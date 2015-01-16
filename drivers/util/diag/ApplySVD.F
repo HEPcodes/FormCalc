@@ -3,7 +3,7 @@
 * matrices U and V, i.e. form U^* A V^+.
 * The original matrix A is overwritten with the result.
 * this file is part of FormCalc
-* last modified 18 Jun 04 th
+* last modified 20 Oct 05 th
 
 #include "config.h"
 
@@ -20,7 +20,7 @@
 	  do i = 1, n
 	    s = 0
 	    do k = 1, n
-	      s = s + A(i,k)*dconjg(V(j,k))
+	      s = s + A(i,k)*DCONJG(V(j,k))
 	    enddo
 	    AVdag(i,j) = s
 	  enddo
@@ -30,7 +30,7 @@
 	  do i = 1, n
 	    s = 0
 	    do k = 1, n
-	      s = s + dconjg(U(i,k))*AVdag(k,j)
+	      s = s + DCONJG(U(i,k))*AVdag(k,j)
 	    enddo
 	    A(i,j) = s
 	  enddo

@@ -3,7 +3,7 @@
 # postings to support@wolfram.com is still unable to order
 # object files and library options correctly
 # this file is part of FormCalc
-# last modified 7 Mar 05 th
+# last modified 7 Apr 05 th
 
 
 linkopt=""
@@ -21,5 +21,5 @@ for opt in $* ; do
 done
 
 set -x
-${REALCC:-cc} $otheropt $linkopt -lpthread
+${REALCC:-gcc} $otheropt $linkopt -lpthread
 

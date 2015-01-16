@@ -2,7 +2,7 @@
 	Grid.c
 		utility functions for the Vegas grid
 		this file is part of Vegas
-		last modified 9 Feb 05 th
+		last modified 31 Aug 05 th
 */
 
 
@@ -85,7 +85,8 @@ static void RefineGrid(Grid grid, Grid margsum)
       cur = grid[bin];
     }
     thisbin -= avgperbin;
-    newgrid[newbin] = cur - (cur - prev)*thisbin/imp[bin];
+    newgrid[newbin] = cur - 2*(cur - prev)*thisbin/
+      (imp[bin] + imp[IDim(bin - 1)]);
   }
   Copy(grid, newgrid, NBINS - 1);
   grid[NBINS - 1] = 1;

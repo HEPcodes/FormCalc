@@ -1,7 +1,7 @@
 * PolarizationSum.frm
 * the FORM part of the PolarizationSum function
 * this file is part of FormCalc
-* last modified 8 Dec 05 th
+* last modified 16 Oct 05 th
 
 
 #procedure PolSum(i, m)
@@ -39,6 +39,18 @@ id E([mu]?) * EC([nu]?) = 1/3*( -d_([mu], [nu]) +
 #endif
 
 .sort
+#endprocedure
+
+***********************************************************************
+
+#procedure Shortest(foo)
+argument `foo';
+#call Small
+endargument;
+id `foo'([x]?, [y]?) = `foo'([x], nterms_([x]), [y], nterms_([y]));
+symm `foo' (2,1), (4,3);
+id `foo'([x]?, 1, ?a) = [x];
+id `foo'([x]?, ?a) = `foo'([x]);
 #endprocedure
 
 ***********************************************************************
@@ -89,7 +101,7 @@ collect Simplify, Simplify;
 normalize Simplify;
 
 #call Factor(Simplify)
-#call MandelSimplify(Simplify)
+#call InvSimplify(Simplify)
 
 id Simplify(0) = 0;
 

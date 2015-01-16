@@ -1,180 +1,84 @@
 * 1to2.F
 * the kinematics for a 1 -> 2 process
 * this file is part of FormCalc
-* last modified 7 Feb 05 th
+* last modified 31 Jan 06 th
 
 
-* some definitions for main.F
+* some definitions for xsection.F
 #define LEGS 3
 #define LEGS_IN 1
+#define LEGS_OUT 2
+#define MASS_IN MASS1
+#define MASS_OUT MASS2 + MASS3
 #define TYPES TYPE1, TYPE2, TYPE3
 
-#define HEADER "1to2.h"
+* this defines the order of integrations:
+#define XCOSTH 1
+#define MAXVAR XCOSTH
+
+#include LUMI
 
 
 ************************************************************************
-** DoIntegrated computes the integrated cross section.
 
-	subroutine DoIntegrated
+	subroutine KinIni(fail)
 	implicit none
+	integer fail
 
-#include HEADER
+#include "xsection.h"
 
-	double precision result(NCOMP), error(NCOMP)
-
-	print *, "sqrt(s) =", sqrtS
-	call flush(6)
-
-	call IntegratedCS(result, error)
-
-1	format(TAG, G19.10, NCOMP G24.15, NCOMP G15.6)
-	print 1, sqrtS, result, error
-	call flush(6)
-	end
-
-
-************************************************************************
-** DoDifferential computes the differential cross section.
-
-	subroutine DoDifferential
-	implicit none
-
-#include HEADER
-
-	double precision result(NCOMP), theta
-
-	do theta = THETACUT, pi - (THETACUT), THETASTEP
-	  print *, "sqrt(s) =", sqrtS, "  theta =", theta
-	  call flush(6)
-
-	  call DifferentialCS(result, cos(theta))
-
-1	  format(TAG, G19.10, NCOMP G24.15)
-	  print 1, theta, result
-	  call flush(6)
-	enddo
-	end
-
-
-************************************************************************
-** SetProcess sets up process-dependent constants.
-
-        subroutine SetProcess(hel, avgfac, sqrtSfrom, sqrtSto)
-        implicit none
-        integer hel
-        double precision avgfac, sqrtSfrom, sqrtSto
-
-#include HEADER
-
-	helicities = hel
-	preflux = 1/(2*(2*pi)**2*4)*avgfac
-
-	if( sqrtSto .ge. sqrtSfrom ) then
-* the factor 2 pi takes care of the azimuthal integration:
-	  preflux = 2*pi*preflux
-* make loop over sqrtS terminate immediately:
-	  sqrtSto = -1
-	endif
-	end
-
-
-************************************************************************
-** SetEnergy initializes everything that depends only on sqrtS.
-
-	subroutine SetEnergy(newsqrtS, *)
-	implicit none
-	double precision newsqrtS
-
-#include HEADER
-#include "util.h"
-
-1	continue
-	newsqrtS = MASS1
-	if( newsqrtS .le. 0 ) newsqrtS = 1
-	call ModelVarIni(newsqrtS, *999)
-	if( abs(MASS1 - newsqrtS) .gt. 1D-14 ) goto 1
-	if( newsqrtS .lt. MASS2 + MASS3 ) then
-	  print *, "Below threshold"
-	  return 1
+	Lower(XCOSTH) = 0
+	Upper(XCOSTH) = 1
+	if( Lower(SQRTS) .gt. Upper(SQRTS) ) then
+	  Step(XCOSTH) = XCOSTHSTEP
+	else
+	  Step(XCOSTH) = 0
 	endif
 
-	sqrtS = newsqrtS
-	Pout = ThreeMom(sqrtS, dble(MASS2), dble(MASS3))
-
-	flux = preflux*Pout/sqrtS**2
-
-	call VecSet(1, dble(MASS1), 0D0, 0D0, 0D0, 1D0)
-
-	call PREFIX CalcRenConst
-	reset = .TRUE.
-	return
-
-999	return 1
+	fail = 0
 	end
 
 
 ************************************************************************
-** DifferentialCS actually invokes the generated function SquaredME.
-** If necessary, soft-photon bremsstrahlung corrections are added.
 
-	subroutine DifferentialCS(result, costh)
+	subroutine InitialState
 	implicit none
-	double precision result(*), costh
 
-#include HEADER
+#include "model.h"
+
+	call VecSet(1, DBLE(MASS1), 0D0, 0D0, 0D0, 1D0)
+	end
+
+
+************************************************************************
+
+	subroutine FinalState(fac)
+	implicit none
+	double precision fac
+
 #include "util.h"
-#include "renconst.h"
+#include "xsection.h"
 
-#ifdef BREMSSTRAHLUNG
-	double precision SoftPhotonFactor
-	external SoftPhotonFactor
+	double precision p, ex,ey,ez, msum, minv
+	integer key
+
+	p = 0
+	ex = 0
+	ey = 0
+	ez = 1
+	minv = sqrtS
+	msum = MASS_OUT
+
+	key = 0
+#ifdef COSTHCUT
+	CutMin(XCOSTH) = -(1 - COSTHCUT)
+	CutMax(XCOSTH) = +(1 - COSTHCUT)
+	key = key + Cut(CUT_COSTH, CUT_MIN + CUT_MAX)
 #endif
 
-	double precision sinth
-	integer c
+	call Split(2, DBLE(MASS2), p, ex,ey,ez, minv, msum,
+     &    fac, key, Var(FIXED), Var(XCOSTH), Var(TRIVIAL))
 
-	sinth = sqrt(1 - costh**2)
-
-	call VecSet(2, dble(MASS2), Pout, sinth, 0D0, costh)
-	call VecSet(3, dble(MASS3), Pout, -sinth, 0D0, -costh)
-
-	call SquaredME(result, helicities, reset)
-
-	do c = 1, NCOMP
-	  result(c) = result(c)*flux
-	enddo
-
-#ifdef BREMSSTRAHLUNG
-	result(2) = result(2) + SoftPhotonFactor()*result(1)
-#endif
-
-#ifdef WF_RENORMALIZATION
-	result(2) = result(2) + (WF_RENORMALIZATION)*result(1)
-#endif
-	end
-
-
-************************************************************************
-** IntegratedCS integrates DifferentialCS over the scattering angle.
-
-	subroutine IntegratedCS(result, error)
-	implicit none
-	double precision result(*), error(*)
-
-#include HEADER
-
-	double precision costhcut
-	integer c, neval, fail
-	external DifferentialCS
-
-	costhcut = cos(dble(THETACUT))
-	call Patterson(NCOMP, -costhcut, costhcut, DifferentialCS,
-     &    dble(ABSACCURACY), dble(RELACCURACY),
-     &    neval, fail, result, error)
-
-	if( fail .ne. 0 )
-     &    print *, "Failed to reach the desired accuracy."
-
-c	print *, neval, " evaluations used"
+	call VecSet(3, DBLE(MASS3), p, ex,ey,ez)
 	end
 

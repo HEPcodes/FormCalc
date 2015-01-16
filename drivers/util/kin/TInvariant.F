@@ -1,7 +1,7 @@
 * TInvariant.F
 * calculates an t-type invariant, i.e. t_{ij} = (k_i - k_j)^2
 * this file is part of FormCalc
-* last modified 15 Jun 04 th
+* last modified 20 Oct 05 th
 
 
 	double precision function TInvariant(i, j)
@@ -17,10 +17,10 @@
 	double precision T11, T22
 	double complex T12
 
-	T11 = dble(Ki(1,1)) - dble(Kj(1,1))
-	T22 = dble(Ki(2,2)) - dble(Kj(2,2))
+	T11 = DBLE(Ki(1,1)) - DBLE(Kj(1,1))
+	T22 = DBLE(Ki(2,2)) - DBLE(Kj(2,2))
 	T12 = Ki(1,2) - Kj(1,2)
 
-        TInvariant = T11*T22 - dble(T12)**2 - dimag(T12)**2
+        TInvariant = T11*T22 - DBLE(T12)**2 - DIMAG(T12)**2
 	end
 

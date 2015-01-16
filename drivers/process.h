@@ -1,7 +1,7 @@
 * process.h
 * defines all process-dependent parameters
 * this file is part of FormCalc
-* last modified 3 Jun 03 th
+* last modified 21 Feb 06 th
 
 
 * Definition of the external particles.
@@ -56,9 +56,15 @@ c#define DIRACFERMIONS
 *   carry colour,
 * - the overall colour factor resulting from the external particles
 *   if that cannot computed by FormCalc (e.g. if the model has no
-*   colour indices, as SM.mod).
+*   colour indices, as SMew.mod).
 
 #define COLOURFACTOR 1
+
+
+* The scale at which the interaction takes place
+* (= the factorization scale for an hadronic process).
+
+#define SCALE sqrtS
 
 
 * Whether to include soft-photon bremsstrahlung.
@@ -81,7 +87,25 @@ c#define WF_RENORMALIZATION (nW*dWFW1 + nZ*dWFZ1)
 #define NCOMP 2
 
 
-* Include the kinematics-dependent part of the code
+* Choose the appropriate luminosity for the collider:
+* - lumi_parton.F for a "parton collider" (e.g. e+ e- -> X),
+* - lumi_hadron.F for a hadron collider (e.g. p pbar -> X),
+* - lumi_photon.F for a photon collider (gamma gamma -> X)
+
+#define LUMI "lumi_parton.F"
+
+* for lumi_hadron.F: PARTON1 and PARTON2 identify the
+* incoming partons by their PDG code, where
+* 0 = gluon
+* 1 = down   3 = strange   5 = bottom
+* 2 = up     4 = charm     6 = top
+
+#define PARTON1 1
+#define PARTON2 1
+#define PDFSET "cteq5l.LHgrid"
+
+
+* Include the kinematics-dependent part.
 
 #include "2to2.F"
 

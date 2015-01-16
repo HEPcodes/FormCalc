@@ -1,7 +1,7 @@
 /*
 	stddecl.h
 		Type declarations common to all Cuba routines
-		last modified 2 Mar 05 th
+		last modified 2 Jun 05 th
 */
 
 
@@ -33,7 +33,7 @@
 #define PSEUDORNG (flags & 8)
 #define REGIONS (flags & 256)
 
-#define INFTY HUGE_VAL
+#define INFTY DBL_MAX
 
 #define NOTZERO 0x1p-104
 

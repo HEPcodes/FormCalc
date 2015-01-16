@@ -4,9 +4,9 @@
 		gamma gamma -> gamma gamma in the electroweak SM
 		using the background-field method
 		this file is part of FormCalc
-		last modified 11 Jun 03 th
+		last modified 30 Dec 05 th
 
-Reference: M. Boehm, R. Schuster, Z. Phys. C63 (1994) 219.
+Reference: M. Böhm, R. Schuster, Z. Phys. C63 (1994) 219.
 
 *)
 
@@ -44,12 +44,16 @@ DoPaint[ins, "box"];
 box = CalcFeynAmp[CreateFeynAmp[ins]]
 
 
+box = Abbreviate[box, 5,
+  Preprocess -> OnSize[100, Simplify, 500, DenCollect]]
+
 abbr = OptimizeAbbr[Abbr[]]
 
+subexpr = OptimizeAbbr[Subexpr[]]
 
 dir = SetupCodeDir[name <> ".fortran", Drivers -> "AAAA-SM.drivers"]
 
-WriteSquaredME[{}, box, abbr, dir]
+WriteSquaredME[{}, box, abbr, subexpr, dir]
 
 WriteRenConst[{}, dir]
 

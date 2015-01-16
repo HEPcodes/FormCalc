@@ -2,7 +2,7 @@
 	divonne-f.c
 		Fortran interface for Divonne
 		this file is part of Divonne
-		last modified 9 Feb 05 th
+		last modified 4 Jan 06 th
 */
 
 
@@ -15,23 +15,23 @@
 
 Extern void Divonne(ccount ndim, ccount ncomp, Integrand integrand,
   creal epsrel, creal epsabs,
-  cint flags, ccount mineval, ccount maxeval,
+  cint flags, cnumber mineval, cnumber maxeval,
   cint key1, cint key2, cint key3, ccount maxpass,
   creal border, creal maxchisq, creal mindeviation,
-  ccount ngiven, ccount ldxgiven, real *xgiven,
-  ccount nextra, PeakFinder peakfinder,
-  int *pnregions, int *pneval, int *pfail,
+  cnumber ngiven, ccount ldxgiven, real *xgiven,
+  cnumber nextra, PeakFinder peakfinder,
+  int *pnregions, number *pneval, int *pfail,
   real *integral, real *error, real *prob);
 
 
 Extern void divonne(ccount *pndim, ccount *pncomp, Integrand integrand,
   creal *pepsrel, creal *pepsabs,
-  cint *pflags, ccount *pmineval, ccount *pmaxeval,
+  cint *pflags, cnumber *pmineval, cnumber *pmaxeval,
   cint *pkey1, cint *pkey2, cint *pkey3, ccount *pmaxpass,
   creal *pborder, creal *pmaxchisq, creal *pmindeviation,
-  ccount *pngiven, ccount *pldxgiven, real *xgiven,
-  ccount *pnextra, PeakFinder peakfinder,
-  int *pnregions, int *pneval, int *pfail,
+  cnumber *pngiven, ccount *pldxgiven, real *xgiven,
+  cnumber *pnextra, PeakFinder peakfinder,
+  int *pnregions, number *pneval, int *pfail,
   real *integral, real *error, real *prob)
 {
   Divonne(*pndim, *pncomp, integrand,

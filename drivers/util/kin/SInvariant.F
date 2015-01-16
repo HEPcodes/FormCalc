@@ -1,7 +1,7 @@
 * SInvariant.F
 * calculates an s-type invariant, i.e. s_{ij} = (k_i + k_j)^2
 * this file is part of FormCalc
-* last modified 15 Jun 04 th
+* last modified 20 Oct 05 th
 
 
 	double precision function SInvariant(i, j)
@@ -17,10 +17,10 @@
 	double precision S11, S22
 	double complex S12
 
-	S11 = dble(Ki(1,1)) + dble(Kj(1,1))
-	S22 = dble(Ki(2,2)) + dble(Kj(2,2))
+	S11 = DBLE(Ki(1,1)) + DBLE(Kj(1,1))
+	S22 = DBLE(Ki(2,2)) + DBLE(Kj(2,2))
 	S12 = Ki(1,2) + Kj(1,2)
 
-	SInvariant = S11*S22 - dble(S12)**2 - dimag(S12)**2
+	SInvariant = S11*S22 - DBLE(S12)**2 - DIMAG(S12)**2
 	end
 

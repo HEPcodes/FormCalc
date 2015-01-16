@@ -3,7 +3,7 @@
 		explicit formulas for the one- and two-point
 		functions and their derivatives
 		this file is part of FormCalc
-		last modified 3 Dec 01 th
+		last modified 3 Nov 05 th
 
 The formulas are more or less directly from the Passarino-Veltman
 paper. The regularization parameters are
@@ -64,6 +64,9 @@ B11[p_, m1_, 0] := B11[p, 0, m1] -
 B11[0, m1_, m2_] = (-Log[m2/Mudim] - F[3, m1/(m1 - m2)] + Delta)/3
 
 B11[p_, m1_, m2_] = (-Log[m2/Mudim] - Simplify[F[3, x1] + F[3, x2]] + Delta)/3
+
+
+B111[p_, m1_, m2_] = (Log[m2/Mudim] + Simplify[F[4, x1] + F[4, x2]] - Delta)/4
 
 
 B00[p_, m1_, m2_] :=

@@ -1,7 +1,7 @@
 * Gauss.F
 * Gaussian integration of a vector
 * this file is part of FormCalc
-* last modified 15 Jun 04 th
+* last modified 1 Jun 05 th
 
 
 #include "config.h"
@@ -15,7 +15,7 @@
 	double precision lower, upper, result(*)
 	external integrand
 
-	double precision tmp(MAXCOMP, 2), mid, range, x
+	double precision samples(MAXCOMP,2), mid, range, x
 	integer c, n, p
 
 	double precision gaussdata(80)
@@ -113,11 +113,11 @@
 
 	do n = 1, nodes, 2
 	  x = range*gaussdata(p)
-	  call integrand(tmp(1, 1), mid - x)
-	  call integrand(tmp(1, 2), mid + x)
+	  call integrand(1, mid - x, ncomp, samples(1,1))
+	  call integrand(1, mid + x, ncomp, samples(1,2))
 	  x = range*gaussdata(p + 1)
 	  do c = 1, ncomp
-	    result(c) = result(c) + x*(tmp(c, 1) + tmp(c, 2))
+	    result(c) = result(c) + x*(samples(c,1) + samples(c,2))
 	  enddo
 	  p = p + 2
 	enddo

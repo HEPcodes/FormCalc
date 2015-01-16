@@ -3,7 +3,7 @@
 		generates the Fortran code for
 		gamma gamma -> t-bar t in the electroweak SM
 		this file is part of FormCalc
-		last modified 11 Jun 03 th
+		last modified 23 Dec 05 th
 
 Reference: A. Denner, S. Dittmaier, and M. Strobel,
            Phys. Rev. D53 (1996) 44 [hep-ph/9507372].
@@ -85,16 +85,22 @@ box = CalcFeynAmp[
   Select[counter, DiagramType[#] == 0 &]]
 
 
+amps = {born, self, vert, box}
+
+{born, self, vert, box} = Abbreviate[amps, 6,
+  Preprocess -> OnSize[100, Simplify, 500, DenCollect] ]
+
 col = ColourME[All, born]
 
 abbr = OptimizeAbbr[Abbr[]]
 
+subexpr = OptimizeAbbr[Subexpr[]]
 
 dir = SetupCodeDir[name <> ".fortran", Drivers -> name <> ".drivers"]
 
-WriteSquaredME[born, {self, vert, box}, col, abbr, dir]
+WriteSquaredME[born, {self, vert, box}, col, abbr, subexpr, dir]
 
-WriteRenConst[counter, dir]
+WriteRenConst[amps, dir]
 
 
 Print["time used: ", SessionTime[] - time1]

@@ -1,262 +1,114 @@
 * 2to3.F
 * the kinematics for a 2 -> 3 process
 * this file is part of FormCalc
-* last modified 7 Feb 05 th
+* last modified 23 Jan 06 th
 
 
-* some definitions for main.F
+* some definitions for xsection.F
 #define LEGS 5
 #define LEGS_IN 2
+#define LEGS_OUT 3
+#define MASS_IN MASS1 + MASS2
+#define MASS_OUT MASS3 + MASS4 + MASS5
 #define TYPES TYPE1, TYPE2, TYPE3, TYPE4, TYPE5
 
-#define HEADER "2to3.h"
-
 * this defines the order of integrations:
-#define K50 4
-#define COSTH 3
-#define K30 2
-#define ETA 1
+#define XMREM5 1
+#define XCOSTH5 2
+#define XCOSTH4 3
+#define XPHI4 4
+#define MAXVAR XPHI4
 
-#define MAXDIM 4
-
-#include "cuba.F"
-
-
-************************************************************************
-** DoIntegrated computes the integrated cross section.
-
-	subroutine DoIntegrated
-	implicit none
-
-#include HEADER
-
-	double precision result(NCOMP), error(NCOMP)
-	external Sample
-
-	print *, "sqrt(s) =", sqrtS
-	call flush(6)
-
-	call Cuba(MAXDIM, Sample, result, error)
-
-100	format(TAG, G19.10, NCOMP G24.15, NCOMP G15.6)
-	print 100, sqrtS, result, error
-	call flush(6)
-	end
+#include LUMI
 
 
 ************************************************************************
-** DoDifferential computes the differential cross section.
 
-	subroutine DoDifferential
+	subroutine KinIni(fail)
 	implicit none
+	integer fail
 
-#include HEADER
+#include "xsection.h"
 
-	double precision result(NCOMP), error(NCOMP), k50
-	external Sample
-
-* at k50 = MASS5 (i.e. k5 = 0) the phase-space volume is precisely
-* zero, plus we have difficulties computing certain kinematical
-* quantities, such as cosxi ~ 1/k5, hence we move a tiny bit away
-* from k5 = 0:
-	k50 = max(lower(K50), dble(MASS5) + .1D0)
-
-	do k50 = k50, upper(K50), K50STEP
-	  print *, "sqrt(s) =", sqrtS, "  k50 =", k50
-	  call flush(6)
-
-	  var(K50) = k50
-	  call SetLimits
-	  call Cuba(MAXDIM - 1, Sample, result, error)
-
-100	  format(TAG, G19.10, NCOMP G24.15, NCOMP G15.6)
-	  print 100, k50, result, error
-	  call flush(6)
-	enddo
-	end
-
-
-************************************************************************
-** SetProcess sets up process-dependent constants.
-
-	subroutine SetProcess(hel, avgfac, sqrtSfrom, sqrtSto)
-	implicit none
-	integer hel
-	double precision avgfac, sqrtSfrom, sqrtSto
-
-#include HEADER
-
-	helicities = hel
-	preflux = hbar_c2/(8*(2*pi)**4*4)*avgfac
-
-	upper(ETA) = 2*pi
-	lower(ETA) = 0
-	end
-
-
-************************************************************************
-** SetEnergy sets up energy-dependent constants.
-
-	subroutine SetEnergy(newsqrtS, *)
-	implicit none
-	double precision newsqrtS
-
-#include HEADER
-#include "util.h"
-
-	double precision Pin
-
-	double precision threshold, m
-	logical adjust
-
-	adjust = .FALSE.
-1	continue
-	call ModelVarIni(newsqrtS, *999)
-	m = (MASS3 + MASS4)**2 - (MASS5)**2
-	sqrtS = newsqrtS
-	lower(K50) = max(dble(MASS5), dble(K50CUT))
-	threshold = max(
-     &    dble(MASS1 + MASS2),
-     &    dble(MASS3 + MASS4 + MASS5),
-     &    lower(K50) + sqrt(lower(K50)**2 + m) )
-	if( newsqrtS .le. threshold ) then
-	  newsqrtS = threshold + .01D0
-	  adjust = .TRUE.
-	  goto 1
+	Lower(XMREM5) = 0
+	Upper(XMREM5) = 1
+	if( Lower(SQRTS) .gt. Upper(SQRTS) ) then
+	  Step(XMREM5) = XMREM5STEP
+	else
+	  Step(XMREM5) = 0
 	endif
 
-100	format(TAG,
-     &    "# WARNING: adjusted sqrt(s) to above-threshold value ",
-     &    F10.2)
-	if( adjust ) print 100, newsqrtS
+	Lower(XCOSTH5) = 0
+	Upper(XCOSTH5) = 1
+	Step(XCOSTH5) = 0
 
-	upper(K50) = .5D0*(sqrtS - m/sqrtS)
+	Lower(XCOSTH4) = 0
+	Upper(XCOSTH4) = 1
+	Step(XCOSTH4) = 0
 
-	upper(COSTH) = cos(dble(THETACUT))
-	lower(COSTH) = -upper(COSTH)
+	Lower(XPHI4) = 0
+	Upper(XPHI4) = 1
+	Step(XPHI4) = 0
 
-	Pin = ThreeMom(sqrtS, dble(MASS1), dble(MASS2))
-
-	flux = preflux/(Pin*sqrtS)
-
-	call VecSet(1, dble(MASS1), Pin, 0D0, 0D0, 1D0)
-	call VecSet(2, dble(MASS2), Pin, 0D0, 0D0, -1D0)
-
-	call PREFIX CalcRenConst
-	reset = .TRUE.
-	return
-
-999	return 1
+	fail = 0
 	end
 
 
 ************************************************************************
-** SetLimits is called after a new value for var(K50) has been set and
-** computes the limits of the k30 integration that depend on k50.
 
-	subroutine SetLimits
+	subroutine InitialState
 	implicit none
 
-#include HEADER
-
-	double precision k50, k5, sig, tau, m1, m2
-
-	k50 = var(K50)
-	k5 = sqrt(k50**2 - (MASS5)**2)
-	sig = sqrtS - k50
-	tau = sqrtS*(sig - k50) + (MASS5)**2
-	m1 = MASS3 + MASS4
-	m2 = MASS3 - (MASS4)
-	sig = sig*(1 + m1*m2/tau)
-	tau = k5*sqrt((1 - m1**2/tau)*(1 - m2**2/tau))
-	lower(K30) = .5D0*(sig - tau)
-	upper(K30) = .5D0*(sig + tau)
-	end
-
-
-************************************************************************
-** DifferentialCS actually invokes the generated function SquaredME.
-** If necessary, soft-photon bremsstrahlung corrections are added.
-** DifferentialCS = dsigma/(dk50 dk30 dcosth deta)
-
-	subroutine DifferentialCS(result, k50, costh, k30, eta)
-	implicit none
-	double precision result(*), k50, costh, k30, eta
-
-#include HEADER
 #include "util.h"
-#include "renconst.h"
+#include "xsection.h"
 
-#ifdef BREMSSTRAHLUNG
-	double precision SoftPhotonFactor
-	external SoftPhotonFactor
-#endif
+	double precision p
 
-	double precision sinth, cosxi, sinxi, coseta, sineta
-	double precision e3x, e3y, e3z
-	double precision k3, k4, k5
-	integer c
+	p = ThreeMom(sqrtS, DBLE(MASS1), DBLE(MASS2))
 
-	k3 = sqrt(k30**2 - (MASS3)**2)
-	k4 = sqrt((sqrtS - k30 - k50)**2 - (MASS4)**2)
-	k5 = sqrt(k50**2 - (MASS5)**2)
-	cosxi = (k4**2 - k3**2 - k5**2)/(2*k3*k5)
-	sinxi = sqrt(1 - cosxi**2)
-	sinth = sqrt(1 - costh**2)
-	coseta = cos(eta)
-	sineta = sin(eta)
-
-	e3x = costh*coseta*sinxi + sinth*cosxi
-	e3y = sineta*sinxi
-	e3z = costh*cosxi - sinth*coseta*sinxi
-
-	call VecSet(3, dble(MASS3), k3, e3x, e3y, e3z)
-	call VecSet(4, dble(MASS4), k4,
-     &    (-k3*e3x - k5*sinth)/k4, -k3*e3y/k4, (-k3*e3z - k5*costh)/k4)
-	call VecSet(5, dble(MASS5), k5, sinth, 0D0, costh)
-
-	call SquaredME(result, helicities, reset)
-
-	do c = 1, NCOMP
-	  result(c) = result(c)*flux
-	enddo
-
-#ifdef BREMSSTRAHLUNG
-	result(2) = result(2) + SoftPhotonFactor()*result(1)
-#endif
-
-#ifdef WF_RENORMALIZATION
-	result(2) = result(2) + (WF_RENORMALIZATION)*result(1)
-#endif
+	call VecSet(1, DBLE(MASS1), p, 0D0, 0D0, 1D0)
+	call VecSet(2, DBLE(MASS2), p, 0D0, 0D0, -1D0)
 	end
 
 
 ************************************************************************
-** Sample samples the differential cross-section at x.  The arrays
-** upper and lower contain the integration limits.
 
-	subroutine Sample(ndim, x, ncomp, result)
+	subroutine FinalState(fac)
 	implicit none
-	integer ndim, ncomp
-	double precision x(*), result(*)
+	double precision fac
 
-#include HEADER
+#include "util.h"
+#include "xsection.h"
 
-	integer dim, c
-	double precision range, jacobian
+	double precision p, ex,ey,ez, msum, minv
+	integer key
 
-	jacobian = 1
-	do dim = ndim, 1, -1
-	  range = upper(dim) - lower(dim)
-	  jacobian = jacobian*range
-	  var(dim) = lower(dim) + x(dim)*range
-	  if( dim .eq. K50 ) call SetLimits
-	enddo
+	p = 0
+	ex = 0
+	ey = 0
+	ez = 1
+	minv = sqrtS
+	msum = MASS_OUT
 
-	call DifferentialCS(result,
-     &    var(K50), var(COSTH), var(K30), var(ETA))
+	key = 0
+#ifdef E5MIN
+	CutMin(XMREM5) = E5MIN
+	key = key + Cut(CUT_MREM_E, CUT_MIN)
+#endif
+#ifdef COSTH5CUT
+	CutMin(XCOSTH5) = -(1 - COSTH5CUT)
+	CutMax(XCOSTH5) = +(1 - COSTH5CUT)
+	key = key + Cut(CUT_COSTH, CUT_MIN + CUT_MAX)
+#endif
 
-	do c = 1, ncomp
-	  result(c) = result(c)*jacobian
-	enddo
+	call Split(5, DBLE(MASS5), p, ex,ey,ez, minv, msum,
+     &    fac, key, Var(XMREM5), Var(XCOSTH5), Var(TRIVIAL))
+	Show(XMREM5) = momspec(SPEC_E, 5)
+	if( fac .eq. 0 ) return
+
+	call Split(4, DBLE(MASS4), p, ex,ey,ez, minv, msum,
+     &    fac, 0, Var(FIXED), Var(XCOSTH4), Var(XPHI4))
+
+	call VecSet(3, DBLE(MASS3), p, ex,ey,ez)
 	end
+

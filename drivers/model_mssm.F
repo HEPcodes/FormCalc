@@ -1,11 +1,11 @@
-* mssm_ini.F
+* model_mssm.F
 * all parameters for the MSSM are initialized here
 * this file is part of FormCalc
 * Christian Schappacher, 17 Feb 99
-* last modified 4 May 06 th
+* last modified 15 May 06 th
 
 
-* The input parameters for mssm_ini are:
+* The input parameters for model_mssm are:
 
 * Higgs sector:
 *   TB = tan beta
@@ -21,7 +21,7 @@
 * If one wants to specify the breaking and mixing in the
 * sfermion sector more precisely, the following preprocessor
 * variables can be used:
-*   MSQ, MSU, MSD, MSL, MSE (= MSusy by default)
+*   MSQ(g), MSU(g), MSD(g), MSL(g), MSE(g) (= MSusy by default)
 
 
 * The following preprocessor variables can be defined
@@ -54,28 +54,28 @@
 
 * NO_GUT_RELATION
 *   If defined, does not use the GUT relation which relates
-*   the gaugino mass paramters.  In this case, M_1 and MGl are
+*   the gaugino mass paramters.  In this case, M_1 and M_3 are
 *   also input parameters.
 
 
 #ifndef MSQ
-#define MSQ MSusy
+#define MSQ(g) MSusy
 #endif
 
 #ifndef MSU
-#define MSU MSusy
+#define MSU(g) MSusy
 #endif
 
 #ifndef MSL
-#define MSL MSusy
+#define MSL(g) MSusy
 #endif
 
 #ifndef MSD
-#define MSD MSusy
+#define MSD(g) MSusy
 #endif
 
 #ifndef MSE
-#define MSE MSusy
+#define MSE(g) MSusy
 #endif
 
 
@@ -121,7 +121,7 @@
 #define ModelDefaults SMDefaults
 #define ModelConstIni SMConstIni
 #define ModelVarIni SMVarIni
-#include "sm_ini.F"
+#include "model_sm.F"
 #undef ModelDefaults
 #undef ModelConstIni
 #undef ModelVarIni
@@ -134,10 +134,15 @@
 
 #include "model.h"
 
-#ifdef FLAVOUR_VIOLATION
 	integer i
 
-	do i = 1, 6*6*2
+	do i = 1, 3*3*3
+	  Af_flat(i) = 0
+	  Xf_flat(i) = 0
+	enddo
+
+#ifdef FLAVOUR_VIOLATION
+	do i = 1, 2*6*6
 	  deltaSf_flat(i) = 0
 	enddo
 #endif
@@ -148,17 +153,19 @@
 
 ************************************************************************
 
-	subroutine ModelConstIni(*)
+	subroutine ModelConstIni(fail)
 	implicit none
+	integer fail
 
 #include "model.h"
 
-	double precision ALPHAS2
-	external ALPHAS2
+	double precision alphasPDF
+	external alphasPDF
 
-	call SMConstIni(*999)
+	call SMConstIni(fail)
+	if( fail .ne. 0 ) return
 
-	AlfasMT = ALPHAS2(MT)
+	AlfasMT = alphasPDF(MT)
 
 	TB2 = TB**2
 	CB2 = 1/(1 + TB2)
@@ -168,28 +175,32 @@
 	S2B = 2*TB*CB2
 	C2B = CB2 - SB2
 
-	call SfermionMasses(*999)
-	call CharginoMasses(*999)
-	call NeutralinoMasses(*999)
+	call SfermionMasses(fail)
+	if( fail .ne. 0 ) return
+
+	call CharginoMasses(fail)
+	if( fail .ne. 0 ) return
+
+	call NeutralinoMasses(fail)
+	if( fail .ne. 0 ) return
 
 * FeynHiggs needs the gluino mass, hence we have to postpone
 * the Higgs sector to ModelVarIni.
 #if HIGGS_MASSES != FEYNHIGGS
-	call HiggsMasses(*999)
+	call HiggsMasses(fail)
+	if( fail .ne. 0 ) return
 #endif
 
 	mssm_digest = .FALSE.
-	return
-
-999	return 1
 	end
 
 
 *-----------------------------------------------------------------------
 * Sfermion sector:
 
-	subroutine SfermionMasses(*)
+	subroutine SfermionMasses(fail)
 	implicit none
+	integer fail
 
 #include "model.h"
 
@@ -200,17 +211,17 @@
 	parameter (Qe = -1, Qu = 2/3D0, Qd = -1/3D0)
 
 #ifndef NO_EXCLUSION_LIMITS
-	double precision f1f2, DeltaRho
+	double precision USf2(2,2,3:4), DeltaRho, f1f2
 	external f1f2
 #endif
 
 #ifdef FLAVOUR_VIOLATION
-	integer as1, as2, g2
+	integer as1, g2
 	double precision m, m2
-	double complex X(6,6)
+	double complex MX2(6,6)
 
-	double complex Xflat(6*6)
-	equivalence (X, Xflat)
+	double complex MX2flat(6*6)
+	equivalence (MX2, MX2flat)
 #endif
 
 	i3part = .5D0*MZ2*C2B
@@ -225,12 +236,12 @@
 	DSf(1,4) = -i3part - DSf(2,4)
 
 	do g = 1, 3
-	  MSS(1,2,g) = MSL
-	  MSS(2,2,g) = MSE
-	  MSS(1,3,g) = MSQ
-	  MSS(2,3,g) = MSU
-	  MSS(1,4,g) = MSQ
-	  MSS(2,4,g) = MSD
+	  MSS(1,2,g) = MSL(g)
+	  MSS(2,2,g) = MSE(g)
+	  MSS(1,3,g) = MSQ(g)
+	  MSS(2,3,g) = MSU(g)
+	  MSS(1,4,g) = MSQ(g)
+	  MSS(2,4,g) = MSD(g)
 
 	  MSS2(1,2,g) = MSS(1,2,g)**2
 	  MSS2(2,2,g) = MSS(2,2,g)**2
@@ -241,79 +252,82 @@
 
 #ifdef NO_SQUARK_MIXING
 #define Eigen2x2 NoMixing
-	  Af(2,g) = dconjg(MUE)*TB
-	  Af(3,g) = dconjg(MUE)/TB
-	  Af(4,g) = Af(2,g)
-	  Xf(2,g) = 0
-	  Xf(3,g) = 0
-	  Xf(4,g) = 0
+	  Af(2,g,g) = DCONJG(MUE)*TB
+	  Af(3,g,g) = DCONJG(MUE)/TB
+	  Af(4,g,g) = Af(2,g,g)
+	  Xf(2,g,g) = 0
+	  Xf(3,g,g) = 0
+	  Xf(4,g,g) = 0
 #else
-	  Af(2,g) = Atau
-	  Xf(2,g) = Af(2,g) - dconjg(MUE)*TB
-	  Af(3,g) = At
-	  Xf(3,g) = Af(3,g) - dconjg(MUE)/TB
-	  Af(4,g) = Ab
-	  Xf(4,g) = Af(4,g) - dconjg(MUE)*TB
+	  Af(2,g,g) = Atau
+	  Xf(2,g,g) = Af(2,g,g) - DCONJG(MUE)*TB
+	  Af(3,g,g) = At
+	  Xf(3,g,g) = Af(3,g,g) - DCONJG(MUE)/TB
+	  Af(4,g,g) = Ab
+	  Xf(4,g,g) = Af(4,g,g) - DCONJG(MUE)*TB
 #endif
 
-	  call NoMixing(MSf(1,1,g), MSf2(1,1,g), USf(1,1,1,g),
-     &      MSS2(1,2,g) + DSf(1,1), 0D0, dcmplx(0D0), *999)
+	  call NoMixing(fail, MSf(1,1,g), MSf2(1,1,g), USf(1,1,1,g),
+     &      MSS2(1,2,g) + DSf(1,1), 1D300, DCMPLX(0D0))
 
 	  do t = 2, 4
-	    call Eigen2x2(MSf(1,t,g), MSf2(1,t,g), USf(1,1,t,g),
+	    call Eigen2x2(fail, MSf(1,t,g), MSf2(1,t,g), USf(1,1,t,g),
      &        MSS2(1,t,g) + DSf(1,t) + Mf2(t,g),
      &        MSS2(2,t,g) + DSf(2,t) + Mf2(t,g),
-     &        Mf(t,g)*dconjg(Xf(t,g)), *999)
+     &        Mf(t,g)*DCONJG(Xf(t,g,g)))
+	    if( fail .ne. 0 ) return
 	  enddo
 	enddo
 
 #ifndef NO_EXCLUSION_LIMITS
 	if( MSf(1,4,3) .lt. MSbottom_LOWERBOUND ) then
-	  print *, "mssm_ini: MSf(1,4,3) = ", MSf(1,4,3),
+	  WARN "model_mssm: MSf(1,4,3) = ", MSf(1,4,3),
      &      " < MSbottom_LOWERBOUND = ", MSbottom_LOWERBOUND
-	  return 1
+	  fail = 2
+	  return
 	endif
 
 	if( MSf(1,3,3) .lt. MStop_LOWERBOUND ) then
-	  print *, "mssm_ini: MSf(1,3,3) = ", MSf(1,3,3),
+	  WARN "model_mssm: MSf(1,3,3) = ", MSf(1,3,3),
      &      " < MStop_LOWERBOUND = ", MStop_LOWERBOUND
-	  return 1
+	  fail = 2
+	  return
 	endif
 
 	if( MSf(1,2,1) .lt. MSlepton_LOWERBOUND ) then
-	  print *, "mssm_ini: MSf(1,2,1) = ", MSf(1,2,1),
+	  WARN "model_mssm: MSf(1,2,1) = ", MSf(1,2,1),
      &      " < MSlepton_LOWERBOUND = ", MSlepton_LOWERBOUND
-	  return 1
+	  fail = 2
+	  return
 	endif
 
 	if( MSf(1,3,1) .lt. MSquark_LOWERBOUND ) then
-	  print *, "mssm_ini: MSf(1,3,1) = ", MSf(1,3,1),
+	  WARN "model_mssm: MSf(1,3,1) = ", MSf(1,3,1),
      &      " < MSquark_LOWERBOUND = ", MSquark_LOWERBOUND
-	  return 1
+	  fail = 2
+	  return
 	endif
 
-#define abs2(c) (dble(c)**2 + dimag(c)**2)
+	do t = 3, 4
+	  USf2(1,1,t) = DBLE(USf(1,1,t,3)*DCONJG(USf(1,1,t,3)))
+	  USf2(2,1,t) = DBLE(USf(2,1,t,3)*DCONJG(USf(2,1,t,3)))
+	  USf2(1,2,t) = DBLE(USf(1,2,t,3)*DCONJG(USf(1,2,t,3)))
+	  USf2(2,2,t) = DBLE(USf(2,2,t,3)*DCONJG(USf(2,2,t,3)))
+	enddo
 
 	DeltaRho =
-     &     USf(1,1,3,3)*USfC(1,2,3,3)
-     &     * USf(2,2,3,3)*USfC(2,1,3,3)
-     &     * f1f2(MSf2(1,3,3), MSf2(2,3,3))
-     &   + USf(1,1,4,3)*USfC(1,2,4,3)
-     &     * USf(2,2,4,3)*USfC(2,1,4,3)
-     &     * f1f2(MSf2(1,4,3), MSf2(2,4,3))
-     &   + abs2(USf(1,1,3,3)) * abs2(USf(1,1,4,3))
-     &     * f1f2(MSf2(1,3,3), MSf2(1,4,3))
-     &   + abs2(USf(1,1,3,3)) * abs2(USf(2,1,4,3))
-     &     * f1f2(MSf2(1,3,3), MSf2(2,4,3))
-     &   + abs2(USf(2,1,3,3)) * abs2(USf(1,1,4,3))
-     &     * f1f2(MSf2(2,3,3), MSf2(1,4,3))
-     &   + abs2(USf(2,1,3,3)) * abs2(USf(2,1,4,3))
-     &     * f1f2(MSf2(2,3,3), MSf2(2,4,3))
+     &    USf2(1,1,3)*USf2(1,1,4)*f1f2(MSf2(1,3,3), MSf2(1,4,3)) +
+     &    USf2(1,1,3)*USf2(2,1,4)*f1f2(MSf2(1,3,3), MSf2(2,4,3)) +
+     &    USf2(2,1,3)*USf2(1,1,4)*f1f2(MSf2(2,3,3), MSf2(1,4,3)) +
+     &    USf2(2,1,3)*USf2(2,1,4)*f1f2(MSf2(2,3,3), MSf2(2,4,3)) -
+     &    USf2(1,2,3)*USf2(2,2,3)*f1f2(MSf2(1,3,3), MSf2(2,3,3)) -
+     &    USf2(1,2,4)*USf2(2,2,4)*f1f2(MSf2(1,4,3), MSf2(2,4,3))
 
 	if( DeltaRho .gt. DeltaRho_UPPERBOUND ) then
-	  print *, "mssm_ini: DeltaRho = ", DeltaRho,
+	  WARN "model_mssm: DeltaRho = ", DeltaRho,
      &      " > DeltaRho_UPPERBOUND = ", DeltaRho_UPPERBOUND
-	  return 1
+	  fail = 3
+	  return
 	endif
 #endif
 
@@ -325,41 +339,36 @@
 
 	do t = 3, 4
 	  do g = 1, 6*6
-	    Xflat(g) = 0
+	    MX2flat(g) = 0
 	  enddo
 	  do g = 1, 3
-	    X(g,g+3) = Mf(t,g)*dconjg(Xf(t,g))
-	    X(g+3,g+3) = MSS2(2,t,g) + DSf(2,t) + Mf2(t,g)
-	    X(g,g) = MSS2(1,t,g) + DSf(1,t) + Mf2(t,g)
+	    MX2(g,g) = MSS2(1,t,g) + DSf(1,t) + Mf2(t,g)
+	    MX2(g+3,g+3) = MSS2(2,t,g) + DSf(2,t) + Mf2(t,g)
+	    MX2(g,g+3) = Mf(t,g)*DCONJG(Xf(t,g,g))
 	  enddo
 
+#define MX2diag(g) MX2flat(7*(g - ibits(3 - g, 2, 2)) - 6)
+* same as: (g > 3) ? MX2(g-3,g-3) : MX2(g,g)
+
 	  do g2 = 6, 1, -1
-	    if( g2 .le. 3 ) then
-	      m = X(g2,g2)
-	    else
-	      m = X(g2-3,g2-3)
-	    endif
+	    m2 = MX2diag(g2)
 	    do g = g2, 1, -1
-	      if( g .le. 3 ) then
-	        m2 = X(g,g)
-	      else
-	        m2 = X(g-3,g-3)
-	      endif
-	      X(g,g2) = X(g,g2) + deltaSf(t,g,g2)*sqrt(m*m2)
+	      m = MX2diag(g)
+	      MX2(g,g2) = MX2(g,g2) + deltaSf(t,g,g2)*sqrt(m*m2)
 	    enddo
 	  enddo
 
-	  Af(t,1,2) = X(1,5)/Mf(t,1)
-	  Af(t,2,1) = X(2,4)/Mf(t,2)
-	  Af(t,1,3) = X(1,6)/Mf(t,1)
-	  Af(t,3,1) = X(3,4)/Mf(t,3)
-	  Af(t,2,3) = X(2,6)/Mf(t,2)
-	  Af(t,3,2) = X(3,5)/Mf(t,3)
+	  Af(t,1,2) = MX2(1,2+3)/Mf(t,1)
+	  Af(t,2,1) = MX2(2,1+3)/Mf(t,2)
+	  Af(t,1,3) = MX2(1,3+3)/Mf(t,1)
+	  Af(t,3,1) = MX2(3,1+3)/Mf(t,3)
+	  Af(t,2,3) = MX2(2,3+3)/Mf(t,2)
+	  Af(t,3,2) = MX2(3,2+3)/Mf(t,3)
 
-	  call Eigensystem(6, X, 6, MASf2(1,t), UASf(1,1,t), 6)
+	  call Eigensystem(6, MX2, 6, MASf2(1,t), UASf(1,1,t), 6)
 
 	  if( MASf2(1,t) .lt. 0 ) then
-	    print *, "Negative MASf2"
+	    WARN "Negative MASf2"
 	    fail = 1
 	    return
 	  endif
@@ -369,29 +378,6 @@
 	  enddo
 	enddo
 #endif
-	return
-
-999	return 1
-	end
-
-
-*-----------------------------------------------------------------------
-
-	subroutine NoMixing(m, msq, U, M11, M22, M12, *)
-	implicit none
-	double precision m(*), msq(*)
-	double complex U(2,*)
-	double precision M11, M22
-	double complex M12
-
-	msq(1) = M11
-	m(1) = sqrt(M11)
-	msq(2) = M22
-	m(2) = sqrt(M22)
-	U(1,1) = 1
-	U(2,2) = 1
-	U(2,1) = 0
-	U(1,2) = 0
 	end
 
 
@@ -406,7 +392,7 @@
 
 	double precision f1, f2, logm1m2, c1
 
-	double precision Li2
+	double complex Li2
 	external Li2
 
 	logm1m2 = log(m1/m2)
@@ -423,8 +409,9 @@
 *-----------------------------------------------------------------------
 * Chargino sector:
 
-	subroutine CharginoMasses(*)
+	subroutine CharginoMasses(fail)
 	implicit none
+	integer fail
 
 #include "model.h"
 
@@ -439,22 +426,26 @@
 
 #ifndef NO_EXCLUSION_LIMITS
 	if( MCha(1) .lt. MChargino_LOWERBOUND ) then
-	  print *, "mssm_ini: MCha(1) = ", MCha(1),
+	  WARN "model_mssm: MCha(1) = ", MCha(1),
      &      " < MChargino_LOWERBOUND = ", MChargino_LOWERBOUND
-	  return 1
+	  fail = 2
+	  return
 	endif
 #endif
 
 	MCha2(1) = MCha(1)**2
 	MCha2(2) = MCha(2)**2
+
+	fail = 0
 	end
 
 
 *-----------------------------------------------------------------------
 * Neutralino sector:
 
-	subroutine NeutralinoMasses(*)
+	subroutine NeutralinoMasses(fail)
 	implicit none
+	integer fail
 
 #include "model.h"
 
@@ -486,9 +477,10 @@
 
 #ifndef NO_EXCLUSION_LIMITS
 	if( MNeu(1) .lt. MNeutralino_LOWERBOUND ) then
-	  print *, "mssm_ini: MNeu(1) = ", MNeu(1),
+	  WARN "model_mssm: MNeu(1) = ", MNeu(1),
      &      " < MNeutralino_LOWERBOUND = ", MNeutralino_LOWERBOUND
-	  return 1
+	  fail = 2
+	  return
 	endif
 #endif
 
@@ -496,14 +488,17 @@
 	MNeu2(2) = MNeu(2)**2
 	MNeu2(3) = MNeu(3)**2
 	MNeu2(4) = MNeu(4)**2
+
+	fail = 0
 	end
 
 
 *-----------------------------------------------------------------------
 * Higgs sector:
 
-	subroutine HiggsMasses(*)
+	subroutine HiggsMasses(fail)
 	implicit none
+	integer fail
 
 #include "model.h"
 
@@ -521,18 +516,16 @@
 	parameter (tl_running_mt = 1)
 	parameter (tl_bot_resum = 1)
 
-	double precision scalefactor, lambda_t, lambda_b
+	double precision scalefactor
 	double precision Qtau, Qt, Qb
 	parameter (scalefactor = 1)
-	parameter (lambda_t = 0)
-	parameter (lambda_b = 0)
-	parameter (Qtau = -1)
-	parameter (Qt = -1)
-	parameter (Qb = -1)
+	parameter (AlfasMZ = -1)
+	parameter (Qtau = 0)
+	parameter (Qt = 0)
+	parameter (Qb = 0)
 
-	integer error
-	double precision MHiggs(4), SAeff
-	double complex UHiggs(3,3)
+	double precision MHiggs(4)
+	double complex SAeff, UHiggs(3,3)
 #else
 	double precision sig11, sig12, sig22
 	double precision MTr2, Qsusy, Lambda
@@ -541,8 +534,8 @@
 	double precision pref, pref2, tmp, tmplog, TA
 
 	double precision MtLR, MbLR
-	equivalence (Xf(3,3), MtLR)
-	equivalence (Xf(4,3), MbLR)
+	equivalence (Xf(3,3,3), MtLR)
+	equivalence (Xf(4,3,3), MbLR)
 
 	integer Nc, Ng
 	double precision Qt, Qb
@@ -560,26 +553,25 @@
 
 #if HIGGS_MASSES == FEYNHIGGS
 
-	call FHSetFlags(error, mssmpart, fieldren, tanbren,
+	call FHSetFlags(fail, mssmpart, fieldren, tanbren,
      &    higgsmix, p2approx, looplevel, tl_running_mt, tl_bot_resum)
-	if( error .ne. 0 ) return 1
+	if( fail .ne. 0 ) return
 
-	call FHSetPara(error, scalefactor,
-     &    MT, MB, MW, MZ, TB, MA0, -1D0,
+	call FHSetPara(fail, scalefactor,
+     &    AlfasMZ, MC, MT, MBatMB, MB, MW, MZ, TB, MA0, -1D0,
      &    MSS(1,2,3), MSS(2,2,3), MSS(1,3,3), MSS(2,3,3), MSS(2,4,3),
      &    MSS(1,2,2), MSS(2,2,2), MSS(1,3,2), MSS(2,3,2), MSS(2,4,2),
      &    MSS(1,2,1), MSS(2,2,1), MSS(1,3,1), MSS(2,3,1), MSS(2,4,1),
      &    MUE,
-     &    Af(2,3), Af(3,3), Af(4,3),
-     &    Af(2,2), Af(3,2), Af(4,2),
-     &    Af(2,1), Af(3,1), Af(4,1),
-     &    dcmplx(M_1), dcmplx(M_2), dcmplx(MGl),
-     &    lambda_t, lambda_b,
+     &    Af(2,3,3), Af(3,3,3), Af(4,3,3),
+     &    Af(2,2,2), Af(3,2,2), Af(4,2,2),
+     &    Af(2,1,1), Af(3,1,1), Af(4,1,1),
+     &    M_1, M_2, M_3,
      &    Qtau, Qt, Qb)
-        if( error .ne. 0 ) return 1
+        if( fail .ne. 0 ) return
 
-	call FHHiggsCorr(error, MHiggs, SA, UHiggs)
-	if( error .ne. 0 ) return 1
+	call FHHiggsCorr(fail, MHiggs, SAeff, UHiggs)
+	if( fail .ne. 0 ) return
 
         Mh0 = MHiggs(1)
 	Mh02 = Mh0**2
@@ -593,6 +585,7 @@
 	MHp = MHiggs(4)
 	MHp2 = MHp**2
 
+	SA = DBLE(SAeff)
 	SA2 = SA**2
 	CA2 = 1 - SA2
 	CA = sqrt(CA2)
@@ -662,7 +655,7 @@
 	tmplog = log(MSf(2,3,3)*MSf(1,3,3)/MTr2)
 	sig22 = sig22 + MTr2**2/SB2 * (
      &    + GF*sqrt2/pi**3*AlfasMT*(toplog*(3*toplog - 6)
-     &        - 6*sqrt(mix) + mix*(-3*toplog + 3/4D0*mix))
+     &      - 6*sign(sqrt(mix), MtLR) + mix*(-3*toplog + 3/4D0*mix))
      &    - 9*GF**2/(16*pi**4)*MTr2* tmplog*(Xt + tmplog) )
 
 * The one-loop leading-log contributions from all other sectors:
@@ -682,15 +675,15 @@
 	sig11 = sig11
      &    - pref*CB2
      &      *(6*Nc*tmp*(2*tmp - 1) + Pb + Pf + Pg + P2h)*tmplog
-     &    - pref2*Af(4,3)
-     &      *(4*MB2*MbLR/CB2*(1 - Af(4,3)*MbLR/(12*MSS2(1,3,3)))
-     &        - MZ2*(MbLR + Af(4,3)/3D0))
+     &    - pref2*Af(4,3,3)
+     &      *(4*MB2*MbLR/CB2*(1 - Af(4,3,3)*MbLR/(12*MSS2(1,3,3)))
+     &        - MZ2*(MbLR + Af(4,3,3)/3D0))
 	sig12 = sig12
      &    - pref*SB*CB*(3*Nc*tmp - Pb - Pf - Pg_ - P2h_)*tmplog
      &    + .5D0*pref2
-     &      *(4*MB2*MUE*MbLR/CB2*(1 - Af(4,3)*MbLR/(6*MSS2(1,3,3)))
-     &        - MZ2*TB*(MbLR*(Af(4,3) + MUE/TB)
-     &                  + (MUE**2 + Af(4,3)**2)/3D0))
+     &      *(4*MB2*MUE*MbLR/CB2*(1 - Af(4,3,3)*MbLR/(6*MSS2(1,3,3)))
+     &        - MZ2*TB*(MbLR*(Af(4,3,3) + MUE/TB)
+     &                  + (MUE**2 + Af(4,3,3)**2)/3D0))
 	sig22 = sig22
      &    - pref*SB2*(Pb + Pf + Pg + P2h)*tmplog
      &    + pref2*MUE
@@ -725,8 +718,9 @@
 
 	Mh02 = avgMH2 - deltaMH2
 	if( Mh02 .lt. 0 ) then
-	  print *, "mssm_ini: negative Mh0^2 detected."
-	  return 1
+	  WARN "model_mssm: negative Mh0^2 detected."
+	  fail = 1
+	  return
 	endif
 	Mh0 = sqrt(Mh02)
 
@@ -746,9 +740,10 @@
 
 #ifndef NO_EXCLUSION_LIMITS
 	if( Mh0 .lt. Mh0_LOWERBOUND ) then
-	  print *, "mssm_ini: Mh0 = ", Mh0,
+	  WARN "model_mssm: Mh0 = ", Mh0,
      &      " < Mh0_LOWERBOUND = ", Mh0_LOWERBOUND
-	  return 1
+	  fail = 2
+	  return
 	endif
 #endif
 
@@ -768,7 +763,10 @@
 * we only need beta to be consistent with the values of Mh0 and MZ.
 
 	C2B = Mh0/MZ
-	if( C2B .gt. 1 ) goto 999
+	if( C2B .gt. 1 ) then
+	  fail = 4
+	  return
+	endif
 	CB2 = .5D0*(1 + C2B)
 	SB2 = 1 - CB2
 	TB2 = SB2/CB2
@@ -795,109 +793,114 @@
 	SBA = SB*CA - CB*SA
 	CBA = CB*CA + SB*SA
 #endif
+
+	fail = 0
 	end
 
 
 ************************************************************************
 
-	subroutine ModelVarIni(sqrtS, *)
+	subroutine ModelVarIni(fail, scale)
 	implicit none
-	double precision sqrtS
+	integer fail
+	double precision scale
 
 #include "model.h"
 
-	call SMVarIni(sqrtS, *999)
+	call SMVarIni(fail, scale)
+	if( fail .ne. 0 ) return
 
 #ifndef NO_GUT_RELATION
 * Gluino mass: GUT relation
 * we use 1/Alfa(s) approx 1/Alfa(MZ2) - 20/(9*pi)*log(s/MZ2)
-	MGl = Alfas*(127.934D0 - 40/(9*pi)*log(sqrtS/MZ))*SW2*M_2
+	M_3 = Alfas*(127.934D0 - 40/(9*pi)*log(scale/MZ))*SW2*M_2
 #endif
 
+	MGl = DBLE(M_3)
 #ifndef NO_EXCLUSION_LIMITS
 	if( MGl .lt. MGl_LOWERBOUND ) then
-	  print *, "mssm_ini: MGl = ", MGl,
+	  WARN "model_mssm: MGl = ", MGl,
      &      " < MGl_LOWERBOUND = ", MGl_LOWERBOUND
-	  return 1
+	  fail = 2
+	  return
 	endif
 #endif
 	MGl2 = MGl**2
 
 #if HIGGS_MASSES == FEYNHIGGS
-	call HiggsMasses(*999)
+	call HiggsMasses(fail)
+	if( fail .ne. 0 ) return
 #endif
 
 	if( mssm_digest ) return
 	mssm_digest = .TRUE.
 
-	print *, "MSSM parameters"
-	print *, "----------------------------"
-	print *, "TB =", TB
-	print *, "M_1 =", M_1
-	print *, "M_2 =", M_2
-	print *, "MUE =", MUE
-	print *, "MSusy =", MSusy
-	print *, "Atau =", Af(2,3)
-	print *, "At =", Af(3,3)
-	print *, "Ab =", Af(4,3)
-	print *, "----------------------------"
-	print *, "Higgs masses:"
+	INFO "MSSM parameters"
+	INFO "----------------------------"
+	INFO "TB =", TB
+	INFO "M_1 =", M_1
+	INFO "M_2 =", M_2
+	INFO "M_3 =", M_3
+	INFO "MUE =", MUE
+	INFO "MSusy =", MSusy
+	INFO "Atau =", Af(2,3,3)
+	INFO "At =", Af(3,3,3)
+	INFO "Ab =", Af(4,3,3)
+	INFO "----------------------------"
+	INFO "Higgs masses:"
 #if HIGGS_MASSES == FEYNHIGGS
-	print *, "(using FeynHiggs)"
+	INFO "(using FeynHiggs)"
 #elif HIGGS_MASSES == TREE
-	print *, "(using tree-level Higgs masses)"
+	INFO "(using tree-level Higgs masses)"
 #elif HIGGS_MASSES == SIMPLE
-	print *, "(using simple approximation)"
+	INFO "(using simple approximation)"
 #else
-	print *, "(using 2-loop approximation)"
+	INFO "(using 2-loop approximation)"
 #endif
-	print *, "Mh0 =", Mh0
-	print *, "MHH =", MHH
-	print *, "MA0 =", MA0
-	print *, "MHp =", MHp
-	print *, "----------------------------"
-	print *, "Sfermion masses:"
+	INFO "Mh0 =", Mh0
+	INFO "MHH =", MHH
+	INFO "MA0 =", MA0
+	INFO "MHp =", MHp
+	INFO "----------------------------"
+	INFO "Sfermion masses:"
 #ifdef NO_SQUARK_MIXING
-	print *, "(diagonal sfermion mass matrix: L-R basis)"
+	INFO "(diagonal sfermion mass matrix: L-R basis)"
 #else
-	print *, "(non-diagonal sfermion mass matrix: 1-2 basis)"
+	INFO "(non-diagonal sfermion mass matrix: 1-2 basis)"
 #endif
-	print *, "Sneutrino  e:  ", MSf(1,1,1)
-	print *, "           mu: ", MSf(1,1,2)
-	print *, "           tau:", MSf(1,1,3)
-	print *, "Slepton    e:  ", MSf(1,2,1), MSf(2,2,1)
-	print *, "           mu: ", MSf(1,2,2), MSf(2,2,2)
-	print *, "           tau:", MSf(1,2,3), MSf(2,2,3)
-	print *, "u-Squark   u:  ", MSf(1,3,1), MSf(2,3,1)
-	print *, "           c:  ", MSf(1,3,2), MSf(2,3,2)
-	print *, "           t:  ", MSf(1,3,3), MSf(2,3,3)
-	print *, "d-Squark   d:  ", MSf(1,4,1), MSf(2,4,1)
-	print *, "           s:  ", MSf(1,4,2), MSf(2,4,2)
-	print *, "           b:  ", MSf(1,4,3), MSf(2,4,3)
+	INFO "Sneutrino  e:  ", MSf(1,1,1)
+	INFO "           mu: ", MSf(1,1,2)
+	INFO "           tau:", MSf(1,1,3)
+	INFO "Slepton    e:  ", MSf(1,2,1), MSf(2,2,1)
+	INFO "           mu: ", MSf(1,2,2), MSf(2,2,2)
+	INFO "           tau:", MSf(1,2,3), MSf(2,2,3)
+	INFO "u-Squark   u:  ", MSf(1,3,1), MSf(2,3,1)
+	INFO "           c:  ", MSf(1,3,2), MSf(2,3,2)
+	INFO "           t:  ", MSf(1,3,3), MSf(2,3,3)
+	INFO "d-Squark   d:  ", MSf(1,4,1), MSf(2,4,1)
+	INFO "           s:  ", MSf(1,4,2), MSf(2,4,2)
+	INFO "           b:  ", MSf(1,4,3), MSf(2,4,3)
 #ifdef FLAVOUR_VIOLATION
-	print *, "u-Squark fv    ", MASf(1,3), MASf(2,3)
-	print *, "               ", MASf(3,3), MASf(4,3)
-	print *, "               ", MASf(5,3), MASf(6,3)
-	print *, "d-Squark fv    ", MASf(1,4), MASf(2,4)
-	print *, "               ", MASf(3,4), MASf(4,4)
-	print *, "               ", MASf(5,4), MASf(6,4)
+	INFO "u-Squark fv    ", MASf(1,3), MASf(2,3)
+	INFO "               ", MASf(3,3), MASf(4,3)
+	INFO "               ", MASf(5,3), MASf(6,3)
+	INFO "d-Squark fv    ", MASf(1,4), MASf(2,4)
+	INFO "               ", MASf(3,4), MASf(4,4)
+	INFO "               ", MASf(5,4), MASf(6,4)
 #endif
-	print *, "----------------------------"
-	print *, "Chargino masses:"
-	print *, "MCha(1) =", MCha(1)
-	print *, "MCha(2) =", MCha(2)
-	print *, "----------------------------"
-	print *, "Neutralino masses:"
-	print *, "MNeu(1) =", MNeu(1)
-	print *, "MNeu(2) =", MNeu(2)
-	print *, "MNeu(3) =", MNeu(3)
-	print *, "MNeu(4) =", MNeu(4)
-	print *, "----------------------------"
-	print *, "Gluino mass:"
-	print *, "MGl =", MGl
-	print *, "============================"
-	return
-
-999	return 1
+	INFO "----------------------------"
+	INFO "Chargino masses:"
+	INFO "MCha(1) =", MCha(1)
+	INFO "MCha(2) =", MCha(2)
+	INFO "----------------------------"
+	INFO "Neutralino masses:"
+	INFO "MNeu(1) =", MNeu(1)
+	INFO "MNeu(2) =", MNeu(2)
+	INFO "MNeu(3) =", MNeu(3)
+	INFO "MNeu(4) =", MNeu(4)
+	INFO "----------------------------"
+	INFO "Gluino mass:"
+	INFO "MGl =", MGl
+	INFO "============================"
 	end
 

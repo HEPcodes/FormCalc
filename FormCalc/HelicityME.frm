@@ -1,8 +1,20 @@
 * HelicityME.frm
 * the FORM part of the HelicityME function
 * this file is part of FormCalc
-* last modified 11 Aug 04 th
+* last modified 16 Oct 05 th
 
+
+#procedure Shortest(foo)
+argument `foo';
+#call Small
+endargument;
+id `foo'([x]?, [y]?) = `foo'([x], nterms_([x]), [y], nterms_([y]));
+symm `foo' (2,1), (4,3);
+id `foo'([x]?, 1, ?a) = [x];
+id `foo'([x]?, ?a) = `foo'([x]);
+#endprocedure
+
+***********************************************************************
 
 #procedure Factor(foo)
 factarg `foo';
@@ -56,7 +68,7 @@ collect Simplify, Simplify;
 normalize Simplify;
 
 #call Factor(Simplify)
-#call MandelSimplify(Simplify)
+#call InvSimplify(Simplify)
 
 b `Hels';
 print;

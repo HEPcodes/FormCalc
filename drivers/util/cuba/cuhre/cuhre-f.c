@@ -2,7 +2,7 @@
 	cuhre-f.c
 		Fortran interface for Cuhre
 		this file is part of Cuhre
-		last modified 9 Feb 05 th
+		last modified 4 Jan 06 th
 */
 
 
@@ -15,17 +15,17 @@
 
 Extern void Cuhre(ccount ndim, ccount ncomp, Integrand integrand,
   creal epsrel, creal epsabs,
-  cint flags, ccount mineval, ccount maxeval,
+  cint flags, cnumber mineval, cnumber maxeval,
   ccount key,
-  count *pnregions, count *pneval, int *pfail,
+  count *pnregions, number *pneval, int *pfail,
   real *integral, real *error, real *prob);
 
 
 Extern void cuhre(ccount *pndim, ccount *pncomp, Integrand integrand,
   creal *pepsrel, creal *pepsabs,
-  cint *pflags, ccount *pmineval, ccount *pmaxeval,
+  cint *pflags, cnumber *pmineval, cnumber *pmaxeval,
   ccount *pkey,
-  count *pnregions, count *pneval, int *pfail,
+  count *pnregions, number *pneval, int *pfail,
   real *integral, real *error, real *prob)
 {
   Cuhre(*pndim, *pncomp, integrand,

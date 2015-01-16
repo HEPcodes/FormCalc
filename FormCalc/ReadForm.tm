@@ -1,8 +1,8 @@
 :Begin:
 :Function: readform
-:Pattern: ReadForm[filename_String]
-:Arguments: {filename}
-:ArgumentTypes: {String}
+:Pattern: ReadForm[filename_String, debug_Integer]
+:Arguments: {filename, debug}
+:ArgumentTypes: {String, Integer}
 :ReturnType: Manual
 :End:
 
@@ -29,7 +29,7 @@
 	ReadForm.tm
 		reads FORM output back into Mathematica
 		this file is part of FormCalc
-		last modified 5 Nov 04 th
+		last modified 20 Jan 06 th
 
 Note: FORM code must have
 	1. #- (no listing),
@@ -312,7 +312,7 @@ loop: ;
 }
 
 
-void readform(const char *filename)
+void readform(const char *filename, const int debug)
 {
   FILE *file;
   char line[1024], *si, *di, *ind, *delim, *beg, **pp;
@@ -365,14 +365,22 @@ nextline:
 
       line[0] = 0;
       si = fgets(line, sizeof(line), file);
+      if( debug ) fputs(line, stderr);
+
       if( (er = strstr(line, "-->")) ||
           (er = strstr(line, "==>")) ||
           (er = strstr(line, "===")) ) {
         er += 4;
         *erp = 0;
-        if( !strstr(errmsg, er) &&
-            (int)(erp - errmsg) + strlen(er) < sizeof(errmsg) )
-          erp = memccpy(erp, er, '\n', sizeof(errmsg));
+        if( strstr(errmsg, er) == NULL ) {
+          const int rem = errmsg + sizeof(errmsg) - erp;
+          if( rem > 0 ) {
+            int len = strlen(er);
+            if( len > rem ) len = rem;
+            memcpy(erp, er, len);
+            erp += len;
+          }
+        }
         continue;
       }
 
@@ -452,7 +460,7 @@ nextline:
         goto nextline;
 
       case '_':
-        *di++ = '$';
+        *di++ = 'J';
         break;
       case '?':
         ind = di - 2;

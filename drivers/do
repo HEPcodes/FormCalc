@@ -1,0 +1,20 @@
+#! /bin/sh
+# a script to automate running FormCalc-generated code
+# handy for testing/debugging
+# this file is part of FormCalc
+# last modified 5 Nov 05 th
+
+# THIS IS A TEMPLATE AND NOT A FINAL PRODUCT.
+# YOU MUST ADAPT THIS TO THE PROCESS YOU'RE LOOKING AT.
+
+make || exit 1
+
+polarizations=UUUU
+energy=00500
+
+rm -fr run.$polarizations.$energy
+
+LTVERSION=-1 ./run $polarizations $energy
+
+less run.$polarizations.$energy/0000001
+

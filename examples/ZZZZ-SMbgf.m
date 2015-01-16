@@ -4,7 +4,7 @@
 		Z Z -> Z Z in the electroweak SM
 		using the background-field method
 		this file is part of FormCalc
-		last modified 11 Jun 03 th
+		last modified 30 Dec 05 th
 
 Reference: A. Denner, S. Dittmaier, T. Hahn,
            Phys. Rev. D56 (1997) 117 [hep-ph/9612390].
@@ -83,14 +83,20 @@ box = CalcFeynAmp[
   Select[counter, DiagramType[#] == 0 &]]
 
 
+amps = {born, self, vert, box}
+
+{born, self, vert, box} = Abbreviate[amps, 6,
+  Preprocess -> OnSize[100, Simplify, 500, DenCollect]]
+
 abbr = OptimizeAbbr[Abbr[]]
 
+subexpr = OptimizeAbbr[Subexpr[]]
 
 dir = SetupCodeDir[name <> ".fortran", Drivers -> name <> ".drivers"]
 
-WriteSquaredME[born, {self, vert, box}, abbr, dir]
+WriteSquaredME[born, {self, vert, box}, abbr, subexpr, dir]
 
-WriteRenConst[{self, vert, box, dWFZ1}, dir]
+WriteRenConst[{amps, dWFZ1}, dir]
 
 
 Print["time used: ", SessionTime[] - time1]

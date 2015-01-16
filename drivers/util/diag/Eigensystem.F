@@ -3,7 +3,7 @@
 * code adapted from the "Handbook" routines for complex A
 * (Wilkinson, Reinsch: Handbook for Automatic Computation, p. 202)
 * this file is part of FormCalc
-* last modified 18 Jun 04 th
+* last modified 8 Dec 05 th
 
 #include "config.h"
 
@@ -30,7 +30,7 @@
 	parameter (eps = 5D-16)
 
 	do p = 1, n
-	  d(p) = dble(A(p,p))
+	  d(p) = DBLE(A(p,p))
 	  Z(1,p) = d(p)
 	  Z(2,p) = 0
 	enddo
@@ -65,7 +65,7 @@
 	      else
 	        if( absA .gt. threshold ) then
 	          call Jacobi(delta, s, tau,
-     &              Z(1,p) - Z(1,q), A(p,q), absA)
+     &              Z(1,p) - Z(1,q), A(p,q), absA**2)
 	          Z(1,p) = Z(1,p) + delta
 	          Z(2,p) = Z(2,p) + delta
 	          Z(1,q) = Z(1,q) - delta
@@ -75,29 +75,29 @@
 	          do j = 1, p - 1
 	            x = A(j,p)
 	            y = A(j,q)
-	            A(j,p) = x + dconjg(s)*y - tau*x
+	            A(j,p) = x + DCONJG(s)*y - tau*x
 	            A(j,q) = y - s*x - tau*y
 	          enddo
 
 	          do j = p + 1, q - 1
 	            x = A(p,j)
 	            y = A(j,q)
-	            A(p,j) = x + s*dconjg(y) - tau*x
-	            A(j,q) = y - s*dconjg(x) - tau*y
+	            A(p,j) = x + s*DCONJG(y) - tau*x
+	            A(j,q) = y - s*DCONJG(x) - tau*y
 	          enddo
 
 	          do j = q + 1, n
 	            x = A(p,j)
 	            y = A(q,j)
 	            A(p,j) = x + s*y - tau*x
-	            A(q,j) = y - dconjg(s)*x - tau*y
+	            A(q,j) = y - DCONJG(s)*x - tau*y
 	          enddo
 
 	          do j = 1, n
 	            x = U(p,j)
 	            y = U(q,j)
 	            U(p,j) = x + s*y - tau*x
-	            U(q,j) = y - dconjg(s)*x - tau*y
+	            U(q,j) = y - DCONJG(s)*x - tau*y
 	          enddo
 	        endif
 	      endif

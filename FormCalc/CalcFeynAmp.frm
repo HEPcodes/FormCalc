@@ -1,7 +1,7 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 21 Sep 05 th
+* last modified 29 Sep 05 th
 
 
 #procedure DotSimplify
@@ -136,6 +136,18 @@ id MOM([p1]?, ?a) = [p1].[p1];
 
 ***********************************************************************
 
+#procedure Shortest(foo)
+argument `foo';
+#call Small
+endargument;
+id `foo'([x]?, [y]?) = `foo'([x], nterms_([x]), [y], nterms_([y]));
+symm `foo' (2,1), (4,3);
+id `foo'([x]?, 1, ?a) = [x];
+id `foo'([x]?, ?a) = `foo'([x]);
+#endprocedure
+
+***********************************************************************
+
 #procedure Factor(foo)
 factarg `foo';
 repeat id `foo'([x]?, [y]?, ?a) = `foo'([x]) * `foo'([y], ?a);
@@ -190,7 +202,8 @@ f WC;
 auto s FC;
 
 * patterns
-s [x], [y], [m1], [m2], [s1], [s2];
+s [x], [y], [s1], [s2];
+s [k1], [k2], [k1k2], [m1], [m2], [m3];
 i [mu], [nu], [rho], [sig], [om], [LA];
 i [i], [j], [k], [l];
 i [a], [b], [c], [d];
@@ -251,7 +264,8 @@ repeat id GA(?a) * g_([om]?, [mu]?) = GA(?a, [mu]);
 
 #endif
 
-b `Patterns', Times, NoExpand, Den, SumOver, SUNSum,
+b `Patterns', Times, NoExpand, Den,
+  SumOver, SUNSum, SUNT, SUNTSum, SUNF,
   A0i, B0i, C0i, D0i, E0i, q1.q1, GA, Spinor, i_;
 .sort
 
@@ -278,7 +292,7 @@ endwhile;
 
 id A0i(0) = 0;
 
-#call DotSimplify;
+#call DotSimplify
 
 id abb([x]?) = [x];
 
@@ -423,13 +437,23 @@ keep brackets;
 
 id D = Dminus4 + 4;
 id Dminus4 * pave(A0i(0), [m1]?) = -2*[m1];
+id Dminus4 * pave(A0i(0,0), [m1]?) = -[m1]^2/2;
 id Dminus4 * pave(B0i(0), ?a) = -2;
 id Dminus4 * pave(B0i(1), ?a) = 1;
-id Dminus4 * pave(B0i(0,0), [x]?, [m1]?, [m2]?) = [x]/6 - [m1]/2 - [m2]/2;
+id Dminus4 * pave(B0i(0,0), [k1]?, [m1]?, [m2]?) =
+  1/6*([k1] - 3*[m1] - 3*[m2]);
 id Dminus4 * pave(B0i(1,1), ?a) = -2/3;
+id Dminus4 * pave(B0i(0,0,1), [k1]?, [m1]?, [m2]?) =
+  -1/12*([k1] - 2*[m1] - 4*[m2]);
+id Dminus4 * pave(B0i(1,1,1), ?a) = 1/2;
 id Dminus4 * pave(C0i(0,0), ?a) = -1/2;
 id Dminus4 * pave(C0i(0,0,[i]?), ?a) = 1/6;
+id Dminus4 * pave(C0i(0,0,0,0), [k1]?, [k2]?, [k1k2]?, [m1]?, [m2]?, [m3]?) =
+  1/48*([k1] + [k2] + [k1k2] - 4*([m1] + [m2] + [m3]));
+id Dminus4 * pave(C0i(0,0,[i]?,[i]?), ?a) = -1/12;
+id Dminus4 * pave(C0i(0,0,[i]?,[j]?), ?a) = -1/24;
 id Dminus4 * pave(D0i(0,0,0,0), ?a) = -1/12;
+id Dminus4 * pave(D0i(0,0,0,0,[i]?), ?a) = 1/48;
 id Dminus4 = 0;
 
 #endif
@@ -595,8 +619,8 @@ id Times(0) = 0;
 * index handling
 
 repeat;
-  once SumOver([LA]?, [mu]?, Renumber) =
-    TMP(DUMMY) * SumOver(DUMMY, [mu]) * replace_([LA], DUMMY);
+  once SumOver([LA]?, [x]?, Renumber) =
+    TMP(DUMMY) * SumOver(DUMMY, [x]) * replace_([LA], DUMMY);
   sum DUMMY;
 endrepeat;
 
@@ -769,7 +793,7 @@ moduleoption polyfun=Simplify;
 normalize Simplify;
 
 #call Factor(Simplify)
-#call MandelSimplify(Simplify)
+#call InvSimplify(Simplify)
 
 .sort
 

@@ -1,7 +1,7 @@
 #! /bin/sh
 # configure script
 # this file is part of FormCalc
-# last modified 4 Mar 05 th
+# last modified 18 May 06 th
 # note: has nothing to do with GNU autoconf
 
 
@@ -24,8 +24,8 @@ findprog()
 {
   echo $echo_n "looking for $1... $echo_c" 1>&2
   shift
-  for prog in $* ; do
-    full=`which $prog`
+  for prog in "$@" ; do
+    full="`which \"$prog\"`"
     if [ -x "$full" ] ; then
       echo $full 1>&2
       echo $prog
@@ -37,18 +37,25 @@ findprog()
 }
 
 
-findpath()
+findlib()
 {
-  echo $echo_n "looking for path to $1... $echo_c" 1>&2
+  echo $echo_n "looking for $1... $echo_c" 1>&2
   file=$2
   shift 2
-  for path in $* ; do
-    if [ -f "$path/$file" ] ; then
-      (cd $path ; pwd 1>&2 ; pwd)
-      return 0
-    fi
+  for base in "$@" ; do
+    for path in \
+      "$base/lib" \
+      "$base/$CONF_HOSTTYPE/lib" \
+      "$base/build" \
+      "$base/src"
+    do
+      if [ -f "$path/$file" ] ; then
+        (cd "`dirname \"$path\"`" ; pwd 1>&2 ; pwd)
+        return 0
+      fi
+    done
   done
-  echo "no $file in $*" 1>&2
+  echo "not found" 1>&2
   return 1
 }
 
@@ -57,12 +64,11 @@ findpath()
 
 CONF_HOSTTYPE=`tcsh -cf 'echo $HOSTTYPE'`
 
-ARG_CERNLIB=0
 ARG_MAKEARGS=""
 
 for arg in "$@" ; do
   case $arg in
-  --with-cernlib) ARG_CERNLIB=1 ;;
+  --quad) ARG_QUAD=1 ;;
   -*) echo "Unknown option $arg" 1>&2 ;;
   *=*) eval $arg ;;
   *) ARG_MAKEARGS="$ARG_MAKEARGS $arg" ;;
@@ -76,25 +82,27 @@ CONF_MAKE=`findprog make gmake Make make` || exit 1
 
 CONF_CC=`findprog gcc $CC gcc` || exit 1
 
-CONF_CFLAGS="${CFLAGS--O3 -fomit-frame-pointer -ffast-math}"
+CONF_CFLAGS="${CFLAGS--O3 -fomit-frame-pointer -ffast-math -g}"
 
-CONF_FC=`findprog f77 $FC pgf77 ifort fort77 f77 xlf f90 g77` || exit 1
+CONF_FC=`findprog f77 $FC ${ARG_QUAD+ifort} pgf77 ifort fort77 f77 xlf f90 g77 g95 gfortran` || exit 1
 
 if $CONF_FC -v -c 2>&1 | grep "gcc version" > /dev/null ; then
-  CONF_FFLAGS="-O0 -ffixed-line-length-none"
+  CONF_FFLAGS="-O0 -ffixed-line-length-none -g"
 else
   CONF_FFLAGS="${FFLAGS-default}"
   [ "$CONF_FFLAGS" = default ] && case "$CONF_FC$CONF_HOSTTYPE" in
   *pgf77*)
-	CONF_FFLAGS="-fast -Mextend -g77libs" ;;
+	CONF_FFLAGS="-fast -Mextend -g77libs -Ktrap=fp -g" ;;
   *ifort*)
-	CONF_FFLAGS="-O3 -extend_source -warn truncated_source" ;;
+	CONF_FFLAGS="-O3 -extend_source -warn truncated_source -fpe0 -g ${ARG_QUAD+-r16 -DDBLE=QEXT -DDIMAG=QIMAG -DDCONJG=QCONJG -DDCMPLX=QCMPLX}" ;;
   *alpha)
-	CONF_FFLAGS="-fast -extend_source -warn truncated_source" ;;
+	CONF_FFLAGS="-fast -extend_source -warn truncated_source -fpe0 -g3" ;;
   *sun* | *sparc*)
-	CONF_FFLAGS="-fast -e" ;;
+	CONF_FFLAGS="-fast -e -ftrap=common -g" ;;
   *hp*)
-	CONF_FFLAGS="-O2 +es +U77" ;;
+	CONF_FFLAGS="-O2 +es +U77 +FPVZO -g" ;;
+  *)
+	CONF_FFLAGS="-O -g" ;;
   esac
 fi
 
@@ -123,23 +131,21 @@ fi
 
 # check for the necessary libraries
 
-LTPATH=LoopTools/$CONF_HOSTTYPE
-CONF_LOOPTOOLS=`findpath LoopTools lib/libooptools.a $LOOPTOOLS $LT \
-  ../$LTPATH ../../$LTPATH $HOME/$LTPATH /usr/local /usr` || exit 1
+CONF_LT=`findlib LoopTools libooptools.a \
+  $LT ../LoopTools ../../LoopTools $HOME/LoopTools \
+  /usr/local/LoopTools /usr/LoopTools /usr/local /usr` || exit 1
 
-if [ $ARG_CERNLIB = 1 ] ; then
-  if [ -z "$CERN" -o -z "$CERN_LEVEL" -o ! -d $CERN/$CERN_LEVEL ] ; then
-    echo ""
-    echo "Warning: CERNlib is not or not properly installed on your system."
-    echo "If it is installed, the environment variables CERN and CERN_LEVEL"
-    echo "should be set such that \$CERN/\$CERN_LEVEL/lib is the directory"
-    echo "in which the CERNlib libraries are installed."
-    echo ""
-  else
-    CONF_CERNLIB='-L$(CERN)/$(CERN_LEVEL)/lib -lpdflib -lmathlib -lpacklib'
-    CONF_FFLAGS="$CONF_FFLAGS -DCERNLIB"
-  fi
-fi
+CONF_LDFLAGS="-L\$(LT)/lib -looptools${ARG_QUAD+-quad}"
+
+CONF_FH=`findlib FeynHiggs libFH.a \
+  $FH ../FeynHiggs* ../../FeynHiggs* $HOME/FeynHiggs* \
+  /usr/local/FeynHiggs* /usr/FeynHiggs* /usr/local /usr` && \
+  CONF_LDFLAGS="$CONF_LDFLAGS -L$CONF_FH -lFH"
+
+CONF_LHAPDF=`findlib LHAPDF libLHAPDF.a \
+  $LHAPDF ../lhapdf* ../../lhapdf* $HOME/lhapdf* \
+  /usr/local/lhapdf* /usr/lhapdf* /usr/local /usr` && \
+  CONF_LDFLAGS="$CONF_LDFLAGS -L$CONF_LHAPDF -lLHAPDF"
 
 
 echo "creating makefile" 1>&2
@@ -147,9 +153,9 @@ echo "creating makefile" 1>&2
 cat - makefile.in > makefile << _EOF_
 # --- variables defined by configure ---
 
-LOOPTOOLS = $CONF_LOOPTOOLS
+LT = $CONF_LT
 
-LDFLAGS = -L\$(LOOPTOOLS)/lib -looptools $CONF_CERNLIB
+LDFLAGS = $CONF_LDFLAGS
 
 FC = $CONF_FC
 FFLAGS = $CONF_FFLAGS

@@ -86,13 +86,20 @@ box = CalcFeynAmp[
   Select[counter, DiagramType[#] == 0 &]]
 
 
+amps = {born, self, vert, box}
+
+{born, self, vert, box} = Abbreviate[amps, 6,
+  Preprocess -> OnSize[100, Simplify, 500, DenCollect]]
+
 abbr = OptimizeAbbr[Abbr[]]
+
+subexpr = OptimizeAbbr[Subexpr[]]
 
 dir = SetupCodeDir[name <> ".fortran", Drivers -> name <> ".drivers"]
 
-WriteSquaredME[born, {self, vert, box}, abbr, dir]
+WriteSquaredME[born, {self, vert, box}, abbr, subexpr, dir]
 
-WriteRenConst[{self, vert, box}, dir]
+WriteRenConst[amps, dir]
 
 
 Print["time used: ", SessionTime[] - time1]

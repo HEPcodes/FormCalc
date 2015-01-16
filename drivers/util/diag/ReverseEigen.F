@@ -2,7 +2,7 @@
 * recover the original matrix A from the eigenvalues and
 * the transformation matrix U by forming A = U^+ diag(d) U.
 * this file is part of FormCalc
-* last modified 18 Jun 04 th
+* last modified 20 Oct 05 th
 
 
 	subroutine ReverseEigen(n, A, lda, d, U, ldu)
@@ -18,7 +18,7 @@
 	  do i = 1, n
 	    s = 0
 	    do k = 1, n
-	      s = s + d(k)*dconjg(U(k,i))*U(k,j)
+	      s = s + d(k)*DCONJG(U(k,i))*U(k,j)
 	    enddo
 	    A(i,j) = s
 	  enddo

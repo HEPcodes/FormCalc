@@ -4,7 +4,7 @@
 		e^+ e^- -> W^+ W^- in the electroweak SM
 		using the background-field method
 		this file is part of FormCalc
-		last modified 11 Jun 03 th
+		last modified 23 Dec 05 th
 
 Reference: W. Beenakker, A. Denner,
            Int. J. Mod. Phys. A9 (1994) 4837.
@@ -89,13 +89,20 @@ box = CalcFeynAmp[
   Select[counter, DiagramType[#] == 0 &]]
 
 
+amps = {born, self, vert, box}
+
+{born, self, vert, box} = Abbreviate[amps, 6,
+  Preprocess -> OnSize[100, Simplify, 500, DenCollect]]
+
 abbr = OptimizeAbbr[Abbr[]]
+
+subexpr = OptimizeAbbr[Subexpr[]]
 
 dir = SetupCodeDir[name <> ".fortran", Drivers -> name <> ".drivers"]
 
-WriteSquaredME[born, {self, vert, box}, abbr, dir]
+WriteSquaredME[born, {self, vert, box}, abbr, subexpr, dir]
 
-WriteRenConst[{self, vert, box, dWFW1}, dir]
+WriteRenConst[{amps, dWFW1}, dir]
 
 
 Print["time used: ", SessionTime[] - time1]

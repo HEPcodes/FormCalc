@@ -2,7 +2,7 @@
 	Integrate.c
 		integrate over the unit hypercube
 		this file is part of Vegas
-		last modified 2 Mar 05 th
+		last modified 2 Jun 05 th
 */
 
 
@@ -226,7 +226,10 @@ static int Integrate(creal epsrel, creal epsabs,
     prob[comp] = ChiSquare(c->chisq, state.niter);
   }
 
+#ifdef MLVERSION
 abort:
+#endif
+
   free(sample);
   PutGrid(state.grid);
 

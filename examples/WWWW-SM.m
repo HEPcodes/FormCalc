@@ -3,7 +3,7 @@
 		generates the Fortran code for
 		W^+ W^- -> W^+ W^- in the electroweak SM
 		this file is part of FormCalc
-		last modified 11 Jun 03 th
+		last modified 23 Dec 05 th
 
 Reference: A. Denner, T. Hahn,
            Nucl. Phys. B525 (1998) 27 [hep-ph/9711302].
@@ -82,14 +82,20 @@ box = CalcFeynAmp[
   Select[counter, DiagramType[#] == 0 &]]
 
 
+amps = {born, self, vert, box}
+
+{born, self, vert, box} = Abbreviate[amps, 6,
+  Preprocess -> OnSize[100, Simplify, 500, DenCollect]]
+
 abbr = OptimizeAbbr[Abbr[]]
 
+subexpr = OptimizeAbbr[Subexpr[]]
 
 dir = SetupCodeDir[name <> ".fortran", Drivers -> name <> ".drivers"]
 
-WriteSquaredME[born, {self, vert, box}, abbr, dir]
+WriteSquaredME[born, {self, vert, box}, abbr, subexpr, dir]
 
-WriteRenConst[{self, vert, box}, dir]
+WriteRenConst[amps, dir]
 
 
 Print["time used: ", SessionTime[] - time1]

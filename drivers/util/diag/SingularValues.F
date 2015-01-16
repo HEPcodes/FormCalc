@@ -1,7 +1,7 @@
 * SingularValues.F
 * singular-value decomposition of an m-by-n matrix
 * this file is part of FormCalc
-* last modified 18 Jun 04 th
+* last modified 20 Oct 05 th
 
 #include "config.h"
 
@@ -36,7 +36,7 @@
 	  do i = 1, k
 	    s = 0
 	    do j = 1, m
-	      s = s + dconjg(A(j,i))*A(j,k)
+	      s = s + DCONJG(A(j,i))*A(j,k)
 	    enddo
 	    AdagA(i,k) = s
 	  enddo
@@ -55,7 +55,7 @@
 	  do i = 1, m
 	    s = 0
 	    do j = 1, n
-	      s = s + A(i,j)*dconjg(V(k,j))
+	      s = s + A(i,j)*DCONJG(V(k,j))
 	    enddo
 	    U(k,i) = s*x
 	  enddo
@@ -86,10 +86,10 @@
 #else
 	    do l = i + 1, k
 #endif
-	      s = s - dconjg(U(l,r))*U(l,j)
+	      s = s - DCONJG(U(l,r))*U(l,j)
 	    enddo
 	    U(i,r) = s
-	    x = x + dble(s)**2 + dimag(s)**2
+	    x = x + DBLE(s)**2 + DIMAG(s)**2
 	  enddo
 	  if( x .le. eps ) goto 11
 

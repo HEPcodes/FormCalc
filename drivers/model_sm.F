@@ -1,7 +1,7 @@
-* sm_ini.F
+* model_sm.F
 * all parameters for the Standard Model are initialized here
 * this file is part of FormCalc
-* last modified 9 Feb 05 th
+* last modified 2 Feb 06 th
 
 
 	subroutine ModelDefaults
@@ -32,9 +32,9 @@
 	parameter (s13 = .0037D0)
 	parameter (delta13 = 60*degree)
 
-	c12 = sqrt(1 - s12**2)
-	c23 = sqrt(1 - s23**2)
-	c13 = sqrt(1 - s13**2)
+	c12 = sqrt((1 - s12)*(1 + s12))
+	c23 = sqrt((1 - s23)*(1 + s23))
+	c13 = sqrt((1 - s13)*(1 + s13))
 	s13c = s13*exp(cI*delta13)
 
 	CKM(1,1) = c12*c13
@@ -43,7 +43,7 @@
 	CKM(1,2) = s12*c13
 	CKM(2,2) = c12*c23 - s12*s23*s13c
 	CKM(3,2) = -c12*s23 - s12*c23*s13c
-	CKM(1,3) = dconjg(s13c)
+	CKM(1,3) = DCONJG(s13c)
 	CKM(2,3) = s23*c13
 	CKM(3,3) = c23*c13
 
@@ -79,8 +79,9 @@
 
 ************************************************************************
 
-	subroutine ModelConstIni(*)
+	subroutine ModelConstIni(fail)
 	implicit none
+	integer fail
 
 #include "model.h"
 
@@ -90,64 +91,67 @@
 	MH2 = MH**2
 
 	sm_digest = .FALSE.
+	fail = 0
 	end
 
 
 ************************************************************************
 
-	subroutine ModelVarIni(sqrtS, *)
+	subroutine ModelVarIni(fail, scale)
 	implicit none
-	double precision sqrtS
+	integer fail
+	double precision scale
 
 #include "model.h"
 
-	double precision ALPHAS2
-	external ALPHAS2
+	double precision alphasPDF
+	external alphasPDF
 
-	Alfas = ALPHAS2(sqrtS)
+	Alfas = alphasPDF(scale)
 	Alfas2 = Alfas**2
 	GS = sqrt(4*pi*Alfas)
 
+	fail = 0
 	if( sm_digest ) return
 	sm_digest = .TRUE.
 
-	print *, "============================"
-	print *, "SM parameters"
-	print *, "----------------------------"
-	print *, "1/Alfa =", 1/Alfa
-	print *, "Alfas =", Alfas
-	print *, "GF =", GF
-	print *, "SW2 =", SW2
-	print *, "----------------------------"
-	print *, "Gauge-boson masses:"
-	print *, "MW =", MW
-	print *, "MZ =", MZ
-	print *, "----------------------------"
-	print *, "Fermion masses:"
-	print *, "ME =", ME
-	print *, "MM =", MM
-	print *, "ML =", ML
-	print *, "MU =", MU
-	print *, "MC =", MC
-	print *, "MT =", MT
-	print *, "MD =", MD
-	print *, "MS =", MS
-	print *, "MB =", MB
-	print *, "----------------------------"
-	print *, "Higgs mass:"
-	print *, "MH =", MH
-	print *, "============================"
+	INFO "============================"
+	INFO "SM parameters"
+	INFO "----------------------------"
+	INFO "1/Alfa =", 1/Alfa
+	INFO "Alfas =", Alfas
+	INFO "GF =", GF
+	INFO "SW2 =", SW2
+	INFO "----------------------------"
+	INFO "Gauge-boson masses:"
+	INFO "MW =", MW
+	INFO "MZ =", MZ
+	INFO "----------------------------"
+	INFO "Fermion masses:"
+	INFO "ME =", ME
+	INFO "MM =", MM
+	INFO "ML =", ML
+	INFO "MU =", MU
+	INFO "MC =", MC
+	INFO "MT =", MT
+	INFO "MD =", MD
+	INFO "MS =", MS
+	INFO "MB =", MB
+	INFO "----------------------------"
+	INFO "Higgs mass:"
+	INFO "MH =", MH
+	INFO "============================"
 	end
 
 
-#ifndef CERNLIB
+#ifndef HAVE_ALPHASPDF
 
 ************************************************************************
-** ALPHAS2 (same name as CERNLIB routine) computes the strong coupling
+** alphasPDF (same name as in LHAPDF) computes the strong coupling
 ** constant at a given scale.  Code is transcribed from Java applet by
 ** I. Hinchliffe at http://www-theory.lbl.gov/~ianh/alpha/alpha.html.
 
-	double precision function ALPHAS2(scale)
+	double precision function alphasPDF(scale)
 	implicit none
 	double precision scale
 
@@ -214,7 +218,7 @@
 	double precision b0, b1, b2, lam, t, logt, c
 
 	if( scale .lt. .5D0 ) then
-	  ALPHAS2 = 1D10
+	  alphasPDF = 1D10
 	  return
 	endif
 
@@ -255,7 +259,7 @@
 	logt = log(t)
 	c = 2*b1/b0**2/t
 
-	ALPHAS2 = 4*pi/(t*b0)*(1 - logt*c +
+	alphasPDF = 4*pi/(t*b0)*(1 - logt*c +
      &    ((logt - .5D0)**2 + b2*b0/(8*b1**2) - 5/4D0)*c**2)
 	end
 

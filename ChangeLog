@@ -1,3 +1,106 @@
+10 Apr 06:
+
+- The SquaredME subroutine no longer sets the "reset" flag to
+  .FALSE. after initialization.  Rather, this is done in xsection.F.
+  This makes it easier to combine several squaredme modules.
+
+
+7 Apr 06:
+
+- Moved the Li2 function to LoopTools, substituted the Kronecker
+  Delta function by a preprocessor macro.
+
+- Updated configure to look for FeynHiggs and LHAPDF and also
+  check more places.
+
+
+27 Feb 06:
+
+- Added the MultiplyDiagrams function of which the TagDiagrams
+  function introduced earlier is just a special case.
+
+
+20 Jan 06:
+
+- Added the $ReadFormDebug variable.  When set to a non-zero value,
+  ReadForm echos each line of the FORM output.
+
+
+15 Dec 05:
+
+- Added the Pool function which collects terms with common
+  prefactors.
+
+
+1 Dec 05:
+
+- Added the OnSize function, which constructs a Switch
+  statement for simplifying an expression according to its
+  LeafCount.
+
+
+23 Nov 05:
+
+- Added the Abbreviate function, which introduces abbreviations
+  for certain subexpressions (currently only sums).  Subexpr[]
+  returns the definitions of the subexpressions and ClearSubexpr[]
+  removes them.
+
+
+25 Oct 05:
+
+- The last change is now automatic with ./configure --quad.
+
+
+20 Oct 05:
+
+- Replaced all dble -> DBLE, dimag -> DIMAG, dconjg -> DCONJG.
+  This way, the entire code can easily be treated to quadruple
+  precision using the change in the makefile:
+  FC = ifort -r16 -DDBLE=QEXT -DDIMAG=QIMAG -DDCONJG=QCONJG
+
+
+21 Sep 05:
+
+- Fixed bug re summation of Deltas in CalcFeynAmp.frm.
+
+- Fixed problem with #call Shortest if args included parentheses,
+  e.g. #call Shortest(..., MSf2(...)).
+
+
+2 Aug 05:
+
+- Corrected bug in PolarizationSum for massive vector bosons.
+  Terms not containing the polarization vector were multiplied
+  with 2; the correct number of polarizations is of course 3.
+
+
+29 Jul 05:
+
+- Added a generational dependence to the preprocessor macros
+  for the sfermion mass-parameters, e.g. MLE -> MLE(g).
+
+
+24 Jun 05:
+
+- Improved internal InvSimplify FORM procedure which had some
+  problems with large expressions.
+
+
+8 Jun 05:
+
+- Renamed internal symbols i$, d$, e$, p$, dummy$ to
+  iJ, dJ, ... because Mathematica uses the $ also in Modules
+  and then gives warnings of the kind "Form`i$ may be shadowed
+  by Global`i$".
+
+
+13 Apr 05:
+
+- Consistently renamed all remaining occurrences of Mandel* to
+  Inv*, e.g. MandelSimplify -> InvSimplify.
+
+
 7 Mar 05:
 
 - Fixed problem with insertions in Particle-level amplitudes.

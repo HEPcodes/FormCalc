@@ -48,9 +48,9 @@ CUBA = \
 
 OBJS = \
   system/logfile.o \
-  kin/Delta.o \
   kin/ThreeMom.o \
   kin/VecSet.o \
+  kin/Split.o \
   kin/SInvariant.o \
   kin/TInvariant.o \
   kin/Pair.o \
@@ -63,6 +63,7 @@ OBJS = \
   kin/BeS.o \
   diag/Jacobi.o \
   diag/Eigen2x2.o \
+  diag/NoMixing.o \
   diag/Eigensystem.o \
   diag/SingularValues.o \
   diag/PseudoEigensystem.o \

@@ -2,7 +2,7 @@
 	Suave.c
 		Subregion-adaptive Vegas Monte-Carlo integration
 		by Thomas Hahn
-		last modified 9 Feb 05 th
+		last modified 4 Jan 06 th
 */
 
 
@@ -32,7 +32,7 @@ Extern void Suave(ccount ndim, ccount ncomp, Integrand integrand,
   creal epsrel, creal epsabs,
   cint flags, cnumber mineval, cnumber maxeval,
   cnumber nnew, creal flatness,
-  count *pnregions, count *pneval, int *pfail,
+  count *pnregions, number *pneval, int *pfail,
   real *integral, real *error, real *prob)
 {
   ndim_ = ndim;

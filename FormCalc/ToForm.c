@@ -3,12 +3,13 @@
 		rearranges Mma's InputForm output to yield
 		acceptable FORM input
 		this file is part of FormCalc
-		last modified 3 Dec 02 th
+		last modified 7 Apr 06 th
 */
 
 #include <stdio.h>
+#include <string.h>
 
-main()
+int main()
 {
   char in[2048], out[2048], *s, *d;
 

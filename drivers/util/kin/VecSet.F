@@ -2,17 +2,17 @@
 * construct the CMS representation of a momentum and the
 * three corresponding polarization vectors
 * this file is part of FormCalc
-* last modified 2 Mar 05 th
+* last modified 23 Jan 06 th
 
 
 * i: the index of the momentum
 * m, p: mass and three-momentum of the particle
-* ex, ey, ez: the unit three-vector of the momentum
+* ex,ey,ez: the unit three-vector of the momentum
 
-	subroutine VecSet(i, m, p, ex, ey, ez)
+	subroutine VecSet(i, m, p, ex,ey,ez)
 	implicit none
 	integer i
-	double precision m, p, ex, ey, ez
+	double precision m, p, ex,ey,ez
 
 	double complex vec(2,2, 8, 0:1)
 	common /vectors/ vec
@@ -37,11 +37,12 @@
 *       spi(x, 15, i) = right-handed, dotted,   upper
 *       spi(x, 16, i) = right-handed, dotted,   lower
 
-	double precision momspec(4, 1)
+	double precision momspec(8, 1)
 	common /momenta/ momspec
 
-	double precision m2, p2, p0, deltap, sump, sinth
-	double complex expIfi
+	double precision m2, p2, p0, deltap, sump
+	double precision sinth, onePez, oneMez
+	double complex expIphi
 
 	double precision sqrt2
 	parameter (sqrt2 = 1.4142135623730950488016887242096981D0)
@@ -53,68 +54,81 @@
 	else
 	  p2 = p**2
 	  p0 = sqrt(p2 + m2)
-	  deltap = p0 - p
-	  if( deltap .lt. 1D-8*p ) deltap = m2/p*(.5D0 - .125D0*m2/p2)
+	  deltap = m2/(p0 + p)
 	endif
 
-	momspec(1, i) = m2
-	momspec(2, i) = p0
-	momspec(3, i) = p
-	momspec(4, i) = deltap
+	sinth = ex**2 + ey**2
+	onePez = 1 + ez
+	if( onePez .lt. .5D0 ) onePez = sinth/(1 - ez)
+	oneMez = 1 - ez
+	if( oneMez .lt. .5D0 ) oneMez = sinth/(1 + ez)
 
-	K(1,1) = p0*(1 + ez) - deltap*ez
-	K(2,2) = p0*(1 - ez) + deltap*ez
-	K(2,1) = p*dcmplx(ex, ey)
-	K(1,2) = dconjg(K(2,1))
-
-	if( m .ne. 0 ) then
-	  EpsL(1,1) = (p*(1 + ez) + deltap*ez)/m
-	  EpsL(2,2) = (p*(1 - ez) - deltap*ez)/m
-	  EpsL(2,1) = p0/m*dcmplx(ex, ey)
-	  EpsL(1,2) = dconjg(EpsL(2,1))
-	endif
-
-	sinth = sqrt(ex**2 + ey**2)
 	if( sinth .lt. 1D-14 ) then
 * phi is irrelevant when theta = 0
-	  expIfi = 1
+	  expIphi = 1
 	else
-	  expIfi = dcmplx(ex, ey)/sinth
+	  sinth = sqrt(sinth)
+	  expIphi = DCMPLX(ex, ey)/sinth
+	endif
+
+	K(1,1) = p0*onePez - deltap*ez
+	K(2,2) = p0*oneMez + deltap*ez
+	K(2,1) = p*DCMPLX(ex, ey)
+	K(1,2) = DCONJG(K(2,1))
+
+	if( m .ne. 0 ) then
+	  EpsL(1,1) = (p*onePez + deltap*ez)/m
+	  EpsL(2,2) = (p*oneMez - deltap*ez)/m
+	  EpsL(2,1) = p0/m*DCMPLX(ex, ey)
+	  EpsL(1,2) = DCONJG(EpsL(2,1))
 	endif
 
 	EpsTR(2,2) = 1/sqrt2*sinth
 	EpsTL(2,2) = EpsTR(2,2)
 	EpsTR(1,1) = -EpsTR(2,2)
 	EpsTL(1,1) = EpsTR(1,1)
-	EpsTR(2,1) = 1/sqrt2*(ez - 1)*expIfi
-	EpsTL(1,2) = dconjg(EpsTR(2,1))
-	EpsTL(2,1) = 1/sqrt2*(ez + 1)*expIfi
-	EpsTR(1,2) = dconjg(EpsTL(2,1))
+	EpsTR(2,1) = -1/sqrt2*oneMez*expIphi
+	EpsTL(1,2) = DCONJG(EpsTR(2,1))
+	EpsTL(2,1) = 1/sqrt2*onePez*expIphi
+	EpsTR(1,2) = DCONJG(EpsTL(2,1))
 
-* this is E^(I fi) cos(th/2) = 1/sqrt2*sqrt(1 + ez)*expIfi:
-	expIfi = 1/sqrt2*sqrt(dim(1D0, -ez))*expIfi
+#define safelog(x) log(max(x, 1D-300))
+
+	momspec(1, i) = m
+	momspec(2, i) = p0
+	momspec(3, i) = p
+	momspec(5, i) = p*sinth
+	momspec(4, i) = sqrt(momspec(5, i)**2 + m2)
+	momspec(6, i) = safelog(DBLE(K(1,1))) -
+     &    safelog(momspec(4, i))
+	momspec(7, i) = safelog(onePez) -
+     &    safelog(sinth)
+	momspec(8, i) = deltap
+
+* this is E^(I phi) cos(th/2) = 1/sqrt2*sqrt(1 + ez)*expIphi:
+	expIphi = 1/sqrt2*sqrt(onePez)*expIphi
 * this is sin(th/2):
-	sinth = 1/sqrt2*sqrt(dim(1D0, ez))
+	sinth = 1/sqrt2*sqrt(oneMez)
 	sump = sqrt(p0 + p)
 	deltap = sqrt(deltap)
 
 	Spinor(-1, 6, 1) = deltap*sinth
 	DottedSpinor(-1, 6, 1) = Spinor(-1, 6, 1)
-	Spinor(-1, 6, 2) = -deltap*expIfi
-	DottedSpinor(-1, 6, 2) = dconjg(Spinor(-1, 6, 2))
+	Spinor(-1, 6, 2) = -deltap*expIphi
+	DottedSpinor(-1, 6, 2) = DCONJG(Spinor(-1, 6, 2))
 
 	Spinor(-1, 7, 1) = sump*sinth
 	DottedSpinor(-1, 7, 1) = Spinor(-1, 7, 1)
-	Spinor(-1, 7, 2) = -sump*expIfi
-	DottedSpinor(-1, 7, 2) = dconjg(Spinor(-1, 7, 2))
+	Spinor(-1, 7, 2) = -sump*expIphi
+	DottedSpinor(-1, 7, 2) = DCONJG(Spinor(-1, 7, 2))
 
-	DottedSpinor(1, 6, 1) = sump*expIfi
-	Spinor(1, 6, 1) = dconjg(DottedSpinor(1, 6, 1))
+	DottedSpinor(1, 6, 1) = sump*expIphi
+	Spinor(1, 6, 1) = DCONJG(DottedSpinor(1, 6, 1))
 	DottedSpinor(1, 6, 2) = sump*sinth
 	Spinor(1, 6, 2) = DottedSpinor(1, 6, 2)
 
-	DottedSpinor(1, 7, 1) = deltap*expIfi
-	Spinor(1, 7, 1) = dconjg(DottedSpinor(1, 7, 1))
+	DottedSpinor(1, 7, 1) = deltap*expIphi
+	Spinor(1, 7, 1) = DCONJG(DottedSpinor(1, 7, 1))
 	DottedSpinor(1, 7, 2) = deltap*sinth
 	Spinor(1, 7, 2) = DottedSpinor(1, 7, 2)
 	end

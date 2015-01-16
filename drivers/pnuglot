@@ -3,7 +3,7 @@
 #	pnuglot
 #		makes a plotting script from data files
 #		this file is part of FormCalc
-#		last modified 20 Jan 05 th
+#		last modified 29 Aug 05 th
 
 # This program works in two steps:
 #
@@ -29,7 +29,7 @@ data=`dirname $0`/data
 
 while [ $# -gt 0 ] ; do
   case $1 in
-  -o)	out="$2.gpl"
+  -o)	out=`dirname $2`/`basename $2 .gpl`.gpl
 	shift
 	;;
   -2)	loop=0
@@ -45,7 +45,7 @@ while [ $# -gt 0 ] ; do
 	  echo "ignored: $file"
 	else
 	  files="$files $file"
-	  [ -z "$out" ] && out=`basename $file .data`.gpl
+	  [ -z "$out" ] && out=`dirname $file`/`basename $file .data`.gpl
 	fi
 	;;
   esac

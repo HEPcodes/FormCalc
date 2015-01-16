@@ -3,7 +3,7 @@
 * i.e. form U A U^+.
 * The original matrix A is overwritten with the result.
 * this file is part of FormCalc
-* last modified 18 Jun 04 th
+* last modified 20 Oct 05 th
 
 #include "config.h"
 
@@ -20,7 +20,7 @@
 	  do i = 1, n
 	    s = 0
 	    do k = 1, n
-	      s = s + A(i,k)*dconjg(U(j,k))
+	      s = s + A(i,k)*DCONJG(U(j,k))
 	    enddo
 	    AUdag(i,j) = s
 	  enddo

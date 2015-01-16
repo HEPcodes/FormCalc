@@ -1,11 +1,11 @@
-* thdm_ini.F
+* model_thdm.F
 * all parameters for the THDM are initialized here
 * this file is part of FormCalc
 * Abdesslam Arhrib, 2 Jun 03
-* last modified 7 Feb 05 th
+* last modified 13 May 05 th
 
 
-* The input parameters for thdm_ini are:
+* The input parameters for model_thdm are:
 
 * SA = sin alpha
 * TB = tan beta
@@ -33,7 +33,7 @@
 
 #define ModelDefaults SMDefaults
 #define ModelConstIni SMConstIni
-#include "sm_ini.F"
+#include "model_sm.F"
 #undef ModelDefaults
 #undef ModelConstIni
 
@@ -51,8 +51,9 @@
 
 ************************************************************************
 
-	subroutine ModelConstIni(*)
+	subroutine ModelConstIni(fail)
 	implicit none
+	integer fail
 
 #include "model.h"
 
@@ -65,7 +66,8 @@
 	stop "Both MODEL_TYPE_I and MODEL_TYPE_II defined"
 #endif
 
-	call SMConstIni(*999)
+	call SMConstIni(fail)
+	if( fail .ne. 0 ) return
 
 	TB2 = TB**2
 	SB = TB/sqrt(1 + TB2)
@@ -116,8 +118,9 @@
 
 	if( max(abs(Lambda1), abs(Lambda2), abs(Lambda3),
      &          Lambda4, abs(Lambda5), Lambda6) .gt. 8*pi ) then
-	  print *, "thdm_ini: Perturbativity violated"
-	  return 1
+	  WARN "model_thdm: Perturbativity violated"
+	  fail = 4
+	  return
 	endif
 
 	if( abs(MA02 - MHH2) .gt. 1D-13 .and.
@@ -130,9 +133,10 @@
      &                   MHp2/(MHp2 - MHH2)*log(MHp2/MHH2)) )
 
 	  if( DeltaRho .gt. DeltaRho_UPPERBOUND ) then
-	    print *, "thdm_ini: DeltaRho = ", DeltaRho,
+	    WARN "model_thdm: DeltaRho = ", DeltaRho,
      &        " > DeltaRho_UPPERBOUND = ", DeltaRho_UPPERBOUND
-	    return 1
+	    fail = 3
+	    return
 	  endif
 	endif
 #endif
@@ -140,23 +144,20 @@
 	if( thdm_digest ) return
 	thdm_digest = .TRUE.
 
-	print *, "THDM parameters"
-	print *, "----------------------------"
+	INFO "THDM parameters"
+	INFO "----------------------------"
 #ifdef MODEL_TYPE_I
-	print *, "using type-I model"
+	INFO "using type-I model"
 #else
-	print *, "using type-II model"
+	INFO "using type-II model"
 #endif
-	print *, "TB =", TB
-	print *, "SA =", SA
-	print *, "Mh0 =", Mh0
-	print *, "MHH =", MHH
-	print *, "MA0 =", MA0
-	print *, "MHp =", MHp
-	print *, "Lambda5 =", Lambda5
-	print *, "============================"
-	return
-
-999	return 1
+	INFO "TB =", TB
+	INFO "SA =", SA
+	INFO "Mh0 =", Mh0
+	INFO "MHH =", MHH
+	INFO "MA0 =", MA0
+	INFO "MHp =", MHp
+	INFO "Lambda5 =", Lambda5
+	INFO "============================"
 	end
 

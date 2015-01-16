@@ -2,7 +2,7 @@
 	logfile.c
 		I/O redirection for logfiles
 		this file is part of FormCalc
-		last modified 11 Jan 05 th
+		last modified 30 May 05 th
 */
 
 
@@ -19,6 +19,7 @@
 #define flush flush_
 #endif
 
+extern void flush(int *);
 
 static int truestdout = -1;
 

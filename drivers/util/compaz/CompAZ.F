@@ -28,7 +28,7 @@
 
 * Parameters of the distribution, partly fitted to the spectra from V. Telnov
 	double precision par(14)
-	data Par /
+	data par /
      &    18.08800D0    ,                         ! Laser parameter
      &      .06594662D0 ,    .7060851D0 ,         ! Nonlinear corrections
      &      .7115863D0  ,   -.6776124D0 ,  0D0 ,  ! Total normalization
@@ -43,7 +43,7 @@
 
 	double precision xmax, xmax2, g
 	double precision gflux1, gflux2, gflux3, gflux
-	double precision Pol1, Pol2, Pol3, Ptot
+	double precision pol1, pol2, pol3, ptot
 	double precision g1, g2, dg, p1, p2, dp
 	double precision ymin, ymin2, ymax, y1, y2, dy
 
@@ -59,10 +59,10 @@
 	if( .NOT. ((icase .GE. 0  .and. icase .LE. 3 ) .or.
      &             (icase .GE. 10 .and. icase .LE. 13) .or.
      &             (icase .GE. 20 .and. icase .LE. 22)) ) then
-	   print *, "CompAZ: Invalid distribution flag ", icase
-	   CompAZ = 0
-	   return
-	 endif
+	  print *, "CompAZ: Invalid distribution flag ", icase
+	  CompAZ = 0
+	  return
+	endif
 
 * Check input energy
 	if( E .lt. 50 .or. E .gt. 500 ) then
@@ -82,10 +82,10 @@
 	Ee = e/1000D0
 
 * Nominal value of z = 4*Ee*El/me^2
-	z0 = par(1)*ee
+	z0 = par(1)*Ee
 
 * correction nonlinear effects
-	xi = par(2) + par(3)*ee
+	xi = par(2) + par(3)*Ee
 
 * effective z
 	z = z0/(1 + xi)
@@ -106,11 +106,11 @@
 	endif
 
 * normalization of main compton component
-	Tot = par(4) + ee*(par(5) + ee*par(6))
+	Tot = par(4) + Ee*(par(5) + Ee*par(6))
 
 * normalization of additional contributions
 	Tot2 = Tot*par(7)*(1 - exp(-xi*xi*par(8)))
-	Tot3 = Tot*(par(9) + ee*par(10))
+	Tot3 = Tot*(par(9) + Ee*par(10))
 
 * Corrections to Compton spectra
 	Br2 = par(11)
@@ -130,7 +130,7 @@
 
 	if( x .gt. 0 .and. x .le. xmax .and. Tot .gt. 0 ) then
 	  gflux1 = CompAZc(x, z, Pol)
-	  g = (z/x - z - 1)
+	  g = z/x - z - 1
 	  if( g .gt. 0 ) then
 	    g = sqrt(g)
 	  else
@@ -169,18 +169,18 @@
 	  gflux2 = gflux2*exp( -Br2 * g*g/8D0 )* g**gpow
 
 	  if( DoPolar .and. x .gt. xmax ) then
-	     Pol2 = CompAZp(x, poll, Pole, 2*z)
+	    pol2 = CompAZp(x, poll, Pole, 2*z)
 	  else if( DoPolar ) then
-	     Pol2 = CompAZp(xmax, poll, Pole, 2*z)
+	    pol2 = CompAZp(xmax, poll, Pole, 2*z)
 	  endif
 	EndIf
 
 	if( icase .eq. 2 ) then
-	   CompAZ = Tot2*gflux2
-	   return
+	  CompAZ = Tot2*gflux2
+	  return
 	else if( icase .eq. 12 ) then
-	   CompAZ = pol2
-	   return
+	  CompAZ = pol2
+	  return
 	endif
 
 * Electron rescattering
@@ -219,14 +219,12 @@
      &          CompAZc(x/y2, y2*z, pole2*poll)*CompAZc(1 - y2, z, Pol)
 	      
 	      dg = .5D0*(g1 + g2)*dy
-	      dp = .5D0*(g1*p1 + g2*p2)*dy
-
 	      gflux3 = gflux3 + dg
 
 	      if( DoPolar ) then
 	        p2 = CompAZp(x/y2, poll, pole2, y2*z)
 	        dp = .5D0*(g1*p1 + g2*p2)*dy
-	        Pol3 = Pol3 + dp
+	        pol3 = pol3 + dp
 	        p1 = p2
 	      endif
 
@@ -247,13 +245,13 @@
 	  return
 	endif
 
-	Gflux = Tot*gflux1 + Tot2*gflux2 + Tot3*gflux3
+	gflux = Tot*gflux1 + Tot2*gflux2 + Tot3*gflux3
 
 	if( icase .eq. 0 ) then
-	  CompAZ = Gflux
-	else if( Gflux .gt. 0 .and. icase .eq. 10 ) then
-	  Ptot = Tot*gflux1*pol1 + Tot2*gflux2*pol2 + Tot3*pol3
-	  CompAZ = Ptot/Gflux
+	  CompAZ = gflux
+	else if( gflux .gt. 0 .and. icase .eq. 10 ) then
+	  ptot = Tot*gflux1*pol1 + Tot2*gflux2*pol2 + Tot3*pol3
+	  CompAZ = ptot/gflux
 	else
 	  CompAZ = 0
 	endif

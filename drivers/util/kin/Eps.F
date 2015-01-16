@@ -2,7 +2,7 @@
 * calculates -I times the Levi-Civita tensor contracted with
 * four four-vectors
 * this file is part of FormCalc
-* last modified 15 Jun 04 th
+* last modified 20 Oct 05 th
 
 
 * Note: the arguments a, b, c, d specify the vector's position in
@@ -21,7 +21,7 @@
 #define C(x,y) vec(x,y, c)
 #define D(x,y) vec(x,y, d)
 
-#define diag(i, j) (dble(i(1,1))*dble(j(2,2)) - dble(i(2,2))*dble(j(1,1)))
+#define diag(i, j) (DBLE(i(1,1))*DBLE(j(2,2)) - DBLE(i(2,2))*DBLE(j(1,1)))
 #define offdiag(i, j) (i(2,1)*j(1,2) - i(1,2)*j(2,1))
 
 	Eps = .25D0*(

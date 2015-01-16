@@ -3,14 +3,14 @@
 		replaces all real constants by Fortran-style double
 		precision numbers (1.234D0) in Mma FortranForm output
 		this file is part of FormCalc
-		last modified 13 Dec 01 th
+		last modified 6 Jun 05 th
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-main()
+int main()
 {
   static const char signdigits[] = "+-0123456789";
   static const char *digits = signdigits + 2;
@@ -28,6 +28,7 @@ main()
       fgets(s, sizeof(s), stdin);
     }
     eol = s + strlen(s) - 1;
+    if( *eol != '\n' ) *++eol = '\n';
     if( *(eol - 1) == '\\' ) {
       fgets(next, sizeof(next), stdin);
       di = next + 6 + strspn(next + 6, " \t");

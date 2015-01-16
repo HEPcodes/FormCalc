@@ -1,7 +1,7 @@
 * run.F
-* defines parameter settings for one run, then includes num.F
+* defines parameter settings for one run, then includes main.F
 * this file is part of FormCalc
-* last modified 11 Feb 05 th
+* last modified 2 Feb 06 th
 
 
 * Whether to run in debugging mode
@@ -21,13 +21,13 @@ c#define CalcRenConst ZeroRenConst
 
 
 * The model initialization code is included here.  Options for the
-* XXX_ini.F file (e.g. NO_SQUARK_MIXING for mssm_ini.F) must be
+* model_XXX.F file (e.g. NO_SQUARK_MIXING for model_mssm.F) must be
 * defined before the #include line.
 
-* options for sm_ini.F:
+* options for model_sm.F:
 c#define NO_CKM
 
-* options for mssm_ini.F:
+* options for model_mssm.F:
 c#define NO_SQUARK_MIXING
 c#define HIGGS_MASSES TREE
 c#define HIGGS_MASSES SIMPLE
@@ -36,12 +36,12 @@ c#define SM_HIGGS
 c#define FLAVOUR_VIOLATION
 c#define NO_EXCLUSION_LIMITS
 
-* options for thdm_ini.F:
+* options for model_thdm.F:
 c#define MODEL_TYPE_I
 c#define MODEL_TYPE_II
 c#define NO_EXCLUSION_LIMITS
 
-#include "sm_ini.F"
+#define MODEL "model_sm.F"
 
 
 * You can define LOOP[1..15] for scanning the parameter space.
@@ -50,7 +50,7 @@ c#define NO_EXCLUSION_LIMITS
 *	#define LOOP1 do 1 MH = 100, 500, 200
 * For a fixed parameter, use something like #define LOOP1 MH = 300.
 
-#define LOOP1 MH = 100
+#define LOOP1 MH = 120
 #define LOOP2
 #define LOOP3 TB = 5
 #define LOOP4 MA0 = 500
@@ -72,7 +72,7 @@ c#define NO_EXCLUSION_LIMITS
 * written to the output file and screen.  For example,
 *	PRINT "MH=", MH, "MT=", MT
 * writes out the values of MH and MT in each pass of the loop.
-* Only real parameters are allowed (use dble and dimag for complex
+* Only real parameters are allowed (use DBLE and DIMAG for complex
 * ones) and a string identifier must be given as in the example above.
 
 #define PRINT1 PRINT "MH=", MH
@@ -84,17 +84,22 @@ c#define NO_EXCLUSION_LIMITS
 
 * Cuts and increments.  May be defined in terms of sqrtS, the CMS energy.
 
-#define THETACUT (10*degree)
+#define SQRTSSTEP 10
+
+* a) 2-particle phase space:
+
+#define COSTHCUT .01D0
 #ifdef DEBUG
-#define THETASTEP (125*degree)
+#define XCOSTHSTEP 1/3D0
 #else
-#define THETASTEP (1*degree)
+#define XCOSTHSTEP .02D0
 #endif
 
-#define K50CUT ESOFTMAX
-#define K50STEP .05D0*sqrtS
+* b) 3-particle phase-space:
 
-#define SQRTSSTEP 10
+#define XMREM5STEP .1D0
+#define E5MIN ESOFTMAX
+#define COSTH5CUT 0
 
 
 * The integration parameters:
@@ -103,7 +108,7 @@ c#define NO_EXCLUSION_LIMITS
 #define RELACCURACY 1D-3
 #define ABSACCURACY 1D-10
 
-* The multidimensional integration routines (2 -> 3) also need
+* The multidimensional integration routines also need
 
 #define METHOD DIVONNE
 #define VERBOSE 1

@@ -1,7 +1,7 @@
 /*
 	Random.c
 		quasi- and pseudo-random-number generation
-		last modified 9 Feb 05 th
+		last modified 5 Jan 06 th
 */
 
 
@@ -78,7 +78,7 @@ static inline void SobolIni(cnumber n)
     int inibits = -1, bit;
     for( j = powers; j; j >>= 1 ) ++inibits;
 
-    memcpy(pv, pini, inibits*sizeof(int));
+    memcpy(pv, pini, inibits*sizeof(*pini));
     pini += 8;
 
     for( bit = inibits; bit < nbits; ++bit ) {

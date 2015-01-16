@@ -22,8 +22,11 @@
 
 	parameter (cI = (0D0, 1D0))
 
-#ifndef polar
-#define polar(r, theta) r*exp(cI*degree*theta)
+#ifndef WARN
+#define WARN print *,
+#define INFO print *,
+#define Digit(i) char(i+48)
+#define Polar(r,theta) r*exp(cI*degree*theta)
 #endif
 
 	double precision Divergence
@@ -53,10 +56,11 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 	parameter (MC = 1.50D0, MC2 = MC**2)
 	parameter (MT = 178D0, MT2 = MT**2)
 
-	double precision MD, MD2, MS, MS2, MB, MB2
+	double precision MD, MD2, MS, MS2, MB, MB2, MBatMB
 	parameter (MD = 53.8D-3, MD2 = MD**2)
 	parameter (MS = 150D-3, MS2 = MS**2)
 	parameter (MB = 4.7D0, MB2 = MB**2)
+	parameter (MBatMB = 4.25D0)
 
 	double complex CKM(3,3)
 	double precision Mf(4,3), Mf2(4,3)
@@ -74,14 +78,13 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 * MSSM parameters
 
 	double complex UCha(2,2), VCha(2,2), ZNeu(4,4)
-	double complex USf(2,2,4,3), Af(2:4,3), Xf(2:4,3)
-	double complex Atau, At, Ab, MUE
+	double complex USf(2,2,4,3), Af(2:4,3,3), Xf(2:4,3,3)
+	double complex Atau, At, Ab, MUE, M_1, M_2, M_3
 	double precision MCha(2), MCha2(2), MNeu(4), MNeu2(4)
 	double precision MSS(2,2:4,3), MSS2(2,2:4,3), DSf(2,4)
-	double precision MSf(2,4,3), MSf2(2,4,3), MSusy
+	double precision MSf(2,4,3), MSf2(2,4,3), MSusy, MGl, MGl2
 	double precision Mh0, Mh02, MHH, MHH2, MA0, MA02, MHp, MHp2
 	double precision Mh02tree, MHH2tree, MHp2tree
-	double precision M_1, M_2, MGl, MGl2
 	double precision CB, SB, TB, CB2, SB2, TB2, C2B, S2B
 	double precision CA, SA, CA2, SA2, C2A, S2A
 	double precision CAB, SAB, CBA, SBA
@@ -89,40 +92,55 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 
 	common /mssm_para/ UCha, VCha, ZNeu
 	common /mssm_para/ USf, Af, Xf
-	common /mssm_para/ Atau, At, Ab, MUE
+	common /mssm_para/ Atau, At, Ab, MUE, M_1, M_2, M_3
 	common /mssm_para/ MCha, MCha2, MNeu, MNeu2
 	common /mssm_para/ MSS, MSS2, DSf
-	common /mssm_para/ MSf, MSf2, MSusy
+	common /mssm_para/ MSf, MSf2, MSusy, MGl, MGl2
 	common /mssm_para/ Mh0, Mh02, MHH, MHH2, MA0, MA02, MHp, MHp2
 	common /mssm_para/ Mh02tree, MHH2tree, MHp2tree
-	common /mssm_para/ M_1, M_2, MGl, MGl2
 	common /mssm_para/ CB, SB, TB, CB2, SB2, TB2, C2B, S2B
 	common /mssm_para/ CA, SA, CA2, SA2, C2A, S2A
 	common /mssm_para/ CAB, SAB, CBA, SBA
 	common /mssm_para/ mssm_digest
 
-	double precision reimMUE(2), reMUE, imMUE
-	equivalence (MUE, reimMUE)
-	equivalence (reimMUE(1), reMUE), (reimMUE(2), imMUE)
+	double precision Af_flat(3*3*3), Xf_flat(3*3*3)
+	equivalence (Af, Af_flat)
+	equivalence (Xf, Xf_flat)
 
-	double precision reimAtau(2), reAtau, imAtau
-	equivalence (Atau, reimAtau)
-	equivalence (reimAtau(1), reAtau), (reimAtau(2), imAtau)
+	double precision ReImAtau(2), ReAtau, ImAtau
+	equivalence (Atau, ReImAtau)
+	equivalence (ReImAtau(1), ReAtau), (ReImAtau(2), ImAtau)
 
-	double precision reimAt(2), reAt, imAt
-	equivalence (At, reimAt)
-	equivalence (reimAt(1), reAt), (reimAt(2), imAt)
+	double precision ReImAt(2), ReAt, ImAt
+	equivalence (At, ReImAt)
+	equivalence (ReImAt(1), ReAt), (ReImAt(2), ImAt)
 
-	double precision reimAb(2), reAb, imAb
-	equivalence (Ab, reimAb)
-	equivalence (reimAb(1), reAb), (reimAb(2), imAb)
+	double precision ReImAb(2), ReAb, ImAb
+	equivalence (Ab, ReImAb)
+	equivalence (ReImAb(1), ReAb), (ReImAb(2), ImAb)
+
+	double precision ReImMUE(2), ReMUE, ImMUE
+	equivalence (MUE, ReImMUE)
+	equivalence (ReImMUE(1), ReMUE), (ReImMUE(2), ImMUE)
+
+	double precision ReImM_1(2), ReM_1, ImM_1
+	equivalence (M_1, ReImM_1)
+	equivalence (ReImM_1(1), ReM_1), (ReImM_1(2), ImM_1)
+
+	double precision ReImM_2(2), ReM_2, ImM_2
+	equivalence (M_2, ReImM_2)
+	equivalence (ReImM_2(1), ReM_2), (ReImM_2(2), ImM_2)
+
+	double precision ReImM_3(2), ReM_3, ImM_3
+	equivalence (M_3, ReImM_3)
+	equivalence (ReImM_3(1), ReM_3), (ReImM_3(2), ImM_3)
 
 #ifndef CKMC
-#define CKMC(a,b) dconjg(CKM(a,b))
-#define USfC(a,b,t,g) dconjg(USf(a,b,t,g))
-#define VChaC(a,b) dconjg(VCha(a,b))
-#define UChaC(a,b) dconjg(UCha(a,b))
-#define ZNeuC(a,b) dconjg(ZNeu(a,b))
+#define CKMC(a,b) DCONJG(CKM(a,b))
+#define USfC(a,b,t,g) DCONJG(USf(a,b,t,g))
+#define VChaC(a,b) DCONJG(VCha(a,b))
+#define UChaC(a,b) DCONJG(UCha(a,b))
+#define ZNeuC(a,b) DCONJG(ZNeu(a,b))
 #endif
 
 
@@ -130,57 +148,57 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 
 	double complex UASf(6,6,3:4)
 	double precision MASf(6,3:4), MASf2(6,3:4)
-	double precision deltaSf(6,6,3:4)
+	double precision deltaSf(3:4,6,6)
 
 	common /fv_para/ UASf, MASf, MASf2, deltaSf
 
-	double precision deltaSf_flat(6*6*2)
+	double precision deltaSf_flat(2*6*6)
 	equivalence (deltaSf, deltaSf_flat)
 
 	double complex deltaLLuc, deltaLRuc
-	double complex deltaRLuc, deltaRRuc
+	double complex deltaRLucC, deltaRRuc
 	equivalence (deltaSf(3,1  ,2  ), deltaLLuc)
 	equivalence (deltaSf(3,1  ,2+3), deltaLRuc)
-	equivalence (deltaSf(3,2  ,1+3), deltaRLuc)
+	equivalence (deltaSf(3,2  ,1+3), deltaRLucC)
 	equivalence (deltaSf(3,1+3,2+3), deltaRRuc)
 
 	double complex deltaLLct, deltaLRct
-	double complex deltaRLct, deltaRRct
+	double complex deltaRLctC, deltaRRct
 	equivalence (deltaSf(3,2  ,3  ), deltaLLct)
 	equivalence (deltaSf(3,2  ,3+3), deltaLRct)
-	equivalence (deltaSf(3,3  ,2+3), deltaRLct)
+	equivalence (deltaSf(3,3  ,2+3), deltaRLctC)
 	equivalence (deltaSf(3,2+3,3+3), deltaRRct)
 
 	double complex deltaLLut, deltaLRut
-	double complex deltaRLut, deltaRRut
+	double complex deltaRLutC, deltaRRut
 	equivalence (deltaSf(3,1  ,3  ), deltaLLut)
 	equivalence (deltaSf(3,1  ,3+3), deltaLRut)
-	equivalence (deltaSf(3,3  ,1+3), deltaRLut)
+	equivalence (deltaSf(3,3  ,1+3), deltaRLutC)
 	equivalence (deltaSf(3,1+3,3+3), deltaRRut)
 
 	double complex deltaLLds, deltaLRds
-	double complex deltaRLds, deltaRRds
+	double complex deltaRLdsC, deltaRRds
 	equivalence (deltaSf(4,1  ,2  ), deltaLLds)
 	equivalence (deltaSf(4,1  ,2+3), deltaLRds)
-	equivalence (deltaSf(4,2  ,1+3), deltaRLds)
+	equivalence (deltaSf(4,2  ,1+3), deltaRLdsC)
 	equivalence (deltaSf(4,1+3,2+3), deltaRRds)
 
 	double complex deltaLLsb, deltaLRsb
-	double complex deltaRLsb, deltaRRsb
+	double complex deltaRLsbC, deltaRRsb
 	equivalence (deltaSf(4,2  ,3  ), deltaLLsb)
 	equivalence (deltaSf(4,2  ,3+3), deltaLRsb)
-	equivalence (deltaSf(4,3  ,2+3), deltaRLsb)
+	equivalence (deltaSf(4,3  ,2+3), deltaRLsbC)
 	equivalence (deltaSf(4,2+3,3+3), deltaRRsb)
 
 	double complex deltaLLdb, deltaLRdb
-	double complex deltaRLdb, deltaRRdb
+	double complex deltaRLdbC, deltaRRdb
 	equivalence (deltaSf(4,1  ,3  ), deltaLLdb)
 	equivalence (deltaSf(4,1  ,3+3), deltaLRdb)
-	equivalence (deltaSf(4,3  ,1+3), deltaRLdb)
+	equivalence (deltaSf(4,3  ,1+3), deltaRLdbC)
 	equivalence (deltaSf(4,1+3,3+3), deltaRRdb)
 
 #ifndef UASfC
-#define UASfC(a,b,t) dconjg(UASf(a,b,t))
+#define UASfC(a,b,t) DCONJG(UASf(a,b,t))
 #endif
 
 

@@ -2,7 +2,7 @@
 	Integrate.c
 		integrate over the unit hypercube
 		this file is part of Suave
-		last modified 2 Mar 05 th
+		last modified 2 Jun 05 th
 */
 
 
@@ -263,7 +263,10 @@ static int Integrate(creal epsrel, creal epsabs,
   }
 #endif
 
+#ifdef MLVERSION
 abort:
+#endif
+
   if( region ) free(region);
 
   while( (region = anchor) ) {

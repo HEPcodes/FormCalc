@@ -1,9 +1,13 @@
+# Note: make permanent changes only in makefile.in,
+# changes in makefile will be overwritten by configure.
+
+
 .PHONY: default force mostlyclean clean distclean
 
 default: run
 
 
-export VPATH := $(CURDIR):$(CURDIR)/renconst:$(LOOPTOOLS)/include
+export VPATH := $(CURDIR):$(CURDIR)/renconst:$(LT)/include
 
 INCLUDE := $(patsubst %,-I%,$(subst :, ,$(VPATH)))
 

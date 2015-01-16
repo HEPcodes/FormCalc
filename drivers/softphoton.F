@@ -1,7 +1,7 @@
 * softphoton.F
 * routines for the treatment of soft-photon radiation
 * this file is part of FormCalc
-* last modified 23 Jun 04 th
+* last modified 13 Apr 05 th
 
 
 ************************************************************************
@@ -12,8 +12,8 @@
 	double precision function SoftPhotonFactor()
 	implicit none
 
-#include HEADER
 #include "looptools.h"
+#include "xsection.h"
 
 	double precision PhaseSpaceIntegral
 	external PhaseSpaceIntegral
@@ -50,7 +50,7 @@
 	parameter (ch5 = CHARGE5)
 	data charge / ch1, ch2, ch3, ch4, ch5 /
 #else
-	error: No definition for LEGS external legs
+#error No definition for LEGS external legs
 #endif
 
 	loglambda = log(4*(ESOFTMAX)**2/getlambda())
@@ -78,18 +78,19 @@
 
 #include "model.h"
 #include "util.h"
+#include "looptools.h"
 
-	double precision ki2, ki0, ki, kidelta, kilog
-	double precision kj2, kj0, kj, kjdelta, kjlog
+	double precision mi, ki0, ki, kidelta, kilog
+	double precision mj, kj0, kj, kjdelta, kjlog
 	double precision kikj, alpha, d, vi
 
 	double precision loglambda
 	common /infrared/ loglambda
 
-	ki2 = momspec(1, i)
-	ki0 = momspec(2, i)
-	ki = momspec(3, i)
-	kidelta = momspec(4, i)
+	mi = momspec(SPEC_M, i)
+	ki0 = momspec(SPEC_E, i)
+	ki = momspec(SPEC_K, i)
+	kidelta = momspec(SPEC_DELTAK, i)
 	kilog = log(kidelta/(ki0 + ki))
 
 	if( i .eq. j ) then
@@ -101,26 +102,25 @@
 	  return
 	endif
 
-	kj2 = momspec(1, j)
-	kj0 = momspec(2, j)
-	kj = momspec(3, j)
-	kjdelta = momspec(4, j)
+	mj = momspec(SPEC_M, j)
+	kj0 = momspec(SPEC_E, j)
+	kj = momspec(SPEC_K, j)
+	kjdelta = momspec(SPEC_DELTAK, j)
 	kjlog = log(kjdelta/(kj0 + kj))
 
-	kikj = dble(Pair(k(i), k(j)))
+	kikj = DBLE(Pair(k(i), k(j)))
 
-	d = sqrt(kikj**2 - ki2*kj2)
-	alpha = (kikj + d)/ki2
-	if( sign(kj0, alpha*ki0 - kj0) .ne. kj0 ) alpha = (kikj - d)/ki2
+	d = sqrt((kikj - mi*mj)*(kikj + mi*mj))
+	alpha = (kikj + d)/mi**2
+	if( alpha*ki0 .lt. kj0 ) alpha = (kikj - d)/mi**2
 
-	d = 1/(alpha**2*ki2 - kj2)
+	d = 1/((alpha*mi - mj)*(alpha*mi + mj))
 	vi = 2*(alpha*ki0 - kj0)*d
 
 	PhaseSpaceIntegral = 4*pi*alpha*kikj*d * (
-     &    .5D0*log(ki2/kj2*alpha**2)*loglambda +
-     &    .25D0*(kilog**2 - kjlog**2) +
+     &    log(mi/mj*abs(alpha))*loglambda +
+     &    .25D0*(kilog - kjlog)*(kilog + kjlog) +
      &    Li2(1 - (ki0 + ki)*alpha*vi) + Li2(1 - kidelta*alpha*vi) -
      &    Li2(1 - (kj0 + kj)*vi) - Li2(1 - kjdelta*vi) )
-
 	end
 

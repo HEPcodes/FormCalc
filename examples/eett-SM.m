@@ -3,7 +3,7 @@
 		generates the Fortran code for
 		e^+ e^- -> t-bar t in the electroweak SM
 		this file is part of FormCalc
-		last modified 11 Jun 03 th
+		last modified 30 Dec 05 th
 
 Reference: W. Beenakker, S.C. van der Marck, and W. Hollik,
            Nucl. Phys. B365 (1991) 24.
@@ -95,20 +95,25 @@ box = CalcFeynAmp[
   Select[counter, DiagramType[#] == 0 &]]
 
 
+amps = {born, self, vert, box}
+
+{born, self, vert, box} = Abbreviate[amps, 6,
+  Preprocess -> OnSize[100, Simplify, 500, DenCollect]]
+
 col = ColourME[All, born]
 
 abbr = OptimizeAbbr[Abbr[]]
 
+subexpr = OptimizeAbbr[Subexpr[]]
 
 dir = SetupCodeDir[name <> ".fortran", Drivers -> name <> ".drivers"]
 
-WriteSquaredME[born, {self, vert, box}, col, abbr, dir]
-
+WriteSquaredME[born, {self, vert, box}, col, abbr, subexpr, dir]
 
 InsertFieldsHook[tops_, f1_F -> f2_F] :=
   InsertFields[tops, f1 -> f2, ExcludeParticles -> V[1]]
 
-WriteRenConst[{self, vert, box}, dir]
+WriteRenConst[amps, dir]
 
 
 Print["time used: ", SessionTime[] - time1]

@@ -2,7 +2,7 @@
 	suave-f.c
 		Fortran interface for Suave
 		this file is part of Suave
-		last modified 9 Feb 05 th
+		last modified 4 Jan 06 th
 */
 
 
@@ -15,17 +15,17 @@
 
 Extern void Suave(ccount ndim, ccount ncomp, Integrand integrand,
   creal epsrel, creal epsabs,
-  cint flags, ccount mineval, ccount maxeval,
-  ccount nnew, creal flatness,
-  count *pnregions, count *pneval, int *pfail,
+  cint flags, cnumber mineval, cnumber maxeval,
+  cnumber nnew, creal flatness,
+  count *pnregions, number *pneval, int *pfail,
   real *integral, real *error, real *prob);
 
 
 Extern void suave(ccount *pndim, ccount *pncomp, Integrand integrand,
   creal *pepsrel, creal *pepsabs,
-  cint *pflags, ccount *pmineval, ccount *pmaxeval,
-  ccount *pnnew, creal *pflatness,
-  count *pnregions, count *pneval, int *pfail,
+  cint *pflags, cnumber *pmineval, cnumber *pmaxeval,
+  cnumber *pnnew, creal *pflatness,
+  count *pnregions, number *pneval, int *pfail,
   real *integral, real *error, real *prob)
 {
   Suave(*pndim, *pncomp, integrand,

@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /bin/sh
 
 logfile=`dirname $0`/log
 

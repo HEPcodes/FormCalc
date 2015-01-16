@@ -4,7 +4,7 @@
 		has approximately equal spread = 1/2 vol (max - min),
 		then do a final integration over all regions
 		this file is part of Divonne
-		last modified 7 Mar 05 th
+		last modified 2 Jun 05 th
 */
 
 
@@ -434,7 +434,10 @@ refine:
   }
 #endif
 
+#ifdef MLVERSION
 abort:
+#endif
+
   SamplesFree(&samples_[2]);
   SamplesFree(&samples_[1]);
   SamplesFree(&samples_[0]);

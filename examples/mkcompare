@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /bin/sh
 
 for dir in *.fortran ; do
   set -- `ls -1 $dir/*.data`

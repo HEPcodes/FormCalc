@@ -2,7 +2,7 @@
 * non-adaptive 1D Gauss-Kronrod-Patterson integration
 * adapted from Quadpack's dqng.f for vector integrands
 * this file is part of FormCalc
-* last modified 7 Feb 05 th
+* last modified 1 Jun 05 th
 
 
 #include "config.h"
@@ -17,7 +17,7 @@
 	double precision result(*), error(*)
 	external integrand
 
-	double precision samples(MAXCOMP, 2, 0:43)
+	double precision samples(MAXCOMP,2,0:43)
 	double precision range, mid, h
 	double precision estimate, integral, fluct
 	double precision err
@@ -173,35 +173,35 @@
 
 * compute the integral using the 10- and 21-point formula
 
-	call integrand(samples(1, 1, 0), mid)
+	call integrand(1, mid, ncomp, samples(1,1,0))
 	do j = 1, 10
 	  h = range*x(j)
-	  call integrand(samples(1, 1, j), mid + h)
-	  call integrand(samples(1, 2, j), mid - h)
+	  call integrand(1, mid + h, ncomp, samples(1,1,j))
+	  call integrand(1, mid - h, ncomp, samples(1,2,j))
 	enddo
 
 	fail = 0
 
 	do c = 1, ncomp
 	  estimate = 0
-	  integral = w21(0)*samples(c, 1, 0)
+	  integral = w21(0)*samples(c,1,0)
 	  do j = 1, 10
-	    h = samples(c, 1, j) + samples(c, 2, j)
+	    h = samples(c,1,j) + samples(c,2,j)
 	    integral = integral + w21(j)*h
 	    if( j .le. 5 ) estimate = estimate + w10(j)*h
 	  enddo
 
 	  h = .5D0*integral
-	  fluct = w21(0)*abs(samples(c, 1, 0) - h)
+	  fluct = w21(0)*abs(samples(c,1,0) - h)
 	  do j = 1, 10
-	    fluct = fluct + w21(j)*(abs(samples(c, 1, j) - h) +
-     &                              abs(samples(c, 2, j) - h))
+	    fluct = fluct + w21(j)*(abs(samples(c,1,j) - h) +
+     &                              abs(samples(c,2,j) - h))
 	  enddo
 
 	  integral = integral*range
 	  err = abs(integral - range*estimate)
 	  fluct = fluct*range
-	  samples(c, 2, 0) = fluct
+	  samples(c,2,0) = fluct
 	  if( fluct .gt. 1D-13 )
      &      err = fluct*min(1D0, (200*err/fluct)**1.5D0)
 	  error(c) = err
@@ -219,22 +219,22 @@
 
 	do j = 11, 21
 	  h = range*x(j)
-	  call integrand(samples(1, 1, j), mid + h)
-	  call integrand(samples(1, 2, j), mid - h)
+	  call integrand(1, mid + h, ncomp, samples(1,1,j))
+	  call integrand(1, mid - h, ncomp, samples(1,2,j))
 	enddo
 
 	fail = 0
 
 	do c = 1, ncomp
-	  integral = w43(0)*samples(c, 1, 0)
+	  integral = w43(0)*samples(c,1,0)
 	  do j = 1, 21
-	    integral = integral + w43(j)*(samples(c, 1, j) +
-     &                                    samples(c, 2, j))
+	    integral = integral + w43(j)*(samples(c,1,j) +
+     &                                    samples(c,2,j))
 	  enddo
 
 	  integral = integral*range
 	  err = abs(integral - result(c))
-	  fluct = samples(c, 2, 0)
+	  fluct = samples(c,2,0)
 	  if( fluct .gt. 1D-13 )
      &      err = fluct*min(1D0, (200*err/fluct)**1.5D0)
 	  error(c) = err
@@ -252,22 +252,22 @@
 
 	do j = 22, 43
 	  h = range*x(j)
-	  call integrand(samples(1, 1, j), mid + h)
-	  call integrand(samples(1, 2, j), mid - h)
+	  call integrand(1, mid + h, ncomp, samples(1,1,j))
+	  call integrand(1, mid - h, ncomp, samples(1,2,j))
 	enddo
 
 	fail = 0
 
 	do c = 1, ncomp
-	  integral = w87(0)*samples(c, 1, 0)
+	  integral = w87(0)*samples(c,1,0)
 	  do j = 1, 43
-	    integral = integral + w87(j)*(samples(c, 1, j) +
-     &                                    samples(c, 2, j))
+	    integral = integral + w87(j)*(samples(c,1,j) +
+     &                                    samples(c,2,j))
 	  enddo
 
 	  integral = integral*range
 	  err = abs(integral - result(c))
-	  fluct = samples(c, 2, 0)
+	  fluct = samples(c,2,0)
 	  if( fluct .gt. 1D-13 )
      &      err = fluct*min(1D0, (200*err/fluct)**1.5D0)
 	  error(c) = err
