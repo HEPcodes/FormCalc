@@ -1,7 +1,7 @@
 * xsection.h
 * common blocks for xsection.F
 * this file is part of FormCalc
-* last modified 23 Dec 05 th
+* last modified 6 Feb 07 th
 
 
 #include "model.h"
@@ -17,13 +17,16 @@
 #define Step(v) var(5,v)
 #define CutMin(v) var(6,v)
 #define CutMax(v) var(7,v)
+
+#define BIT_RESET 0
+#define BIT_LOOP 1
 #endif
 
 	double precision var(8, MINVAR:TRIVIAL)
 	double precision avgfac, sqrtS, threshold, scale
 	integer sqrtSinvalid, helicities
-	logical reset
+	integer flags
 
 	common /xsection/ var, avgfac, sqrtS, threshold, scale,
-     &    sqrtSinvalid, helicities, reset
+     &    sqrtSinvalid, helicities, flags
 

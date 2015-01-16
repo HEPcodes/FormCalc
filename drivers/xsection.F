@@ -1,7 +1,7 @@
 * xsection.F
 * routines to compute the cross-section
 * this file is part of FormCalc
-* last modified 15 Jan 07 th
+* last modified 6 Feb 07 th
 
 
 #include "process.h"
@@ -162,7 +162,7 @@
 	  fail = 1
 	else
 	  call InitialState
-	  reset = .TRUE.
+	  flags = ibset(flags, BIT_RESET)
 	endif
 
 	sqrtSinvalid = fail
@@ -275,7 +275,7 @@
 	call ModelConstIni(fail)
 	if( fail .ne. 0 ) goto 999
 
-	reset = .TRUE.
+	flags = 2**BIT_RESET + 2**BIT_LOOP
 
 #ifdef MUDIM
 	call setmudim(DBLE(MUDIM))
@@ -397,14 +397,14 @@
 	call FinalState(fac)
 	if( fac .eq. 0 ) return
 
-	if( reset ) then
+	if( btest(flags, BIT_RESET) ) then
 	  call clearcache
 	  call CalcRenConst
 	endif
 
-	call SquaredME(result, helicities, reset)
+	call SquaredME(result, helicities, flags)
 
-	reset = .FALSE.
+	flags = ibclr(flags, BIT_RESET)
 
 #if LEGS_IN == 1
 	flux = 2*sqrtS

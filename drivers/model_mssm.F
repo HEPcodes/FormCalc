@@ -2,7 +2,7 @@
 * all parameters for the MSSM are initialized here
 * this file is part of FormCalc
 * Christian Schappacher, 17 Feb 99
-* last modified 5 Dec 06 th
+* last modified 15 Feb 07 th
 
 
 * The input parameters for model_mssm are:
@@ -22,6 +22,9 @@
 * sfermion sector more precisely, the following preprocessor
 * variables can be used:
 *   MSQ(g), MSU(g), MSD(g), MSL(g), MSE(g) (= MSusy by default)
+*   Ae(g) (= Atau by default)
+*   Au(g) (= At by default)
+*   Ad(g) (= Ab by default)
 
 
 * The following preprocessor variables can be defined
@@ -57,6 +60,18 @@
 *   the gaugino mass paramters.  In this case, M_1 and M_3 are
 *   also input parameters.
 
+
+#ifndef Ae
+#define Ae(g) Atau
+#endif
+
+#ifndef Au
+#define Au(g) At
+#endif
+
+#ifndef Ad
+#define Ad(g) Ab
+#endif
 
 #ifndef MSQ
 #define MSQ(g) MSusy
@@ -259,11 +274,11 @@
 	  Xf(3,g,g) = 0
 	  Xf(4,g,g) = 0
 #else
-	  Af(2,g,g) = Atau
+	  Af(2,g,g) = Ae(g)
 	  Xf(2,g,g) = Af(2,g,g) - DCONJG(MUE)*TB
-	  Af(3,g,g) = At
+	  Af(3,g,g) = Au(g)
 	  Xf(3,g,g) = Af(3,g,g) - DCONJG(MUE)/TB
-	  Af(4,g,g) = Ab
+	  Af(4,g,g) = Ad(g)
 	  Xf(4,g,g) = Af(4,g,g) - DCONJG(MUE)*TB
 #endif
 

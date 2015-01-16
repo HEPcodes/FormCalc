@@ -29,7 +29,7 @@
 	ReadForm.tm
 		reads FORM output back into Mathematica
 		this file is part of FormCalc
-		last modified 15 Jan 07 th
+		last modified 25 Mar 07 th
 
 Note: FORM code must have
 	1. #- (no listing),
@@ -238,7 +238,7 @@ loop: ;
 
 /******************************************************************/
 
-static void OrderChain(TERM *t1p, cint level)
+static TERM *OrderChain(TERM *t1p, cint level)
 {
   TERM *old1;
   int *const nterms = &t1p->nterms[level];
@@ -274,12 +274,13 @@ over:
 next:
     if( level > LEVEL_COEFF ) {
       old1->last = NULL;
-      OrderChain(ini, level - 1);
+      old1 = OrderChain(ini, level - 1);
     }
     else ini->nterms[level - 1] = c2;
   } while( (old1->last = t1p) );
 
   *nterms = c;
+  return old1;
 }
 
 /******************************************************************/

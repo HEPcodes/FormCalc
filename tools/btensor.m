@@ -3,7 +3,7 @@
 		explicit decompositions of the two-point
 		tensor-coefficient functions
 		this file is part of FormCalc
-		last modified 26 Apr 06 th
+		last modified 26 Feb 07 th
 *)
 
 
@@ -17,9 +17,12 @@ A00[m_] = 1/4 m (A0[m] + m/2)
 
 B0[0, m_, m_] := A0[m]/m - 1 /; m =!= 0
 
-B0[0, m_, m_] := (D/2 - 1)/m A0[m]
+B0[m_, 0, m_] := A0[m]/m + 1 /; m =!= 0
+
+B0[m_, m_, 0] := A0[m]/m + 1 /; m =!= 0
 
 B0[0, m1_, m2_] := (A0[m1] - A0[m2])/(m1 - m2)
+
 
 DeltaB0[p_, m1_, m2_] := (B0[p, m1, m2] - B0[0, m1, m2])/p
 

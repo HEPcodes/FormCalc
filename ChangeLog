@@ -1,3 +1,55 @@
+26 Feb 07:
+
+- Added SEPart function to allow for modifications of parts of
+  renormalization constants.
+
+
+13 Feb 07:
+
+- Added MassRC, FieldRC, TadpoleRC, WidthRC functions to simplify
+  the definition of renormalization constants (and introduce
+  fewer errors).
+
+
+6 Feb 07:
+
+- Added MoveDepsLeft and MoveDepsRight functions to disentangle
+  dependences between categories of abbreviations.
+
+
+3 Feb 07:
+
+- Separated abbreviations into such for tree and loop part.
+  Changed the third "reset" argument of SquaredME to a more
+  general flag register.  Bit 0 is the old "reset" value,
+  bit 1 determines whether the loop correction should be added,
+  i.e. bit 1 = 0 computes the tree-level part only.
+
+
+29 Jan 07:
+
+- Added ToArray function which turns symbols into array references,
+  e.g. Xyz1234 -> Xyz[1234].
+
+- Added MaxDims function which determines the maximum dimensions of
+  array references, e.g. MaxDims[Xyz[1, 2], Xyz[2, 1]] -> {Xyz[2, 2]}.
+
+- Added Renumber function which renumbers the given array references.
+
+- Added SubstSimpleAbbr function which removes `simple' abbreviations
+  and subexpressions from the list and substitutes them directly
+  into the expressions they appear in.
+
+
+24 Jan 07:
+
+- Added startmath template script with which programs that use the
+  Mathematica interface can be distributed (parallelized).
+
+- Added handling of IndexEps objects which represent antisymmetric
+  combinations of indices (e.g. colour or generation).
+
+
 15 Jan 07:
 
 - Revamped ReadForm.tm for better C style.  Adapted the MathLink

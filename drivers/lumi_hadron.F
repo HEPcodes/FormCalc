@@ -1,7 +1,7 @@
 * lumi_hadron.F
 * parton luminosity for a hadron collider
 * this file is part of FormCalc
-* last modified 11 Sep 06 th
+* last modified 13 Feb 07 th
 
 * This code links to the LHAPDF library.
 * The following preprocessor variables are used:
@@ -90,7 +90,10 @@
 	xrange = 1 - tau
 	x = tau + xrange*Var(PARTON_X)
 
-	if( x .lt. 1D-10 .or. x .gt. (1 - 1D-10) ) return
+	if( x .lt. 1D-10 .or. x .gt. (1 - 1D-10) ) then
+	  fac = 0
+	  return
+	endif
 
 	call evolvePDF(x, scale, xPDF)
 	call evolvePDF(tau/x, scale, tPDF)

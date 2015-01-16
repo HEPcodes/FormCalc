@@ -2,7 +2,7 @@
 # a script to set up the interface code for accessing
 # FormCalc-generated code in Mathematica
 # this file is part of FormCalc
-# last modified 15 Jan 07 th
+# last modified 23 Feb 07 th
 
 
 if [ $# -ne 1 ] ; then
@@ -66,7 +66,7 @@ cat << _EOF_ > `dirname $file`/$base.tm
 
 :Evaluate: c = Head[# + 1. I] === Complex &
 
-:Evaluate: $name[sqrtS_?r$argsQ, opt___Rule] :=
+:Evaluate: $name[sqrtS_$argsQ, opt___Rule] :=
   Block[ {pol, serial, setno, phead, dhead, file},
     {pol, serial, setno, phead, dhead, file} =
       {Polarizations, Serial, SetNumber, ParaHead, DataHead, LogFile} /.

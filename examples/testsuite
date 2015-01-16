@@ -1,6 +1,5 @@
-#! /bin/sh
+#! /bin/sh -x
 
-logfile=`dirname $0`/log
 
 runit()
 {
@@ -9,35 +8,34 @@ runit()
   ./configure
   make
   ./run $2 $3
-  ./data run.*$3/
-  cd ..
 }
+
 
 process()
 {
-  set -x
-  runit $* > $logfile-$1 2>&1
-  cat $1.fortran/run.*$3.compare
-  cat $1.fortran/run.*$3.data
+  echo "======================= $1 ======================="
+  base=$1.fortran/run.$2.$3
+  [ -f $base/0000001 ] || ( runit "$@" ) >> log.$1 2>&1
+  ndiff $base/0000001 $base-0000001
 }
 
 
-process eett-SM    uuuu  500
-process eett-MSSM  uuuu  500
-process eettA-SM   uuuuu 500
+process eett-SM    UUUU  00500
+process eett-MSSM  UUUU  00500
+process eettA-SM   UUUUU 00500
 
-process eeWW-SM    uuuu  500
-process eeWW-SMbgf uuuu  500
-process eeWW-MSSM  uuuu  500
-process eeHH-MSSM  uuuu  1500
+process eeWW-SM    UUUU  00500
+process eeWW-SMbgf UUUU  00500
+process eeWW-MSSM  UUUU  00500
+process eeHH-MSSM  UUUU  01500
 
-process AAtt-SM    uuuu  500
-process AAttA-SM   uuuuu 500
+process AAtt-SM    UUUU  00500
+process AAttA-SM   UUUUU 00500
 
-process AAAA-SM    uuuu  500
-process AAAA-SMbgf uuuu  500
-process WWWW-SM    uuuu  500
-process WWWW-SMbgf uuuu  500
-process ZZZZ-SM    uuuu  500
-process ZZZZ-SMbgf uuuu  500
+process AAAA-SM    UUUU  00500
+process AAAA-SMbgf UUUU  00500
+process WWWW-SM    UUUU  00500
+process WWWW-SMbgf UUUU  00500
+process ZZZZ-SM    UUUU  00500
+process ZZZZ-SMbgf UUUU  00500
 

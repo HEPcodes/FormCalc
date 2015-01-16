@@ -1,7 +1,7 @@
 * util.h
 * prototypes for the functions in util.a
 * this file is part of FormCalc
-* last modified 7 Aug 06 th
+* last modified 26 Jan 07 th
 
 
 	double precision ThreeMom
@@ -24,15 +24,8 @@
 	common /momenta/ momspec
 #endif
 
-#ifndef Delta
-#define Delta(i,j) ibits(ieor(i,j)-1,15,1)
 
-#define k(i) (8*i+1)
-#define s(i) (8*i+3)
-#define e(i) (8*i+3+Hel(i))
-#define ec(i) (8*i+3-Hel(i))
-#define Spinor(i,s,om) (s*2*Hel(i)+16*i+om+5)
-#define DottedSpinor(i,s,om) (s*2*Hel(i)+16*i+om+7)
+#ifndef SPEC_M
 
 #define SPEC_M 1
 #define SPEC_K 2
@@ -47,7 +40,17 @@
 #define SPEC_KY 11
 #define SPEC_KZ 12
 
-#define Cut(c, m) (m)*(c)
+#define k(i) (8*i+1)
+#define s(i) (8*i+3)
+#define e(i) (8*i+3+Hel(i))
+#define ec(i) (8*i+3-Hel(i))
+#define Spinor(i,s,om) (s*2*Hel(i)+16*i+om+5)
+#define DottedSpinor(i,s,om) (s*2*Hel(i)+16*i+om+7)
+
+#define signbit(i) ibits(i,31,1)
+#define IndexDelta(i,j) signbit(ieor(i,j)-1)
+
+#define Cut(c,m) (m)*(c)
 
 #define CUT_MIN 1
 #define CUT_MAX 2
@@ -63,5 +66,6 @@
 #define CUT_MREM_KT 4097
 #define CUT_MREM_RAP 16384
 #define CUT_MREM_PRAP 16385
+
 #endif
 

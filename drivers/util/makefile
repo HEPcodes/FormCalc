@@ -53,6 +53,7 @@ OBJS = \
   kin/VeS.o \
   kin/BxS.o \
   kin/BeS.o \
+  kin/IndexEps.o \
   diag/Eigen2x2.o \
   diag/NoMixing.o \
   diag/HEigensystem.o \
