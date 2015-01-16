@@ -2,7 +2,7 @@
 * this is the main program for the generated Fortran code,
 * it scans the command line and then invokes ParameterScan
 * this file is part of FormCalc
-* last modified 5 May 11 th
+* last modified 20 Jul 11 th
 
 
 #include "xsection.F"
@@ -29,14 +29,14 @@ c	call setfpu
 #endif
 
 	call getarg(0, dir)
-	next = lnblnk(dir) + 1
+	next = len_trim(dir) + 1
 
 	argc = 0
 1	call getarg(argc + 1, dir(next:))
 	if( dir(next:next) .eq. ':' ) then
 	  argc = argc + 1
 	  argv(argc) = dir(next+1:)
-	  next = next + lnblnk(dir(next:))
+	  next = next + len_trim(dir(next:))
 	  goto 1
 	endif
 
@@ -92,7 +92,7 @@ c	call setfpu
      &    //"serialfrom,to,step = range of serial numbers"/)
 
 999	call getarg(0, tmp)
-	print 99, tmp(1:lnblnk(tmp)), LEGS, LEGS
+	print 99, tmp(1:len_trim(tmp)), LEGS, LEGS
 	stop
 
 2	continue

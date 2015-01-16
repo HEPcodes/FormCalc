@@ -1,8 +1,8 @@
 (*
 
-This is FormCalc, Version 7.0
+This is FormCalc, Version 7.1
 Copyright by Thomas Hahn 1996-2011
-last modified 12 May 11 by Thomas Hahn
+last modified 18 Jul 11 by Thomas Hahn
 
 Release notes:
 
@@ -43,9 +43,9 @@ Have fun!
 *)
 
 Print[""];
-Print["FormCalc 7.0"];
+Print["FormCalc 7.1"];
 Print["by Thomas Hahn"];
-Print["last revised 11 May 11"]
+Print["last revised 18 Jul 11"]
 
 
 (* symbols from FeynArts *)
@@ -532,6 +532,13 @@ elimination, an integer between 1 and the number of legs substitutes
 the specified momentum in favour of the others, and Automatic tries all
 substitutions and chooses the one resulting in the fewest terms."
 
+AbbrScale::usage =
+"AbbrScale is an option of DeclareProcess.  The automatically introduced
+abbreviations are scaled by the square root of the provided factor for
+every momentum they contain.  Thus AbbrScale -> S makes the
+abbreviations dimensionless, which can be of advantage in some
+applications, e.g. the treatment of resonances."
+
 FormAmp::usage =
 "FormAmp[proc][amps] contains a preprocessed form of the FeynArts
 amplitudes amps for process proc, to be calculated by CalcFeynAmp."
@@ -608,11 +615,20 @@ larger than that integer are inserted only after the amplitude comes
 back from FORM (this is a workaround for the rare cases where the FORM
 code aborts due to very long insertions)."
 
+SortDen::usage =
+"SortDen is an option of CalcFeynAmp.  It determines whether the
+denominators of loop integrals shall be sorted.  This is usually done to
+reduce the number of loop integrals appearing in an amplitude."
+
 PaVeReduce::usage =
 "PaVeReduce is an option of CalcFeynAmp.  False retains the one-loop
 tensor-coefficient functions.  Raw reduces them to scalar integrals but
 keeps the Gram determinants in the denominator in terms of dot products. 
 True simplifies the Gram determinants using invariants."
+
+CancelQ2::usage =
+"CancelQ2 is an option of CalcFeynAmp.  It determines whether to cancel
+q^2-terms in the numerator against a denominator."
 
 OPP::usage =
 "OPP is an option of CalcFeynAmp.  It can take the three values False,
@@ -633,12 +649,19 @@ NoBracket::usage =
 specifies that sym1, sym2, ... are not collected inside a multiplication 
 bracket during the FORM calculation."
 
-AbbrScale::usage =
-"AbbrScale is an option of CalcFeynAmp.  The automatically introduced
-abbreviations are scaled by the square root of the provided factor for
-every momentum they contain.  Thus AbbrScale -> S makes the
-abbreviations dimensionless, which can be of advantage in some
-applications, e.g. the treatment of resonances."
+PreFunction::usage =
+"PreFunction is an option of CalcFeynAmp.  It specifies a function to be
+applied to each amplitude before any simplification is made.  This
+option is typically used to apply a function to all amplitudes in a
+calculation, even in indirect calls to CalcFeynAmp, such as through
+CalcRenConst."
+
+PostFunction::usage =
+"PostFunction is an option of CalcFeynAmp.  It specifies a function to
+be applied to each amplitude after all simplifications have been made. 
+This option is typically used to apply a function to all amplitudes in a
+calculation, even in indirect calls to CalcFeynAmp, such as through
+CalcRenConst."
 
 EditCode::usage =
 "EditCode is a debugging option of CalcFeynAmp, HelicityME, and
@@ -849,6 +872,11 @@ diagrams at all levels.  This makes it possible to locate the
 contribution of individual diagrams in the final CalcFeynAmp output. 
 TagDiagrams[amp, tag] uses tag rather than Diagram."
 
+TagCollect::usage =
+"TagCollect[expr, tag, f] collects expr with respect to powers of tag
+and applies f to the term linear in tag.  This function is typically
+used to apply f to a tagged part of an expression."
+
 Diagram::usage =
 "Diagram[number] is the identifier used to tag a single diagram by
 TagDiagrams."
@@ -866,6 +894,11 @@ IndexIf::usage =
 and b are not held unevaluated.  IndexIf[cond, a] is equivalent to
 IndexIf[cond, a, 0] and IndexIf[cond1, a1, cond2, a2, ...] is
 equivalent to IndexIf[cond1, a1, IndexIf[cond2, a2, ...]]."
+
+MapIf::usage =
+"MapIf[foo, i] maps foo over the expression parts only (i.e. not over
+the conditions) if i is an IndexIf expression.  For all other types of
+expressions, MapIf is equivalent to Map."
 
 IndexDiff::usage =
 "IndexDiff[i, j] is the same as 1 - IndexDelta[i, j]."
@@ -925,6 +958,11 @@ Divergence::usage =
 "Divergence represents the dimensionally regularized divergence
 2/(4 - D) of loop integrals.  It is used by the function
 UVDivergentPart."
+
+Finite::usage =
+"Finite is a symbol with which the local terms (resulting from D times
+divergent integral) are multiplied with.  This is to be able to remove
+these terms when evaluating the eps^-1 or eps^-2 coefficients."
 
 
 (* matrix elements *)
@@ -1496,7 +1534,7 @@ the file is split into several pieces."
 
 Begin["`Private`"]
 
-$FormCalc = 7.0
+$FormCalc = 7.1
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -1635,17 +1673,6 @@ _Kind = Sequence[]
 kind[h_[___], ___] = h
 
 kind[h_, ___] = h
-
-
-KindPattern[Tag[___, x_]] := KindPattern[x]
-
-KindPattern[h_ -> _] := kindPattern[h]
-
-_KindPattern = Sequence[]
-
-kindPattern[h_[___], ___] = _h
-
-kindPattern[h_, ___] = h
 
 
 Alt[l_List] := Alt@@ Flatten[l]
@@ -1852,8 +1879,10 @@ IndexIf[cond1_, IndexIf[cond2_, a_, 0], 0] := IndexIf[cond1 && cond2, a, 0]
 IndexIf[a___, i_IndexIf] := IndexIf[a, Sequence@@ i]
 
 
-MapIf[foo_, i_] := MapAt[foo, i,
+MapIf[foo_, i_IndexIf] := MapAt[foo, i,
   List/@ Append[Range[2, # - 1, 2], #]]& @ Length[i]
+
+MapIf[foo_, other_] := foo/@ other
 
 
 Off[Optional::opdef]
@@ -2002,24 +2031,12 @@ prop[p_, m__] := prop[-p, m] /; !FreeQ[p, -q1]
 prop[p_, m_, d___] := Den[p, m^2, d]
 
 
-Attributes[loop] = {Orderless}
+loop[a___, Den[p_, m_], b___, Den[p_, x_ m_], c___] :=
+  loop[a, Den[p, m] - Den[p, x m], b, c]/(m (1 - x))
 
-loop[a___, d_[p_, m1_], _[p_, m2_], b___] :=
-  (loop[a, d[p, m1], b] - loop[a, d[p, m2], b]) inv[Factor[m1 - m2]] /;
-  m1 =!= m2
+loop[a___, d1_Den - d2_Den, b___] := loop[a, d1, b] - loop[a, d2, b]
 
 loop[d__] := I Pi^2 intM[d]
-
-
-inv[t_Times] := inv/@ t
-
-inv[p_Plus] := inv[p, -p]
-
-inv[other_] := 1/other
-
-inv/: inv[p_, _] p_ = 1
-
-inv/: inv[_, p_] p_ = -1
 
 
 noncomm[p_Plus] := noncomm/@ p
@@ -2385,13 +2402,22 @@ MultiplyDiagrams[f_][FeynAmp[id_, q_, amp_]] :=
 
 i_MultiplyIns[ins_ -> more_] := i[ins] -> i/@ more
 
-MultiplyIns[f_, gen_, gm_][{r__, fac_}] := {r, f[gen, gm -> {r, fac}] fac}
+MultiplyIns[f_, gen_, gm_][{r__, fac_}] :=
+  {r, f[gen, Thread[gm -> {r, fac}]] fac}
 
 
 TagDiagrams[diags_, tag_:Diagram] :=
 Block[ {diag = 0},
   MultiplyDiagrams[tag[++diag]&][diags]
 ]
+
+
+TagCollect[a:Amp[_][__], tag__] := TagCollect[#, tag]&/@ a
+
+TagCollect[other_, tag_, foo_:Identity] :=
+  Collect[other, tag, foobar] /.
+    tag foobar[x_] :> foo[tag x] /.
+    foobar -> Identity
 
 
 IndexDim[Lorentz, i_] := i -> i
@@ -2427,10 +2453,14 @@ Options[CalcFeynAmp] = {
   FermionChains -> Weyl,
   FermionOrder -> Automatic,
   InsertionPolicy -> Default,
+  SortDen -> True,
   PaVeReduce -> False,
+  CancelQ2 -> True,
   OPP -> False,
   NoExpand -> {},
   NoBracket -> {},
+  PreFunction -> Identity,
+  PostFunction -> Identity,
   EditCode -> False,
   RetainFile -> False }
 
@@ -2439,13 +2469,14 @@ implies the use of Fierz identities which are in general not \
 applicable in D dimensions.  You know what you are doing."
 
 CalcFeynAmp[FormAmp[proc_][amp___], opt___Rule] :=
-Block[ {lev, dim, fchain, forder, inspol, pavered, opp, noexp,
-nobrk, edit, retain, uniq, vecs, legs = 0, ic, inssym, mmains, 
-indices = {}, ranges = {}, indsym, vars,
+Block[ {lev, dim, fchain, forder, inspol, sortden, pavered, cancelq2,
+opp, noexp, nobrk, pre, post, edit, retain, uniq, vecs, legs = 0,
+ic, inssym, mmains, indices = {}, ranges = {}, indsym, vars,
 hh, amps, res, traces = 0},
 
-  {lev, dim, fchain, forder, inspol, pavered, opp, noexp,
-    nobrk, edit, retain} = ParseOpt[CalcFeynAmp, opt];
+  {lev, dim, fchain, forder, inspol, sortden, pavered, cancelq2,
+    opp, noexp, nobrk, pre, post, edit, retain} =
+    ParseOpt[CalcFeynAmp, opt];
 
   If[ dim === 0,
     If[ Length[#] > 0, Message[CalcFeynAmp::ddim, #] ]&[{
@@ -2475,11 +2506,11 @@ hh, amps, res, traces = 0},
 
   _uniq = 0;
   vecs = {};
-  amps = LevelSelect[lev]@@@ ({amp} /.
-      {g:G[_][_][__][_] -> g,
-       IndexDelta -> idelta,
-       IndexEps -> ieps,
-       IndexSum -> psum[1]} //.
+  amps = LevelSelect[lev]@@@ (pre/@ {amp} /.
+      { g:G[_][_][__][_] -> g,
+        IndexDelta -> idelta,
+        IndexEps -> ieps,
+        IndexSum -> psum[1] } //.
       psum[n_] -> (Product[Fold[isum, #1, {##2}], {n}]&)) /.
     Cases[Thread[(#2&@@@ Level[proc, {2}]) -> Moms],
       _[_FourMomentum, _]] /.
@@ -2496,8 +2527,7 @@ hh, amps, res, traces = 0},
       ChiralityProjector[c_] :> ga[(13 - c)/2],
       (DiracSlash | DiracMatrix)[p_] :> MomThread[p, ga],
       NonCommutative -> noncomm,
-      FourVector -> fvec } /.
-    inv[p_, _] -> 1/p;
+      FourVector -> fvec };
 
   FormVectors = Join[FormVectors,
     Complement[Flatten[vecs], FormVectors]];
@@ -2542,7 +2572,9 @@ hh, amps, res, traces = 0},
 #define HaveFermions \"" <> ToBool[!FreeQ[amps, FermionChain]] <> "\"\n\
 #define FermionOrder \"" <> ToSeq[forder] <> "\"\n\
 #define FermionChains \"" <> ToForm[fchain] <> "\"\n\
+#define SortDen \"" <> ToBool[sortden] <> "\"\n\
 #define PaVeReduce \"" <> ToForm[pavered] <> "\"\n\
+#define CancelQ2 \"" <> ToForm[cancelq2] <> "\"\n\
 #define OPP \"" <> ToForm[opp] <> "\"\n\
 #define HaveSUN \"" <> ToBool[!FreeQ[amps, SUNObjs]] <> "\"\n\
 #define SUNN \"" <> ToForm[SUNN] <> "\"\n\n" <>
@@ -2574,7 +2606,7 @@ hh, amps, res, traces = 0},
     FormCode["CalcFeynAmp.frm"]];
   Close[hh];
 
-  Amp[CurrentProcess]@@ RunForm[mmains][edit, retain][[1]]
+  Amp[CurrentProcess]@@ post/@ RunForm[mmains][edit, retain][[1]]
 ]
 
 CalcFeynAmp[amps__, opt___Rule] := CalcFeynAmp[
@@ -3314,7 +3346,7 @@ Block[ {div = RCPattern[Divergence], foo = f},
 ]
 
 
-UVDivergentPart[expr_] := MapDiv[SubDiv, expr, 0]
+UVDivergentPart[expr_] := MapDiv[SubDiv, expr /. Finite -> 0, 0]
 
 
 UVSeries[expr_, pow_] := Coefficient[UVSeries[expr], Dminus4, pow]
@@ -4012,7 +4044,7 @@ FFList[Mat[m_] x_., array_] :=
    subroutines only when necessary. *)
 
 Category[rul_] := {{}, {}, rul} /;
-  !FreeQ[rul, Hel | e | ec | Spinor | DottedSpinor | q1]
+  !FreeQ[rul, Hel | e | ec | Spinor | DottedSpinor | q1 | MuTildeSq]
 
 Category[rul_] := {{}, rul, {}} /; !FreeQ[rul, angledep]
 
@@ -4496,20 +4528,24 @@ LIBS += $(LIB)\n\n"];
 \tinteger*8 helicities\n\
 \tinteger flags\n\n\
 #include \"" <> prefix <> "vars.h\"\n\n\
+* " <> prefix <> "BEGIN VARDECL\n\
 \tdouble precision " <> $SymbolPrefix <> "sumup\n\
 \texternal " <> $SymbolPrefix <> "sumup\n" <>
     VarDecl[hels, "integer"] <>
     ({"\n\tequivalence (Hel(", #2, "), ", #1, ")"}&)@@@ hels <>
     ({"\n", #4, #5}&)@@@ loops <>
     ({"\n\n\tdata ", ToString[Head[#]],
-      " /", ToString[Times@@ #], "*bogus/"}&)/@ mats <>
-    "\n\n"];
+      " /", ToString[Times@@ #], "*bogus/"}&)/@ mats <> "\n\
+* " <> prefix <> "END VARDECL\n"];
 
   (* b) definitions of the invariants *)
-  WriteExpr[hh, invs];
+  WriteExpr[hh, {"\
+* " <> prefix <> "BEGIN INVARIANTS\n",
+    invs, "\
+* " <> prefix <> "END INVARIANTS\n\n"}, Newline -> ""];
 
   (* c) calculation of the abbreviations *)
-  WriteString[hh, "\n\
+  WriteString[hh, "\
 #define RESET_IF if( btest(flags, 0) ) then\n\
 #define RESET_ENDIF endif\n\n\
 #define LOOP_IF if( btest(flags, 1) ) then\n\
@@ -4517,49 +4553,65 @@ LIBS += $(LIB)\n\n"];
 #define HEL_IF(i) if( btest(helicities, " <>
     ToString[5 legs + 2] <> "-5*i+Hel(i)) ) then\n\
 #define HEL_ENDIF(i) endif\n\n\
-\tRESET_IF\n" <>
+\tRESET_IF\n\
+* " <> prefix <> "BEGIN ABBR_S\n" <>
     Invoke@@ abbrmods[[1]] <> "\
+* " <> prefix <> "END ABBR_S\n\
 \tRESET_ENDIF\n\n\
-\tcall markcache\n\n" <>
-    Invoke@@ abbrmods[[2]] <> "\n\
+\tcall markcache\n\n\
+* " <> prefix <> "BEGIN ABBR_ANGLE\n" <>
+    Invoke@@ abbrmods[[2]] <> "\
+* " <> prefix <> "END ABBR_ANGLE\n\n\
+* " <> prefix <> "BEGIN RES_INI\n\
 \tresult(1) = 0\n\
-\tresult(2) = 0\n\n" <>
-    ({"\tdo ", #1, " = -2, 2\n\tHEL_IF(", #2, ")\n"}&)@@@ hels <> "\n" <>
-    Invoke@@ abbrmods[[3]] <>
-    ({#6, "\n\t", #2, " = 0", #7, "\n"}&)@@@ loops <>
-    "\n"];
+\tresult(2) = 0\n\
+* " <> prefix <> "END RES_INI\n\n\
+* " <> prefix <> "BEGIN HEL_LOOPS\n" <>
+    ({"\tdo ", #1, " = -2, 2\n\tHEL_IF(", #2, ")\n"}&)@@@ hels <> "\n\
+* " <> prefix <> "BEGIN ABBR_HEL\n" <>
+    Invoke@@ abbrmods[[3]] <> "\
+* " <> prefix <> "END ABBR_HEL\n\n\
+* " <> prefix <> "BEGIN FF_INI" <>
+    ({#6, "\n\t", #2, " = 0", #7, "\n"}&)@@@ loops <> "\
+* " <> prefix <> "END FF_INI\n\n"];
 
   (* d) calculation of the form factors *)
   If[ ntree =!= 0,
-    WriteString[hh,
+    WriteString[hh, "\
+* " <> prefix <> "BEGIN TREE\n" <>
       CallDecl[ToDoLoops[ffmods[[1]], Indices]] <>
       Cond[ TrueQ[treesq],
         "\n\tresult(1) = result(1) + " <> $SymbolPrefix <> "sumup(",
-          ntree[[3]] <> ", " <> ntree[[3]] <> ")\n" ]] ];
+          ntree[[3]] <> ", " <> ntree[[3]] <> ")" ] <> "\n\
+* " <> prefix <> "END TREE\n\n"] ];
 
   If[ nloop =!= 0,
-    WriteString[hh, "\n\tLOOP_IF\n" <>
+    WriteString[hh, "\
+\tLOOP_IF\n\
+* " <> prefix <> "BEGIN LOOP\n" <>
       CallDecl[ToDoLoops[ffmods[[2]], Indices]] <>
       Cond[ ntree =!= 0,
         "\n\tresult(2) = result(2) + 2*", $SymbolPrefix, "sumup(",
           nloop[[3]], ", ", ntree[[3]], ")" ] <>
       Cond[ ntree === 0 || TrueQ[loopsq],
         "\n\tresult(2) = result(2) + ", $SymbolPrefix, "sumup(",
-          nloop[[3]], ", ", nloop[[3]], ")" ] <>
-      "\n\tLOOP_ENDIF\n"] ];
+          nloop[[3]], ", ", nloop[[3]], ")" ] <> "\n\
+* " <>  prefix <> "END LOOP\n\
+\tLOOP_ENDIF\n\n"] ];
 
   (* e) wrapping up *)
   WriteString[hh,
-    ({"\n\tHEL_ENDIF(", #2, ")\n\tenddo"}&)@@@ Reverse[hels] <>
-    "\n\n\
+    ({"\tHEL_ENDIF(", #2, ")\n\tenddo\n"}&)@@@ Reverse[hels] <> "\
+* " <> prefix <> "END HEL_LOOPS\n\n\
 \tcall restorecache\n\n\
 #ifdef CHECK" <>
     ({"\n\tprint *, '", #, " =', ", #}&)/@
-      (ToString[#1]&)@@@ invs <> "\n\n\
+      (ToString[#1]&)@@@ invs <> "\n\
 \tprint *, 'tree =', result(1)\n\
 \tprint *, 'loop =', result(2)\n\
 \tstop\n\
-#endif\n\
+#endif\n\n\
+* " <> prefix <> "END SQUAREDME\n\
 \tend\n\n"];
 
   If[ ntree === 0, ntree = LoopComponents[Ctree, maxmat[Cloop]] ];
@@ -4597,8 +4649,12 @@ LIBS += $(LIB)\n\n"];
 
 (* renormalization constants *)
 
+rcpatt[_[_[_[h_[___]]], _]] := HoldPattern[_h]
+
+rcpatt[_[_[_[h_]], _]] := HoldPattern[h]
+
 RCPattern[other___] := Alt[{other,
-  Union[kindPattern[ #[[1, 1, 1]] ]&/@ DownValues[RenConst]]}]
+  Union[rcpatt/@ DownValues[RenConst]]}]
 
 
 Attributes[WithOpt] = {HoldFirst}
@@ -5108,6 +5164,8 @@ AddDebug[s_String, _] = s
 AddDebug[DoLoop[expr_, ind__], tag_] :=
   DoLoop[{DebugLine[#1&@@@ {ind}, tag], AddDebug[expr, tag]}, ind]
 
+AddDebug[i_IndexIf, tag_] := MapIf[AddDebug[#, tag]&, i]
+
 AddDebug[(ru:Rule | RuleAdd)[var_, expr_], tag_] :=
   {ru[var, expr], DebugLine[var, tag]}
 
@@ -5464,6 +5522,8 @@ Alfas2/: Alfas2/Alfas = Alfas
 
 Sq[SW] = SW2;
 Sq[CW] = CW2;
+CW2/: CW2 - 1 = -SW2;
+SW2/: SW2 - 1 = -CW2;
 CW2/: CW2 + SW2 = 1
 
 Sq[MZ] = MZ2;

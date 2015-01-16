@@ -2,7 +2,7 @@
 	logfile.c
 		I/O redirection for logfiles
 		this file is part of FormCalc
-		last modified 26 Feb 08 th
+		last modified 20 Jul 11 th
 */
 
 
@@ -13,15 +13,15 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-#ifdef UNDERSCORE
-#define openlog openlog_
-#define closelog closelog_
+#if NOUNDERSCORE
+#define openlog_ openlog
+#define closelog_ closelog
 #endif
 
 static int prevstdout;
 
 
-int openlog(const char *dir, const int *serial, const int len)
+int openlog_(const char *dir, const int *serial, const int len)
 {
   int logfile;
   struct stat filestat;
@@ -69,7 +69,7 @@ int openlog(const char *dir, const int *serial, const int len)
 }
 
 
-void closelog(void)
+void closelog_(void)
 {
   if( prevstdout ) {
     fchmod(1, 0644);

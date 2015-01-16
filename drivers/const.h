@@ -1,7 +1,7 @@
 * const.h
 * model-independent constants
 * this file is part of FormCalc
-* last modified 3 Dec 10 th
+* last modified 27 May 11 th
 
 
 	double precision pi, degree, sqrt2, hbar_c2
@@ -23,6 +23,6 @@
 	parameter (cI = (0D0, 1D0))
 
 	double precision Divergence, mudim, lambda
-	integer epscoeff
-	common /renorm/ Divergence, mudim, lambda, epscoeff
+	integer epscoeff, Finite
+	common /renorm/ Divergence, mudim, lambda, epscoeff, Finite
 

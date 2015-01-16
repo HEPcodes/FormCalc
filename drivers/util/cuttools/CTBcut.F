@@ -1,18 +1,24 @@
 * CTBcut.F
 * the FormCalc wrapper for the CutTools two-point function
 * this file is part of FormCalc
-* last modified 8 Dec 10 th
+* last modified 3 Aug 11 th
 
 
-	double complex function CTBcut(rank, num, p, m1, m2)
+	double complex function CTBcut(rank, num, numeps,
+     &    p, m1, m2)
 	implicit none
 	integer rank
-	external num
+	external num, numeps
 	integer*8 p
 	double precision m1, m2
 
 	double precision pj(0:3,2), mj(2)
+	logical stable, forcemp
+	double complex res(0:2), res1
 	external CTmpnum
+
+	double precision rootsvalue, muscale
+	common /cuttools_para/ rootsvalue, muscale
 
 	pj(0,1) = 0
 	pj(1,1) = 0
@@ -31,8 +37,9 @@
 	PRINT *, "m1=", m1
 	PRINT *, "m2=", m2
 
-	call ctsxcut(2, num, CTmpnum, rank, pj, mj, CTBcut)
-c	call ctsxcut(2, num, CTmpnum, 2, pj, mj, CTBcut)
+	call ctsxcut(rootsvalue, muscale, 2, num, CTmpnum,
+     &    rank, pj, mj, res, res1, stable, forcemp)
+	CTBcut = res(0)
 	PRINT *, "CTBcut=", CTBcut
 	end
 

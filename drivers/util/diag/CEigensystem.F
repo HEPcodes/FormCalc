@@ -3,9 +3,9 @@
 * code adapted from the "Handbook" routines for complex A
 * (Wilkinson, Reinsch: Handbook for Automatic Computation, p. 202)
 * this file is part of the Diag library
-* last modified 25 Nov 09 th
+* last modified 1 Aug 11 th
 
-#include "diag.h"
+#include "diag-f.h"
 
 
 ************************************************************************
@@ -21,16 +21,16 @@
 
 	integer p, q, j
 	double precision red, off, thresh
-	double complex delta, t, invc, sx, sy, tx, ty
+	double complex delta, t, s, invc, sx, sy, tx, ty
 	double complex x, y
 	double complex ev(2,MAXDIM)
 
 	integer sweep
 	common /nsweeps/ sweep
 
-	double precision sq
+	double precision Sq
 	double complex c
-	sq(c) = DBLE(c*DCONJG(c))
+	Sq(c) = DBLE(c*DCONJG(c))
 
 	if( n .gt. MAXDIM ) then
 	  print *, "Dimension too large"
@@ -57,7 +57,7 @@
 	  off = 0
 	  do q = 2, n
 	    do p = 1, q - 1
-	      off = off + sq(A(p,q)) + sq(A(q,p))
+	      off = off + Sq(A(p,q)) + Sq(A(q,p))
 	    enddo
 	  enddo
 	  if( .not. off .gt. EPS ) goto 1
@@ -67,56 +67,54 @@
 
 	  do q = 2, n
 	    do p = 1, q - 1
-	      off = sq(A(p,q)) + sq(A(q,p))
+	      off = Sq(A(p,q)) + Sq(A(q,p))
 	      if( sweep .gt. 4 .and. off .lt.
-     &              EPS*max(sq(ev(2,p)), sq(ev(2,q))) ) then
+     &              EPS*(Sq(ev(2,p)) + Sq(ev(2,q))) ) then
 	        A(p,q) = 0
 	        A(q,p) = 0
-	      else
-	        if( off .gt. thresh ) then
-	          delta = A(p,q)*A(q,p)
-	          x = .5D0*(ev(2,p) - ev(2,q))
-	          y = sqrt(x**2 + delta)
-	          t = x - y
-	          x = x + y
-	          if( abs(t) .lt. abs(x) ) t = x
+	      else if( off .gt. thresh ) then
+	        delta = A(p,q)*A(q,p)
+	        x = .5D0*(ev(2,p) - ev(2,q))
+	        y = sqrt(x**2 + delta)
+	        t = x - y
+	        s = x + y
+	        if( Sq(t) .lt. Sq(s) ) t = s
 
-	          t = 1/t
-	          delta = delta*t
-	          ev(1,p) = ev(1,p) + delta
-	          ev(2,p) = d(p) + ev(1,p)
-	          ev(1,q) = ev(1,q) - delta
-	          ev(2,q) = d(q) + ev(1,q)
+	        t = 1/t
+	        delta = delta*t
+	        ev(1,p) = ev(1,p) + delta
+	        ev(2,p) = d(p) + ev(1,p)
+	        ev(1,q) = ev(1,q) - delta
+	        ev(2,q) = d(q) + ev(1,q)
 
-	          invc = sqrt(delta*t + 1)
-	          x = t/invc
-	          t = t/(invc + 1)
-	          sx = x*Element(A,p,q)
-	          ty = t*Element(A,p,q)
-	          sy = x*Element(A,q,p)
-	          tx = t*Element(A,q,p)
+	        invc = sqrt(delta*t + 1)
+	        s = t/invc
+	        t = t/(invc + 1)
+	        sx = s*A(p,q)
+	        ty = t*A(p,q)
+	        sy = s*A(q,p)
+	        tx = t*A(q,p)
 
-	          do j = 1, n
-	            x = Element(A,j,p)
-	            y = Element(A,j,q)
-	            Element(A,j,p) = x + sy*(y - ty*x)
-	            Element(A,j,q) = y - sx*(x + tx*y)
-	            x = Element(A,p,j)
-	            y = Element(A,q,j)
-	            Element(A,p,j) = x + sx*(y - tx*x)
-	            Element(A,q,j) = y - sy*(x + ty*y)
-	          enddo
+	        do j = 1, n
+	          x = A(j,p)
+	          y = A(j,q)
+	          A(j,p) = x + sy*(y - ty*x)
+	          A(j,q) = y - sx*(x + tx*y)
+	          x = A(p,j)
+	          y = A(q,j)
+	          A(p,j) = x + sx*(y - tx*x)
+	          A(q,j) = y - sy*(x + ty*y)
+	        enddo
 
-	          A(p,q) = 0
-	          A(q,p) = 0
+	        A(p,q) = 0
+	        A(q,p) = 0
 
-	          do j = 1, n
-	            x = Element(U,p,j)
-	            y = Element(U,q,j)
-	            Element(U,p,j) = x + sx*(y - tx*x)
-	            Element(U,q,j) = y - sy*(x + ty*y)
-	          enddo
-	        endif
+	        do j = 1, n
+	          x = U(p,j)
+	          y = U(q,j)
+	          U(p,j) = x + sx*(y - tx*x)
+	          U(q,j) = y - sy*(x + ty*y)
+	        enddo
 	      endif
 	    enddo
 	  enddo
@@ -147,9 +145,9 @@
 	    d(j) = d(p)
 	    d(p) = t
 	    do q = 1, n
-	      x = Element(U,p,q)
-	      Element(U,p,q) = Element(U,j,q)
-	      Element(U,j,q) = x
+	      x = U(p,q)
+	      U(p,q) = U(j,q)
+	      U(j,q) = x
 	    enddo
 	  endif
 	enddo

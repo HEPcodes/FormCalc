@@ -1,3 +1,49 @@
+4 Aug 11:
+
+- Updated the CutTools drivers to match invocations in the latest version
+  of CutTools.
+
+- Updated the diagonalization routines to the latest version.
+
+
+20 Jul 11:
+
+- Fixed problem with escaped backslashes in ReadForm, as in \\[Eta].
+
+- Added CalcFeynAmp option CancelQ2 to be able to switch off cancellation
+  of q^2-terms in the numerators.
+
+
+11 Jul 11:
+
+- Refitted mktm with argc and argv arguments.
+
+- mktm now captures stdout and sends it to Mathematica.
+
+
+22 Jun 11:
+
+- Added tags (comments) to SquaredME.F for easier sed editing.
+
+
+10 Jun 11:
+
+- Fixed handling of Mathematica's List in FORM.
+
+
+30 May 11:
+
+- Added PreFunction and PostFunction options to CalcFeynAmp.
+
+- Added TagCollect function.
+
+
+27 May 11:
+
+- Added SortDen option to CalcFeynAmp, this is currently still
+  needed for Samurai but may generally be useful for testing.
+
+
 12 May 11:
 
 - Fixed sign in PaVeReduce code.  (Thanks to A. Neiser.)
@@ -35,8 +81,8 @@
 - Fixed quotes around `m' in PolarizationSum.frm, re-enabling
   detection of massless legs.
 
-- Added optional 'colon arguments' to main.F, these are passed
-  to ModelDefaults.
+- Added optional 'colon arguments' (:arg1 :arg2) to main.F, these are 
+  passed to ModelDefaults and LumiDefaults.
 
 
 1 Apr 11:

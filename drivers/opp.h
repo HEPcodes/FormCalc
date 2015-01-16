@@ -1,7 +1,7 @@
 * opp.h
 * declarations for the OPP routines
 * this file is part of FormCalc
-* last modified 6 Dec 10 th
+* last modified 4 Aug 11 th
 
 
 #ifndef Acut
@@ -12,13 +12,15 @@
 #define Dcut SADcut
 #define Ecut SAEcut
 #define Fcut SAFcut
-#else
+#elif defined CUTTOOLS
 #define Acut CTAcut
 #define Bcut CTBcut
 #define Ccut CTCcut
 #define Dcut CTDcut
 #define Ecut CTEcut
 #define Fcut CTFcut
+#else
+#error Neither SAMURAI nor CUTTOOLS defined
 #endif
 #endif
 

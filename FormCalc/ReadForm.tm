@@ -49,7 +49,7 @@
 	ReadForm.tm
 		reads FORM output back into Mathematica
 		this file is part of FormCalc
-		last modified 1 Apr 11 th
+		last modified 20 Jul 11 th
 
 Note: FORM code must have
 	1. #- (no listing),
@@ -677,7 +677,6 @@ nextline:
 
       case '[':
         *di++ = '\\';
-        *di++ = '\\';
         break;
 
       case ';':
@@ -785,6 +784,14 @@ static int ToMma(cint hw, string expr)
     case '$':
       if( *r == c ) ++r, c = '_';
       break;
+    case '{':
+      c = '(', br[b++] = ')';
+      if( b == 1 ) goto send;
+      *s++ = 'L';
+      *s++ = 'i';
+      *s++ = 's';
+      *s++ = 't';
+      break;
     case '[':
       if( r[-2] == '\\' ) verb = 256, br[b++] = ']';
       else c = '(', br[b++] = ')';
@@ -796,6 +803,7 @@ static int ToMma(cint hw, string expr)
       verb = 0;
     case ']':
     case ')':
+    case '}':
       if( b > 0 ) c = br[--b];
       break;
     case '\\':
@@ -803,9 +811,9 @@ static int ToMma(cint hw, string expr)
       c = Strtol(r, &r, 8);
       break;
     case ',':
-      if( decl | b ) break;
+      if( decl | (b - 1) ) break;
       *s++ = '\n';
-    case '{':
+send:
       if( debug & 2 ) {
         fprintf(stddeb, DEBUG "from mma (%lu bytes)" RESET,
           (unsigned long)(s - expr));
@@ -898,7 +906,6 @@ loop:
         if( b > 0 ) c = br[--b];
         break;
       case '[':
-        expr[w++] = '\\';
         expr[w++] = '\\';
         verb = 256;
         break;

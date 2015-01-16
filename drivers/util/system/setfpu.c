@@ -4,7 +4,7 @@
 		program) rather than deliver NaNs
 		necessary only for g77/gfortran
 		this file is part of FormCalc
-		last modified 12 Dec 08 th
+		last modified 20 Jul 11 th
 */
 
 
@@ -18,11 +18,11 @@ int feenableexcept(int excepts);
 #endif
 #endif
 
-#if UNDERSCORE
-#define setfpu setfpu_
+#if NOUNDERSCORE
+#define setfpu_ setfpu
 #endif
 
-void setfpu(void)
+void setfpu_(void)
 {
 #ifdef _GNU_SOURCE
   feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);

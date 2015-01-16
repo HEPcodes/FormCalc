@@ -1,7 +1,7 @@
 * xsection.F
 * routines to compute the cross-section
 * this file is part of FormCalc
-* last modified 5 May 11 th
+* last modified 3 Aug 11 th
 
 #include "decl.h"
 
@@ -30,6 +30,7 @@
 #include "xsection.h"
 
 #if U77EXT
+#define len_trim lnblnk
 	integer lnblnk
 	external lnblnk
 #endif
@@ -48,7 +49,7 @@
 	integer type(LEGS)
 	data type /TYPES/
 
-	if( lnblnk(pol) .ne. LEGS ) then
+	if( len_trim(pol) .ne. LEGS ) then
 	  fail = 1
 	  return
 	endif
@@ -76,7 +77,7 @@
 	  endif
 
 	  if( bits .eq. 0 ) then
-	    Error("Invalid polarization for leg "/ /Digit(i))
+	    Error(fail, "Invalid polarization for leg "/ /Digit(i))
 	    return
 	  endif
 
@@ -112,6 +113,19 @@
 	sqrtSinvalid = 1
 
 	call ltini
+
+#ifdef CUTTOOLS
+* args are:
+* 1. rootsvalue = arbitrary OPP scale of the order of the scale of the process
+* 2. limitvalue = upper limit of precision above which the mp routines activate
+* 3. idig       = max number of digits of the mp routines
+* 4. scaloop    = scalar integrals (1 is LoopTools)
+* 5. muscale    = the renormalization scale
+* 6. thrs       = internal collinear IR threshold for avh_olo
+	rootsvalue = sqrtSfrom
+	muscale = getmudim()
+	call ctsinit(rootsvalue, 1D-2, 0, 1, muscale, 1D-6)
+#endif
 
 #ifdef SAMURAI
 * args are:
@@ -332,10 +346,13 @@
 	lambda = getlambda()
 	if( lambda .eq. -1 ) then
 	  epscoeff = -1
+	  Finite = 0
 	else if( lambda .eq. -2 ) then
 	  epscoeff = -2
+	  Finite = 0
 	else
 	  epscoeff = 0
+	  Finite = 1
 	endif
 
 	call KinIni(fail)
@@ -663,7 +680,7 @@
 	if( fail .gt. 0 ) then
 	  Warning("Failed to reach the desired accuracy")
 	else if( fail .lt. 0 ) then
-	  Error("Integration error")
+	  Error(fail, "Integration error")
 	endif
 
 100	format(I2, G24.15, " +- ", G24.15, "    p = ", F6.3)

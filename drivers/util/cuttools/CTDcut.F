@@ -1,19 +1,24 @@
 * CTDcut.F
 * the FormCalc wrapper for the CutTools four-point function
 * this file is part of FormCalc
-* last modified 8 Dec 10 th
+* last modified 3 Aug 11 th
 
 
-	double complex function CTDcut(rank, num,
+	double complex function CTDcut(rank, num, numeps,
      &    p1, p2, p3, m1, m2, m3, m4)
 	implicit none
 	integer rank
-	external num
+	external num, numeps
 	integer*8 p1, p2, p3
 	double precision m1, m2, m3, m4
 
 	double precision pj(0:3,4), mj(4)
+	logical stable, forcemp
+	double complex res(0:2), res1
 	external CTmpnum
+
+	double precision rootsvalue, muscale
+	common /cuttools_para/ rootsvalue, muscale
 
 	pj(0,1) = 0
 	pj(1,1) = 0
@@ -46,8 +51,9 @@
 	PRINT *, "m3=", m3
 	PRINT *, "m4=", m4
 
-	call ctsxcut(4, num, CTmpnum, rank, pj, mj, CTDcut)
-c	call ctsxcut(4, num, CTmpnum, 4, pj, mj, CTDcut)
+	call ctsxcut(rootsvalue, muscale, 4, num, CTmpnum,
+     &    rank, pj, mj, res, res1, stable, forcemp)
+	CTDcut = res(0)
 	PRINT *, "CTDcut=", CTDcut
 	end
 

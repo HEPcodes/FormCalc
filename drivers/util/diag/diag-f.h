@@ -1,7 +1,7 @@
-* diag.h
+* diag-f.h
 * global declarations for the Diag routines
 * this file is part of Diag
-* last modified 23 Nov 07 th
+* last modified 4 Aug 11 th
 
 
 * The maximum dimension of a matrix, needed for allocating internal
@@ -21,23 +21,4 @@
 #define SYM_EPS 2D0**(-103)
 
 #define DBL_EPS 2D0**(-52)
-
-
-* The transposed versions are needed for C, which has row-major
-* matrix access.
-
-#ifdef TRANSPOSE
-
-#define Element(A,i,j) A(j,i)
-#define HEigensystem HEigensystemT
-#define SEigensystem SEigensystemT
-#define CEigensystem CEigensystemT
-#define TakagiFactor TakagiFactorT
-#define SVD SVDT
-
-#else
-
-#define Element(A,i,j) A(i,j)
-
-#endif
 

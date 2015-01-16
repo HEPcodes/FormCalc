@@ -1,7 +1,7 @@
 * util.h
 * prototypes for the functions in util.a
 * this file is part of FormCalc
-* last modified 8 Dec 10 th
+* last modified 3 Aug 11 th
 
 
 	double precision ThreeMom
@@ -28,6 +28,9 @@
 
 	double precision momspec(16,LEGS)
 	common /momenta/ momspec
+
+	double precision rootsvalue, muscale
+	common /cuttools_para/ rootsvalue, muscale
 
 	integer*8 by
 	parameter (by = 256)
@@ -63,7 +66,7 @@
 #define Polar(r,theta) r*exp(cI*degree*theta)
 #define Sq(c) DBLE((c)*DCONJG(c))
 
-#define Error(msg) call m_(fail, __LINE__, __FILE__, msg)
+#define Error(err,msg) call m_(err, __LINE__, __FILE__, msg)
 #define Warning(msg) call m_(0, 0, __FILE__, msg)
 #define INFO print *,
 #define DEB print *,

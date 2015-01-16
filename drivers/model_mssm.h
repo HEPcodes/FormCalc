@@ -1,7 +1,7 @@
 * model_mssm.h
 * declarations for model_mssm.F
 * this file is part of FormCalc
-* last modified 8 Feb 11 th
+* last modified 18 May 11 th
 
 
 #include "model_sm.h"
@@ -19,7 +19,7 @@
 	double precision CB, SB, TB, CB2, SB2, TB2, C2B, S2B
 	double precision CA, SA, CA2, SA2, C2A, S2A
 	double precision CAB, SAB, CBA, SBA, CBA2, SBA2
-	logical mssm_digest
+	double precision AlfasMT
 
 	common /mssm_para/ UCha, VCha, ZNeu
 	common /mssm_para/ USf, UCSf, UUSf
@@ -34,7 +34,7 @@
 	common /mssm_para/ CB, SB, TB, CB2, SB2, TB2, C2B, S2B
 	common /mssm_para/ CA, SA, CA2, SA2, C2A, S2A
 	common /mssm_para/ CAB, SAB, CBA, SBA, CBA2, SBA2
-	common /mssm_para/ mssm_digest
+	common /mssm_para/ AlfasMT
 
 #ifndef USfC
 #define USfC(i,j,t,g) DCONJG(USf(i,j,t,g))

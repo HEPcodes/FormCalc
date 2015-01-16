@@ -2,7 +2,7 @@
 * all parameters for the THDM are initialized here
 * this file is part of FormCalc
 * Abdesslam Arhrib, 2 Jun 03
-* last modified 9 Feb 11 th
+* last modified 13 May 11 th
 
 
 * The input parameters for model_thdm are:
@@ -107,7 +107,7 @@
 
 	if( max(abs(Lambda1), abs(Lambda2), abs(Lambda3),
      &          Lambda4, abs(Lambda5), Lambda6) .gt. 8*pi ) then
-	  Error("Perturbativity violated")
+	  Error(fail, "Perturbativity violated")
 	  return
 	endif
 
@@ -121,7 +121,7 @@
      &                   MHp2/(MHp2 - MHH2)*log(MHp2/MHH2)) )
 
 	  if( DeltaRho .gt. DeltaRho_UPPERBOUND ) then
-	    Error("DeltaRho > DeltaRho_UPPERBOUND")
+	    Error(fail, "DeltaRho > DeltaRho_UPPERBOUND")
 	    return
 	  endif
 	endif

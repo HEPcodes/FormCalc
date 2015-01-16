@@ -1,19 +1,24 @@
 * CTCcut.F
 * the FormCalc wrapper for the CutTools three-point function
 * this file is part of FormCalc
-* last modified 8 Dec 10 th
+* last modified 3 Aug 11 th
 
 
-	double complex function CTCcut(rank, num,
+	double complex function CTCcut(rank, num, numeps,
      &    p1, p2, m1, m2, m3)
 	implicit none
 	integer rank
-	external num
+	external num, numeps
 	integer*8 p1, p2
 	double precision m1, m2, m3
 
 	double precision pj(0:3,3), mj(3)
+	logical stable, forcemp
+	double complex res(0:2), res1
 	external CTmpnum
+
+	double precision rootsvalue, muscale
+	common /cuttools_para/ rootsvalue, muscale
 
 	pj(0,1) = 0
 	pj(1,1) = 0
@@ -39,8 +44,9 @@
 	PRINT *, "m2=", m2
 	PRINT *, "m3=", m3
 
-	call ctsxcut(3, num, CTmpnum, rank, pj, mj, CTCcut)
-c	call ctsxcut(3, num, CTmpnum, 3, pj, mj, CTCcut)
+	call ctsxcut(rootsvalue, muscale, 3, num, CTmpnum,
+     &    rank, pj, mj, res, res1, stable, forcemp)
+	CTCcut = res(0)
 	PRINT *, "Ccut=", CTCcut
 	end
 

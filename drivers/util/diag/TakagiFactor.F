@@ -3,9 +3,9 @@
 * code adapted from the "Handbook" routines
 * (Wilkinson, Reinsch: Handbook for Automatic Computation, p. 202)
 * this file is part of the Diag library
-* last modified 17 Feb 10 th
+* last modified 1 Aug 11 th
 
-#include "diag.h"
+#include "diag-f.h"
 
 
 ************************************************************************
@@ -30,9 +30,9 @@
 	integer sweep
 	common /nsweeps/ sweep
 
-	double precision sq
+	double precision Sq
 	double complex c
-	sq(c) = DBLE(c*DCONJG(c))
+	Sq(c) = DBLE(c*DCONJG(c))
 
 	if( n .gt. MAXDIM ) then
 	  print *, "Dimension too large"
@@ -58,7 +58,7 @@
 	  off = 0
 	  do q = 2, n
 	    do p = 1, q - 1
-	      off = off + sq(Element(A,p,q))
+	      off = off + Sq(A(p,q))
 	    enddo
 	  enddo
 	  if( .not. off .gt. SYM_EPS ) goto 1
@@ -68,66 +68,63 @@
 
 	  do q = 2, n
 	    do p = 1, q - 1
-	      off = sq(Element(A,p,q))
-	      sqp = sq(ev(2,p))
-	      sqq = sq(ev(2,q))
+	      off = Sq(A(p,q))
+	      sqp = Sq(ev(2,p))
+	      sqq = Sq(ev(2,q))
 	      if( sweep .gt. 4 .and.
-     &            off .lt. SYM_EPS*max(sqp, sqq) ) then
-	        Element(A,p,q) = 0
-	      else
-	        if( off .gt. thresh ) then
-	          t = .5D0*abs(sqp - sqq)
-	          if( t .eq. 0 ) then
-	            f = 1
-	            if( sqp .ne. 0 ) f = sqrt(ev(2,q)/ev(2,p))
-	          else
-	            f = sign(1D0, sqp - sqq)*
-     &                (ev(2,q)*DCONJG(Element(A,p,q)) +
-     &                  DCONJG(ev(2,p))*Element(A,p,q))
-	          endif
-	          t = t + sqrt(t**2 + DBLE(f)**2 + DIMAG(f)**2)
-	          f = f/t
-
-	          ev(1,p) = ev(1,p) + Element(A,p,q)*DCONJG(f)
-	          ev(2,p) = A(p,p) + ev(1,p)
-	          ev(1,q) = ev(1,q) - Element(A,p,q)*f
-	          ev(2,q) = A(q,q) + ev(1,q)
-
-	          t = DBLE(f)**2 + DIMAG(f)**2
-	          invc = sqrt(t + 1)
-	          f = f/invc
-	          t = t/(invc*(invc + 1))
-
-	          do j = 1, p - 1
-	            x = Element(A,j,p)
-	            y = Element(A,j,q)
-	            Element(A,j,p) = x + (DCONJG(f)*y - t*x)
-	            Element(A,j,q) = y - (f*x + t*y)
-	          enddo
-
-	          do j = p + 1, q - 1
-	            x = Element(A,p,j)
-	            y = Element(A,j,q)
-	            Element(A,p,j) = x + (DCONJG(f)*y - t*x)
-	            Element(A,j,q) = y - (f*x + t*y)
-	          enddo
-
-	          do j = q + 1, n
-	            x = Element(A,p,j)
-	            y = Element(A,q,j)
-	            Element(A,p,j) = x + (DCONJG(f)*y - t*x)
-	            Element(A,q,j) = y - (f*x + t*y)
-	          enddo
-
-	          Element(A,p,q) = 0
-
-	          do j = 1, n
-	            x = Element(U,p,j)
-	            y = Element(U,q,j)
-	            Element(U,p,j) = x + (f*y - t*x)
-	            Element(U,q,j) = y - (DCONJG(f)*x + t*y)
-	          enddo
+     &            off .lt. SYM_EPS*(sqp + sqq) ) then
+	        A(p,q) = 0
+	      else if( off .gt. thresh ) then
+	        t = .5D0*abs(sqp - sqq)
+	        if( t .gt. 0 ) then
+	          f = sign(1D0, sqp - sqq)*
+     &              (ev(2,q)*DCONJG(A(p,q)) + DCONJG(ev(2,p))*A(p,q))
+	        else
+	          f = 1
+	          if( sqp .ne. 0 ) f = sqrt(ev(2,q)/ev(2,p))
 	        endif
+	        t = t + sqrt(t**2 + Sq(f))
+	        f = f/t
+
+	        ev(1,p) = ev(1,p) + A(p,q)*DCONJG(f)
+	        ev(2,p) = A(p,p) + ev(1,p)
+	        ev(1,q) = ev(1,q) - A(p,q)*f
+	        ev(2,q) = A(q,q) + ev(1,q)
+
+	        t = Sq(f)
+	        invc = sqrt(t + 1)
+	        f = f/invc
+	        t = t/(invc*(invc + 1))
+
+	        do j = 1, p - 1
+	          x = A(j,p)
+	          y = A(j,q)
+	          A(j,p) = x + (DCONJG(f)*y - t*x)
+	          A(j,q) = y - (f*x + t*y)
+	        enddo
+
+	        do j = p + 1, q - 1
+	          x = A(p,j)
+	          y = A(j,q)
+	          A(p,j) = x + (DCONJG(f)*y - t*x)
+	          A(j,q) = y - (f*x + t*y)
+	        enddo
+
+	        do j = q + 1, n
+	          x = A(p,j)
+	          y = A(q,j)
+	          A(p,j) = x + (DCONJG(f)*y - t*x)
+	          A(q,j) = y - (f*x + t*y)
+	        enddo
+
+	        A(p,q) = 0
+
+	        do j = 1, n
+	          x = U(p,j)
+	          y = U(q,j)
+	          U(p,j) = x + (f*y - t*x)
+	          U(q,j) = y - (DCONJG(f)*x + t*y)
+	        enddo
 	      endif
 	    enddo
 	  enddo
@@ -149,7 +146,7 @@
 	  if( d(p) .gt. DBL_EPS .and. d(p) .ne. DBLE(A(p,p)) ) then
 	    f = sqrt(A(p,p)/d(p))
 	    do q = 1, n
-	      Element(U,p,q) = Element(U,p,q)*f
+	      U(p,q) = U(p,q)*f
 	    enddo
 	  endif
 	enddo
@@ -172,9 +169,9 @@
 	    d(j) = d(p)
 	    d(p) = t
 	    do q = 1, n
-	      x = Element(U,p,q)
-	      Element(U,p,q) = Element(U,j,q)
-	      Element(U,j,q) = x
+	      x = U(p,q)
+	      U(p,q) = U(j,q)
+	      U(j,q) = x
 	    enddo
 	  endif
 	enddo

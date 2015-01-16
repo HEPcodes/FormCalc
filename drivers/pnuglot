@@ -3,7 +3,7 @@
 #	pnuglot
 #		makes a plotting script from data files
 #		this file is part of FormCalc
-#		last modified 30 Mar 11 th
+#		last modified 28 Jul 11 th
 
 # This program works in two steps:
 #
@@ -83,7 +83,7 @@ set rmargin 4
 set tmargin 0
 set bmargin 2
 
-set size 1,1.3
+set size 1,1.1
 set key spacing 2
 set tics scale .6
 

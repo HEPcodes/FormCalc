@@ -3,7 +3,7 @@
 		reorders data from main.F-output for easier access
 		e.g. with gnuplot
 		this file is part of FormCalc
-		last modified 14 Jul 10 th
+		last modified 13 Jul 11 th
 
 Syntax: reorder var1 var2 var3... < infile > outfile
 
@@ -73,9 +73,9 @@ int main(int argc, char **argv)
   char *para[ARGC];
   char line[LINE];
   char prefix[2*LINE];
-  char comment[BLOCK], *c;
-  Group *anchor = NULL, *cur;
-  unsigned plen;
+  char comment[BLOCK], *c = comment;
+  Group *anchor = NULL, *cur = NULL;
+  int plen = 0;
 
   if( argc < 2 ) {
     fprintf(stderr, "Usage:  %s para1 para2 ... < infile > outfile\n\n"

@@ -1,7 +1,7 @@
 # makefile.in
 # makefile template used by configure
 # this file is part of FormCalc
-# last modified 6 Dec 10 th
+# last modified 22 Jul 11 th
 
 # Note: make permanent changes only in makefile.in,
 # changes in makefile will be overwritten by configure.
@@ -79,10 +79,11 @@ ifeq ($(MMA), 0)
 %$(EXE):: $(SRC)/%.F %.d $(SRC)/mktm
 	$(SRC)/mktm $<
 	$(FC) $(FFLAGS) $(DEF)MMA $(DEF)PREFIX=$(PREFIX) -c $<
-	CC="$(SRC)/tools/fcc" CXX="$(SRC)/tools/fcc" REALCC="$(CC)" \
+	CC="$(SRC)/tools/fcc" REALCC="$(CC) $(CFLAGS)" \
+	CXX="$(SRC)/tools/f++" REALCC="$(CXX) $(CXXFLAGS)" \
 	  PATH="$(PATH):$(SRC)/tools" \
 	  mcc $(MCFLAGS) -o $@ $*.tm $*.o $(LIBS) $(STDLIBS) $(LDFLAGS)
-	-$(RM) $*.o $*.tm $*.tm.c
+	-$(RM) $*.o $*.tm.c
 else
 %$(EXE):: $(SRC)/%.F %.d
 	$(FC) $(FFLAGS) $(DEF)PREFIX=$(PREFIX) -o $@ $< $(LIBS) $(STDLIBS)

@@ -1,19 +1,24 @@
 * CTEcut.F
 * the FormCalc wrapper for the CutTools five-point function
 * this file is part of FormCalc
-* last modified 8 Dec 10 th
+* last modified 3 Aug 11 th
 
 
-	double complex function CTEcut(rank, num,
+	double complex function CTEcut(rank, num, numeps,
      &    p1, p2, p3, p4, m1, m2, m3, m4, m5)
 	implicit none
 	integer rank
-	external num
+	external num, numeps
 	integer*8 p1, p2, p3, p4
 	double precision m1, m2, m3, m4, m5
 
 	double precision pj(0:3,5), mj(5)
+	logical stable, forcemp
+	double complex res(0:2), res1
 	external CTmpnum
+
+	double precision rootsvalue, muscale
+	common /cuttools_para/ rootsvalue, muscale
 
 	pj(0,1) = 0
 	pj(1,1) = 0
@@ -30,7 +35,8 @@
 	mj(4) = m4
 	mj(5) = m5
 
-	call ctsxcut(5, num, CTmpnum, rank, pj, mj, CTEcut)
-c	call ctsxcut(5, num, CTmpnum, 5, pj, mj, CTEcut)
+	call ctsxcut(rootsvalue, muscale, 5, num, CTmpnum,
+     &    rank, pj, mj, res, res1, stable, forcemp)
+	CTEcut = res(0)
 	end
 

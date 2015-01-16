@@ -1,7 +1,7 @@
 /*
 	stddecl.h
 		Type declarations common to all Cuba routines
-		last modified 6 Dec 10 th
+		last modified 20 Jul 11 th
 */
 
 
@@ -159,10 +159,10 @@ typedef struct {
 } RNGState;
 
 
-#ifdef UNDERSCORE
-#define SUFFIX(s) s##_
-#else
+#if NOUNDERSCORE
 #define SUFFIX(s) s
+#else
+#define SUFFIX(s) s##_
 #endif
 
 #define EXPORT(s) EXPORT_(PREFIX(s))

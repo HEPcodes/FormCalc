@@ -97,7 +97,7 @@ $(LIB): $(LIB)($(OBJS))
 $(LIB)($(univariate)/Gauss.o $(univariate)/Patterson.o): $(univariate)/config.h
 
 $(LIB)($(diag)/HEigensystem.o $(diag)/SEigensystem.o $(diag)/CEigensystem.o \
-  $(diag)/TakagiFactor.o $(diag)/SVD.o): $(diag)/diag.h
+  $(diag)/TakagiFactor.o $(diag)/SVD.o): $(diag)/diag-f.h
 
 $(LIB)($(samurai)/SAAcut.o $(samurai)/SABcut.o $(samurai)/SACcut.o \
   $(samurai)/SADcut.o $(samurai)/SAEcut.o $(samurai)/SAFcut.o): $(samurai)/SA.h

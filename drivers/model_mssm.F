@@ -2,7 +2,7 @@
 * all parameters for the MSSM are initialized here
 * this file is part of FormCalc
 * Christian Schappacher, 17 Feb 99
-* last modified 5 May 11 th
+* last modified 18 May 11 th
 
 
 * The input parameters for model_mssm are:
@@ -182,13 +182,12 @@
 
 #include "decl.h"
 
-	double precision alphasPDF
-	external alphasPDF
+	integer nf
 
 	call SMConstIni(fail)
 	if( fail .ne. 0 ) return
 
-	AlfasMT = alphasPDF(MT)
+	call AlphaS(AlfasMT, nf, MT)
 
 	TB2 = TB**2
 	CB2 = 1/(1 + TB2)
@@ -232,7 +231,7 @@
 	MGl = abs(Mino3)
 #ifndef NO_EXCLUSION_LIMITS
 	if( MGl .lt. MGl_LOWERBOUND ) then
-	  Error("MGl < MGl_LOWERBOUND")
+	  Error(fail, "MGl < MGl_LOWERBOUND")
 	  return
 	endif
 #endif
@@ -441,22 +440,22 @@
 
 #ifndef NO_EXCLUSION_LIMITS
 	if( MSf(1,4,3) .lt. MSbottom_LOWERBOUND ) then
-	  Error("MSf(1,4,3) < MSbottom_LOWERBOUND")
+	  Error(fail, "MSf(1,4,3) < MSbottom_LOWERBOUND")
 	  return
 	endif
 
 	if( MSf(1,3,3) .lt. MStop_LOWERBOUND ) then
-	  Error("MSf(1,3,3) < MStop_LOWERBOUND")
+	  Error(fail, "MSf(1,3,3) < MStop_LOWERBOUND")
 	  return
 	endif
 
 	if( MSf(1,2,1) .lt. MSlepton_LOWERBOUND ) then
-	  Error("MSf(1,2,1) < MSlepton_LOWERBOUND")
+	  Error(fail, "MSf(1,2,1) < MSlepton_LOWERBOUND")
 	  return
 	endif
 
 	if( MSf(1,3,1) .lt. MSquark_LOWERBOUND ) then
-	  Error("MSf(1,3,1) < MSquark_LOWERBOUND")
+	  Error(fail, "MSf(1,3,1) < MSquark_LOWERBOUND")
 	  return
 	endif
 
@@ -469,7 +468,7 @@
      &    USf2(1,2,4,3)*USf2(2,2,4,3)*f1f2(MSf2(1,4,3), MSf2(2,4,3))
 
 	if( DeltaRho .gt. DeltaRho_UPPERBOUND ) then
-	  Error("DeltaRho > DeltaRho_UPPERBOUND")
+	  Error(fail, "DeltaRho > DeltaRho_UPPERBOUND")
 	  return
 	endif
 #endif
@@ -533,7 +532,7 @@
 	  call HEigensystem(6, MX2,6, MASf2(1,t), UASf(1,1,t),6, 1)
 
 	  if( MASf2(1,t) .lt. 0 ) then
-	    Error("Negative MASf2")
+	    Error(fail, "Negative MASf2")
 	    return
 	  endif
 
@@ -587,7 +586,7 @@
 
 #ifndef NO_EXCLUSION_LIMITS
 	if( MCha(1) .lt. MCha_LOWERBOUND ) then
-	  Error("MCha(1) < MCha_LOWERBOUND")
+	  Error(fail, "MCha(1) < MCha_LOWERBOUND")
 	  return
 	endif
 #endif
@@ -634,7 +633,7 @@
 
 #ifndef NO_EXCLUSION_LIMITS
 	if( MNeu(1) .lt. MNeu_LOWERBOUND ) then
-	  Error("MNeu(1) < MNeu_LOWERBOUND")
+	  Error(fail, "MNeu(1) < MNeu_LOWERBOUND")
 	  return
 	endif
 #endif
@@ -665,7 +664,7 @@
 	  else if( MHp .gt. MW ) then
 	    inputmass = 4
 	  else
-	    Error("Neither MA0 nor MHp given")
+	    Error(fail, "Neither MA0 nor MHp given")
 	    return
 	  endif
 	endif
@@ -733,7 +732,7 @@
 
 #ifndef NO_EXCLUSION_LIMITS
 	if( Mh0 .lt. Mh0_LOWERBOUND ) then
-	  Error("Mh0 < Mh0_LOWERBOUND")
+	  Error(fail, "Mh0 < Mh0_LOWERBOUND")
 	  return
 	endif
 #endif
@@ -905,7 +904,7 @@
 	MHH2 = avgMH2 + deltaMH2
 
 	if( Mh02 .lt. 0 ) then
-	  Error("Negative Mh0^2")
+	  Error(fail, "Negative Mh0^2")
 	  return
 	endif
 
@@ -965,8 +964,13 @@
 
 	call FHSetSMPara(fail,
      &    1/Alfa, AlfasMZ, GF,
-     &    MS, MC, MBatMB, MW, MZ,
-     &    CKMlambda, CKMA, DBLE(CKMrhoeta), DIMAG(CKMrhoeta))
+     &    ME, MU, MD, MM, MC, MS, ML, MBatMB,
+     &    MW, MZ,
+#ifdef NO_CKM
+     &    0D0, 0D0, 0D0, 0D0)
+#else
+     &    CKMlambda, CKMA, CKMrhobar, CKMetabar)
+#endif
 	if( fail .ne. 0 ) return
 
 	call FHSetPara(fail, scalefactor,

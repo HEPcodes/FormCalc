@@ -3,9 +3,9 @@
 * code adapted from the "Handbook" routines for complex A
 * (Wilkinson, Reinsch: Handbook for Automatic Computation, p. 202)
 * this file is part of the Diag library
-* last modified 25 Nov 09 th
+* last modified 1 Aug 11 th
 
-#include "diag.h"
+#include "diag-f.h"
 
 
 ************************************************************************
@@ -23,16 +23,16 @@
 
 	integer p, q, j
 	double precision red, off, thresh
-	double precision delta, t, invc, s
+	double precision t, delta, invc, s
 	double complex x, y, Apq
 	double precision ev(2,MAXDIM)
 
 	integer sweep
 	common /nsweeps/ sweep
 
-	double precision sq
+	double precision Sq
 	double complex c
-	sq(c) = DBLE(c*DCONJG(c))
+	Sq(c) = DBLE(c*DCONJG(c))
 
 	if( n .gt. MAXDIM ) then
 	  print *, "Dimension too large"
@@ -59,7 +59,7 @@
 	  off = 0
 	  do q = 2, n
 	    do p = 1, q - 1
-	      off = off + sq(Element(A,p,q))
+	      off = off + Sq(A(p,q))
 	    enddo
 	  enddo
 	  if( .not. off .gt. SYM_EPS ) goto 1
@@ -69,57 +69,54 @@
 
 	  do q = 2, n
 	    do p = 1, q - 1
-	      off = sq(Element(A,p,q))
+	      Apq = A(p,q)
+	      off = Sq(Apq)
 	      if( sweep .gt. 4 .and. off .lt.
-     &              SYM_EPS*max(ev(2,p)**2, ev(2,q)**2) ) then
-	        Element(A,p,q) = 0
-	      else
-	        if( off .gt. thresh ) then
-	          t = .5D0*(ev(2,p) - ev(2,q))
-	          t = 1/(t + sign(sqrt(t**2 + off), t))
+     &              SYM_EPS*(ev(2,p)**2 + ev(2,q)**2) ) then
+	        A(p,q) = 0
+	      else if( off .gt. thresh ) then
+	        t = .5D0*(ev(2,p) - ev(2,q))
+	        t = 1/(t + sign(sqrt(t**2 + off), t))
 
-	          delta = t*off
-	          ev(1,p) = ev(1,p) + delta
-	          ev(2,p) = d(p) + ev(1,p)
-	          ev(1,q) = ev(1,q) - delta
-	          ev(2,q) = d(q) + ev(1,q)
+	        delta = t*off
+	        ev(1,p) = ev(1,p) + delta
+	        ev(2,p) = d(p) + ev(1,p)
+	        ev(1,q) = ev(1,q) - delta
+	        ev(2,q) = d(q) + ev(1,q)
 
-	          invc = sqrt(delta*t + 1)
-	          s = t/invc
-	          t = delta/(invc + 1)
+	        invc = sqrt(delta*t + 1)
+	        s = t/invc
+	        t = delta/(invc + 1)
 
-	          Apq = Element(A,p,q)
+	        do j = 1, p - 1
+	          x = A(j,p)
+	          y = A(j,q)
+	          A(j,p) = x + s*(DCONJG(Apq)*y - t*x)
+	          A(j,q) = y - s*(Apq*x + t*y)
+	        enddo
 
-	          do j = 1, p - 1
-	            x = Element(A,j,p)
-	            y = Element(A,j,q)
-	            Element(A,j,p) = x + s*(DCONJG(Apq)*y - t*x)
-	            Element(A,j,q) = y - s*(Apq*x + t*y)
-	          enddo
+	        do j = p + 1, q - 1
+	          x = A(p,j)
+	          y = A(j,q)
+	          A(p,j) = x + s*(Apq*DCONJG(y) - t*x)
+	          A(j,q) = y - s*(Apq*DCONJG(x) + t*y)
+	        enddo
 
-	          do j = p + 1, q - 1
-	            x = Element(A,p,j)
-	            y = Element(A,j,q)
-	            Element(A,p,j) = x + s*(Apq*DCONJG(y) - t*x)
-	            Element(A,j,q) = y - s*(Apq*DCONJG(x) + t*y)
-	          enddo
+	        do j = q + 1, n
+	          x = A(p,j)
+	          y = A(q,j)
+	          A(p,j) = x + s*(Apq*y - t*x)
+	          A(q,j) = y - s*(DCONJG(Apq)*x + t*y)
+	        enddo
 
-	          do j = q + 1, n
-	            x = Element(A,p,j)
-	            y = Element(A,q,j)
-	            Element(A,p,j) = x + s*(Apq*y - t*x)
-	            Element(A,q,j) = y - s*(DCONJG(Apq)*x + t*y)
-	          enddo
+	        A(p,q) = 0
 
-	          Element(A,p,q) = 0
-
-	          do j = 1, n
-	            x = Element(U,p,j)
-	            y = Element(U,q,j)
-	            Element(U,p,j) = x + s*(Apq*y - t*x)
-	            Element(U,q,j) = y - s*(DCONJG(Apq)*x + t*y)
-	          enddo
-	        endif
+	        do j = 1, n
+	          x = U(p,j)
+	          y = U(q,j)
+	          U(p,j) = x + s*(Apq*y - t*x)
+	          U(q,j) = y - s*(DCONJG(Apq)*x + t*y)
+	        enddo
 	      endif
 	    enddo
 	  enddo
@@ -150,9 +147,9 @@
 	    d(j) = d(p)
 	    d(p) = t
 	    do q = 1, n
-	      x = Element(U,p,q)
-	      Element(U,p,q) = Element(U,j,q)
-	      Element(U,j,q) = x
+	      x = U(p,q)
+	      U(p,q) = U(j,q)
+	      U(j,q) = x
 	    enddo
 	  endif
 	enddo

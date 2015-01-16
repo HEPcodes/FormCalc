@@ -1,7 +1,7 @@
 * model_sm.h
 * declarations for model_sm.F
 * this file is part of FormCalc
-* last modified 5 May 11 th
+* last modified 16 May 11 th
 
 
 	double precision CKMlambda, CKMA, CKMrhobar, CKMetabar
@@ -43,13 +43,11 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 	double precision Mf(4,3), Mf2(4,3)
 	double precision MH, MH2
 	double precision EL, GS, Alfas, Alfas2, SW
-	logical sm_digest
 
 	common /sm_para/ CKM
 	common /sm_para/ Mf, Mf2
 	common /sm_para/ MH, MH2
 	common /sm_para/ EL, GS, Alfas, Alfas2, SW
-	common /sm_para/ sm_digest
 
 #ifndef CKMC
 #define CKMC(i,j) DCONJG(CKM(i,j))
