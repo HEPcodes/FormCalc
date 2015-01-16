@@ -1,7 +1,7 @@
 * HelicityME.frm
 * the FORM part of the HelicityME function
 * this file is part of FormCalc
-* last modified 7 Jan 09 th
+* last modified 6 Apr 11 th
 
 
 #procedure Fewest(foo)
@@ -33,7 +33,7 @@ id DiracChain(Spinor(?p), [x]?pos_, ?g, Spinor(?q)) =
 * un-antisymmetrize the Dirac chains if necessary
 also DiracChain(Spinor(?p), [x]?, ?g, Spinor(?q)) =
   Spinor(?p) * GM(-[x]) * ( GD(?g) -
-    sum_(DUMMY, 2, nargs_(?g), 2, distrib_(-1, DUMMY, DD, GD, ?g)) ) *
+    sum_(KK, 2, nargs_(?g), 2, distrib_(-1, KK, DD, GD, ?g)) ) *
   Spinor(?q);
 
 id DD() = 1;
@@ -111,8 +111,10 @@ repeat;
 
   trace4, 1;
 endrepeat;
-  
-contract 0;
+
+id D = Dminus4 + 4;
+
+contract;
 
 #call eiei
 
@@ -128,6 +130,8 @@ id k`i' = `k`i'';
 #call kikj
 
 #call Neglect
+
+id D = Dminus4Eps + 4;
 
 .sort
 
@@ -145,10 +149,10 @@ id [p1]?([mu]?) = abbM([p1]([mu]), [p1]);
 repeat;
   once abbM([x]?, ?a, [mu]?!fixed_, ?b) *
        abbM([y]?, ?c, [mu]?, ?d) =
-    abbM([x]*[y], ?a, ?b, ?c, ?d) * replace_([mu], DUMMY);
+    abbM([x]*[y], ?a, ?b, ?c, ?d) * replace_([mu], N100_?);
   also once abbM([x]?, ?a, [mu]?!fixed_, ?b, [mu]?, ?c) =
-    abbM([x], ?a, ?b, ?c) * replace_([mu], DUMMY);
-  sum DUMMY;
+    abbM([x], ?a, ?b, ?c) * replace_([mu], N100_?);
+  renumber;
 endrepeat;
 
 id abbM([x]?, ?a) = abbM([x])
@@ -193,7 +197,7 @@ v [p1], [p2];
 s [m1], [m2], [s1], [s2], [x], [y];
 t [t];
 
-i DUMMY;
+i KK, DUMMY;
 t DD;
 nt GD;
 f RHO, RHOC, GM;
@@ -203,6 +207,7 @@ auto s ARG;
 set MOMS: k1,...,k`Legs';
 set EPSS: e1,...,e`Legs';
 
+s D, Dminus4, Dminus4Eps;
 cf abbM, helM, powM, DiracChain, FormSimplify;
 
 ntable CHI(0:7);

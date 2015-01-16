@@ -1,7 +1,7 @@
 * 2to2.F
 * the kinematics for a 2 -> 2 process
 * this file is part of FormCalc
-* last modified 18 Jan 08 th
+* last modified 25 Feb 11 th
 
 
 * some definitions for xsection.F
@@ -13,8 +13,8 @@
 #define TYPES TYPE1, TYPE2, TYPE3, TYPE4
 
 * this defines the order of integrations:
-#define XCOSTH 1
-#define MAXVAR XCOSTH
+#define XCOSTH1 1
+#define MAXVAR XCOSTH1
 
 #include LUMI
 
@@ -27,12 +27,12 @@
 
 #include "xsection.h"
 
-	Lower(XCOSTH) = 0
-	Upper(XCOSTH) = 1
+	Lower(XCOSTH1) = 0
+	Upper(XCOSTH1) = 1
 	if( Lower(SQRTS) .gt. Upper(SQRTS) ) then
-	  Step(XCOSTH) = XCOSTHSTEP
+	  Step(XCOSTH1) = XCOSTH1STEP
 	else
-	  Step(XCOSTH) = 0
+	  Step(XCOSTH1) = 0
 	endif
 
 	fail = 0
@@ -74,14 +74,14 @@
 	msum = MASS_OUT
 
 	key = 0
-#ifdef COSTHCUT
-	CutMin(XCOSTH) = -(1 - COSTHCUT)
-	CutMax(XCOSTH) = +(1 - COSTHCUT)
+#ifdef COSTH1CUT
+	CutMin(XCOSTH1) = -(1 - COSTH1CUT)
+	CutMax(XCOSTH1) = +(1 - COSTH1CUT)
 	key = key + Cut(CUT_COSTH, CUT_MIN + CUT_MAX)
 #endif
 
 	call Split(3, DBLE(MASS3), p, ex,ey,ez, minv, msum,
-     &    fac, key, Var(FIXED), Var(XCOSTH), Var(TRIVIAL))
+     &    fac, key, Var(FIXED), Var(XCOSTH1), Var(TRIVIAL))
 
 	call VecSet(4, DBLE(MASS4), p, ex,ey,ez)
 	end

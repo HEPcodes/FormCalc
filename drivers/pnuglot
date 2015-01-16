@@ -3,7 +3,7 @@
 #	pnuglot
 #		makes a plotting script from data files
 #		this file is part of FormCalc
-#		last modified 12 Mar 10 th
+#		last modified 30 Mar 11 th
 
 # This program works in two steps:
 #
@@ -85,7 +85,7 @@ set bmargin 2
 
 set size 1,1.3
 set key spacing 2
-set ticscale .6
+set tics scale .6
 
 #set title "Cross-section"
 
@@ -100,7 +100,7 @@ set label '[l]{$\sqrt s$/GeV}' at graph 1.05,0
 set label '[tr]{$\sigma$/pb}' at graph -.15,.95
 # looks better than set ylabel '...'
 
-set data style lines
+set style data lines
 
 _TEMPLATE_
 

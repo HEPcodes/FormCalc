@@ -49,7 +49,7 @@
 	ReadForm.tm
 		reads FORM output back into Mathematica
 		this file is part of FormCalc
-		last modified 6 Aug 10 th
+		last modified 1 Apr 11 th
 
 Note: FORM code must have
 	1. #- (no listing),
@@ -62,6 +62,9 @@ Debug:
 	bit 1+2 = + FORM -> Mma verbose
 	bit 1+3 = + Mma -> FORM raw verbose
 	bit 1+4 = + Mma -> FORM verbose
+	bit 5   = final result transfer
+	bit 6   = internal chains before OrderChain
+	bit 7   = internal chains after OrderChain
 */
 
 #include "mathlink.h"
@@ -77,21 +80,14 @@ Debug:
 #define TERMBUF 500000
 #define STRINGSIZE 32767
 
-#if !defined(__WIN32__) && !defined(__WIN64__) && !defined(__CYGWIN__)
-#define HAVE_EXTCHANNELS
+#ifndef WITHEXTERNALCHANNEL
+#define WITHEXTERNALCHANNEL 1
 #endif
 
-#define Allocate(p, n) \
-  if( (p = malloc(n)) == NULL ) { \
-    fprintf(stderr, "Out of memory in " __FILE__ " line %d.\n", __LINE__); \
-    exit(1); \
-  }
-
-#define Reallocate(p, n) \
-  if( (p = realloc(p, n)) == NULL ) { \
-    fprintf(stderr, "Out of memory in " __FILE__ " line %d.\n", __LINE__); \
-    exit(1); \
-  }
+#define Die(p) if( (p) == NULL ) { \
+  fprintf(stderr, "Out of memory in " __FILE__ " line %d.\n", __LINE__); \
+  exit(1); \
+}
 
 #define DEBUG "\e[31m"
 #define RESET "\e[0m\n"
@@ -120,7 +116,7 @@ Hierarchy of collecting:
 #define LEVEL_DEN 2
 #define LEVEL_MAT 3
 #define LEVEL_SUMOVER 4
-#define LEVELS 5
+#define NLEVELS 5
 
 typedef const int cint;
 typedef unsigned char byte;
@@ -132,23 +128,51 @@ typedef struct {
   int level;
 } FUN;
 
-static FUN funtab[] = {
-  {"SumOver", LEVEL_SUMOVER},
-  {"Mat",     LEVEL_MAT},
-  {"Den",     LEVEL_DEN},
-  {"paveM",   LEVEL_PAVE}
+static const FUN funtab[] = {
+  {(cstring)"SumOver", LEVEL_SUMOVER},
+  {(cstring)"Mat",     LEVEL_MAT},
+  {(cstring)"Den",     LEVEL_DEN},
+  {(cstring)"paveM",   LEVEL_PAVE},
+  {(cstring)"A0i",     LEVEL_PAVE},
+  {(cstring)"B0i",     LEVEL_PAVE},
+  {(cstring)"C0i",     LEVEL_PAVE},
+  {(cstring)"D0i",     LEVEL_PAVE},
+  {(cstring)"E0i",     LEVEL_PAVE},
+  {(cstring)"F0i",     LEVEL_PAVE},
+  {(cstring)"Acut",    LEVEL_PAVE},
+  {(cstring)"Bcut",    LEVEL_PAVE},
+  {(cstring)"Ccut",    LEVEL_PAVE},
+  {(cstring)"Dcut",    LEVEL_PAVE},
+  {(cstring)"Ecut",    LEVEL_PAVE},
+  {(cstring)"Fcut",    LEVEL_PAVE},
+  {(cstring)"A0",      LEVEL_PAVE},
+  {(cstring)"A00",     LEVEL_PAVE},
+  {(cstring)"B0",      LEVEL_PAVE},
+  {(cstring)"B1",      LEVEL_PAVE},
+  {(cstring)"B00",     LEVEL_PAVE},
+  {(cstring)"B11",     LEVEL_PAVE},
+  {(cstring)"B001",    LEVEL_PAVE},
+  {(cstring)"B111",    LEVEL_PAVE},
+  {(cstring)"DB0",     LEVEL_PAVE},
+  {(cstring)"DB1",     LEVEL_PAVE},
+  {(cstring)"DB00",    LEVEL_PAVE},
+  {(cstring)"C0",      LEVEL_PAVE},
+  {(cstring)"D0",      LEVEL_PAVE},
+  {(cstring)"E0",      LEVEL_PAVE},
+  {(cstring)"F0",      LEVEL_PAVE}
 };
 
 typedef struct term {
   struct term *last;
-  string f[LEVELS];
-  int nterms[LEVELS], coll;
+  string f[NLEVELS];
+  int nterms[NLEVELS], coll;
+  byte expr[];
 } TERM;
 
 typedef struct btree {
   struct btree *lt, *gt;
   string abbr;
-  byte expr[0];
+  byte expr[];
 } BTREE;
 
 static byte zero[] = "";
@@ -158,13 +182,65 @@ static FILE *stddeb;
 
 /******************************************************************/
 
+#define Strlen(s) strlen((const char *)s)
+#define Strchr(s, c) (string)strchr((const char *)s, (char)c)
+#define Strstr(s1, s2) (string)strstr((const char *)s1, (const char *)s2)
+#define Strcmp(s1, s2) strcmp((const char *)s1, (const char *)s2)
+#define Strncpy(s1, s2, n) strncpy((char *)s1, (const char *)s2, n)
+#define MLPutStr(mlp, s) MLPutByteString(mlp, s, Strlen(s))
+
+#if 1
+static inline long Strtol(cstring s, string *e, int base) {
+  return strtol((const char *)s, (char **)e, base);
+}
+#else
+#define Strtol(s, e, base) strtol((const char *)s, (char **)e, base)
+#endif
+
+/******************************************************************/
+
+static void PrintPointer(TERM *tp)
+{
+  fprintf(stddeb,
+    "address: %p\n"
+    "PAVE:    %s\n"
+    "COEFF:   %s\n"
+    "DEN:     %s\n"
+    "MAT:     %s\n"
+    "SUMOVER: %s\n"
+    "coll:    %d\n\n",
+    tp,
+    tp->f[LEVEL_PAVE],
+    tp->f[LEVEL_COEFF],
+    tp->f[LEVEL_DEN],
+    tp->f[LEVEL_MAT],
+    tp->f[LEVEL_SUMOVER],
+    tp->coll);
+}
+
+static void PrintChain(TERM *tp, cstring info)
+{
+  int n = 0;
+  while( tp ) {
+    fprintf(stddeb, "\n%s term %d:\n", info, ++n);
+    PrintPointer(tp);
+    tp = tp->last;
+  }
+}
+
+/******************************************************************/
+
 static inline string MLString(MLINK mlp)
 {
   cstring s;
   string d;
   int n;
 
-  if( MLGetByteString(mlp, &s, &n, ' ') == 0 ) return NULL;
+  if( MLGetByteString(mlp, &s, &n, ' ') == 0 ) {
+    MLClearError(mlp);
+    MLNewPacket(mlp);
+    return NULL;
+  }
   d = malloc(n + 1);
   if( d ) {
     memcpy(d, s, n);
@@ -192,10 +268,21 @@ static inline void MLEmitMessage(MLINK mlp, cstring tag, cstring arg)
   MLPutFunction(mlp, "Message", (arg) ? 2 : 1);
   MLPutFunction(mlp, "MessageName", 2);
   MLPutSymbol(mlp, "ReadForm");
-  MLPutByteString(mlp, tag, strlen(tag));
-  if( arg ) MLPutByteString(mlp, arg, strlen(arg));
+  MLPutStr(mlp, tag);
+  if( arg ) MLPutStr(mlp, arg);
   MLSendPacket(mlp);
   MLNewPacket(mlp);	/* discard returned Null */
+}
+
+/******************************************************************/
+
+static inline int MLPutExpr(MLINK mlp, TERM *tp, int lev)
+{
+  static const char *levname[] = {"pave", "coeff", "den", "mat", "sum"};
+  if( debug & 32 )
+    fprintf(stddeb, "toexpr %s |%s|\n", levname[lev], tp->f[lev]);
+  MLPutFunction(mlp, "ToExpression", 1);
+  return MLPutStr(mlp, tp->f[lev]);
 }
 
 /******************************************************************/
@@ -216,20 +303,25 @@ static string GetAbbr(string expr)
   int exprlen, abbrlen;
 
   while( (lp = *node) ) {
-    cint t = strcmp(expr, lp->expr);
+    cint t = Strcmp(expr, lp->expr);
     if( t == 0 ) return lp->abbr;
     node = (t < 0) ? &lp->lt : &lp->gt;
   }
 
   MLPutFunction(stdlink, "EvaluatePacket", 1);
   MLPutFunction(stdlink, "FormEval", 1);
-  exprlen = strlen(expr);
+  exprlen = Strlen(expr);
   MLPutByteString(stdlink, expr, exprlen);
   MLSendPacket(stdlink);
 
-  if( MLGetByteString(stdlink, &abbr, &abbrlen, ' ') == 0 ) return expr;
+  if( MLGetByteString(stdlink, &abbr, &abbrlen, ' ') == 0 ) {
+	/* returned expr not a string (e.g. FormEval not defined) */
+    MLClearError(stdlink);
+    MLNewPacket(stdlink);
+    return expr;
+  }
 
-  Allocate(lp, exprlen + abbrlen + 2 + sizeof *lp);
+  Die(lp = malloc(exprlen + abbrlen + 2 + sizeof *lp));
   *node = lp;
   lp->lt = lp->gt = NULL;
   memcpy(lp->expr, expr, exprlen);
@@ -245,19 +337,57 @@ static string GetAbbr(string expr)
 
 /******************************************************************/
 
-static TERM *Downsize(TERM *tp, cstring end)
+static inline void Shift(TERM *tp, cstring begin, cint len, cint n)
 {
-  cstring begin = (cstring)tp;
-  TERM *new = realloc(tp, end - begin);
-  cint offset = begin - (cstring)new;
-
-  if( offset ) {
+  if( n ) {
     string *f;
-    for( f = new->f; f < &new->f[LEVELS]; ++f )
-      if( *f >= begin && *f <= end ) *f -= offset;
+    for( f = tp->f; f < &tp->f[NLEVELS]; ++f )
+      if( (size_t)(*f - begin) <= (size_t)len ) *f -= n;
   }
+}
 
+/******************************************************************/
+
+static TERM *Resize(TERM *tp, cstring end, cint newsize)
+{
+  TERM *new;
+  Die(new = realloc(tp, newsize));
+  Shift(new, tp->expr, end - tp->expr, (cstring)tp - (cstring)new);
   return new;
+}
+
+/******************************************************************/
+
+static inline void MoveToEnd(TERM *tp, cint lev, cstring end)
+{
+  string s = tp->f[lev];
+  cint len = Strlen(s);
+  cstring begin = s + len + 1;
+  cint rest = end - begin;
+  string tmp;
+
+  Die(tmp = malloc(len));
+  memcpy(tmp, s, len);
+  memmove(s, begin, rest);
+  s += rest;
+  *s++ = 0;
+  memcpy(s, tmp, len);
+  free(tmp);
+
+  Shift(tp, begin, rest, len + 1);
+  tp->f[lev] = s;
+}
+
+/******************************************************************/
+
+static inline TERM *FinalizeTerm(TERM *tp, string di, int *maxpavesize)
+{
+  *di++ = 0;
+  if( *tp->f[LEVEL_MAT] )
+    tp->f[LEVEL_MAT] = GetAbbr(tp->f[LEVEL_MAT]);
+  if( *tp->f[LEVEL_PAVE] )
+    *maxpavesize += Strlen(tp->f[LEVEL_PAVE]) + 2;
+  return Resize(tp, di, di - (cstring)tp);
 }
 
 /******************************************************************/
@@ -265,7 +395,7 @@ static TERM *Downsize(TERM *tp, cstring end)
 static string PutFactor(string to, cstring from)
 {
   if( *from ) {
-    cint len = strlen(from) + 1;
+    cint len = Strlen(from) + 1;
     memcpy(to, from, len);
     return to + len;
   }
@@ -278,21 +408,19 @@ static string PutFactor(string to, cstring from)
 
 static void CollectPaVe(TERM *termp, cint maxpavesize)
 {
-  string s;
-
   do {
     TERM *old = termp, *tp;
+    string s = termp->f[LEVEL_PAVE];
 
     while( (tp = old->last) ) {
-      int i;
-      for( i = LEVEL_PAVE + 1; i < LEVELS; ++i )
-        if( strcmp(termp->f[i], tp->f[i]) != 0 ) {
+      int lev;
+      for( lev = LEVEL_PAVE + 1; lev < NLEVELS; ++lev )
+        if( Strcmp(termp->f[lev], tp->f[lev]) != 0 ) {
           old = tp;
           goto loop;
         }
       if( termp->coll == 0 ) {
-        s = termp->f[LEVEL_PAVE];
-        Allocate(termp->f[LEVEL_PAVE], maxpavesize);
+        Die(termp->f[LEVEL_PAVE] = malloc(maxpavesize));
         s = PutFactor(termp->f[LEVEL_PAVE], s);
         termp->coll = 1;
       }
@@ -326,7 +454,7 @@ static TERM *OrderChain(TERM *t1p, cint level)
       old1 = t1p;
       t1p = old1->last;
       if( t1p == NULL ) goto next;
-    } while( strcmp(ini->f[level], t1p->f[level]) == 0 );
+    } while( Strcmp(ini->f[level], t1p->f[level]) == 0 );
 
     t2p = t1p;
 
@@ -335,7 +463,7 @@ static TERM *OrderChain(TERM *t1p, cint level)
 over:
       t2p = old2->last;
       if( t2p == NULL ) goto next;
-    } while( strcmp(ini->f[level], t2p->f[level]) != 0 );
+    } while( Strcmp(ini->f[level], t2p->f[level]) != 0 );
 
     old1->last = t2p;
     old1 = t2p;
@@ -359,18 +487,23 @@ next:
 
 static TERM *Transmit(TERM *tp, int level)
 {
-  int n = tp->nterms[level];
+  cint nterms = tp->nterms[level];
+  int term;
 
-  if( level == LEVEL_SUMOVER ) MLPutFunction(stdlink, "List", n);
-  else if( n > 1 ) MLPutFunction(stdlink, "Plus", n);
+  if( level == LEVEL_SUMOVER ) MLPutFunction(stdlink, "List", nterms);
+  else if( nterms > 1 ) MLPutFunction(stdlink, "Plus", nterms);
 
-  while( n-- ) {
-    int i, ntimes = (*tp->f[level] != 0);
+  for( term = 1; term <= nterms; ++term ) {
+    int lev, ntimes = (*tp->f[level] != 0);
 
-    for( i = level - 1; i > LEVEL_PAVE; --i ) {
+    if( debug & 32 )
+      fprintf(stddeb, DEBUG "sending %d of %d terms" RESET,
+        term, nterms);
+
+    for( lev = level - 1; lev > LEVEL_PAVE; --lev ) {
       ++ntimes;
-      if( tp->nterms[i] > 1 ) goto sendit;
-      if( *tp->f[i] == 0 ) --ntimes;
+      if( tp->nterms[lev] > 1 ) goto sendit;
+      if( *tp->f[lev] == 0 ) --ntimes;
     }
 	/* OrderChain goes down only to LEVEL_COEFF, hence: */
     if( *tp->f[LEVEL_PAVE] ) ++ntimes;
@@ -384,24 +517,15 @@ sendit:
     default:
       MLPutFunction(stdlink, "Times", ntimes);
     case 1:
-      if( *tp->f[level] ) {
-        MLPutFunction(stdlink, "ToExpression", 1);
-        MLPutString(stdlink, tp->f[level]);
-      }
-      for( i = level - 1; i > LEVEL_PAVE; --i ) {
-        if( tp->nterms[i] > 1 ) {
-          tp = Transmit(tp, i);
+      if( *tp->f[level] ) MLPutExpr(stdlink, tp, level);
+      for( lev = level - 1; lev > LEVEL_PAVE; --lev ) {
+        if( tp->nterms[lev] > 1 ) {
+          tp = Transmit(tp, lev);
           goto loop;
         }
-        if( *tp->f[i] ) {
-          MLPutFunction(stdlink, "ToExpression", 1);
-          MLPutString(stdlink, tp->f[i]);
-        }
+        if( *tp->f[lev] ) MLPutExpr(stdlink, tp, lev);
       }
-      if( *tp->f[LEVEL_PAVE] ) {
-        MLPutFunction(stdlink, "ToExpression", 1);
-        MLPutString(stdlink, tp->f[LEVEL_PAVE]);
-      }
+      if( *tp->f[LEVEL_PAVE] ) MLPutExpr(stdlink, tp, LEVEL_PAVE);
       break;
     }
     tp = tp->last;
@@ -416,20 +540,22 @@ loop: ;
 static void ReadForm(FILE *file)
 {
   TERM *expressions[MAXEXPR], **exprp = expressions;
-  TERM *termp = NULL, *tp;
+  TERM *termp = NULL, *tp = NULL;
   byte br[64];
-  int inexpr = 0, maxpavesize = 0, b = 0, thislev;
+  int inexpr = 0, maxpavesize = 0, b = 0, thislev = 0;
+  cstring beg = NULL;
+  string delim = NULL, di = NULL;
   enum { nfun = sizeof funtab/sizeof(FUN) };
+  int lineno = 0;
 
   maxpavesize = 0;
 
   for( ; ; ) {
-    byte line[1024];
-    string di, delim;
-    cstring si, beg;
+    byte line[256];
+    cstring si;
     byte errmsg[512];
     string errend = errmsg;
-    int i;
+    int i, tpsize = sizeof *tp + TERMBUF;
 
     *errend = 0;
 
@@ -438,8 +564,11 @@ nextline:
       string pos;
 
       *line = 0;
-      si = fgets(line, sizeof line, file);
-      if( debug & 1 ) fputs(line, stddeb);
+      si = (string)fgets((char *)line, sizeof line, file);
+      if( debug & 1 ) fprintf(stddeb, "%06d %c%s",
+        ++lineno,
+        inexpr ? (b ? '&' : ' ') : '*',
+        (const char *)line);
 
       if( si == NULL || MLAbort ) {
         int nexpr;
@@ -449,49 +578,50 @@ nextline:
 
         if( errend > errmsg ) {
           errend[-1] = 0;	/* discard last \n */
-          MLEmitMessage(stdlink, "formerror", errmsg);
+          MLEmitMessage(stdlink, (cstring)"formerror", errmsg);
           goto abort;
         }
 
         nexpr = (int)(exprp - expressions);
         if( nexpr == 0 ) {
-          MLEmitMessage(stdlink, "nooutput", NULL);
+          MLEmitMessage(stdlink, (cstring)"nooutput", NULL);
           goto abort;
         }
 
         /* successful exit */
         MLPutFunction(stdlink, "FormExpr", nexpr);
         for( ep = expressions; ep < exprp; ++ep ) {
-          OrderChain(*ep, LEVELS - 1);
-          Transmit(*ep, LEVELS - 1);
+          if( debug & 64 ) PrintChain(*ep, (cstring)"unordered");
+          OrderChain(*ep, NLEVELS - 1);
+          if( debug & 128 ) PrintChain(*ep, (cstring)"ordered");
+          Transmit(*ep, NLEVELS - 1);
         }
         goto quit;
       }
 
-      if( (pos = strstr(si, "-->")) ||
-          (pos = strstr(si, "==>")) ||
-          (pos = strstr(si, "===")) ) {
+      if( (pos = Strstr(si, "-->")) ||
+          (pos = Strstr(si, "==>")) ||
+          (pos = Strstr(si, "===")) ) {
         pos += 4;
-        if( strstr(errmsg, pos) == NULL ) {
-          strncpy(errend, pos, errmsg + sizeof errmsg - errend);
-          errend += strlen(errend);
+        if( Strstr(errmsg, pos) == NULL ) {
+          Strncpy(errend, pos, errmsg + sizeof errmsg - errend);
+          errend += Strlen(errend);
         }
         continue;
       }
 
       if( inexpr ) {
         if( *si >= ' ' ) break;  /* catch both \n and \r (on Windows) */
-        if( di == (cstring)tp + sizeof *tp ) continue;
-        *di++ = 0;
-        termp = Downsize(termp, di);
+        if( di == tp->expr ) continue;
+        termp = FinalizeTerm(termp, di, &maxpavesize);
       }
-      else if( (pos = strchr(si, '=')) == NULL ) continue;
+      else if( (pos = Strchr(si, '=')) == NULL ) continue;
 
-      Allocate(tp, sizeof *tp + TERMBUF);
-      beg = delim = di = (string)tp + sizeof *tp;
+      Die(tp = malloc(tpsize));
+      beg = delim = di = tp->expr;
       tp->last = termp;
       termp = tp;
-      for( i = 0; i < LEVELS; ++i ) tp->f[i] = zero;
+      for( i = 0; i < NLEVELS; ++i ) tp->f[i] = zero;
       tp->f[thislev = LEVEL_COEFF] = di;
       tp->coll = 0;
 
@@ -501,6 +631,9 @@ nextline:
         break;
       }
     }
+
+    if( di > (cstring)tp + tpsize - sizeof line )
+      tp = Resize(tp, di, tpsize += TERMBUF);
 
     while( *si ) {
       byte c = *si++;
@@ -518,27 +651,23 @@ nextline:
           int newlev = LEVEL_COEFF;
           *di = 0;
           for( i = 0; i < nfun; ++i )
-            if( strcmp(delim, funtab[i].name) == 0 ) {
+            if( Strcmp(delim, funtab[i].name) == 0 ) {
               newlev = funtab[i].level;
               break;
             }
 
           if( thislev != newlev ) {
-            if( delim > beg ) delim[-1] = 0;
-            switch( thislev ) {
-            case LEVEL_MAT:
-              termp->f[LEVEL_MAT] = GetAbbr(termp->f[LEVEL_MAT]);
-              break;
-            case LEVEL_PAVE:
-              maxpavesize += (int)(delim - termp->f[LEVEL_PAVE]) + 2;
-              break;
+            if( *termp->f[newlev] )
+              MoveToEnd(termp, newlev, delim - 1);
+            else {
+              if( delim > beg ) delim[-1] = 0;
+              termp->f[newlev] = delim;
             }
             thislev = newlev;
-            termp->f[thislev] = delim;
           }
         }
 
-        if( di == beg || strchr("+-*/^,([", di[-1]) ) br[b++] = ')';
+        if( di == beg || Strchr("+-*/^,([", di[-1]) ) br[b++] = ')';
         else c = '[', br[b++] = ']';
         break;
 
@@ -552,10 +681,9 @@ nextline:
         break;
 
       case ';':
-        *di++ = 0;
-        *exprp++ = termp = Downsize(termp, di);
+        *exprp++ = termp = FinalizeTerm(termp, di, &maxpavesize);
         if( exprp >= expressions + MAXEXPR ) {
-          MLEmitMessage(stdlink, "toomany", NULL);
+          MLEmitMessage(stdlink, (cstring)"toomany", NULL);
           goto abort;
         }
         if( maxpavesize ) CollectPaVe(termp, maxpavesize);
@@ -598,14 +726,14 @@ quit:
 static void readform_file(void)
 {
   string filename = MLString(stdlink);
-  FILE *file = fopen(filename, "r");
+  FILE *file = fopen((const char *)filename, "r");
 
   if( file ) {
     ReadForm(file);
     fclose(file);
   }
   else {
-    MLEmitMessage(stdlink, "noopen", filename);
+    MLEmitMessage(stdlink, (cstring)"noopen", filename);
     MLPutFunction(stdlink, "Abort", 0);
     MLEndPacket(stdlink);
   }
@@ -628,10 +756,9 @@ static inline int writeall(cint h, cstring buf, long n)
 static int ToMma(cint hw, string expr)
 {
   int b = 0, decl = 256, verb = 0;
-  cint exprlen = strlen(expr);
+  cint exprlen = Strlen(expr);
   byte br[64], c;
   string result, r, s;
-  char *n;
 
   if( debug & 2 ) {
     fprintf(stddeb, DEBUG "to mma (%lu bytes)" RESET,
@@ -648,7 +775,7 @@ static int ToMma(cint hw, string expr)
 
   if( debug & 2 ) {
     fprintf(stddeb, DEBUG "from mma raw (%lu bytes)" RESET,
-      (unsigned long)strlen(result));
+      (unsigned long)Strlen(result));
     if( debug & 8 ) fprintf(stddeb, "8 |%s|\n", result);
   }
 
@@ -673,8 +800,7 @@ static int ToMma(cint hw, string expr)
       break;
     case '\\':
       if( *r != '0' ) continue;
-      c = strtol(r, &n, 8);
-      r = n;
+      c = Strtol(r, &r, 8);
       break;
     case ',':
       if( decl | b ) break;
@@ -718,10 +844,11 @@ static void *ExtIO(void *h)
   int size = 2*blocksize, verb = 0, b, w, n;
 
   if( (n = read(hr, br, sizeof br) - 1) < 0 ||
-      writeall(hw, br, n + sprintf(br + n, ",%d\n", getpid())) < 0 )
+      writeall(hw, br,
+        n + sprintf((char *)br + n, ",%d\n", getpid())) < 0 )
     pthread_exit(NULL);
 
-  Allocate(expr, size);
+  Die(expr = malloc(size));
 
 loop:
   w = 1;
@@ -733,7 +860,7 @@ loop:
 
     if( r + linesize > size ) {
       size += blocksize;
-      Reallocate(expr, size);
+      Die(expr = realloc(expr, size));
     }
 
     sync();  /* needed for Mac OS, unclear why */
@@ -764,7 +891,7 @@ loop:
         expr[w++] = c = '$';
         break;
       case '(':
-        if( strchr("+-*/^,([{", expr[w-1]) ) br[b++] = ')';
+        if( Strchr("+-*/^,([{", expr[w-1]) ) br[b++] = ')';
         else c = '[', br[b++] = ']';
         break;
       case ')':
@@ -795,8 +922,9 @@ static void readform_exec(void)
   string formcmd = MLString(stdlink);
   string incpath = MLString(stdlink);
   string filename = MLString(stdlink);
-  string argv[] = {formcmd, "-p", incpath, filename, NULL, filename, NULL};
-#ifdef HAVE_EXTCHANNELS
+  string argv[] = {formcmd, (string)"-p", incpath,
+    filename, NULL, filename, NULL};
+#if WITHEXTERNALCHANNEL
   pthread_t tid;
   void *tj = NULL;
   byte arg[32];
@@ -809,13 +937,13 @@ static void readform_exec(void)
     if( pipe(h) == -1 ) goto abort;
   } while( h[1] <= 2 );
 
-#ifdef HAVE_EXTCHANNELS
+#if WITHEXTERNALCHANNEL
   if( pipe(&h[2]) != -1 &&
       pipe(&h[4]) != -1 &&
       pthread_create(&tid, NULL, ExtIO, h) == 0 ) {
     tj = (void *)1;
-    sprintf(arg, "%d,%d", h[2], h[5]);
-    argv[3] = "-pipe";
+    sprintf((char *)arg, "%d,%d", h[2], h[5]);
+    argv[3] = (string)"-pipe";
     argv[4] = arg;
   }
 #endif
@@ -833,7 +961,7 @@ static void readform_exec(void)
     close(h[1]);
     if( h[3] != -1 ) close(h[3]);
     if( h[4] != -1 ) close(h[4]);
-    exit(execvp(argv[0], (char **)argv));
+    exit(execvp((char *)argv[0], (char **)argv));
   }
 
   close(h[1]);
@@ -849,7 +977,7 @@ static void readform_exec(void)
   }
   else {
 abort:
-    MLEmitMessage(stdlink, "noopen", formcmd);
+    MLEmitMessage(stdlink, (cstring)"noopen", formcmd);
     MLPutFunction(stdlink, "Abort", 0);
     MLEndPacket(stdlink);
   }
@@ -861,7 +989,7 @@ abort:
 
   for( i = 6; --i >= 0; ) if( h[i] != -1 ) close(h[i]);
 
-#ifdef HAVE_EXTCHANNELS
+#if WITHEXTERNALCHANNEL
   if( tj ) pthread_join(tid, &tj);
 #endif
 
@@ -900,9 +1028,9 @@ static void readformdebug(cint deb)
 
   stddeb = stderr;
   if( filename && *filename ) {
-    stddeb = fopen(filename, "w");
+    stddeb = fopen((const char *)filename, "w");
     if( stddeb == NULL ) {
-      MLEmitMessage(stdlink, "noopen", filename);
+      MLEmitMessage(stdlink, (cstring)"noopen", filename);
       MLPutSymbol(stdlink, "$Failed");
       MLEndPacket(stdlink);
       debug = 0;

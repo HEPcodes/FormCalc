@@ -2,7 +2,7 @@
 * all parameters for the THDM are initialized here
 * this file is part of FormCalc
 * Abdesslam Arhrib, 2 Jun 03
-* last modified 1 Aug 08 th
+* last modified 9 Feb 11 th
 
 
 * The input parameters for model_thdm are:
@@ -134,7 +134,7 @@
 	subroutine ModelDigest
 	implicit none
 
-#include "model.h"
+#include "model_thdm.h"
 
 	call SMDigest
 

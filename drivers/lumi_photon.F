@@ -1,7 +1,7 @@
 * lumi_photon.F
 * parton luminosity for a photon collider
 * this file is part of FormCalc
-* last modified 13 Jul 07 th
+* last modified 5 May 11 th
 
 
 #define PARTON_T -1
@@ -11,8 +11,10 @@
 
 ************************************************************************
 
-	subroutine LumiDefaults
+	subroutine LumiDefaults(argc, argv)
 	implicit none
+	integer argc
+	character*128 argv(*)
 
 #include "xsection.h"
 

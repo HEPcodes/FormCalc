@@ -1,7 +1,7 @@
 * lumi_parton.F
 * "luminosity" for a partonic process
 * this file is part of FormCalc
-* last modified 4 Aug 08 th
+* last modified 5 May 11 th
 
 
 #define MINVAR SQRTS
@@ -9,8 +9,10 @@
 
 ************************************************************************
 
-	subroutine LumiDefaults
+	subroutine LumiDefaults(argc, argv)
 	implicit none
+	integer argc
+	character*128 argv(*)
 
 	end
 

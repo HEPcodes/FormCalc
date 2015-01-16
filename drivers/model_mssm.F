@@ -2,7 +2,7 @@
 * all parameters for the MSSM are initialized here
 * this file is part of FormCalc
 * Christian Schappacher, 17 Feb 99
-* last modified 11 Nov 09 th
+* last modified 5 May 11 th
 
 
 * The input parameters for model_mssm are:
@@ -146,8 +146,10 @@
 
 ************************************************************************
 
-	subroutine ModelDefaults
+	subroutine ModelDefaults(argc, argv)
 	implicit none
+	integer argc
+	character*128 argv(*)
 
 #include "decl.h"
 
@@ -168,7 +170,7 @@
 	MA0 = -1
 	MHp = -1
 
-	call SMDefaults
+	call SMDefaults(argc, argv)
 	end
 
 
@@ -343,9 +345,8 @@
 #endif
 
 #ifdef NMFV
-	integer as1, g2
-	double precision m, m2
-	double complex MX2(6,6)
+	integer as, g2
+	double complex MX2(6,6), m1, m2, m3
 
 #define MX2_LL(i,j) MX2(i,j)
 #define MX2_LR(i,j) MX2(i,j+3)
@@ -367,36 +368,39 @@
 	DSf(2,4) = Qd*qpart
 	DSf(1,4) = -i3part - DSf(2,4)
 
+	MUETB(3) = -DCONJG(MUE)/TB
+	MUETB(2) = -DCONJG(MUE)*TB
+	MUETB(4) = MUETB(2)
+
 	do g = 1, 3
 	  MSS(1,2,g) = MSL(g)
-	  MSS(2,2,g) = MSE(g)
-	  MSS(1,3,g) = MSQ(g)
-	  MSS(2,3,g) = MSU(g)
-	  MSS(1,4,g) = MSQ(g)
-	  MSS(2,4,g) = MSD(g)
-
 	  MSS2(1,2,g) = MSS(1,2,g)**2
+	  MSS(2,2,g) = MSE(g)
 	  MSS2(2,2,g) = MSS(2,2,g)**2
+	  MSS(1,3,g) = MSQ(g)
 	  MSS2(1,3,g) = MSS(1,3,g)**2
+	  MSS(2,3,g) = MSU(g)
 	  MSS2(2,3,g) = MSS(2,3,g)**2
+	  MSS(1,4,g) = MSQ(g)
 	  MSS2(1,4,g) = MSS(1,4,g)**2
+	  MSS(2,4,g) = MSD(g)
 	  MSS2(2,4,g) = MSS(2,4,g)**2
 
 #ifdef NO_SQUARK_MIXING
 #define Eigen2x2 NoMixing
-	  Af(2,g,g) = DCONJG(MUE)*TB
-	  Af(3,g,g) = DCONJG(MUE)/TB
-	  Af(4,g,g) = Af(2,g,g)
-	  Xf(2,g,g) = 0
-	  Xf(3,g,g) = 0
-	  Xf(4,g,g) = 0
+	  Af(2,g,g) = -MUETB(2)
+	  Af(3,g,g) = -MUETB(3)
+	  Af(4,g,g) = -MUETB(4)
+	  Xf(2,g) = 0
+	  Xf(3,g) = 0
+	  Xf(4,g) = 0
 #else
 	  Af(2,g,g) = Ae(g)
-	  Xf(2,g,g) = Af(2,g,g) - DCONJG(MUE)*TB
+	  Xf(2,g) = Af(2,g,g) + MUETB(2)
 	  Af(3,g,g) = Au(g)
-	  Xf(3,g,g) = Af(3,g,g) - DCONJG(MUE)/TB
+	  Xf(3,g) = Af(3,g,g) + MUETB(3)
 	  Af(4,g,g) = Ad(g)
-	  Xf(4,g,g) = Af(4,g,g) - DCONJG(MUE)*TB
+	  Xf(4,g) = Af(4,g,g) + MUETB(4)
 #endif
 
 	  call NoMixing(fail, MSf(1,1,g), MSf2(1,1,g), USf(1,1,1,g),
@@ -406,7 +410,7 @@
 	    call Eigen2x2(fail, MSf(1,t,g), MSf2(1,t,g), USf(1,1,t,g),
      &        MSS2(1,t,g) + DSf(1,t) + Mf2(t,g),
      &        MSS2(2,t,g) + DSf(2,t) + Mf2(t,g),
-     &        Mf(t,g)*DCONJG(Xf(t,g,g)))
+     &        Mf(t,g)*DCONJG(Xf(t,g)))
 	    if( fail .ne. 0 ) return
 
 	    UCSf(1,1,t,g) = Sq(USf(1,1,t,g))
@@ -477,33 +481,54 @@
 * The "regular" ones are needed for computing the Higgs mass.
 
 	do t = 3, 4
-	  do g = 1, 6*6
-	    MX2_flat(g) = 0
-	  enddo
-	  do g = 1, 3
-	    MX2_LL(g,g) = MSS2(1,t,g) + DSf(1,t) + Mf2(t,g)
-	    MX2_RR(g,g) = MSS2(2,t,g) + DSf(2,t) + Mf2(t,g)
-	    MX2_LR(g,g) = Mf(t,g)*DCONJG(Xf(t,g,g))
-	  enddo
-
-	  do g2 = 6, 2, -1
-	    m2 = MX2(g2,g2)
-	    do g = 1, g2 - 1
-	      m = MX2(g,g)
-	      MX2(g,g2) = MX2(g,g2) + deltaSf(g,g2,t)*sqrt(m*m2)
+	  MX2_LL(1,1) = MSS2(1,4,1)
+	  MX2_LL(2,2) = MSS2(1,4,2)
+	  MX2_LL(3,3) = MSS2(1,4,3)
+	  MX2_LL(1,2) = MSS(1,4,1)*MSS(1,4,2)*deltaSf_LL(1,2,4)
+	  MX2_LL(2,3) = MSS(1,4,2)*MSS(1,4,3)*deltaSf_LL(2,3,4)
+	  MX2_LL(1,3) = MSS(1,4,1)*MSS(1,4,3)*deltaSf_LL(1,3,4)
+	  if( t .eq. 3 ) then
+	    do g2 = 1, 3
+	      m1 = MX2_LL(1,1)*CKMC(g2,1) +
+     &             MX2_LL(1,2)*CKMC(g2,2) +
+     &             MX2_LL(1,3)*CKMC(g2,3)
+	      m2 = DCONJG(MX2_LL(1,2))*CKMC(g2,1) +
+     &             MX2_LL(2,2)*CKMC(g2,2) +
+     &             MX2_LL(2,3)*CKMC(g2,3)
+	      m3 = DCONJG(MX2_LL(1,3))*CKMC(g2,1) +
+     &             DCONJG(MX2_LL(2,3))*CKMC(g2,2) +
+     &             MX2_LL(3,3)*CKMC(g2,3)
+	      do g = 1, g2
+	        MX2_LL(g,g2) = CKM(g,1)*m1 + CKM(g,2)*m2 + CKM(g,3)*m3
+	      enddo
 	    enddo
-	  enddo
+	  endif
+	  MX2_LL(1,1) = MX2_LL(1,1) + DSf(1,t) + Mf2(t,1)
+	  MX2_LL(2,2) = MX2_LL(2,2) + DSf(1,t) + Mf2(t,2)
+	  MX2_LL(3,3) = MX2_LL(3,3) + DSf(1,t) + Mf2(t,3)
 
-	  MX2_LR(2,1) = DCONJG(MX2_LR(2,1))
-	  MX2_LR(3,1) = DCONJG(MX2_LR(3,1))
-	  MX2_LR(3,2) = DCONJG(MX2_LR(3,2))
+	  MX2_RR(1,1) = MSS2(2,t,1) + DSf(2,t) + Mf2(t,1)
+	  MX2_RR(2,2) = MSS2(2,t,2) + DSf(2,t) + Mf2(t,2)
+	  MX2_RR(3,3) = MSS2(2,t,3) + DSf(2,t) + Mf2(t,3)
+	  MX2_RR(1,2) = MSS(2,t,1)*MSS(2,t,2)*deltaSf_RR(1,2,t)
+	  MX2_RR(2,3) = MSS(2,t,2)*MSS(2,t,3)*deltaSf_RR(2,3,t)
+	  MX2_RR(1,3) = MSS(2,t,1)*MSS(2,t,3)*deltaSf_RR(1,3,t)
 
+	  MX2_LR(1,1) = Mf(t,1)*Xf(t,1)
+	  MX2_LR(2,2) = Mf(t,2)*Xf(t,2)
+	  MX2_LR(3,3) = Mf(t,3)*Xf(t,3)
+	  MX2_LR(1,2) = MSS(1,t,1)*MSS(2,t,2)*deltaSf_LR(1,2,t)
 	  Af(t,1,2) = MX2_LR(1,2)/Mf(t,1)
-	  Af(t,2,1) = MX2_LR(2,1)/Mf(t,2)
-	  Af(t,1,3) = MX2_LR(1,3)/Mf(t,1)
-	  Af(t,3,1) = MX2_LR(3,1)/Mf(t,3)
+	  MX2_LR(2,3) = MSS(1,t,2)*MSS(2,t,3)*deltaSf_LR(2,3,t)
 	  Af(t,2,3) = MX2_LR(2,3)/Mf(t,2)
+	  MX2_LR(1,3) = MSS(1,t,1)*MSS(2,t,3)*deltaSf_LR(1,3,t)
+	  Af(t,1,3) = MX2_LR(1,3)/Mf(t,1)
+	  MX2_LR(2,1) = DCONJG(MSS(2,t,1)*MSS(1,t,2)*deltaSf_RL(1,2,t))
+	  Af(t,2,1) = MX2_LR(2,1)/Mf(t,2)
+	  MX2_LR(3,2) = DCONJG(MSS(2,t,2)*MSS(1,t,3)*deltaSf_RL(2,3,t))
 	  Af(t,3,2) = MX2_LR(3,2)/Mf(t,3)
+	  MX2_LR(3,1) = DCONJG(MSS(2,t,1)*MSS(1,t,3)*deltaSf_RL(1,3,t))
+	  Af(t,3,1) = MX2_LR(3,1)/Mf(t,3)
 
 	  call HEigensystem(6, MX2,6, MASf2(1,t), UASf(1,1,t),6, 1)
 
@@ -512,8 +537,8 @@
 	    return
 	  endif
 
-	  do as1 = 1, 6
-	    MASf(as1,t) = sqrt(MASf2(as1,t))
+	  do as = 1, 6
+	    MASf(as,t) = sqrt(MASf2(as,t))
 	  enddo
 	enddo
 #endif
@@ -631,16 +656,26 @@
 #include "decl.h"
 
 	double precision avgMH2, deltaMH2
+	integer inputmass
+	data inputmass /0/
 
-	if( MA0 .ge. 0 ) then
+	if( inputmass .eq. 0 ) then
+	  if( MA0 .ge. 0 ) then
+	    inputmass = 3
+	  else if( MHp .gt. MW ) then
+	    inputmass = 4
+	  else
+	    Error("Neither MA0 nor MHp given")
+	    return
+	  endif
+	endif
+
+	if( inputmass .eq. 3 ) then
 	  MA0tree2 = MA0**2
 	  MHptree2 = MA0tree2 + MW2
-	else if( MHp .gt. MW ) then
+	else if( inputmass .eq. 4 ) then
 	  MA0tree2 = (MHp - MW)*(MHp + MW)
 	  MHptree2 = MHp**2
-	else
-	  Error("Neither MA0 nor MHp given")
-	  return
 	endif
 
 	avgMH2 = .5D0*(MA0tree2 + MZ2)
@@ -757,7 +792,7 @@
 
 #include "decl.h"
 
-	double precision MTr2, Qsusy, Lambda
+	double precision MTr2, Qsusy, Lam
 	double precision Xt, topstop, toplog, mix
 	double precision Pb, Pf, Pg, Pg_, P1h, P2h, P2h_
 	double precision pref, pref2, tmp, tmplog
@@ -765,8 +800,8 @@
 	double precision avgMH2, deltaMH2
 
 	double precision MtLR, MbLR
-	equivalence (Xf(3,3,3), MtLR)
-	equivalence (Xf(4,3,3), MbLR)
+	equivalence (Xf(3,3), MtLR)
+	equivalence (Xf(4,3), MbLR)
 
 	integer Nc, Ng
 	double precision Qt, Qb
@@ -790,16 +825,16 @@
 	mix = MtLR**2/Qsusy
 
 * The one-loop top/stop contributions:
-	Lambda = 1/8D0 - SW2*(1/3D0 - 4/9D0*SW2)
+	Lam = 1/8D0 - SW2*(1/3D0 - 4/9D0*SW2)
 	topstop = MT2/Qsusy
 	toplog = log(topstop)
 	tmp = MZ2/MT2
-	sig11 = GF*sqrt2/pi**2*MZ2**2*Lambda*CB2 * toplog
+	sig11 = GF*sqrt2/pi**2*MZ2**2*Lam*CB2 * toplog
 	sig12 = -GF*sqrt2/pi**2*MZ2/TB *
-     &    (-3/8D0*MT2 + MZ2*Lambda*SB2) * toplog
+     &    (-3/8D0*MT2 + MZ2*Lam*SB2) * toplog
 	sig22 = GF*sqrt2/(8*pi**2)*MT2**2/SB2 *
      &    ( tmp*(-2 + 11/10D0*tmp)
-     &       + (12 + SB2*tmp*(-6 + 8*Lambda*SB2*tmp)) * toplog
+     &       + (12 + SB2*tmp*(-6 + 8*Lam*SB2*tmp)) * toplog
      &       + mix*(-12 + 4*tmp + 6*topstop
      &         + mix*(1 + topstop*(-4 + 3*topstop)
      &           + mix*topstop
@@ -904,15 +939,15 @@
 #include "decl.h"
 
 	integer mssmpart, fieldren, tanbren, higgsmix, p2approx
-	integer looplevel, tlRunningMT, tlBotResum, tlCplxApprox
+	integer looplevel, runningMT, botResum, tlCplxApprox
 	parameter (mssmpart = 4)
 	parameter (fieldren = 0)
 	parameter (tanbren = 0)
 	parameter (higgsmix = 2)
 	parameter (p2approx = 0)
 	parameter (looplevel = 2)
-	parameter (tlRunningMT = 1)
-	parameter (tlBotResum = 1)
+	parameter (runningMT = 1)
+	parameter (botResum = 1)
 	parameter (tlCplxApprox = 3)
 
 	double precision scalefactor
@@ -925,7 +960,7 @@
 	double complex SAeff
 
 	call FHSetFlags(fail, mssmpart, fieldren, tanbren, higgsmix,
-     &    p2approx, looplevel, tlRunningMT, tlBotResum, tlCplxApprox)
+     &    p2approx, looplevel, runningMT, botResum, tlCplxApprox)
 	if( fail .ne. 0 ) return
 
 	call FHSetSMPara(fail,
@@ -949,12 +984,13 @@
 
 #ifdef NMFV
 	call FHSetNMFV(fail,
-     &    deltaLLuc, deltaLRuc, deltaRLuc, deltaRRuc,
-     &    deltaLLct, deltaLRct, deltaRLct, deltaRRct,
-     &    deltaLLut, deltaLRut, deltaRLut, deltaRRut,
-     &    deltaLLds, deltaLRds, deltaRLds, deltaRRds,
-     &    deltaLLsb, deltaLRsb, deltaRLsb, deltaRRsb,
-     &    deltaLLdb, deltaLRdb, deltaRLdb, deltaRRdb)
+     &    deltaLL12, deltaLL23, deltaLL13,
+     &    deltaLRuc, deltaLRct, deltaLRut,
+     &    deltaRLuc, deltaRLct, deltaRLut,
+     &    deltaRRuc, deltaRRct, deltaRRut,
+     &    deltaLRds, deltaLRsb, deltaLRdb,
+     &    deltaRLds, deltaRLsb, deltaRLdb,
+     &    deltaRRds, deltaRRsb, deltaRRdb)
 	if( fail .ne. 0 ) return
 #endif
 

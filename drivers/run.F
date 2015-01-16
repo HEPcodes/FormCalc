@@ -1,7 +1,7 @@
 * run.F
 * defines parameter settings for one run, then includes main.F
 * this file is part of FormCalc
-* last modified 1 Aug 08 th
+* last modified 3 Mar 11 th
 
 
 * Whether to run in debugging mode
@@ -103,23 +103,21 @@ c#define NO_EXCLUSION_LIMITS
 
 
 * Cuts and increments.  May be defined in terms of sqrtS, the CMS energy.
+* Note: cuts are numbered by the integration they belong to, which is
+* from the last particle downward, e.g. COSTH1CUT refers to cos(th) of
+* the *last* particle.
 
 #define SQRTSSTEP 10
 
-* a) 2-particle phase space:
-
-#define COSTHCUT .01D0
+#define COSTH1CUT .01D0
 #ifdef DEBUG
-#define XCOSTHSTEP 1/3D0
+#define XCOSTH1STEP 1/3D0
 #else
-#define XCOSTHSTEP .02D0
+#define XCOSTH1STEP .02D0
 #endif
 
-* b) 3-particle phase-space:
-
-#define XMREM5STEP .1D0
-#define E5MIN ESOFTMAX
-#define COSTH5CUT 0
+#define XMREM1STEP .1D0
+#define E1MIN ESOFTMAX
 
 
 * The integration parameters:
@@ -131,13 +129,18 @@ c#define NO_EXCLUSION_LIMITS
 * The multidimensional integration routines also need
 
 #define METHOD DIVONNE
+#define USERDATA bogus
 #define VERBOSE 1
+#define SEED 0
 #define MINEVAL 0
 #define MAXEVAL 50000
 
 * for Vegas:
 #define NSTART 1000
 #define NINCREASE 500
+#define NBATCH 1000
+#define GRIDNO 0
+#define STATEFILE ""
 
 * for Suave:
 #define NNEW 1000

@@ -3,9 +3,9 @@
 		generates the Fortran code for
 		gamma gamma -> gamma gamma in the electroweak SM
 		this file is part of FormCalc
-		last modified 9 May 08 th
+		last modified 17 Oct 10 th
 
-Reference: M. Böhm, R. Schuster, Z. Phys. C63 (1994) 219.
+Reference: M. Boehm, R. Schuster, Z. Phys. C63 (1994) 219.
 
 *)
 

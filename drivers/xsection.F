@@ -1,8 +1,9 @@
 * xsection.F
 * routines to compute the cross-section
 * this file is part of FormCalc
-* last modified 12 Oct 09 th
+* last modified 5 May 11 th
 
+#include "decl.h"
 
 #include "process.h"
 
@@ -18,10 +19,12 @@
 ** model defaults.
 
 	subroutine ProcessIni(fail, pol,
-     &    sqrtSfrom, sqrtSto, sqrtSstep)
+     &    sqrtSfrom, sqrtSto, sqrtSstep,
+     &    argc, argv)
 	implicit none
-	integer fail
+	integer fail, argc
 	character*(*) pol
+	character*128 argv(*)
 	double precision sqrtSfrom, sqrtSto, sqrtSstep
 
 #include "xsection.h"
@@ -108,11 +111,32 @@
 	scale = -1
 	sqrtSinvalid = 1
 
-	call ffini
-	call ModelDefaults
-	call LumiDefaults
+	call ltini
+
+#ifdef SAMURAI
+* args are:
+* 1. imeth = "diag" (numerators) or "tree" (products of tree amps)
+* 2. isca = 1 (QCDloop) or 2 (OneLOop)
+* 3. verbosity = 0, 1, 2, 3
+* 4. itest = 0 (none), 1 (powertest), 2 (nntest), 3 (lnntest)
+	call initsamurai("diag", 2, 1, 1)
+#endif
+
+	call ModelDefaults(argc, argv)
+	call LumiDefaults(argc, argv)
 
 	fail = 0
+	end
+
+
+************************************************************************
+** ProcessExi wraps up the calculation, e.g. prints a summary of
+** messages, deallocates arrays etc.
+
+	subroutine ProcessExi
+	implicit none
+
+	call ltexi
 	end
 
 
@@ -128,9 +152,11 @@
 #include "xsection.h"
 
 	double precision oldscale, oldmass_in, oldmass_out
+	logical reset
 	integer i
 
 	fail = 0
+	reset = abs(newsqrtS - sqrtS) .gt. 1D-9
 	sqrtS = newsqrtS
 	oldscale = max(DBLE(SCALE), 1D0)
 
@@ -158,8 +184,10 @@
 
 1	  threshold = max(mass_in, mass_out)
 	  sqrtSinvalid = fail
-	  flags = ibset(flags, BIT_RESET)
+	  reset = .TRUE.
 	endif
+
+	if( reset ) flags = ibset(flags, BIT_RESET)
 
 	if( fail .ne. 0 .or. sqrtS .lt. threshold ) then
 	  fail = 1
@@ -300,6 +328,15 @@
 	call setlambda(DBLE(LAMBDA))
 #endif
 	Divergence = getdelta()
+	mudim = getmudim()
+	lambda = getlambda()
+	if( lambda .eq. -1 ) then
+	  epscoeff = -1
+	else if( lambda .eq. -2 ) then
+	  epscoeff = -2
+	else
+	  epscoeff = 0
+	endif
 
 	call KinIni(fail)
 	if( fail .ne. 0 ) goto 999
@@ -525,6 +562,8 @@
 	integer nregions, neval, fail, c
 	double precision prob(NCOMP)
 
+#include "xsection.h"
+
 #define GAUSS 1
 #define PATTERSON 2
 #define VEGAS 3
@@ -575,28 +614,29 @@
 
 #if METHOD == VEGAS
 
-	  call vegas(ndim, NCOMP, integrand,
+	  call vegas(ndim, NCOMP, integrand, USERDATA,
      &      DBLE(RELACCURACY), DBLE(ABSACCURACY),
-     &      VERBOSE, MINEVAL, MAXEVAL,
-     &      NSTART, NINCREASE,
+     &      VERBOSE, SEED, MINEVAL, MAXEVAL,
+     &      NSTART, NINCREASE, NBATCH,
+     &      GRIDNO, STATEFILE,
      &      neval, fail, result, error, prob)
 	  nregions = 1
 	  INFO "Vegas integration results:"
 
 #elif METHOD == SUAVE
 
-	  call suave(ndim, NCOMP, integrand,
+	  call suave(ndim, NCOMP, integrand, USERDATA,
      &      DBLE(RELACCURACY), DBLE(ABSACCURACY),
-     &      VERBOSE + FLAGS_LAST, MINEVAL, MAXEVAL,
+     &      VERBOSE + FLAGS_LAST, SEED, MINEVAL, MAXEVAL,
      &      NNEW, DBLE(FLATNESS),
      &      nregions, neval, fail, result, error, prob)
 	  INFO "Suave integration results:"
 
 #elif METHOD == DIVONNE
 
-	  call divonne(ndim, NCOMP, integrand,
+	  call divonne(ndim, NCOMP, integrand, USERDATA,
      &      DBLE(RELACCURACY), DBLE(ABSACCURACY),
-     &      VERBOSE, MINEVAL, MAXEVAL,
+     &      VERBOSE, SEED, MINEVAL, MAXEVAL,
      &      KEY1, KEY2, KEY3, MAXPASS,
      &      DBLE(BORDER), DBLE(MAXCHISQ), DBLE(MINDEVIATION),
      &      0, NDIM, 0, 0, 0,
@@ -605,7 +645,7 @@
 
 #else
 
-	  call cuhre(ndim, NCOMP, integrand,
+	  call cuhre(ndim, NCOMP, integrand, USERDATA,
      &      DBLE(RELACCURACY), DBLE(ABSACCURACY),
      &      VERBOSE + FLAGS_LAST, MINEVAL, MAXEVAL,
      &      KEY,

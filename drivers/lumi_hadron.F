@@ -1,7 +1,7 @@
 * lumi_hadron.F
 * parton luminosity for a hadron collider
 * this file is part of FormCalc
-* last modified 13 Feb 07 th
+* last modified 5 May 11 th
 
 * This code links to the LHAPDF library.
 * The following preprocessor variables are used:
@@ -20,8 +20,10 @@
 
 ************************************************************************
 
-	subroutine LumiDefaults
+	subroutine LumiDefaults(argc, argv)
 	implicit none
+	integer argc
+	character*128 argv(*)
 
 #include "xsection.h"
 

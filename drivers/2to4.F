@@ -1,7 +1,7 @@
 * 2to4.F
 * the kinematics for a 2 -> 4 process
 * this file is part of FormCalc
-* last modified 18 Jan 08 th
+* last modified 7 Mar 11 th
 
 
 * some definitions for xsection.F
@@ -13,14 +13,14 @@
 #define TYPES TYPE1, TYPE2, TYPE3, TYPE4, TYPE5, TYPE6
 
 * this defines the order of integrations:
-#define XMREM6 1
-#define XCOSTH6 2
-#define XMREM5 3
-#define XCOSTH5 4
-#define XPHI5 5
-#define XCOSTH4 6
-#define XPHI4 7
-#define MAXVAR XPHI4
+#define XMREM1 1
+#define XCOSTH1 2
+#define XMREM2 3
+#define XCOSTH2 4
+#define XPHI2 5
+#define XCOSTH3 6
+#define XPHI3 7
+#define MAXVAR XPHI3
 
 #include LUMI
 
@@ -33,29 +33,29 @@
 
 #include "xsection.h"
 
-	Lower(XMREM6) = 0
-	Upper(XMREM6) = 1
+	Lower(XMREM1) = 0
+	Upper(XMREM1) = 1
 	if( Lower(SQRTS) .gt. Upper(SQRTS) ) then
-	  Step(XMREM6) = XMREM6STEP
+	  Step(XMREM1) = XMREM1STEP
 	else
-	  Step(XMREM6) = 0
+	  Step(XMREM1) = 0
 	endif
 
-	Lower(XMREM5) = 0
-	Upper(XMREM5) = 1
-	Step(XMREM5) = 0
+	Lower(XMREM2) = 0
+	Upper(XMREM2) = 1
+	Step(XMREM2) = 0
 
-	Lower(XCOSTH5) = 0
-	Upper(XCOSTH5) = 1
-	Step(XCOSTH5) = 0
+	Lower(XCOSTH2) = 0
+	Upper(XCOSTH2) = 1
+	Step(XCOSTH2) = 0
 
-	Lower(XCOSTH4) = 0
-	Upper(XCOSTH4) = 1
-	Step(XCOSTH4) = 0
+	Lower(XCOSTH3) = 0
+	Upper(XCOSTH3) = 1
+	Step(XCOSTH3) = 0
 
-	Lower(XPHI4) = 0
-	Upper(XPHI4) = 1
-	Step(XPHI4) = 0
+	Lower(XPHI3) = 0
+	Upper(XPHI3) = 1
+	Step(XPHI3) = 0
 
 	fail = 0
 	end
@@ -96,28 +96,28 @@
 	msum = MASS_OUT
 
 	key = 0
-#ifdef E5MIN
-	CutMin(XMREM6) = E6MIN
+#ifdef E1MIN
+	CutMin(XMREM1) = E1MIN
 	key = key + Cut(CUT_MREM_E, CUT_MIN)
 #endif
-#ifdef COSTH6CUT
-	CutMin(XCOSTH6) = -(1 - COSTH6CUT)
-	CutMax(XCOSTH6) = +(1 - COSTH6CUT)
+#ifdef COSTH1CUT
+	CutMin(XCOSTH1) = -(1 - COSTH1CUT)
+	CutMax(XCOSTH1) = +(1 - COSTH1CUT)
 	key = key + Cut(CUT_COSTH, CUT_MIN + CUT_MAX)
 #endif
 
 	call Split(6, DBLE(MASS6), p, ex,ey,ez, minv, msum,
-     &    fac, key, Var(XMREM6), Var(XCOSTH6), Var(TRIVIAL))
-	Show(XMREM6) = momspec(SPEC_E, 6)
+     &    fac, key, Var(XMREM1), Var(XCOSTH1), Var(TRIVIAL))
+	Show(XMREM1) = momspec(SPEC_E, 6)
 	if( fac .eq. 0 ) return
 
 	call Split(5, DBLE(MASS5), p, ex,ey,ez, minv, msum,
-     &    fac, key, Var(XMREM5), Var(XCOSTH5), Var(XPHI5))
-	Show(XMREM5) = momspec(SPEC_E, 5)
+     &    fac, key, Var(XMREM2), Var(XCOSTH2), Var(XPHI2))
+	Show(XMREM2) = momspec(SPEC_E, 5)
 	if( fac .eq. 0 ) return
 
 	call Split(4, DBLE(MASS4), p, ex,ey,ez, minv, msum,
-     &    fac, 0, Var(FIXED), Var(XCOSTH4), Var(XPHI4))
+     &    fac, 0, Var(FIXED), Var(XCOSTH3), Var(XPHI3))
 
 	call VecSet(3, DBLE(MASS3), p, ex,ey,ez)
 	end

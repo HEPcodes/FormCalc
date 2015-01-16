@@ -1,19 +1,17 @@
 * model_sm.F
 * all parameters for the Standard Model are initialized here
 * this file is part of FormCalc
-* last modified 1 Jun 09 th
+* last modified 5 May 11 th
 
 
-	subroutine ModelDefaults
+	subroutine ModelDefaults(argc, argv)
 	implicit none
+	integer argc
+	character*128 argv(*)
 
 #include "decl.h"
 
 #ifdef NO_CKM
-
-	CKMlambda = 0
-	CKMA = 0
-	CKMrhoeta = 0
 
 	CKM(1,1) = 1
 	CKM(2,2) = 1
@@ -27,27 +25,30 @@
 
 #else
 
-	double precision cos12, cos23, cos13
-	double complex sin13c
+	double precision s12, s23, s13
+	double precision c12, c23, c13
+	double complex s13c
 
-	CKMlambda = sin12
-	CKMA = sin23/CKMlambda**2
-	sin13c = sin13*exp(cI*delta13)
-	CKMrhoeta = sin13c/(CKMA*CKMlambda)
+	s12 = CKMlambda
+	c12 = sqrt((1 - s12)*(1 + s12))
 
-	cos12 = sqrt((1 - sin12)*(1 + sin12))
-	cos23 = sqrt((1 - sin23)*(1 + sin23))
-	cos13 = sqrt((1 - sin13)*(1 + sin13))
+	s23 = s12**2*CKMA
+	c23 = sqrt((1 - s23)*(1 + s23))
 
-	CKM(1,1) = cos12*cos13
-	CKM(2,1) = -sin12*cos23 - cos12*sin23*sin13c
-	CKM(3,1) = sin12*sin23 - cos12*cos23*sin13c
-	CKM(1,2) = sin12*cos13
-	CKM(2,2) = cos12*cos23 - sin12*sin23*sin13c
-	CKM(3,2) = -cos12*sin23 - sin12*cos23*sin13c
-	CKM(1,3) = DCONJG(sin13c)
-	CKM(2,3) = sin23*cos13
-	CKM(3,3) = cos23*cos13
+	s13c = s12*s23*DCMPLX(CKMrhobar, CKMetabar)
+	s13c = c23/c12*s13c/(1 - s23/s12*s13c)
+	s13 = abs(s13c)
+	c13 = sqrt((1 - s13)*(1 + s13))
+
+	CKM(1,1) = c12*c13
+	CKM(2,1) = -s12*c23 - c12*s23*s13c
+	CKM(3,1) = s12*s23 - c12*c23*s13c
+	CKM(1,2) = s12*c13
+	CKM(2,2) = c12*c23 - s12*s23*s13c
+	CKM(3,2) = -c12*s23 - s12*c23*s13c
+	CKM(1,3) = DCONJG(s13c)
+	CKM(2,3) = s23*c13
+	CKM(3,3) = c23*c13
 
 #endif
 
@@ -217,12 +218,23 @@
 	parameter (delta43_20 = -.057313053497942386831D0)
 	parameter (delta43_21 =  .039058962962962962963D0)
 
-	double precision lam5
-	parameter (lam5 = 204D-3)
-* The 5-flavour scale lam5 is chosen to reproduce the
-* "world average" alpha_s(MZ) = .1176.
+	double precision beta0, beta1, beta2, lam, t, b, c, l
 
-	double precision beta0, beta1, beta2, lam, t, logt, c
+	double precision lam5, asMZ
+	save lam5, asMZ
+	data lam5 /204D-3/, asMZ /.1176D0/
+* the 5-flavour scale lam5 reproduces alpha_s(MZ) = .1176
+
+	do while( abs(asMZ - AlfasMZ) .gt. 1D-4 )
+	  t = 2*log(MZ/lam5)
+	  c = 2*beta5_1/beta5_0**2/t
+	  l = c*log(t)
+	  b = c**2*(beta5_2*beta5_0/(8*beta5_1**2) - 1)
+	  asMZ = 4*pi/beta5_0/t*(1 + l*(l - c - 1) + b)
+* Newton step is (as - AlfasMZ)/as'
+	  lam5 = lam5*(1 - beta5_0/(8*pi)*t**2*(asMZ - AlfasMZ)/
+     &      (1 + c*(c + 1) + l*(3*l - 5*c - 2) + 3*b))
+	enddo
 
 	if( scale .lt. .5D0 ) then
 	  alphasPDF = 1D10
@@ -230,44 +242,47 @@
 	endif
 
 	if( scale .gt. MT ) then
+c	  nf = 6
 	  beta0 = beta6_0
 	  beta1 = beta6_1
 	  beta2 = beta6_2
 	  t = MT/lam5
 	  lam = lam5*t**(-2/21D0)*(2*log(t))**(-107/1127D0)
 	else if( scale .gt. MB ) then
+c	  nf = 5
 	  beta0 = beta5_0
 	  beta1 = beta5_1
 	  beta2 = beta5_2
 	  lam = lam5
 	else
 	  t = 2*log(MB/lam5)
-	  logt = log(t)
+	  l = log(t)
 	  lam = lam5*exp(delta54_0*t +
-     &      delta54_11*logt + delta54_10 +
-     &      (delta54_21*logt + delta54_20)/t)
+     &      delta54_11*l + delta54_10 +
+     &      (delta54_21*l + delta54_20)/t)
 	  if( scale .gt. MC ) then
+c	    nf = 4
 	    beta0 = beta4_0
 	    beta1 = beta4_1
 	    beta2 = beta4_2
 	  else
+c	    nf = 3
 	    beta0 = beta3_0
 	    beta1 = beta3_1
 	    beta2 = beta3_2
 	    t = 2*log(MC/lam)
-	    logt = log(t)
+	    l = log(t)
 	    lam = lam*exp(delta43_0*t +
-     &        delta43_11*logt + delta43_10 +
-     &        (delta43_21*logt + delta43_20)/t)
+     &        delta43_11*l + delta43_10 +
+     &        (delta43_21*l + delta43_20)/t)
 	  endif
 	endif
 
 	t = 2*log(scale/lam)
-	logt = log(t)
-	c = 2*beta1/beta0**2/t
-
-	alphasPDF = 4*pi/(t*beta0)*(1 - logt*c +
-     &    ((logt - .5D0)**2 + beta2*beta0/(8*beta1**2) - 5/4D0)*c**2)
+	c = 2*beta1/(beta0**2*t)
+	l = c*log(t)
+	b = c**2*(beta2*beta0/(8*beta1**2) - 1)
+	alphasPDF = 4*pi/(beta0*t)*(1 + l*(l - c - 1) + b)
 	end
 
 #endif

@@ -1,12 +1,12 @@
-* mpnum.F
+* CTmpnum.F
 * a dummy multiprecision numerator function
 * this file is part of FormCalc
-* last modified 21 Oct 09 th
+* last modified 2 Dec 10 th
 
 
-	subroutine mpnum(q1in, qt2, res)
+	subroutine CTmpnum(q1in, res)
 	implicit none
-	double precision q1in(0:3), qt2
+	double precision q1in(0:3)
 	double complex res
 
 	integer ini

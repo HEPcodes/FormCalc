@@ -1,3 +1,230 @@
+12 May 11:
+
+- Fixed sign in PaVeReduce code.  (Thanks to A. Neiser.)
+
+
+11 May 11:
+
+- Fixed PolarizationSum bug for longitudinal reference vectors
+  in fermionic amplitudes (the s[n] did not get converted to
+  e[n] when passing to FORM).
+
+
+5 May 11:
+
+- Fixed absorption of MuTildeSq in the abbreviations for OPP -> True.
+
+- Updated constants in model_sm.
+
+
+7 Apr 11:
+
+- Made PrepareExpr aware of nested instances of FortranExpr.
+
+
+6 Apr 11:
+
+- Fixed problem with open Lorentz indices in conjugate eps tensors.
+
+- Fixed problem with sum in FORM code, replaced all dummy indices +
+  sum by N100_? and renumber.
+
+
+5 Apr 11:
+
+- Fixed quotes around `m' in PolarizationSum.frm, re-enabling
+  detection of massless legs.
+
+- Added optional 'colon arguments' to main.F, these are passed
+  to ModelDefaults.
+
+
+1 Apr 11:
+
+- Made LoopIntegral, PaVeIntegral, CutIntegral public.
+
+
+24 Mar 11:
+
+- MkDir returns path ending in /, for better compliance with
+  $PaintSE etc.
+
+
+14 Mar 11:
+
+- Fixed memory allocation problem in ReadForm.
+
+
+11 Mar 11:
+
+- Fixed summation range in PolarizationSum.frm for arbitrary
+  dimensions.
+
+
+7 Mar 11:
+
+- Renamed integration variables for better consistency across
+  phase-spaces with different number of legs.
+
+- Fixed invocation of Cuba (segfault).
+
+- Fixed C_{mu nu} local term in DRED.
+
+- Added EditCode -> Modal to allow modification of FORM code.
+
+
+10 Feb 11:
+
+- Replaced calls to Mathematica's Unique by NewSymbol, with its
+  own numbering system.  Unique's numbering is just too
+  unpredictable in Mathematica 8.
+
+
+8 Feb 11:
+
+- Cleaned up the NMFV sections in model_mssm.F.
+  Due to copy-and-paste from FeynHiggs, some bits were not compiling.
+
+
+5 Feb 11:
+
+- Fixed FORM error with NEQ (in DRED local terms).
+
+- Extended cancellation of q1.q1 to handle several instances.
+
+- Reverted to plain numbering of dups and tmps in PrepareExpr
+  (rather than using Unique).  In repeated calls not so many
+  different symbols are generated thus.  Use DupOffset and
+  TmpOffset to obtain numbering not starting from 1.
+
+
+3 Feb 11:
+
+- Added -ff2c to gfortran FFLAGS for compatibility with other libs.
+
+
+2 Feb 11:
+
+- Corrected powers in reduction of A00 etc.
+
+- Fixed infinite loop if several instances of q1.q1 were around
+  (does not affect regular one-loop calculations).
+
+
+1 Feb 11:
+
+- Fixed problems with pattern [m1] in one-point tensor reduction.
+
+- Added renumber statement to make FORM try harder to find
+  identical terms under sums.
+
+
+31 Jan 11:
+
+- Fixed local terms in DRED.
+
+- Made configure find lib64 directories (Linux x86-64).
+
+
+21 Jan 11:
+
+- Fixed problem in ReadForm.tm which would lead to loop integrals
+  being dropped from PolarizationSum output.
+
+- Switched typedefs for Bget, Cget, Dget, Eget from integer to
+  memindex, in accordance with latest change in LoopTools for
+  64-bit compliance.
+
+
+16 Dec 10:
+
+- Again lots of rearrangements in the numerator functions.
+  Now has macros 'NumeratorFunction' and 'Result'.
+  Spinor chains get evaluated on one line each, to prevent
+  the Fortran compiler from evaluating them in the wrong order.
+
+- Moved Abbreviate[expr, patt] to Abbreviate[expr, foo] (like Select).
+
+- Subexpr[args] executes Abbreviate[args] locally, i.e. without
+  registering the abbreviations permanently.
+
+- Added Fuse option of Abbreviate.  Fuse -> False introduces
+  abbreviations for elementary items only.
+
+
+6 Dec 10:
+
+- Lots of rearrangement re CutTools/Samurai.
+
+- Added util/samurai directory with wrapper functions.
+
+- decl.h and user.h are now both file includes and subroutine
+  includes, i.e. the first #include just declares the per-file
+  things, like preprocessor #defines, and only on subsequent
+  #includes are Fortran declarations emitted.
+
+- Renamed CutTools option of CalcFeynAmp to OPP.
+
+
+1 Dec 10:
+
+- num.h is now a link to either cuttools.h or samurai.h, both of
+  which need the numerator in a slightly different form.
+
+
+2 Oct 10:
+
+- Removed model.h in favour of model_{sm,mssm,thdm,...}.h, which
+  allows to have separate declarations for every model.  The new
+  model_xxx.h should be included in user.h.
+
+
+23 Sep 10:
+
+- Added Dminus4Eps for the Dminus4 coming from epsilon contractions
+  in HelicityME and PolarizationSum.  This is not very consistent.
+  Mostly for testing, I surmise.  You have been warned.
+
+- Moved External.h into CalcFeynAmp.frm, as now the proper
+  Cygwin FORM executable is available.  External channels now
+  available on Cygwin!
+
+
+21 Sep 10:
+
+- Windows FORM executable now a properly compiled Cygwin one.
+
+
+16 Sep 10:
+
+- Fixed remaining source of g_(1) (in fill statements) in
+  HelicityME.frm, would lead to grossly wrong results.
+
+
+15 Sep 10:
+
+- PaVeReduce -> True, Raw working (beta).  Integrals with N > 4
+  not checked yet.
+
+
+10 Sep 10:
+
+- Fermion chains in HelicityME are now written out before
+  taking the traces.  Could lead to wrong D-4 terms in the
+  presence of two epsilon tensors.
+
+
+9 Sep 10:
+
+- Fixed issue with lack of gamma matrices in fermionic couplings,
+  e.g. fermion chains of the form Spinor(...)*Spinor(...).
+
+
+3 Sep 10:
+
+- Added Dimension -> 0 for HelicityME and PolarizationSum, too.
+
+
 11 Aug 10:
 
 - Fixed problem with the abbreviation of negative powers of

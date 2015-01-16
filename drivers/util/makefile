@@ -1,6 +1,7 @@
 system := $(DIR)/system
 kin := $(DIR)/kin
 cuttools := $(DIR)/cuttools
+samurai := $(DIR)/samurai
 diag := $(DIR)/diag
 univariate := $(DIR)/univariate
 compaz := $(DIR)/compaz
@@ -14,32 +15,30 @@ cuhre := $(cuba)/cuhre
 
 CFLAGS += -I$(common)
 
+COMMON_DEPS = $(common)/stddecl.h $(common)/ChiSquare.c $(common)/Erf.c
+
 VEGAS_C := $(vegas)/Vegas.c
-VEGAS_H := $(vegas)/decl.h $(common)/stddecl.h
-VEGAS_SRCS := $(common)/debug.c $(common)/Random.c \
-  $(common)/ChiSquare.c $(common)/Erf.c $(vegas)/util.c \
-  $(vegas)/common.c $(vegas)/Grid.c $(vegas)/Integrate.c
+VEGAS_DEPS := $(COMMON_DEPS) $(common)/Random.c \
+  $(vegas)/decl.h $(vegas)/common.c \
+  $(vegas)/Grid.c $(vegas)/Integrate.c
 
 SUAVE_C := $(suave)/Suave.c
-SUAVE_H := $(suave)/decl.h $(common)/stddecl.h
-SUAVE_SRCS := $(common)/debug.c $(common)/Random.c \
-  $(common)/ChiSquare.c $(common)/Erf.c $(suave)/util.c \
-  $(suave)/common.c $(suave)/Grid.c $(suave)/Fluct.c \
-  $(suave)/Sample.c $(suave)/Integrate.c
+SUAVE_DEPS := $(COMMON_DEPS) $(common)/Random.c \
+  $(suave)/decl.h $(suave)/common.c \
+  $(suave)/Grid.c $(suave)/Fluct.c $(suave)/Sample.c \
+  $(suave)/Integrate.c
 
 DIVONNE_C := $(divonne)/Divonne.c
-DIVONNE_H := $(divonne)/decl.h $(common)/stddecl.h
-DIVONNE_SRCS := $(common)/debug.c $(common)/Random.c \
-  $(common)/ChiSquare.c $(common)/Erf.c $(divonne)/util.c \
-  $(divonne)/common.c $(divonne)/KorobovCoeff.c \
-  $(divonne)/Rule.c $(divonne)/Sample.c $(divonne)/FindMinimum.c \
-  $(divonne)/Explore.c $(divonne)/Split.c $(divonne)/Integrate.c
+DIVONNE_DEPS = $(COMMON_DEPS) $(common)/Random.c \
+  $(divonne)/decl.h $(divonne)/common.c \
+  $(divonne)/KorobovCoeff.c $(divonne)/Rule.c $(divonne)/Sample.c \
+  $(divonne)/FindMinimum.c $(divonne)/Explore.c $(divonne)/Split.c \
+  $(divonne)/Integrate.c
 
 CUHRE_C := $(cuhre)/Cuhre.c
-CUHRE_H := $(cuhre)/decl.h $(common)/stddecl.h
-CUHRE_SRCS := $(common)/debug.c \
-  $(common)/ChiSquare.c $(common)/Erf.c $(cuhre)/util.c \
-  $(cuhre)/common.c $(cuhre)/Rule.c $(cuhre)/Integrate.c
+CUHRE_DEPS = $(COMMON_DEPS) \
+  $(cuhre)/decl.h $(cuhre)/common.c \
+  $(cuhre)/Rule.c $(cuhre)/Integrate.c
 
 CUBA := $(VEGAS_C) $(SUAVE_C) $(DIVONNE_C) $(CUHRE_C)
 
@@ -64,14 +63,21 @@ OBJS := \
   $(kin)/BeS.o \
   $(kin)/IndexEps.o \
   $(kin)/PrintVec.o \
-  $(cuttools)/MomDecode.o \
-  $(cuttools)/mpnum.o \
-  $(cuttools)/Acut.o \
-  $(cuttools)/Bcut.o \
-  $(cuttools)/Ccut.o \
-  $(cuttools)/Dcut.o \
-  $(cuttools)/Ecut.o \
-  $(cuttools)/Fcut.o \
+  $(cuttools)/CTMomDecode.o \
+  $(cuttools)/CTmpnum.o \
+  $(cuttools)/CTAcut.o \
+  $(cuttools)/CTBcut.o \
+  $(cuttools)/CTCcut.o \
+  $(cuttools)/CTDcut.o \
+  $(cuttools)/CTEcut.o \
+  $(cuttools)/CTFcut.o \
+  $(samurai)/SAMomDecode.o \
+  $(samurai)/SAAcut.o \
+  $(samurai)/SABcut.o \
+  $(samurai)/SACcut.o \
+  $(samurai)/SADcut.o \
+  $(samurai)/SAEcut.o \
+  $(samurai)/SAFcut.o \
   $(diag)/Eigen2x2.o \
   $(diag)/NoMixing.o \
   $(diag)/HEigensystem.o \
@@ -93,18 +99,13 @@ $(LIB)($(univariate)/Gauss.o $(univariate)/Patterson.o): $(univariate)/config.h
 $(LIB)($(diag)/HEigensystem.o $(diag)/SEigensystem.o $(diag)/CEigensystem.o \
   $(diag)/TakagiFactor.o $(diag)/SVD.o): $(diag)/diag.h
 
+$(LIB)($(samurai)/SAAcut.o $(samurai)/SABcut.o $(samurai)/SACcut.o \
+  $(samurai)/SADcut.o $(samurai)/SAEcut.o $(samurai)/SAFcut.o): $(samurai)/SA.h
 
-$(LIB)($(VEGAS_C:.c=.o)): $(VEGAS_C) $(VEGAS_H) $(VEGAS_SRCS)
-$(LIB)($(VEGAS_F:.c=.o)): $(VEGAS_F) $(VEGAS_H)
-
-$(LIB)($(SUAVE_C:.c=.o)): $(SUAVE_C) $(SUAVE_H) $(SUAVE_SRCS)
-$(LIB)($(SUAVE_F:.c=.o)): $(SUAVE_F) $(SUAVE_H)
-
-$(LIB)($(DIVONNE_C:.c=.o)): $(DIVONNE_C) $(DIVONNE_H) $(DIVONNE_SRCS)
-$(LIB)($(DIVONNE_F:.c=.o)): $(DIVONNE_F) $(DIVONNE_H)
-
-$(LIB)($(CUHRE_C:.c=.o)): $(CUHRE_C) $(CUHRE_H) $(CUHRE_SRCS)
-$(LIB)($(CUHRE_F:.c=.o)): $(CUHRE_F) $(CUHRE_H)
+$(LIB)($(VEGAS_C:.c=.o)): $(VEGAS_C) $(VEGAS_DEPS)
+$(LIB)($(SUAVE_C:.c=.o)): $(SUAVE_C) $(SUAVE_DEPS)
+$(LIB)($(DIVONNE_C:.c=.o)): $(DIVONNE_C) $(DIVONNE_DEPS)
+$(LIB)($(CUHRE_C:.c=.o)): $(CUHRE_C) $(CUHRE_DEPS)
 
 LIBS += $(LIB)
 

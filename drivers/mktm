@@ -2,7 +2,7 @@
 # a script to set up the interface code for accessing
 # FormCalc-generated code in Mathematica
 # this file is part of FormCalc
-# last modified 14 Jul 10 th
+# last modified 15 Dec 10 th
 
 
 if [ $# -ne 1 ] ; then
@@ -194,6 +194,8 @@ extern void FORTRAN(processini)(int *fail, string pol,
 extern void FORTRAN(parameterscan)(string dir,
   cint *serialfrom, cint *serialto, cint *serialstep, cint dirlen);
 
+extern void FORTRAN(processexi)(void);
+
 extern void FORTRAN(fortranflush)(void);
 
 static va_list xsection_ap;
@@ -322,6 +324,7 @@ static void m$name(cint setno, string phead, string dhead,
   FORTRAN(processini)(&fail, pol,
     &sqrtSfrom, &sqrtSto, &sqrtSstep, strlen(pol));
   v$name(serialfrom, serialto, serialstep$argsS);
+  FORTRAN(processexi)();
 
   FORTRAN(fortranflush)();
   dup2(prevstdout, 1);

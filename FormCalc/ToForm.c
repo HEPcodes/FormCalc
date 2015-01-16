@@ -3,7 +3,7 @@
 		rearranges Mma's InputForm output to yield
 		acceptable FORM input
 		this file is part of FormCalc
-		last modified 11 Aug 10 th
+		last modified 13 Aug 10 th
 */
 
 #include <stdio.h>
@@ -19,7 +19,7 @@ int main()
     if( *in == '#' ) {
       if( in[1] == '#' ) {
         while( fgets(in, sizeof in, stdin) ) {
-          if( *(short *)in == '#'*256 + '#' ) break;
+          if( (*(short *)in & 0xffff) == '#'*0x101 ) break;
           fputs(in, stdout);
         }
         continue;

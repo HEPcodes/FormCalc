@@ -1,7 +1,7 @@
 * util.h
 * prototypes for the functions in util.a
 * this file is part of FormCalc
-* last modified 21 Oct 09 th
+* last modified 8 Dec 10 th
 
 
 	double precision ThreeMom
@@ -29,8 +29,8 @@
 	double precision momspec(16,LEGS)
 	common /momenta/ momspec
 
-	integer*8 two
-	parameter (two = 2)
+	integer*8 by
+	parameter (by = 256)
 
 
 #ifndef SPEC_M
@@ -55,7 +55,7 @@
 #define Spinor(i,s,om) (s*2*Hel(i)+16*i+om+5)
 #define DottedSpinor(i,s,om) (s*2*Hel(i)+16*i+om+7)
 
-#define K(f,i) iand(f,255)*two**(8*(i-1))
+#define MomEncoding(f,i) iand(f,255)*by**(i-1)
 
 #define signbit(i) ibits(i,31,1)
 #define IndexDelta(i,j) signbit(ieor(i,j)-1)

@@ -1,12 +1,12 @@
 * process.h
 * defines all process-dependent parameters
 * this file is part of FormCalc
-* last modified 7 Jun 05 th
+* last modified 26 Oct 10 th
 
 
 * Definition of the external particles.
-* The TYPEn may be one of SCALAR, FERMION, PHOTON, or VECTOR.
-* (PHOTON is equivalent to VECTOR, except that longitudinal
+* Each TYPEn is one of SCALAR, FERMION, PHOTON (= GLUON), or VECTOR.
+* (PHOTON/GLUON is equivalent to VECTOR, except that longitudinal
 * modes are not allowed)
 
 #define TYPE1 FERMION
@@ -49,7 +49,7 @@ c#define DIRACFERMIONS
 *   carry colour,
 * - the overall colour factor resulting from the external particles
 *   if that cannot computed by FormCalc (e.g. if the model has no
-*   colour indices, as SM.mod).
+*   colour indices, as SMew.mod).
 
 #define COLOURFACTOR 1
 
@@ -95,7 +95,8 @@ c#define WF_RENORMALIZATION (nW*dWFW1 + nZ*dWFZ1)
 
 #define PARTON1 1
 #define PARTON2 1
-#define PDFSET "cteq51.LHgrid"
+#define PDFSET "cteq5l.LHgrid"
+#define PDFMEM 0
 
 
 * Include the kinematics-dependent part.

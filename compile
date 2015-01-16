@@ -1,6 +1,6 @@
 #! /bin/sh
 # compile script for the C programs used by FormCalc
-# last modified 29 Jul 10 th
+# last modified 30 Mar 11 th
 
 # If this compile script doesn't work on your system, check these things:
 #
@@ -21,7 +21,7 @@ CXX=${CXX:-g++}
 
 MCC=${MCC:-mcc}
 
-CFLAGS="${CFLAGS:--O3 -fomit-frame-pointer -ffast-math} $@"
+CFLAGS="${CFLAGS:--O3 -fomit-frame-pointer -ffast-math -Wall -Wextra} $@"
 
 SRC="${SRC:-`dirname $0`}"
 
@@ -58,8 +58,20 @@ if [ -z "$DEST" ] ; then
 fi
 
 case "$DEST" in
-Linux | MacOSX-x86)		CFLAGS="$CFLAGS -m32" ;;
-Linux-x86-64 | MacOSX-x86-64)	CFLAGS="$CFLAGS -m64" ;;
+Please)
+	cat << _EOF_
+You have a buggy Mathematica installation.
+Please make sure the Mathematica Kernel can be run without
+additional flags (e.g. for the location of the Mathematica
+password file) and re-run $0.
+_EOF_
+	exit 1 ;;
+Linux | MacOSX-x86)
+	CFLAGS="$CFLAGS -m32"
+	MCFLAGS="$MCFLAGS -b32" ;;
+Linux-x86-64 | MacOSX-x86-64)
+	CFLAGS="$CFLAGS -m64"
+	MCFLAGS="$MCFLAGS -b64" ;;
 esac
 
 [ -d "$DEST" ] || mkdir "$DEST" || {

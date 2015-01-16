@@ -1,7 +1,7 @@
 * 1to3.F
 * the kinematics for a 1 -> 3 process
 * this file is part of FormCalc
-* last modified 3 Aug 10 th
+* last modified 25 Feb 11 th
 
 
 * some definitions for xsection.F
@@ -13,11 +13,11 @@
 #define TYPES TYPE1, TYPE2, TYPE3, TYPE4
 
 * this defines the order of integrations:
-#define XMREM4 1
-#define XCOSTH4 2
-#define XCOSTH3 3
-#define XPHI3 4
-#define MAXVAR XPHI3
+#define XMREM1 1
+#define XCOSTH1 2
+#define XCOSTH2 3
+#define XPHI2 4
+#define MAXVAR XPHI2
 
 #include LUMI
 
@@ -30,25 +30,25 @@
 
 #include "xsection.h"
 
-	Lower(XMREM4) = 0
-	Upper(XMREM4) = 1
+	Lower(XMREM1) = 0
+	Upper(XMREM1) = 1
 	if( Lower(SQRTS) .gt. Upper(SQRTS) ) then
-	  Step(XMREM4) = XMREM4STEP
+	  Step(XMREM1) = XMREM1STEP
 	else
-	  Step(XMREM4) = 0
+	  Step(XMREM1) = 0
 	endif
 
-	Lower(XCOSTH4) = 0
-	Upper(XCOSTH4) = 1
-	Step(XCOSTH4) = 0
+	Lower(XCOSTH1) = 0
+	Upper(XCOSTH1) = 1
+	Step(XCOSTH1) = 0
 
-	Lower(XCOSTH3) = 0
-	Upper(XCOSTH3) = 1
-	Step(XCOSTH3) = 0
+	Lower(XCOSTH2) = 0
+	Upper(XCOSTH2) = 1
+	Step(XCOSTH2) = 0
 
-	Lower(XPHI3) = 0
-	Upper(XPHI3) = 1
-	Step(XPHI3) = 0
+	Lower(XPHI2) = 0
+	Upper(XPHI2) = 1
+	Step(XPHI2) = 0
 
 	fail = 0
 	end
@@ -98,23 +98,23 @@
 	msum = MASS_OUT
 
 	key = 0
-#ifdef E5MIN
-	CutMin(XMREM4) = E5MIN
+#ifdef E1MIN
+	CutMin(XMREM1) = E1MIN
 	key = key + Cut(CUT_MREM_E, CUT_MIN)
 #endif
-#ifdef COSTH5CUT
-	CutMin(XCOSTH4) = -(1 - COSTH5CUT)
-	CutMax(XCOSTH4) = +(1 - COSTH5CUT)
+#ifdef COSTH1CUT
+	CutMin(XCOSTH1) = -(1 - COSTH1CUT)
+	CutMax(XCOSTH1) = +(1 - COSTH1CUT)
 	key = key + Cut(CUT_COSTH, CUT_MIN + CUT_MAX)
 #endif
 
 	call Split(4, DBLE(MASS4), p, ex,ey,ez, minv, msum,
-     &    fac, key, Var(XMREM4), Var(XCOSTH4), Var(TRIVIAL))
-	Show(XMREM4) = momspec(SPEC_E, 4)
+     &    fac, key, Var(XMREM1), Var(XCOSTH1), Var(TRIVIAL))
+	Show(XMREM1) = momspec(SPEC_E, 4)
 	if( fac .eq. 0 ) return
 
 	call Split(3, DBLE(MASS3), p, ex,ey,ez, minv, msum,
-     &    fac, 0, Var(FIXED), Var(XCOSTH3), Var(XPHI3))
+     &    fac, 0, Var(FIXED), Var(XCOSTH2), Var(XPHI2))
 
 	call VecSet(2, DBLE(MASS2), p, ex,ey,ez)
 	end

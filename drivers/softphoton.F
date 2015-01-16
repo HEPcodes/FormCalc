@@ -1,7 +1,7 @@
 * softphoton.F
 * routines for the treatment of soft-photon radiation
 * this file is part of FormCalc
-* last modified 18 Jan 08 th
+* last modified 2 Mar 11 th
 
 
 ************************************************************************
@@ -114,10 +114,10 @@
 	d = 1/((alpha*mi - mj)*(alpha*mi + mj))
 	vi = 2*(alpha*ki0 - kj0)*d
 
-	PhaseSpaceIntegral = 4*pi*alpha*kikj*d * (
+	PhaseSpaceIntegral = 4*pi*alpha*kikj*d * DBLE(
      &    log(mi/mj*abs(alpha))*loglambda +
      &    .25D0*(kilog - kjlog)*(kilog + kjlog) +
-     &    Li2(1 - (ki0 + ki)*alpha*vi) + Li2(1 - kidelta*alpha*vi) -
-     &    Li2(1 - (kj0 + kj)*vi) - Li2(1 - kjdelta*vi) )
+     &    Li2omx((ki0 + ki)*alpha*vi) + Li2omx(kidelta*alpha*vi) -
+     &    Li2omx((kj0 + kj)*vi) - Li2omx(kjdelta*vi) )
 	end
 

@@ -1,7 +1,7 @@
 # makefile.in
 # makefile template used by configure
 # this file is part of FormCalc
-# last modified 5 May 10 th
+# last modified 6 Dec 10 th
 
 # Note: make permanent changes only in makefile.in,
 # changes in makefile will be overwritten by configure.
@@ -16,7 +16,7 @@ MAKECMDGOALS := $(MAKECMDGOALS:%=%$(EXE))
 all: $(MAKECMDGOALS)
 
 
-VPATH := $(SRC):$(SRC)/squaredme:$(SRC)/renconst:$(LT)/../include:$(LT)
+VPATH := $(SRC):$(SRC)/squaredme:$(SRC)/renconst:$(LT)/../include:$(LT):$(CT)/../include:$(CT):$(SAMURAI)
 
 INCLUDE := $(patsubst %,-I%,$(subst :, ,$(VPATH)))
 
@@ -32,9 +32,6 @@ export FC
 export FFLAGS
 export CC
 export CFLAGS
-
-
-DECL_H = decl.h model.h util.h looptools.h renconst.h user.h
 
 
 DIR = $(SRC)/$(FOLDER)
@@ -62,6 +59,13 @@ clean:
 distclean:
 	$(RM) $(DEPS) $(DEPS:%.d=%.o) $(DEPS:%.d=%$(EXE)) $(LIBS) makefile
 
+
+-include $(SRC)/decl.d
+
+decl.d: $(SRC)/decl.h
+	echo '#include "decl.h"\n#include "decl.h"\n' > decl_d.c
+	$(CPP) -M $(INCLUDE) decl_d.c | sed 's/^.*: decl_d.c/$@:/' > decl.d
+	$(RM) decl_d.c
 
 -include $(SRC)/$(MAKECMDGOALS:%$(EXE)=%.d)
 
