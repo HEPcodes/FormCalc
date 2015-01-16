@@ -62,7 +62,8 @@ fi
 
 echo "Compiling for system type $DEST"
 
-mcc="CC=\"$SRC/drivers/tools/fcc\" PATH=\""'$$PATH'":$SRC/drivers/tools\" $MCC $CFLAGS"
+fcc="$SRC/drivers/tools/fcc"
+mcc="CC=\"$fcc\" CXX=\"$fcc\" PATH=\""'$$PATH'":$SRC/drivers/tools\" $MCC $CFLAGS"
 
 cc="$CC $CFLAGS"
 

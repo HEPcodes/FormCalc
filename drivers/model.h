@@ -1,7 +1,7 @@
 * model.h
 * common blocks for the model parameters
 * this file is part of FormCalc
-* last modified 21 Feb 08 th
+* last modified 19 May 08 th
 
 
 	double precision pi, degree, sqrt2, hbar_c2
@@ -21,14 +21,6 @@
 *	  have been calculated
 
 	parameter (cI = (0D0, 1D0))
-
-#ifndef WARN
-#define WARN print *,
-#define INFO print *,
-#define Digit(i) char(i+48)
-#define Polar(r,theta) r*exp(cI*degree*theta)
-#define Sq(c) DBLE((c)*DCONJG(c))
-#endif
 
 	double precision Divergence
 	common /renorm/ Divergence
@@ -71,13 +63,14 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 	parameter (MB = 4.7D0, MB2 = MB**2)
 	parameter (MBatMB = 4.25D0)
 
-	double complex CKM(3,3)
+	double complex CKM(3,3), CKMrhoeta
+	double precision CKMlambda, CKMA
 	double precision Mf(4,3), Mf2(4,3)
 	double precision MH, MH2, MG0, MG02, MGp, MGp2
 	double precision EL, GS, Alfas, Alfas2, AlfasMT, SW
 	logical sm_digest
 
-	common /sm_para/ CKM
+	common /sm_para/ CKM, CKMrhoeta, CKMlambda, CKMA
 	common /sm_para/ Mf, Mf2
 	common /sm_para/ MH, MH2, MG0, MG02, MGp, MGp2
 	common /sm_para/ EL, GS, Alfas, Alfas2, AlfasMT, SW
@@ -174,7 +167,10 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 #define VChaC(i,j) DCONJG(VCha(i,j))
 #define UChaC(i,j) DCONJG(UCha(i,j))
 #define ZNeuC(i,j) DCONJG(ZNeu(i,j))
+#define UHiggsC(i,j) DCONJG(UHiggs(i,j))
+#define ZHiggsC(i,j) DCONJG(ZHiggs(i,j))
 #define AfC(t,g1,g2) DCONJG(Af(t,g1,g2))
+#define M_3C DCONJG(M_3)
 #define MUEC DCONJG(MUE)
 #define SqrtEGlC DCONJG(SqrtEGl)
 #endif

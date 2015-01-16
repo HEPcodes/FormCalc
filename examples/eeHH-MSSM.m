@@ -3,7 +3,7 @@
 		generates the Fortran code for
 		e^+ e^- -> H^+ H^- in the MSSM
 		this file is part of FormCalc
-		last modified 29 Jan 08 th
+		last modified 9 May 08 th
 
 Reference: J. Guasch, W. Hollik, A. Kraft,
            Nucl. Phys. B596 (2001) 66 [hep-ph/9911452].
@@ -40,7 +40,7 @@ SetOptions[Paint, PaintLevel -> {Classes}, ColumnsXRows -> {4, 5}]
 (* take the comments out if you want the diagrams painted
 $PaintSE = MkDir[name <> ".diagrams"];
 DoPaint[diags_, file_, opt___] := Paint[diags, opt,
-  DisplayFunction -> (Display[ToFileName[$PaintSE, file <> ".ps"], #]&)]
+  DisplayFunction -> (Export[ToFileName[$PaintSE, file <> ".ps"], #]&)]
 *)
 
 

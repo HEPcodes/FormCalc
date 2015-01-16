@@ -1,7 +1,7 @@
 * xsection.F
 * routines to compute the cross-section
 * this file is part of FormCalc
-* last modified 11 Feb 08 th
+* last modified 26 May 08 th
 
 
 #include "process.h"
@@ -133,7 +133,7 @@
 
 #include "xsection.h"
 
-	double precision newthreshold, newscale
+	double precision newmass_in, newmass_out, newscale
 
 	if( newsqrtS .eq. sqrtS ) then
 	  if( btest(flags, BIT_RESET) ) call ModelVarIni(fail, scale)
@@ -144,16 +144,21 @@
 	fail = 0
 	sqrtS = newsqrtS
 
-1	newthreshold = max(DBLE(MASS_IN), DBLE(MASS_OUT))
-	newscale = max(DBLE(SCALE), 1D0)
+1	newscale = max(DBLE(SCALE), 1D0)
+	newmass_in = MASS_IN
+	newmass_out = MASS_OUT
 
-	if( abs(threshold - newthreshold) +
-     &      abs(scale - newscale) .gt. 1D-13 ) then
-	  threshold = newthreshold
+	if( abs(scale - newscale) +
+     &      abs(mass_in - newmass_in) +
+     &      abs(mass_out - newmass_out) .gt. 1D-9 ) then
+	  mass_in = newmass_in
+	  mass_out = newmass_out
 	  scale = newscale
 	  call ModelVarIni(fail, scale)
 	  goto 1
 	endif
+
+	threshold = max(mass_in, mass_out)
 
 	if( fail .ne. 0 .or. sqrtS .lt. threshold ) then
 	  fail = 1
@@ -470,7 +475,9 @@
 
 	if( btest(flags, BIT_RESET) ) then
 	  call clearcache
+#ifndef NO_RENCONST
 	  call CalcRenConst
+#endif
 	endif
 
 	call SquaredME(result, helicities, flags)

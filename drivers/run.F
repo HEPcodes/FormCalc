@@ -1,7 +1,7 @@
 * run.F
 * defines parameter settings for one run, then includes main.F
 * this file is part of FormCalc
-* last modified 11 Feb 08 th
+* last modified 26 May 08 th
 
 
 * Whether to run in debugging mode
@@ -16,8 +16,9 @@ c#define MUDIM 1D100
 c#define LAMBDA 1D10
 
 * The following sets all ren. constants to zero for debugging
+* or if calculating a tree-level reaction.
 
-c#define CalcRenConst ZeroRenConst
+c#define NO_RENCONST
 
 
 * The model initialization code is included here.  Options for the

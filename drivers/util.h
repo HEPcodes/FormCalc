@@ -1,7 +1,7 @@
 * util.h
 * prototypes for the functions in util.a
 * this file is part of FormCalc
-* last modified 18 Jul 07 th
+* last modified 30 Apr 08 th
 
 
 	double precision ThreeMom
@@ -49,6 +49,13 @@
 
 #define signbit(i) ibits(i,31,1)
 #define IndexDelta(i,j) signbit(ieor(i,j)-1)
+#define Digit(i) char(i+48)
+#define Polar(r,theta) r*exp(cI*degree*theta)
+#define Sq(c) DBLE((c)*DCONJG(c))
+
+#define WARN print *,
+#define INFO print *,
+#define DEB print *,
 
 #define Cut(c,m) (m)*(c)
 

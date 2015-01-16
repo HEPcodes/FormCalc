@@ -3,7 +3,7 @@
 #	pnuglot
 #		makes a plotting script from data files
 #		this file is part of FormCalc
-#		last modified 13 Jul 07 th
+#		last modified 12 Apr 08 th
 
 # This program works in two steps:
 #
@@ -153,7 +153,7 @@ _EOF_
 
 sed /endinput/d tmpgpl.pslatex >> tmpgpl.tex
 
-echo '\end{document}' >> tmpgpl.tex
+echo '\\end{document}' >> tmpgpl.tex
 
 epsfile="`dirname $0`/`basename $0 .gpl`.eps"
 latex tmpgpl.tex

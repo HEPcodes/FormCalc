@@ -2,7 +2,7 @@
 * all parameters for the MSSM are initialized here
 * this file is part of FormCalc
 * Christian Schappacher, 17 Feb 99
-* last modified 26 Feb 08 th
+* last modified 29 Apr 08 th
 
 
 * The input parameters for model_mssm are:
@@ -590,7 +590,7 @@
 	call FHSetSMPara(fail,
      &    1/Alfa, AlfasMZ, GF,
      &    MS, MC, MBatMB, MW, MZ,
-     &    theta12, theta23, theta13, delta13)
+     &    CKMlambda, CKMA, DBLE(CKMrhoeta), DIMAG(CKMrhoeta))
 	if( fail .ne. 0 ) return
 
 	call FHSetPara(fail, scalefactor,

@@ -2,7 +2,7 @@
 * non-adaptive 1D Gauss-Kronrod-Patterson integration
 * adapted from Quadpack's dqng.f for vector integrands
 * this file is part of FormCalc
-* last modified 1 Jun 05 th
+* last modified 6 Mar 08 th
 
 
 #include "config.h"
@@ -23,8 +23,10 @@
 	double precision err
 	integer j, c
 
+	double precision x(43), w10(5), w21(0:10)
+	double precision w43(0:21), w87(0:43)
+
 * abscissae
-	double precision x(43)
 	data x /
      &    .973906528517171720077964012084452D0,
      &    .865063366688984510732096688423493D0,
@@ -71,7 +73,6 @@
      &    .037352123394619870814998165437704D0 /
 
 * weights of the 10-point formula
-	double precision w10(5)
 	data w10 /
      &    .066671344308688137593568809893332D0,
      &    .149451349150580593145776339657697D0,
@@ -80,7 +81,6 @@
      &    .295524224714752870173892994651338D0 /
 
 * weights of the 21-point formula
-	double precision w21(0:10)
 	data w21 /
      &    .149445554002916905664936468389821D0,
      &    .032558162307964727478818972459390D0,
@@ -95,7 +95,6 @@
      &    .142775938577060080797094273138717D0 /
 
 * weights of the 43-point formula
-	double precision w43(0:21)
 	data w43 /
      &    .074722147517403005594425168280423D0,
      &    .016296734289666564924281974617663D0,
@@ -121,7 +120,6 @@
      &    .074507751014175118273571813842889D0 /
 
 * weights of the 87-point formula
-	double precision w87(0:43)
 	data w87 /
      &    .037361073762679023410321241766599D0,
      &    .008148377384149172900002878448190D0,

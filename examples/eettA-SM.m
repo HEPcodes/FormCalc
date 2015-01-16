@@ -3,7 +3,7 @@
 		generates the Fortran code for
 		e^+ e^- -> t-bar t gamma in the electroweak SM
 		this file is part of FormCalc
-		last modified 29 Jan 08 th
+		last modified 9 May 08 th
 
 Reference: W. Beenakker, S.C. van der Marck, and W. Hollik,
            Nucl. Phys. B365 (1991) 24.
@@ -35,7 +35,7 @@ SetOptions[Paint, PaintLevel -> {Classes}, ColumnsXRows -> {4, 5}]
 (* take the comments out if you want the diagrams painted
 $PaintSE = MkDir[name <> ".diagrams"];
 DoPaint[diags_, file_, opt___] := Paint[diags, opt,
-  DisplayFunction -> (Display[ToFileName[$PaintSE, file <> ".ps"], #]&)]
+  DisplayFunction -> (Export[ToFileName[$PaintSE, file <> ".ps"], #]&)]
 *)
 
 

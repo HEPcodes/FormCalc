@@ -29,7 +29,7 @@
 	ReadForm.tm
 		reads FORM output back into Mathematica
 		this file is part of FormCalc
-		last modified 9 Aug 07 th
+		last modified 25 Apr 08 th
 
 Note: FORM code must have
 	1. #- (no listing),
@@ -479,6 +479,11 @@ nextline:
 
       case ')':
         *di++ = *--br;
+        break;
+
+      case '[':
+        *di++ = '\\';
+        *di++ = '[';
         break;
 
       case ';':

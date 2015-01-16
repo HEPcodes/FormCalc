@@ -1,7 +1,7 @@
 * model_sm.F
 * all parameters for the Standard Model are initialized here
 * this file is part of FormCalc
-* last modified 18 Jan 08 th
+* last modified 29 Apr 08 th
 
 
 	subroutine ModelDefaults
@@ -10,6 +10,10 @@
 #include "decl.h"
 
 #ifdef NO_CKM
+
+	CKMlambda = 0
+	CKMA = 0
+	CKMrhoeta = 0
 
 	CKM(1,1) = 1
 	CKM(2,2) = 1
@@ -26,13 +30,10 @@
 	double precision cos12, cos23, cos13
 	double complex sin13c
 
+	CKMlambda = sin12
+	CKMA = sin23/CKMlambda**2
 	sin13c = sin13*exp(cI*delta13)
-
-* alternative formulation with Wolfenstein parameters:
-c	sin12 = CKMlambda
-c	sin23 = CKMA*sin12**2
-c	sin13c = sin12*sin23*DCMPLX(CKMrho, CKMeta)
-c	sin13 = abs(sin13c)
+	CKMrhoeta = sin13c/(CKMA*CKMlambda)
 
 	cos12 = sqrt((1 - sin12)*(1 + sin12))
 	cos23 = sqrt((1 - sin23)*(1 + sin23))

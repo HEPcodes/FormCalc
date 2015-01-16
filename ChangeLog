@@ -1,3 +1,62 @@
+29 May 08:
+
+- Added FORCE_ONSHELL to lumi_parton.F, to force a decaying
+  particle on-shell no matter which sqrtS is given from the
+  outside.
+
+
+13 May 08:
+
+- Modified PrepareExpr to deliver a "fully Mathematica"
+  output in FortranExpr.  DoLoop and IndexIf structures are
+  finally translated into Fortran code only by WriteExpr.
+
+- Added DebugLines option to PrepareExpr and corresponding
+  function DebugLine.
+
+
+8 May 08:
+
+- Improved CalcRenConst: no indiscriminate collection
+  w.r.t. integrals any more, only when necessary (gives
+  shorter expressions).
+
+
+30 Apr 08:
+
+- Added Abbr[patt] (i.e. with pattern).
+
+- Added Deny option of Abbreviate.
+
+
+25 Apr 08:
+
+- Complete overhaul of the WriteExpr function.  Rolled
+  WriteDoLoops and WriteSummedExpr into WriteExpr.
+
+
+20 Mar 08:
+
+- Extended the ColourFactor function to ColourSimplify,
+  for public use.
+
+- Added the ColourGrouping function, which serves as an
+  extension to FeynArts' DiagramGrouping function in that
+  it simplifies colour structures before grouping.
+
+
+2 Mar 08:
+
+- Introduced IndexDiff[i, j] = 1 - IndexDelta[i, j].
+
+- Added ToIndexIf function to turn IndexDeltas and
+  IndexDiffs into IndexIfs.
+
+- Modified WriteExpr and WriteSummedExpr to correctly
+  generate code containing IndexIfs which are translated
+  into Fortran if-statements.
+
+
 28 Feb 08:
 
 - Added LeviCivita symbol for antisymmetric tensors with

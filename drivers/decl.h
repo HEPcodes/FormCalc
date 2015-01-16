@@ -1,8 +1,7 @@
 * decl.h
 * these declarations are included "everywhere"
-* i.e. here is the right place to add user definitions
 * this file is part of FormCalc
-* last modified 18 Jan 08 th
+* last modified 4 Mar 08 th
 
 
 #include "model.h"

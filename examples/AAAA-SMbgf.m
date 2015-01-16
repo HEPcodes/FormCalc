@@ -4,7 +4,7 @@
 		gamma gamma -> gamma gamma in the electroweak SM
 		using the background-field method
 		this file is part of FormCalc
-		last modified 29 Jan 08 th
+		last modified 9 May 08 th
 
 Reference: M. Böhm, R. Schuster, Z. Phys. C63 (1994) 219.
 
@@ -33,7 +33,7 @@ SetOptions[Paint, PaintLevel -> {Classes}, ColumnsXRows -> {4, 5}]
 (* take the comments out if you want the diagrams painted
 $PaintSE = MkDir[name <> ".diagrams"];
 DoPaint[diags_, file_, opt___] := Paint[diags, opt,
-  DisplayFunction -> (Display[ToFileName[$PaintSE, file <> ".ps"], #]&)]
+  DisplayFunction -> (Export[ToFileName[$PaintSE, file <> ".ps"], #]&)]
 *)
 
 

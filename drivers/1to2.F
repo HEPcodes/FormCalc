@@ -1,7 +1,7 @@
 * 1to2.F
 * the kinematics for a 1 -> 2 process
 * this file is part of FormCalc
-* last modified 18 Jan 08 th
+* last modified 22 May 08 th
 
 
 * some definitions for xsection.F
@@ -46,7 +46,21 @@
 
 #include "xsection.h"
 
-	call VecSet(1, DBLE(MASS1), 0D0, 0D0, 0D0, 1D0)
+	double precision p
+
+#ifdef FORCE_ONSHELL
+	p = 0
+#else
+	p = dim(sqrtS, mass_in)
+	if( p .gt. 1D-6 ) then
+	  INFO "Computing off-shell decay"
+	  INFO "Warning: Results correct only if decaying particle"
+	  INFO "was chosen off-shell in CalcFeynAmp"
+	endif
+	p = sqrt(p*(sqrtS + mass_in))
+#endif
+
+	call VecSet(1, mass_in, p, 0D0, 0D0, 1D0)
 	end
 
 
