@@ -1,8 +1,8 @@
 (*
 
-This is FormCalc, Version 6.1
+This is FormCalc, Version 6.2
 Copyright by Thomas Hahn 1996-2010
-last modified 20 Jul 10 by Thomas Hahn
+last modified 11 Aug 10 by Thomas Hahn
 
 Release notes:
 
@@ -43,9 +43,9 @@ Have fun!
 *)
 
 Print[""];
-Print["FormCalc 6.1"];
+Print["FormCalc 6.2"];
 Print["by Thomas Hahn"];
-Print["last revised 20 Jul 10"]
+Print["last revised 11 Aug 10"]
 
 
 (* symbols from FeynArts *)
@@ -1415,12 +1415,13 @@ $FormCalc::usage =
 $FormCalcDir::usage =
 "$FormCalcDir points to the directory from which FormCalc was loaded."
 
-$FormCalcProgramDir::usage =
-"$FormCalcProgramDir points to the directory which contains the FormCalc
-program files."
+$FormCalcSrc::usage =
+"$FormCalcSrc points to the directory which contains the FormCalc
+source files."
 
-$ReadForm::usage =
-"$ReadForm contains the location of the ReadForm executable."
+$FormCalcBin::usage =
+"$FormCalcBin points to the directory which contains the FormCalc
+binary files."
 
 $FormCmd::usage =
 "$FormCmd gives the name of the actual FORM executable.  It may contain
@@ -1429,6 +1430,9 @@ a path."
 $DriversDir::usage =
 "$DriversDir is the path where the driver programs for the generated
 Fortran code are located."
+
+$ReadForm::usage =
+"$ReadForm contains the location of the ReadForm executable."
 
 $BlockSize::usage =
 "$BlockSize is the maximum LeafCount a single Fortran statement written
@@ -1443,15 +1447,20 @@ the file is split into several pieces."
 
 Begin["`Private`"]
 
-$FormCalc = 6.1
+$FormCalc = 6.2
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
 
-$FormCalcProgramDir = ToFileName[{$FormCalcDir, "FormCalc"}]
+$FormCmd = ToFileName[{$FormCalcDir, "FORM"}, "form_" <> $SystemID]
 
+$FormCalcSrc = ToFileName[{$FormCalcDir, "FormCalc"}]
 
-$ReadForm = ToFileName[{$FormCalcDir, $SystemID}, "ReadForm"];
+$FormCalcBin = ToFileName[{$FormCalcDir, $SystemID}]
+
+$DriversDir = ToFileName[{$FormCalcDir, "drivers"}]
+
+$ReadForm = ToFileName[$FormCalcBin, "ReadForm"];
 
 Check[
   Install[$ReadForm],
@@ -1459,6 +1468,19 @@ Check[
 installed.  Did you run the compile script first?";
   Message[ReadForm::notcompiled, $ReadForm];
   Abort[] ]
+
+
+If[ StringMatchQ[$SystemID, "Windows*"],
+  Escape[s_] := StringReplace[s, " " -> "^ "],
+(* else *)
+  Escape[s_] := "\"" <> s <> "\"" ]
+
+
+(* FormCode[file_] := "#include " <> file <> "\n" *)
+
+FormCode[file_] := FormCode[file] = "##\n\n" <> ReadList[
+  ToFileName[$FormCalcSrc, file],
+  Record, RecordSeparators -> {} ] <> "\n##\n"
 
 
 $NumberMarks = False
@@ -2491,9 +2513,7 @@ hh, amps, res, traces = 0},
   res = Plus@@ FormWrite[ hh, amps[[2]] ];
   WriteString[hh, ".store\n\n"];
   FormWrite[hh, FormCalc`Result -> res];
-  WriteString[hh, "\
-#endprocedure\n\n\
-#include CalcFeynAmp.frm\n"];
+  WriteString[hh, "#endprocedure\n\n" <> FormCode["CalcFeynAmp.frm"]];
   Close[hh];
 
   Amp[CurrentProcess]@@ RunForm[mmains][edit, retain][[1]]
@@ -2617,11 +2637,10 @@ Block[ {hh},
   hh
 ]
 
-OpenForm[file_] := OpenWrite[toform <> "\"" <> file <> "\"",
+OpenForm[file_] := OpenWrite[toform <> Escape[file],
   FormatType -> InputForm, PageWidth -> 73]
 
-toform =
-  "!\"" <> ToFileName[{$FormCalcDir, $SystemID}, "ToForm"] <> "\" > "
+toform = "!" <> Escape[ToFileName[$FormCalcBin, "ToForm"]] <> " > "
 
 
 Attributes[FormExpr] = {HoldAll}
@@ -2642,7 +2661,7 @@ FormEvalDecl[s_] :=
 Attributes[FormExec] = {HoldAll}
 
 FormExec[s__Set] := Block[{s},
-  ReadForm[$FormCmd, $FormCalcProgramDir, tempfile] ]
+  ReadForm[$FormCmd, $FormCalcSrc, tempfile] ]
 
 
 RunForm[r___][edit_, retain_] :=
@@ -2715,6 +2734,8 @@ abbM[p_Plus] := abbsum[abbM/@ p]
 abbM[n_?NumberQ x_] := n abbM[x]
 
 abbM[x_?AtomQ] = x
+
+abbM[x_^n_Integer] := abbM[x]^n
 
 abbM[x_] := abbM[x] = Unique["Abb"]
 
@@ -3409,8 +3430,7 @@ table HEL(" <> ToString[Min[part]] <> ":" <>
                ToString[Max[part]] <> ", e?);\n" <>
     MapThread[{"fill HEL(", ToForm[#1], ") = ", ToForm[#2], ";\n"}&,
       {part, hels}] <> "\n" <>
-    FormProcs <> "\
-#include HelicityME.frm\n\n"];
+    FormProcs <> FormCode["HelicityME.frm"]];
 
   ( Write[hh, "L " <> "Mat" <> ToString/@ List@@ #1 <> " = ", #2, ";"];
     WriteString[hh, "\n#call Emit\n\n"]
@@ -3719,8 +3739,7 @@ fullexpr, lor, indices, legs, masses, vars, hh},
   WriteString[hh,
     vars[[1]] <> "\n\
 #define GaugeTerms \"" <> ToBool[gauge] <> "\"\n" <>
-    FormProcs <> "\
-#include PolarizationSum.frm\n\n"];
+    FormProcs <> FormCode["PolarizationSum.frm"]];
 
   Write[hh, "L SquaredME = ", fullexpr, ";"];
 
@@ -3778,7 +3797,7 @@ Block[ {drivers, path, files = {}},
   ];
 
   CopyFile[
-    ToFileName[{$FormCalcDir, $SystemID}, "util.a"],
+    ToFileName[$FormCalcBin, "util.a"],
     ToFileName[path, "util.a"] ];
 
   path
@@ -4824,11 +4843,10 @@ WriteRenConst[expr_, dir_, opt___Rule] :=
 (* low-level Fortran output functions *)
 
 OpenFortran[file_, opt___] := OpenWrite[
-  tofortran <> "\"" <> file <> "\"",
+  tofortran <> Escape[file],
   FormatType -> FortranForm, opt, PageWidth -> 67 ]
 
-tofortran =
-  "!\"" <> ToFileName[{$FormCalcDir, $SystemID}, "ToFortran"] <> "\" > "
+tofortran = "!" <> Escape[ToFileName[$FormCalcBin, "ToFortran"]] <> " > "
 
 
 TimeStamp[] :=
@@ -5288,9 +5306,6 @@ Format[ _Continuation ] = "    "
   (* eliminate those `>' in front of continuation lines so one can cut
      and paste more easily *)
 
-$FormCmd = ToFileName[{$FormCalcDir, "FORM"}, "form_" <> $SystemID]
-  (* the filename of the actual FORM executable; may contain a path *)
-
 FormSetup = "\
 #-\n\
 #:SmallSize 5000000\n\
@@ -5310,8 +5325,6 @@ $FileSize = 30 $BlockSize
 $MaxFortranName = 30
 
 $RecursionLimit = 1024
-
-$DriversDir = ToFileName[{$FormCalcDir, "drivers"}]
 
 $PaintSE = False
 
@@ -5487,16 +5500,6 @@ Sq[CBA] = CBA2;
 Sq[SBA] = SBA2;
 CBA2/: CBA2 + SBA2 = 1
 
-SUSYTrigExpand[expr_] := expr /. {
-  SB -> sb, CB -> cb, SB2 -> sb^2, CB2 -> cb^2,
-  TB -> sb/cb, TB2 -> sb^2/cb^2,
-  SA -> sa, CA -> ca, SA2 -> sa^2, CA2 -> ca^2,
-  C2A -> ca^2 - sa^2, S2A -> 2 ca sa,
-  C2B -> cb^2 - sb^2, S2B -> 2 cb sb,
-  CAB -> ca cb - sa sb, SAB -> cb sa + ca sb,
-  CBA -> ca cb + sa sb, SBA -> ca sb - cb sa,
-  CBA2 -> (ca cb + sa sb)^2, SBA2 -> (ca sb - cb sa)^2 }
-
 Sq[MGl] = MGl2;
 Sq[MSf[a__]] = MSf2[a];
 Sq[MASf[a__]] = MASf2[a];
@@ -5516,7 +5519,8 @@ Scan[ (RealQ[#] = True)&,
     CA, SA, CA2, SA2, C2A, S2A,
     CAB, SAB, CBA, SBA, CBA2, SBA2,
     Mh0, Mh02, MHH, MHH2, MA0, MA02, MHp, MHp2, MGl,
-    _MSf, _MSf2, _MCha, _MCha2, _MNeu, _MNeu2 } ]
+    _MSf, _MSf2, _MCha, _MCha2, _MNeu, _MNeu2,
+    _MHiggs, _MHiggstree } ]
 
 MSSMReduce[foo_, red_:SMReduce][expr_, r___] :=
   red[foo][expr /. SBA2 -> 1 - CBA2, r]
@@ -5526,6 +5530,52 @@ MSSMShorten[foo_, red_:SMSimplify][x__] :=
 
 MSSMSimplify = MSSMShorten[Simplify];
 MSSMFullSimplify = MSSMShorten[FullSimplify]
+
+
+SUSYTrigExpand[expr_] := expr /. {
+  SB -> sb, CB -> cb, SB2 -> sb^2, CB2 -> cb^2,
+  TB -> sb/cb, TB2 -> sb^2/cb^2,
+  SA -> sa, CA -> ca, SA2 -> sa^2, CA2 -> ca^2,
+  C2A -> ca^2 - sa^2, S2A -> 2 ca sa,
+  C2B -> cb^2 - sb^2, S2B -> 2 cb sb,
+  CAB -> ca cb - sa sb, SAB -> cb sa + ca sb,
+  CBA -> ca cb + sa sb, SBA -> ca sb - cb sa,
+  CBA2 -> (ca cb + sa sb)^2, SBA2 -> (ca sb - cb sa)^2 }
+
+SUSYTrigReduce[expr_] := expr /.
+  {ca -> CA, sa -> SA, cb -> CB, sb -> SB}
+
+SUSYTrigSimplify[expr_, simp_:Simplify] :=
+  SUSYTrigReduce[simp[SUSYTrigExpand[expr]]]
+
+
+MassDim0 = { EL, Alfa, Alfa2, GS, Alfas, Alfas2,
+  SW, CW, SW2, CW2,
+  TB, CB, SB, TB2, CB2, SB2, C2B, S2B,
+  CA, SA, CA2, SA2, C2A, S2A,
+  CAB, SAB, CBA, SBA, CBA2, SBA2,
+  SqrtEGl, SqrtEGlC,
+  _CKM, _CKMC,
+  _USf, _USfC, _UASf, _UASfC,
+  _UCha, _UChaC, _VCha, _VChaC, _ZNeu, _ZNeuC,
+  _UHiggs, _UHiggsC, _ZHiggs, _ZHiggsC }
+
+MassDim1 = { MW, MZ, MH, MG0, MGp,
+  ME, MM, ML, MU, MC, MT, MD, MS, MB, _Mf,
+  Mh0, MHH, MA0, MHp, MGl,
+  MUE, MUEC, Mino3, Mino3C,
+  _MSf, _MASf, _MCha, _MNeu, _Af, _AfC }
+
+MassDim2 = { MW2, MZ2, MH2, MG02, MGp2,
+  ME2, MM2, ML2, MU2, MC2, MT2, MD2, MS2, MB2, _Mf2,
+  Mh02, MHH2, MA02, MHp2, MGl2,
+  _MSf2, _MASf2, _MCha2, _MNeu2 }
+
+MassDim[expr_] := expr /.
+  (# -> Random[] &)/@ MassDim0 /.
+  (# -> Mass Random[] &)/@ MassDim1 /.
+  (# -> Mass^2 Random[] &)/@ MassDim2
+
 
 (* make Needs["FeynArts`"] work after loading FormCalc *)
 

@@ -1,7 +1,7 @@
 #! /bin/sh
 # download the FORM executables
 # invoke as "getform t" to download tform instead of form
-# last modified 9 Mar 10 th
+# last modified 5 Aug 10 th
 
 download()
 {
@@ -21,4 +21,5 @@ download apple/$1form32.gz $1form_MacOSX-x86
 download apple/$1form.gz $1form_MacOSX-x86-64
 
 download windows/$1form.exe $1form_Windows
+ln -s $1form_Windows $1form_Windows-x86-64
 

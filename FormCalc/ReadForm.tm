@@ -2,7 +2,7 @@
 :Function: readform_file
 :Pattern: ReadForm[filename_String]
 :Arguments: {filename}
-:ArgumentTypes: {String}
+:ArgumentTypes: {Manual}
 :ReturnType: Manual
 :End:
 
@@ -10,7 +10,7 @@
 :Function: readform_exec
 :Pattern: ReadForm[formcmd_String, incpath_String, filename_String]
 :Arguments: {formcmd, incpath, filename}
-:ArgumentTypes: {String, String, String}
+:ArgumentTypes: {Manual}
 :ReturnType: Manual
 :End:
 
@@ -28,7 +28,7 @@
 :Function: readformdebug
 :Pattern: ReadFormDebug[debug_Integer, filename_:""]
 :Arguments: {debug, filename}
-:ArgumentTypes: {Integer, String}
+:ArgumentTypes: {Integer, Manual}
 :ReturnType: Manual
 :End:
 
@@ -49,7 +49,7 @@
 	ReadForm.tm
 		reads FORM output back into Mathematica
 		this file is part of FormCalc
-		last modified 14 Jul 10 th
+		last modified 6 Aug 10 th
 
 Note: FORM code must have
 	1. #- (no listing),
@@ -76,6 +76,10 @@ Debug:
 #define MAXEXPR 5000
 #define TERMBUF 500000
 #define STRINGSIZE 32767
+
+#if !defined(__WIN32__) && !defined(__WIN64__) && !defined(__CYGWIN__)
+#define HAVE_EXTCHANNELS
+#endif
 
 #define Allocate(p, n) \
   if( (p = malloc(n)) == NULL ) { \
@@ -119,8 +123,9 @@ Hierarchy of collecting:
 #define LEVELS 5
 
 typedef const int cint;
-typedef char *string;
-typedef MLCONST char *cstring;
+typedef unsigned char byte;
+typedef byte *string;
+typedef MLCONST byte *cstring;
 
 typedef struct {
   cstring name;
@@ -143,13 +148,31 @@ typedef struct term {
 typedef struct btree {
   struct btree *lt, *gt;
   string abbr;
-  char expr[0];
+  byte expr[0];
 } BTREE;
 
-static char zero[] = "";
+static byte zero[] = "";
 static BTREE *root = NULL;
 static int debug = 0;
 static FILE *stddeb;
+
+/******************************************************************/
+
+static inline string MLString(MLINK mlp)
+{
+  cstring s;
+  string d;
+  int n;
+
+  if( MLGetByteString(mlp, &s, &n, ' ') == 0 ) return NULL;
+  d = malloc(n + 1);
+  if( d ) {
+    memcpy(d, s, n);
+    d[n] = 0;
+  }
+  MLReleaseByteString(mlp, s, n);
+  return d;
+}
 
 /******************************************************************/
 
@@ -169,8 +192,8 @@ static inline void MLEmitMessage(MLINK mlp, cstring tag, cstring arg)
   MLPutFunction(mlp, "Message", (arg) ? 2 : 1);
   MLPutFunction(mlp, "MessageName", 2);
   MLPutSymbol(mlp, "ReadForm");
-  MLPutString(mlp, tag);
-  if( arg ) MLPutString(mlp, arg);
+  MLPutByteString(mlp, tag, strlen(tag));
+  if( arg ) MLPutByteString(mlp, arg, strlen(arg));
   MLSendPacket(mlp);
   MLNewPacket(mlp);	/* discard returned Null */
 }
@@ -200,13 +223,12 @@ static string GetAbbr(string expr)
 
   MLPutFunction(stdlink, "EvaluatePacket", 1);
   MLPutFunction(stdlink, "FormEval", 1);
-  MLPutString(stdlink, expr);
+  exprlen = strlen(expr);
+  MLPutByteString(stdlink, expr, exprlen);
   MLSendPacket(stdlink);
 
-  if( MLGetString(stdlink, &abbr) == 0 ) return expr;
+  if( MLGetByteString(stdlink, &abbr, &abbrlen, ' ') == 0 ) return expr;
 
-  exprlen = strlen(expr);
-  abbrlen = strlen(abbr);
   Allocate(lp, exprlen + abbrlen + 2 + sizeof *lp);
   *node = lp;
   lp->lt = lp->gt = NULL;
@@ -216,7 +238,7 @@ static string GetAbbr(string expr)
   memcpy(lp->abbr, abbr, abbrlen);
   lp->abbr[abbrlen] = 0;
 
-  MLDisownString(stdlink, abbr);
+  MLReleaseByteString(stdlink, abbr, abbrlen);
 
   return lp->abbr;
 }
@@ -395,17 +417,17 @@ static void ReadForm(FILE *file)
 {
   TERM *expressions[MAXEXPR], **exprp = expressions;
   TERM *termp = NULL, *tp;
-  char br[64];
+  byte br[64];
   int inexpr = 0, maxpavesize = 0, b = 0, thislev;
   enum { nfun = sizeof funtab/sizeof(FUN) };
 
   maxpavesize = 0;
 
   for( ; ; ) {
-    char line[1024];
+    byte line[1024];
     string di, delim;
     cstring si, beg;
-    char errmsg[512];
+    byte errmsg[512];
     string errend = errmsg;
     int i;
 
@@ -481,7 +503,7 @@ nextline:
     }
 
     while( *si ) {
-      char c = *si++;
+      byte c = *si++;
       if( c <= ' ' ) continue;
 
       switch( c ) {
@@ -573,9 +595,11 @@ quit:
 
 /******************************************************************/
 
-static void readform_file(cstring filename)
+static void readform_file(void)
 {
+  string filename = MLString(stdlink);
   FILE *file = fopen(filename, "r");
+
   if( file ) {
     ReadForm(file);
     fclose(file);
@@ -585,6 +609,8 @@ static void readform_file(cstring filename)
     MLPutFunction(stdlink, "Abort", 0);
     MLEndPacket(stdlink);
   }
+
+  free(filename);
 }
 
 /******************************************************************/
@@ -602,22 +628,23 @@ static inline int writeall(cint h, cstring buf, long n)
 static int ToMma(cint hw, string expr)
 {
   int b = 0, decl = 256, verb = 0;
-  char br[64], c;
-  cstring result, r;
-  string s;
+  cint exprlen = strlen(expr);
+  byte br[64], c;
+  string result, r, s;
+  char *n;
 
   if( debug & 2 ) {
     fprintf(stddeb, DEBUG "to mma (%lu bytes)" RESET,
-      (unsigned long)strlen(expr));
+      (unsigned long)exprlen);
     if( debug & 4 ) fprintf(stddeb, "4 |%s|\n", expr);
   }
 
   MLPutFunction(stdlink, "EvaluatePacket", 1);
   MLPutFunction(stdlink, "FormEvalDecl", 1);
-  MLPutString(stdlink, expr);
+  MLPutByteString(stdlink, expr, exprlen);
   MLSendPacket(stdlink);
 
-  if( MLGetString(stdlink, &result) == 0 ) return 0;
+  if( (result = MLString(stdlink)) == NULL ) return 0;
 
   if( debug & 2 ) {
     fprintf(stddeb, DEBUG "from mma raw (%lu bytes)" RESET,
@@ -646,7 +673,8 @@ static int ToMma(cint hw, string expr)
       break;
     case '\\':
       if( *r != '0' ) continue;
-      c = strtol(r, (string *)&r, 8);
+      c = strtol(r, &n, 8);
+      r = n;
       break;
     case ',':
       if( decl | b ) break;
@@ -662,7 +690,7 @@ static int ToMma(cint hw, string expr)
       }
       *s++ = '\n';
       if( writeall(hw, expr, s - expr) < 0 ) {
-        MLDisownString(stdlink, result);
+        free(result);
         return 0;
       }
       s = expr;
@@ -674,7 +702,7 @@ static int ToMma(cint hw, string expr)
 
   sync();  /* another sync needed for Mac OS, again unclear why */
 
-  MLDisownString(stdlink, result);
+  free(result);
   return 1;
 }
 
@@ -685,7 +713,7 @@ static void *ExtIO(void *h)
   cint hw = ((int *)h)[3];
   cint hr = ((int *)h)[4];
   string expr;
-  char br[64];
+  byte br[64];
   enum { blocksize = 40960, linesize = 512, ahead = 32 };
   int size = 2*blocksize, verb = 0, b, w, n;
 
@@ -717,7 +745,7 @@ loop:
     }
 
     do {
-      char c = *s++;
+      byte c = *s++;
       if( c <= ' ' ) continue;
       switch( c | verb ) {
       case '#':
@@ -758,19 +786,21 @@ loop:
 
 /******************************************************************/
 
-static void readform_exec(cstring cmd, cstring incpath, cstring filename)
+static void readform_exec(void)
 {
   int hh[10] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
   int *h, i;
-  pthread_t tid;
-  void *tj = NULL;
   pid_t pid = -1;
   FILE *file;
-  char arg[32];
-  string fn = strdup(filename);
-  string argv[] = {strdup(cmd), "-p", strdup(incpath),
-    fn, NULL, fn, NULL};
-	/* need the stupid strdups for !#^$@* Win */
+  string formcmd = MLString(stdlink);
+  string incpath = MLString(stdlink);
+  string filename = MLString(stdlink);
+  string argv[] = {formcmd, "-p", incpath, filename, NULL, filename, NULL};
+#ifdef HAVE_EXTCHANNELS
+  pthread_t tid;
+  void *tj = NULL;
+  byte arg[32];
+#endif
 
   /* make sure we don't overlap with 0, 1, 2 */
   i = -2;
@@ -779,7 +809,7 @@ static void readform_exec(cstring cmd, cstring incpath, cstring filename)
     if( pipe(h) == -1 ) goto abort;
   } while( h[1] <= 2 );
 
-#if !defined(__WIN32__) && !defined(__CYGWIN__)
+#ifdef HAVE_EXTCHANNELS
   if( pipe(&h[2]) != -1 &&
       pipe(&h[4]) != -1 &&
       pthread_create(&tid, NULL, ExtIO, h) == 0 ) {
@@ -797,15 +827,13 @@ static void readform_exec(cstring cmd, cstring incpath, cstring filename)
   if( pid == -1 ) goto abort;
 
   if( pid == 0 ) {
-#if defined(__WIN32__) || defined(__CYGWIN__)
     usleep(1000);
-#endif
     close(h[0]);
     dup2(h[1], 1);
     close(h[1]);
     if( h[3] != -1 ) close(h[3]);
     if( h[4] != -1 ) close(h[4]);
-    exit(execvp(argv[0], argv));
+    exit(execvp(argv[0], (char **)argv));
   }
 
   close(h[1]);
@@ -821,7 +849,7 @@ static void readform_exec(cstring cmd, cstring incpath, cstring filename)
   }
   else {
 abort:
-    MLEmitMessage(stdlink, "noopen", cmd);
+    MLEmitMessage(stdlink, "noopen", formcmd);
     MLPutFunction(stdlink, "Abort", 0);
     MLEndPacket(stdlink);
   }
@@ -833,11 +861,13 @@ abort:
 
   for( i = 6; --i >= 0; ) if( h[i] != -1 ) close(h[i]);
 
+#ifdef HAVE_EXTCHANNELS
   if( tj ) pthread_join(tid, &tj);
+#endif
 
-  free(fn);
-  free(argv[0]);
-  free(argv[2]);
+  free(filename);
+  free(incpath);
+  free(formcmd);
 }
 
 /******************************************************************/
@@ -863,12 +893,13 @@ static void readformclear(void)
 
 /******************************************************************/
 
-static void readformdebug(cint deb, cstring filename)
+static void readformdebug(cint deb)
 {
+  cstring filename = MLString(stdlink);
   debug = deb;
 
   stddeb = stderr;
-  if( *filename ) {
+  if( filename && *filename ) {
     stddeb = fopen(filename, "w");
     if( stddeb == NULL ) {
       MLEmitMessage(stdlink, "noopen", filename);

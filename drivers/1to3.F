@@ -1,7 +1,7 @@
 * 1to3.F
 * the kinematics for a 1 -> 3 process
 * this file is part of FormCalc
-* last modified 24 Jun 10 th
+* last modified 3 Aug 10 th
 
 
 * some definitions for xsection.F
@@ -30,13 +30,25 @@
 
 #include "xsection.h"
 
-	Lower(XCOSTH) = 0
-	Upper(XCOSTH) = 1
+	Lower(XMREM4) = 0
+	Upper(XMREM4) = 1
 	if( Lower(SQRTS) .gt. Upper(SQRTS) ) then
-	  Step(XCOSTH) = XCOSTHSTEP
+	  Step(XMREM4) = XMREM4STEP
 	else
-	  Step(XCOSTH) = 0
+	  Step(XMREM4) = 0
 	endif
+
+	Lower(XCOSTH4) = 0
+	Upper(XCOSTH4) = 1
+	Step(XCOSTH4) = 0
+
+	Lower(XCOSTH3) = 0
+	Upper(XCOSTH3) = 1
+	Step(XCOSTH3) = 0
+
+	Lower(XPHI3) = 0
+	Upper(XPHI3) = 1
+	Step(XPHI3) = 0
 
 	fail = 0
 	end
@@ -66,37 +78,6 @@
 	call VecSet(1, mass_in, p, 0D0, 0D0, 1D0)
 	end
 
-
-************************************************************************
-
-	subroutine FinalState(fac)
-	implicit none
-	double precision fac
-
-#include "xsection.h"
-
-	double precision p, ex,ey,ez, msum, minv
-	integer key
-
-	p = 0
-	ex = 0
-	ey = 0
-	ez = 1
-	minv = sqrtS
-	msum = MASS_OUT
-
-	key = 0
-#ifdef COSTHCUT
-	CutMin(XCOSTH) = -(1 - COSTHCUT)
-	CutMax(XCOSTH) = +(1 - COSTHCUT)
-	key = key + Cut(CUT_COSTH, CUT_MIN + CUT_MAX)
-#endif
-
-	call Split(2, DBLE(MASS2), p, ex,ey,ez, minv, msum,
-     &    fac, key, Var(FIXED), Var(XCOSTH), Var(TRIVIAL))
-
-	call VecSet(3, DBLE(MASS3), p, ex,ey,ez)
-	end
 
 ************************************************************************
 

@@ -1,3 +1,42 @@
+11 Aug 10:
+
+- Fixed problem with the abbreviation of negative powers of
+  dot products: negative powers must be included in the abbreviation 
+  on the FORM side and Mathematica pulls then out again.
+  Exact reason for wrong results remains unclear.  Problem affects 
+  PolarizationSum only, as the other routines do not deal with
+  negative powers.  (Thanks to Celine Degrand.)
+
+- Fixed issue with including static FORM code before
+  generated code, as in HelicityME.frm, PolarizationSum.frm
+  (uses ## delimiter also after static code).
+
+
+5 Aug 10:
+
+- Consistently moved all strings in ReadForm.tm to unsigned char,
+  using ML{Get,Put}ByteString for transfer.
+
+- FormCalc now includes the actual FORM code in the output file,
+  i.e. resolves the #include.
+
+
+4 Aug 10:
+
+- Fixed up a lot of Windows anomalies, e.g. properly quoted
+  filenames in the sense of Cmd.exe.
+
+
+23 Jul 10:
+
+- Added SUSYTrigExpand, SUSYTrigReduce, SUSYTrigSimplify
+  for simplification of the various symbols representing
+  SUSY angles, such as S2A, TB2, ...
+
+- Added MassDim function to check for the correction mass
+  dimension of an expression.
+
+
 20 Jul 10:
 
 - ToDoLoops now takes care to order the expressions such

@@ -1,6 +1,6 @@
 #! /bin/sh
 # compile script for the C programs used by FormCalc
-# last modified 14 Jul 10 th
+# last modified 29 Jul 10 th
 
 # If this compile script doesn't work on your system, check these things:
 #
@@ -36,12 +36,14 @@ Darwin)
 	       $HOME/Desktop/Mathematica*/Contents/MacOS ;;
 CYG*)
 	exe=.exe
-	set -- "$PROGRAMFILES/Wolfram Research/Mathematica"/* ;;
+	export nodosfilewarning=1
+	set -- "$ProgramW6432/Wolfram Research/Mathematica"/* \
+               "$PROGRAMFILES/Wolfram Research/Mathematica"/* ;;
 esac
 
 if [ -z "$DEST" ] ; then
   for dir in "$@" ; do
-    path="$dir:$path"
+    path=`cd "$dir"; pwd`:"$path"
   done
   mathcmd="`PATH=\"$PATH:$path\" which $mathcmd`"
 

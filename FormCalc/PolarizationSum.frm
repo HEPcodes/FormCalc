@@ -1,7 +1,7 @@
 * PolarizationSum.frm
 * the FORM part of the PolarizationSum function
 * this file is part of FormCalc
-* last modified 19 May 10 th
+* last modified 11 Aug 10 th
 
 
 #procedure PolSum(i, m)
@@ -101,7 +101,7 @@ id eta`i' = 0;
 
 id [p1]?.[p2]? = abbM([p1].[p2], [p1], [p2]);
 
-id 1/[p1]?.[p2]? = 1/abbM([p1].[p2])
+id 1/[p1]?.[p2]? = abbM(1/[p1].[p2])
 #if "`Scale'" != "1"
   * IMOM([p1], [p2])
 #endif
