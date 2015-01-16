@@ -54,6 +54,7 @@ OBJS := \
   $(system)/Error.o \
   $(system)/fortranflush.o \
   $(system)/parallel.o \
+  $(system)/shmalloc.o \
   $(kin)/VecSet.o \
   $(kin)/VecCopy.o \
   $(kin)/Split.o \
@@ -104,8 +105,10 @@ $(LIB)( $(cuttools)/CTBcut.o $(cuttools)/CTCcut.o $(cuttools)/CTDcut.o \
 $(LIB)( $(samurai)/SAMomDecode.o $(cuttools)/CTMomDecode.o ): \
   $(parent)/F/types.h $(parent)/F/util.h
 
-$(LIB)( $(kin)/VecCopy.o $(system)/parallel.o ): \
-  $(parent)/distrib.h $(parent)/F/types.h $(parent)/F/util.h
+$(LIB)( $(kin)/VecCopy.o ): \
+  $(parent)/distrib.h simd.h $(parent)/F/types.h $(parent)/F/util.h
+
+$(LIB)( $(system)/parallel.o ): $(parent)/distrib.h
 
 $(LIB)($(VEGAS_C:.c=.o)): $(VEGAS_C) $(VEGAS_DEPS)
 $(LIB)($(SUAVE_C:.c=.o)): $(SUAVE_C) $(SUAVE_DEPS)

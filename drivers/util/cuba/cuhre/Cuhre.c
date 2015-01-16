@@ -2,7 +2,7 @@
 	Cuhre.c
 		Adaptive integration using cubature rules
 		by Thomas Hahn
-		last modified 1 May 13 th
+		last modified 17 Sep 13 th
 */
 
 
@@ -61,7 +61,7 @@ Extern void EXPORT(cuhre)(ccount *pndim, ccount *pncomp,
   t.mineval = *pmineval;
   t.maxeval = *pmaxeval;
   t.key = *pkey;
-  t.statefile = CString(statefile, statefilelen);
+  CString(t.statefile, statefile, statefilelen);
 
   *pfail = Integrate(&t, integral, error, prob);
   *pnregions = t.nregions;

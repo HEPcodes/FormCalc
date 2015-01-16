@@ -2,7 +2,7 @@
 * this is the main program for the generated Fortran code,
 * it scans the command line and then invokes ParameterScan
 * this file is part of FormCalc
-* last modified 31 May 13 th
+* last modified 4 Nov 13 th
 
 
 #include "xsection.F"
@@ -11,6 +11,8 @@
 
 	program main
 	implicit none
+
+#include "util.h"
 
 #if U77EXT
 	integer iargc, lnblnk
@@ -74,6 +76,18 @@ c	call setfpu
      &      serialfrom, serialto, serialstep
 992	  if( serialfrom .eq. -1 ) goto 999
 	endif
+
+	hseleps = 1D-7
+	call getenv("FCHSELEPS", tmp)
+	read(tmp, *, iostat=fail, end=993, err=993) hseleps
+993	print *, "env FCHSELEPS =", hseleps
+
+	hseln = 5
+	call getenv("FCHSELN", tmp)
+	read(tmp, *, iostat=fail, end=994, err=994) hseln
+994	print *, "env FCHSELN =", hseln
+
+	print *, "compiled with SIMD =", SIMD
 
 	call ParameterScan(dir, serialfrom, serialto, serialstep)
 

@@ -1,3 +1,57 @@
+14 Nov 13:
+
+- Added proper initialization with zero of loop result also for
+  tree-level-only calculations (relevant mostly for gfortran).
+
+- Reverted to statically linked Linux FORM executables for glibc
+  compatibility.  Static linking had caused segfaults in g++'s
+  exception handling (used in FORM's factorization algorithm).
+  In the event of a segfault in FORM please replace
+  Linux{,-x86-64}/tform by the respective shared version
+  FORM/Linux{,-x86-64}/bin/tform-shared.
+
+
+13 Nov 13:
+
+- Updated FORM executables.
+
+- Added Windows-x86-64 build (on Cygwin64).
+
+- Made detection of helicity combinations with zero result more
+  conservative.
+
+
+8 Nov 13:
+
+- NCOMP = 1 now automatically sets BIT_LOOP = 0.
+
+
+7 Nov 13:
+
+- Fixed glitch in WriteSquaredME for vanishing tree (or loop)
+  contribution.
+
+
+6 Nov 13:
+
+- configure now creates simd.h (if different than before) such
+  that dependencies are properly handled.  This affects mostly
+  util/kin/VecCopy.F.
+
+
+3 Nov 13:
+
+- Fixed MathLink compilation issue with MacOS 10.9/clang++.
+
+- Enabled vectorization as default using the capabilities of the
+  CPU the code is configured on.  Use ./configure --generic to
+  turn off, i.e. make code run regardless of CPU features (e.g.
+  for batch processing on a cluster).
+
+- Added automatic detection of helicity combinations with
+  zero result.
+
+
 9 Sep 13:
 
 - Fixed detection of LHC energies in lumi_hadron.F.

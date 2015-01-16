@@ -1,7 +1,7 @@
 * xsection.F
 * routines to compute the cross-section
 * this file is part of FormCalc
-* last modified 6 May 13 th
+* last modified 8 Nov 13 th
 
 #define DRIVER
 
@@ -329,7 +329,10 @@
 	call ModelConstIni(fail)
 	if( fail .ne. 0 ) goto 999
 
-	flags = 2**BIT_RESET + 2**BIT_LOOP
+	flags = 2**BIT_RESET
+#if NCOMP > 1
+     &    + 2**BIT_LOOP
+#endif
 
 #ifdef MUDIM
 	call setmudim(Re(MUDIM))
@@ -494,7 +497,7 @@
 ** For all integration variables (those with zero step) it factors in
 ** the Jacobian, too.
 
-	subroutine DifferentialCS(ndim, x, ncomp, result)
+	integer function DifferentialCS(ndim, x, ncomp, result)
 	implicit none
 	integer ndim, ncomp
 	RealType x(ndim), result(ncomp)
@@ -508,6 +511,8 @@
 
 	RealType fac, span, flux
 	integer v, d, c
+
+	DifferentialCS = 0
 
 	fac = avgfac
 	d = 0

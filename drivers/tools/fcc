@@ -1,17 +1,20 @@
 #! /bin/sh
 # script to compile C programs that are linked 
 # against Fortran libraries
-# last modified 22 Jul 11 th
+# last modified 5 Nov 13 th
 
 args=
+compileonly=
 objs=
 ldflags=
 fldflags=
-compileonly=
 
 cc="${REALCC:-cc}"
 cxx="${REALCXX:-c++}"
 test `basename $0 .in` = f++ && cc="$cxx"
+case `$cxx --version 2>&1` in
+*clang*) cxx="$cxx -stdlib=libstdc++" ;;
+esac
 
 while test $# -gt 0 ; do
   case "$1" in

@@ -2,7 +2,7 @@
 	parallel.c
 		parallel execution of SquaredMEHel
 		this file is part of FormCalc
-		last modified 22 Apr 13 th
+		last modified 10 Nov 13 th
 */
 
 
@@ -31,7 +31,6 @@
 #endif
 
 #define RealType double
-#define NCOMP 2
 
 typedef void (*subroutine)(RealType *, const int *);
 
@@ -45,6 +44,7 @@ typedef unsigned long long int seq_t;
 typedef struct {
   int fd;
   seq_t seq;
+  RealType *res;
 } childinfo;
 
 #define MINCORES 1
@@ -78,6 +78,7 @@ fprintf(stderr, TERM_BLUE "SquaredME core %d: " s TERM_RESET, core, __VA_ARGS__)
 
 static int ncores = -1, nlaunched, nrunning;
 static int fdmax;
+static size_t ressize;
 static childinfo *child;
 static fd_set children;
 static struct {
@@ -120,7 +121,7 @@ static inline int writesock(int fd, const void *data, size_t n)
 
 /*********************************************************************/
 
-static inline void newcore(subroutine foo, const int flags)
+static inline void newcore(subroutine foo, RealType *res, const int flags)
 {
   int fd[2];
   pid_t pid;
@@ -136,6 +137,7 @@ static inline void newcore(subroutine foo, const int flags)
     close(fd[1]);
     child[core].fd = fd[0];
     child[core].seq = mem_seq;
+    child[core].res = res;
     FD_SET(fd[0], &children);
     fdmax = IMax(fd[0], fdmax);
     return;
@@ -144,13 +146,11 @@ static inline void newcore(subroutine foo, const int flags)
   close(fd[0]);
 
   for( ; ; ) {
-    RealType res[NCOMP];
     seq_t seq = mem_seq;
 
-    res[0] = res[1] = 0;
     foo(res, &flags);
-    WORKER(core, "writing result(%ld)", sizeof res);
-    writesock(fd[1], res, sizeof res);
+    WORKER(core, "writing result(%ld)", ressize);
+    writesock(fd[1], res, ressize);
 
     WORKER(core, "reading mem_hel(%p#%ld)", mem.h, mem.he - mem.h);
     if( !readsock(fd[1], mem.h, mem.he - mem.h) ) exit(0);
@@ -176,11 +176,10 @@ static inline void newcore(subroutine foo, const int flags)
 
 /*********************************************************************/
 
-static inline int readycore(RealType *result)
+static inline int readycore()
 {
   static int nwaiting, core;
   static fd_set ready;
-  RealType res[NCOMP];
   int c;
 
   if( nwaiting == 0 ) {
@@ -193,10 +192,9 @@ static inline int readycore(RealType *result)
   for( ; core < ncores; ++core )
     if( FD_ISSET(child[core].fd, &ready) ) break;
 
-  MASTER("reading result(%ld) from core %d", sizeof res, core);
+  MASTER("reading result(%ld) from core %d", ressize, core);
 
-  readsock(child[core].fd, res, sizeof res);
-  for( c = 0; c < NCOMP; ++c ) result[c] += res[c];
+  readsock(child[core].fd, child[core].res, ressize);
 
   --nrunning;
   return core++;
@@ -204,11 +202,12 @@ static inline int readycore(RealType *result)
 
 /*********************************************************************/
 
-static inline void oldcore(const int core)
+static inline void oldcore(const int core, RealType *res)
 {
   int fd = child[core].fd;
   seq_t seq = child[core].seq;
   child[core].seq = mem_seq;
+  child[core].res = res;
 
   MASTER("sending mem_hel(%p#%ld) to core %d",
     mem.h, mem.he - mem.h, core);
@@ -235,12 +234,14 @@ static inline void oldcore(const int core)
 
 /*********************************************************************/
 
-void sqmeprep_(void *v, void *ve,
+void sqmeprep_(void *v, void *ve, void *r, void *re,
   void *s, void *se, void *a, void *ae, void *h, void *he)
 {
 #ifdef HAVE_FORK
   void sqmewait_(void);
   void cubasetexit_(void (*)(void), void *);
+
+  ressize = re - r;
 
   mem.h = h;
   mem.he = he;
@@ -270,25 +271,25 @@ void sqmeprep_(void *v, void *ve,
 
 /*********************************************************************/
 
-void sqmeexec_(subroutine foo, RealType *result, const int *flags)
+void sqmeexec_(subroutine foo, RealType *res, const int *flags)
 {
 #ifdef HAVE_FORK
   if( ncores >= MINCORES ) {
-    if( nlaunched < ncores ) newcore(foo, *flags);
-    else oldcore((nrunning < ncores) ? nrunning : readycore(result));
+    if( nlaunched < ncores ) newcore(foo, res, *flags);
+    else oldcore((nrunning < ncores) ? nrunning : readycore(), res);
     ++nrunning;
   }
   else
 #endif
-  foo(result, flags);
+  foo(res, flags);
 }
 
 /*********************************************************************/
 
-void sqmesync_(RealType *result)
+void sqmesync_()
 {
 #ifdef HAVE_FORK
-  while( nrunning ) readycore(result);
+  while( nrunning ) readycore();
 #endif
 }
 

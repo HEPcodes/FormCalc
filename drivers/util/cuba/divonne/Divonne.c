@@ -4,7 +4,7 @@
 		originally by J.H. Friedman and M.H. Wright
 		(CERNLIB subroutine D151)
 		this version by Thomas Hahn
-		last modified 2 May 13 th
+		last modified 17 Sep 13 th
 */
 
 #define DIVONNE
@@ -96,7 +96,7 @@ Extern void EXPORT(divonne)(ccount *pndim, ccount *pncomp,
   t.ldxgiven = *pldxgiven;
   t.nextra = *pnextra;
   t.peakfinder = peakfinder;
-  t.statefile = CString(statefile, statefilelen);
+  CString(t.statefile, statefile, statefilelen);
 
   *pfail = Integrate(&t, integral, error, prob);
   *pnregions = t.nregions;

@@ -1,7 +1,7 @@
 # makefile.in
 # makefile template used by configure
 # this file is part of FormCalc
-# last modified 19 Apr 13 th
+# last modified 6 Nov 13 th
 
 # Note: make permanent changes only in makefile.in,
 # changes in makefile will be overwritten by configure.
@@ -24,7 +24,7 @@ LIB = $(FOLDER).a
 
 LIBS :=
 
-VPATH := $(SRC):$(LT)/../include:$(LT):$(CT)/../include:$(CT):$(SAMURAI)
+VPATH := .:$(SRC):$(LT)/../include:$(LT):$(CT)/../include:$(CT):$(SAMURAI)
 
 FOLDER := squaredme
 -include $(DIR)/makefile
@@ -62,12 +62,12 @@ clean:
 	$(RM) $(DEPS) $(DEPS:%.d=%.o) $(DEPS:%.d=%$(EXE)) $(CLEANLIBS)
 
 distclean:
-	$(RM) $(DEPS) $(DEPS:%.d=%.o) $(DEPS:%.d=%$(EXE)) $(LIBS) makefile
+	$(RM) $(DEPS) $(DEPS:%.d=%.o) $(DEPS:%.d=%$(EXE)) $(LIBS) makefile simd.h
 
 
 define makedeps
 ( echo '#include "$<"' ; echo '#include "$<"' ) > deps.c
-$(CPP) -M -I$(<D) $(INCLUDE) deps.c | sed 's|^.*: deps.c|$@:|' > $@
+$(CPP) -M -DDEPS -I$(<D) $(INCLUDE) deps.c | sed 's|^.*: deps.c|$@:|' > $@
 $(RM) deps.c
 endef
 

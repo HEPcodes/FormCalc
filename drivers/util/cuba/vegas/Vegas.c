@@ -2,7 +2,7 @@
 	Vegas.c
 		Vegas Monte-Carlo integration
 		by Thomas Hahn
-		last modified 2 May 13 th
+		last modified 17 Sep 13 th
 */
 
 
@@ -70,7 +70,7 @@ Extern void EXPORT(vegas)(ccount *pndim, ccount *pncomp,
   t.nincrease = *pnincrease;
   t.nbatch = *pnbatch;
   t.gridno = *pgridno;
-  t.statefile = CString(statefile, statefilelen);
+  CString(t.statefile, statefile, statefilelen);
 
   *pfail = Integrate(&t, integral, error, prob);
   *pneval = t.neval;

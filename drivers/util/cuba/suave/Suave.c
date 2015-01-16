@@ -2,7 +2,7 @@
 	Suave.c
 		Subregion-adaptive Vegas Monte-Carlo integration
 		by Thomas Hahn
-		last modified 2 May 13 th
+		last modified 17 Sep 13 th
 */
 
 
@@ -69,7 +69,7 @@ Extern void EXPORT(suave)(ccount *pndim, ccount *pncomp,
   t.maxeval = *pmaxeval;
   t.nnew = *pnnew;
   t.flatness = *pflatness;
-  t.statefile = CString(statefile, statefilelen);
+  CString(t.statefile, statefile, statefilelen);
 
   *pfail = Integrate(&t, integral, error, prob);
   *pnregions = t.nregions;

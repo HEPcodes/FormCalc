@@ -1,7 +1,7 @@
 * softphoton.F
 * routines for the treatment of soft-photon radiation
 * this file is part of FormCalc
-* last modified 28 Apr 13 th
+* last modified 27 Oct 13 th
 
 
 ************************************************************************
@@ -23,6 +23,30 @@
 	common /infrared/ loglambda
 
 	RealType charge(LEGS), r
+
+#ifndef Charge1
+#define Charge1 0
+#endif
+
+#ifndef Charge2
+#define Charge2 0
+#endif
+
+#ifndef Charge3
+#define Charge3 0
+#endif
+
+#ifndef Charge4
+#define Charge4 0
+#endif
+
+#ifndef Charge5
+#define Charge5 0
+#endif
+
+#ifndef Charge6
+#define Charge6 0
+#endif
 
 * not a very nice solution, the following, but necessary
 * because there may be no "/" in a constant in the data
@@ -48,6 +72,15 @@
 	parameter (ch3 = Charge3)
 	parameter (ch4 = Charge4)
 	parameter (ch5 = Charge5)
+#elif LEGS == 6
+#define CHARGES ch1, ch2, ch3, ch4, ch5, ch6
+	RealType CHARGES
+	parameter (ch1 = Charge1)
+	parameter (ch2 = Charge2)
+	parameter (ch3 = Charge3)
+	parameter (ch4 = Charge4)
+	parameter (ch5 = Charge5)
+	parameter (ch6 = Charge6)
 #else
 #error No definition for LEGS external legs
 #endif
@@ -69,7 +102,7 @@
 
 
 ************************************************************************
-** PhaseSpaceIntegral calculates the integral over the soft photon's
+** PhaseSpaceIntegral calculates the integral over the soft photon
 ** phase space.  See A. Denner, Fortschr. d. Physik, 41 (1993) 4.
 
 	RealType function PhaseSpaceIntegral(i, j)
@@ -85,7 +118,10 @@
 	RealType loglambda
 	common /infrared/ loglambda
 
-#include "inline.h"
+	ComplexType Pair
+	Pair(i, j) = .5D0*(
+     &    vec(1,1,i)*vec(2,2,j) + vec(2,2,i)*vec(1,1,j) -
+     &    vec(1,2,i)*vec(2,1,j) - vec(2,1,i)*vec(1,2,j) )
 
 	mi = momspec(SPEC_M, i)
 	ki0 = momspec(SPEC_E, i)
@@ -122,8 +158,5 @@
      &    .25D0*(kilog - kjlog)*(kilog + kjlog) +
      &    Li2omx((ki0 + ki)*alpha*vi) + Li2omx(kidelta*alpha*vi) -
      &    Li2omx((kj0 + kj)*vi) - Li2omx(kjdelta*vi) )
-
-#include "contains.h"
-
 	end
 

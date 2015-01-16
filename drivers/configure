@@ -2,7 +2,7 @@
 # configure script for FormCalc
 # note: has nothing to do with GNU autoconf
 # this file is part of FormCalc
-# last modified 5 Sep 13 th
+# last modified 6 Nov 13 th
 
 
 LC_ALL=C
@@ -129,9 +129,12 @@ CONF_STATIC_EXT=
 CONF_QUAD=
 CONF_DEBUG=
 CONF_BITS=
+CONF_ARCH="-march=native"
+CONF_AS=
 CONF_EXE=
 case "$CONF_OS" in
-CYG*) CONF_EXE=.exe ;;
+Darwin)	CONF_AS="-Wa,-q" ;;
+CYG*)	CONF_EXE=.exe ;;
 esac
 
 CONF_MAKEARGS=0
@@ -161,6 +164,9 @@ for arg in "$@" ; do
 	CONF_BITS=32 ;;
   --64)
 	CONF_BITS=64 ;;
+  --generic)
+	CONF_ARCH=
+	CONF_AS= ;;
   --make*)
 	CONF_MAKEARGS="`expr "$arg" : "--make=\(.*\)"`" ;;
   --help)
@@ -183,6 +189,8 @@ $0 understands the following options:
 --32                force 32-bit compilation,
 
 --64                force 64-bit compilation,
+
+--generic           do not specifically target the CPU configure runs on,
 
 --make[=ARGS]       immediately continue with "make ARGS" after configure.
 
@@ -208,7 +216,7 @@ CONF_CC=`findprog gcc $CC clang gcc` || exit 1
 
 CONF_CXX=`findprog g++ $CXX g++` || exit 1
 
-CONF_FC=`findprog fortran $FC ${CONF_QUAD:+ifort gfortran xlf} pgf90 ifort xlf gfortran g95 f90` || exit 1
+CONF_FC=`findprog fortran $FC ${CONF_QUAD:+ifort gfortran xlf} ifort pgf90 xlf gfortran g95 f90` || exit 1
 
 CONF_AR=`findprog ar $AR ar`
 
@@ -222,20 +230,20 @@ CONF_DEF="-D"
 
 case "`$CONF_FC --version -c 2>&1`" in
 *G95*)
-  CONF_FFLAGS="$FFLAGS -O3 -g -ffixed-line-length-132 -freal-loops $CONF_M $CONF_STATIC ${CONF_DEBUG:+-Wall}" ;;
+  CONF_FFLAGS="$FFLAGS ${CONF_DEBUG:--O3 -g} -ffixed-line-length-132 -freal-loops $CONF_M $CONF_STATIC ${CONF_DEBUG:+-Wall}" ;;
 *GNU*)
-  CONF_FFLAGS="$FFLAGS -O3 -g -ffixed-line-length-none $CONF_M $CONF_STATIC ${CONF_DEBUG:+-Wall}"
+  CONF_FFLAGS="$FFLAGS ${CONF_DEBUG:--O3 -g} -ffixed-line-length-none $CONF_M $CONF_STATIC ${CONF_DEBUG:+-Wall}"
   case "$CONF_FC" in
   *gfortran*)
-	CONF_FFLAGS="$CONF_FFLAGS ${CONF_DEBUG:+-Wtabs -ffpe-trap=invalid,overflow,zero} -ff2c ${CONF_STATIC_EXT:+-static-libgfortran -static-libgcc} ${CONF_QUAD:+-fdefault-real-8}" ;;
+	CONF_FFLAGS="$CONF_FFLAGS $CONF_ARCH $CONF_AS ${CONF_DEBUG:+-Wtabs -ffpe-trap=invalid,overflow,zero} -ff2c ${CONF_STATIC_EXT:+-static-libgfortran -static-libgcc} ${CONF_QUAD:+-fdefault-real-8}" ;;
   esac ;;
 *)
   CONF_FFLAGS="${FFLAGS-default}"
   test "$CONF_FFLAGS" = default && case "$CONF_FC$CONF_MACH" in
   *pgf*)
-	CONF_FFLAGS="${CONF_DEBUG:--O3 -g} ${CONF_DEBUG:+-Ktrap=fp} -Mextend -Minform=inform -g77libs ${CONF_STATIC:+-Bstatic} $CONF_M" ;;
+	CONF_FFLAGS="${CONF_DEBUG:--O3 -g} ${CONF_ARCH:+-Mvect=simd} ${CONF_DEBUG:+-Ktrap=fp} -Mextend -Minform=inform -g77libs ${CONF_STATIC:+-Bstatic} $CONF_M" ;;
   *ifort*)
-	CONF_FFLAGS="${CONF_DEBUG:--O3 -g} -extend_source -warn nouncalled -warn truncated_source -assume bscc $CONF_STATIC ${CONF_STATIC_EXT:+-static-intel} ${CONF_QUAD:+-r16 -DDBLE=QEXT -DDIMAG=QIMAG -DDCONJG=QCONJG -DDCMPLX=QCMPLX} $CONF_M" ;;
+	CONF_FFLAGS="${CONF_DEBUG:--O3 -g} $CONF_ARCH -extend_source -warn nouncalled -warn truncated_source -assume bscc $CONF_STATIC ${CONF_STATIC_EXT:+-static-intel} ${CONF_QUAD:+-r16 -DDBLE=QEXT -DDIMAG=QIMAG -DDCONJG=QCONJG -DDCMPLX=QCMPLX} $CONF_M" ;;
   *alpha)
 	CONF_FFLAGS="${CONF_DEBUG:--O3 -g3} ${CONF_DEBUG:+-fpe0} -extend_source -warn truncated_source ${CONF_STATIC:+-non_shared}" ;;
   *sun* | *sparc*)
@@ -282,12 +290,7 @@ test -z "$CONF_BITS" && case "$CONF_MACH" in
 esac
 
 
-opt="-O3 -g"
-case `$CONF_CC --version 2>&1 < /dev/null` in
-*LLVM*) ;;
-*gcc*4.2* | *gcc*4.4.3*) opt=-O0 ;;
-esac
-CONF_CFLAGS="${CFLAGS-${CONF_DEBUG:-$opt} -std=gnu99 -fomit-frame-pointer -ffast-math} $CONF_M $CONF_STATIC ${CONF_STATIC_EXT:+-static-libgcc}"
+CONF_CFLAGS="${CFLAGS-${CONF_DEBUG:--O3 -g} $CONF_ARCH -std=gnu99 -fomit-frame-pointer -ffast-math} $CONF_M $CONF_STATIC ${CONF_STATIC_EXT:+-static-libgcc}"
 
 CONF_CXXFLAGS="$CXXFLAGS $CONF_M $CONF_STATIC ${CONF_STATIC_EXT:+-static-libstdc++ -static-libgcc}"
 
@@ -341,6 +344,51 @@ else
   echo "no" 1>&2
   CONF_CFLAGS="$CONF_CFLAGS -DNOUNDERSCORE"
 fi
+
+
+## find max SIMD vector length supported by hardware
+
+echo $echo_n "extracting SIMD properties of $CONF_FC... $echo_c" 1>&2
+
+cat simd.h - > $test.F << _EOF_ 2> /dev/null
+#ifdef GENERIC
+#define SIMD2 0
+#define PROP "none"
+#elif defined __AVX__
+#define SIMD2 2
+#define PROP "AVX"
+#elif defined __SSE3__
+#define SIMD2 1
+#define PROP "SSE3"
+#else
+#define SIMD2 0
+#define PROP "none"
+#endif
+
+	program test
+	print *, PROP
+#if defined SIMD && SIMD == SIMD2
+#else
+	print *, SIMD2
+#endif
+	end
+_EOF_
+
+$CONF_FC $CONF_FFLAGS ${CONF_ARCH:-${CONF_DEF}GENERIC} -o $test $test.F > /dev/null 2>&1
+set -- `./$test 2>&1`
+echo $1
+case $2 in
+0|1|2)	cat > simd.h << _EOF_
+#if 0
+	vectorization ability of $CONF_FC on $HOSTNAME
+	determined by $0 on `date`
+#endif
+
+#define SIMD $2
+
+_EOF_
+	;;
+esac
 
 
 # check for the necessary libraries

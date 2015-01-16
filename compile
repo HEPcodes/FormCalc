@@ -1,6 +1,6 @@
 #! /bin/sh
 # compile script for the C programs used by FormCalc
-# last modified 25 Mar 13 th
+# last modified 6 Nov 13 th
 
 # If this compile script doesn't work on your system, check these things:
 #
@@ -136,7 +136,7 @@ _EOF_
 
 cd "$DEST"
 
-trap "rm -f makefile" 0 1 2 3 15
+trap "rm -f makefile simd.h" 0 1 2 3 15
 
 "../$SRC/drivers/configure" --make="util.a clean"
 

@@ -3,13 +3,22 @@
 	prototypes for the util functions
 	this file is part of FormCalc
 	SIMD functions by J.-N. Lang
-	last modified 8 May 13 th
+	last modified 11 Nov 13 th
 #endif
 
 
 #ifndef LEGS
 #define LEGS 1
 #endif
+
+static struct {
+  RealType eps;
+  int n;
+} hsel_;
+
+#define hseln hsel_.n
+#define hseleps hsel_.eps
+
 
 enum { nvec = 12 };
 
@@ -25,15 +34,22 @@ struct {
 #define ec0(i) (3+nvec*(i-1)-Hel(i))
 #define Spinor0(i,af,d) (af*2+d+7+nvec*(i-1)+Hel(i))
 
-#if SIMD > 0
+#if SIMD > 0 && !defined DEPS
 
 #include <immintrin.h>
 
 #if SIMD == 2 && defined __AVX__
 
+typedef __m128d ResType;
+typedef const ResType cResType;
 typedef __m256d HelType;
 typedef const HelType cHelType;
 #define HelZero _mm256_setzero_pd()
+#define ResZero _mm_setzero_pd()
+
+static inline ResType ToRes(cRealType a) {
+  return _mm_load1_pd(&a);
+}
 
 static inline HelType ToH(cComplexType a) {
   return _mm256_broadcast_pd((__m128d *)&a);
@@ -58,17 +74,26 @@ static inline HelType RxH(cRealType a, cHelType b) {
   return _mm256_broadcast_sd(&a)*b;
 }
 
-static inline RealType ReHcH(cHelType a, cHelType b) {
+static inline ResType ReHcH(cHelType a, cHelType b) {
   HelType ab = a*b;
   HelType t = _mm256_hadd_pd(ab, ab);
-  return t[0] + t[2];
+  return (ResType){t[0], t[2]};
+}
+
+static inline RealType HelSum(cResType a) {
+  return _mm_hadd_pd(a, a)[0];
 }
 
 #elif SIMD == 1 && defined __SSE3__
 
+typedef RealType ResType;
+typedef const ResType cResType;
 typedef __m128d HelType;
 typedef const HelType cHelType;
 #define HelZero _mm_setzero_pd()
+#define ResZero 0
+#define HelSum(a) (a)
+#define ToRes(a) (a)
 
 static inline HelType ToH(cComplexType a) {
   return *(HelType *)&a;
@@ -93,25 +118,33 @@ static inline HelType RxH(cRealType a, cHelType b) {
   return _mm_load1_pd(&a)*b;
 }
 
-static inline RealType ReHcH(cHelType a, cHelType b) {
+static inline ResType ReHcH(cHelType a, cHelType b) {
   HelType ab = a*b;
   return _mm_hadd_pd(ab, ab)[0];
 }
 
-#elif SIMD == 1
+#else
 
+#if SIMD != 1
+#error This value of SIMD not implemented.
+#endif
+
+typedef RealType ResType;
+typedef const ResType cResType;
 typedef ComplexType HelType;
 typedef const HelType cHelType;
 #define HelZero 0
+#define ResZero 0
 
+#define ToRes(a) (a)
 #define ToH(a) (a)
 #define HxH(a,b) (a)*(b)
+#define SxH(a,b) (a)*(b)
 #define CxH(a,b) (a)*(b)
 #define RxH(a,b) (a)*(b)
 #define ReHcH(a,b) Re(Conjugate(a)*(b))
+#define HelSum(a) (a)
 
-#else
-#error This value of SIMD not implemented.
 #endif
 
 enum { nves = 8 };
@@ -138,6 +171,7 @@ struct {
 
 extern void veccopy_(cinteger *v, cinteger *n, cinteger *hel);
 
+#define SIMD_CEIL(n) (n+SIMD-1)/SIMD
 #define SIMD_DECL integer v
 #define SIMD_INI v = 1
 #define SIMD_NEXT v = v % SIMD + 1
@@ -147,16 +181,21 @@ extern void veccopy_(cinteger *v, cinteger *n, cinteger *hel);
 
 #else
 
+typedef RealType ResType;
+typedef const ResType cResType;
 typedef ComplexType HelType;
 typedef const HelType cHelType;
 #define HelZero 0
+#define ResZero 0
 
+#define ToRes(a) (a)
 #define ToH(a) (a)
 #define HxH(a,b) (a)*(b)
 #define SxH(a,b) (a)*(b)
 #define CxH(a,b) (a)*(b)
 #define RxH(a,b) (a)*(b)
 #define ReHcH(a,b) Re(Conjugate(a)*(b))
+#define HelSum(a) (a)
 
 #define k k0
 #define s s0
@@ -165,6 +204,8 @@ typedef const HelType cHelType;
 #define Spinor Spinor0
 #define Vec(x,y,i) vec(x,y,i)
 #define bVec vec_
+
+#define SIMD_CEIL(n) n
 #define SIMD_DECL
 #define SIMD_INI
 #define SIMD_NEXT
@@ -198,20 +239,20 @@ typedef const HelType cHelType;
 #define sqmewait_ sqmewait
 #endif
 
-void sqmeprep_(void *v, void *ve,
+void sqmeprep_(void *v, void *ve, void *r, void *re,
   void *s, void *se, void *a, void *ae, void *h, void *he);
-void sqmeexec_(void (*foo)(RealType *, cinteger *),
-  RealType *result, cinteger *flags);
-void sqmesync_(RealType *result);
+void sqmeexec_(void (*foo)(ResType *, cinteger *),
+  ResType *res, cinteger *flags);
+void sqmesync_();
 void sqmewait_();
 
 #define lim(x) &x, ((char *)&x + sizeof(x))
-#define PAR_PREP(s, a, h) sqmeprep_(lim(bVec), lim(s), lim(a), lim(h))
+#define PAR_PREP(r, s, a, h) sqmeprep_(lim(bVec), lim(r), lim(s), lim(a), lim(h))
 #define PAR_EXEC(f, res, flags) sqmeexec_(&f, res, flags)
-#define PAR_SYNC(res) sqmesync_(res)
+#define PAR_SYNC() sqmesync_()
 #else
-#define PAR_PREP(s, a, h)
+#define PAR_PREP(r, s, a, h)
 #define PAR_EXEC(f, res, flags) f(res, flags)
-#define PAR_SYNC(res)
+#define PAR_SYNC()
 #endif
 

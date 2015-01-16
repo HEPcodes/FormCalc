@@ -1,7 +1,7 @@
 * model_fh.F
 * parameter initialization via FeynHiggs
 * this file is part of FormCalc
-* last modified 18 Apr 13 th
+* last modified 2 Oct 13 th
 
 
 * NO_EXCLUSION_LIMITS
@@ -83,7 +83,7 @@
 
 #include "decl.h"
 
-	RealType invAlfaMZ, scalefactor, asMB
+	RealType invAlfaMZ, scalefactor, asMB, Deltab
 	integer i, nf
 #ifndef NO_EXCLUSION_LIMITS
 	RealType gm2, DeltaRho
@@ -119,7 +119,7 @@
      &    Mino1, Mino2, Mino3)
 	if( fail .ne. 0 ) return
 
-	call FHGetPara(fail, nmfv, MASf, UASf,
+	call FHGetPara(fail, fv, MSf, USf, MASf, UASf,
      &    MCha, UCha, VCha, MNeu, ZNeu, Deltab, MGl,
      &    MHtree, SA)
 	if( fail .ne. 0 ) return
@@ -190,11 +190,6 @@
 	call AlphaS(asMB, nf, MBatMB)
 	MB = MBatMB*sqrt(1 + 4*2/(3*pi)*asMB)
 	MB2 = MB**2
-
-	PRINT *, "MBatMB=", MBatMB
-	PRINT *, "MBosMS=", MB
-	PRINT *, "MBosDR=", MBatMB*sqrt(1 + 5*2/(3*pi)*asMB)
-	PRINT *, "MBosDR=", MBatMB*(1 + 4/(3*pi)*asMB)
 
 	MW2 = MW**2
 	MZ2 = MZ**2

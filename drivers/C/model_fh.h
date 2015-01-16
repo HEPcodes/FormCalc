@@ -2,7 +2,7 @@
 	model_fh.h
 	declarations for model_fh.F
 	this file is part of FormCalc
-	last modified 23 Apr 13 th
+	last modified 2 Oct 13 th
 #endif
 
 
@@ -78,11 +78,12 @@ struct smpara_ {
 struct mssmpara_ {
   ComplexType UCha[2][2], VCha[2][2], ZNeu[4][4];
   ComplexType XHiggs[2][3][3];
-  ComplexType deltaSf[4][6][6], UASf[4][6][6];
+  ComplexType deltaSf[4][6][6], USf[3][5][2][2], UASf[5][6][6];
   ComplexType MSS2[5][3][3], Afd[3][4-2], Kf[4-2][3][3];
-  ComplexType MUE, Mino1, Mino2, Mino3, SqrtEGl, Deltab;
+  ComplexType MUE, Mino1, Mino2, Mino3, SqrtEGl;
   RealType MCha[2], MCha2[2], MNeu[4], MNeu2[4];
-  RealType MSS[3][5], MASf[4][6], MASf2[4][6];
+  RealType MSS[3][5], MSf[3][5][2], MSf2[3][5][2];
+  RealType MASf[5][6], MASf2[5][6];
   RealType MHiggs[4], MHiggs2[4], MHtree[4], MHtree2[4];
   RealType MGl, MGl2;
   RealType CB, SB, TB, CB2, SB2, TB2, C2B, S2B;
@@ -104,7 +105,7 @@ struct mssmpara_ {
 #define deltaSf_RR(i,j,t) deltaSf(i+3,j+3,t)
 #define UASf(i,j,t) mssmpara_.UASf[t-1][j-1][i-1]
 #define UASfC(i,j,t) Conjugate(UASf(i,j,t))
-#define USf(i,j,t,g) UASf(g+3*(i-1),g+3*(j-1),t)
+#define USf(i,j,t,g) mssmpara_.USf[g-1][t-1][j-1][i-1]
 #define USfC(i,j,t,g) Conjugate(USf(i,j,t,g))
 #define MSS2(n,g1,g2) mssmpara_.MSS2[g2-1][g1-1][n-1]
 #define Afd(t,g) mssmpara_.Afd[g-1][t-2]
@@ -120,16 +121,15 @@ struct mssmpara_ {
 #define Mino3C Conjugate(Mino3)
 #define SqrtEGl mssmpara_.SqrtEGl
 #define SqrtEGlC Conjugate(SqrtEGl)
-#define Deltab mssmpara_.Deltab
 #define MCha(i) mssmpara_.MCha[i-1]
 #define MCha2(i) mssmpara_.MCha2[i-1]
 #define MNeu(i) mssmpara_.MNeu[i-1]
 #define MNeu2(i) mssmpara_.MNeu2[i-1]
 #define MSS(n,g) mssmpara_.MSS[g-1][n-1]
+#define MSf(s,t,g) mssmpara_.MSf[g-1][t-1][s-1]
+#define MSf2(s,t,g) mssmpara_.MSf2[g-1][t-1][s-1]
 #define MASf(as,t) mssmpara_.MASf[t-1][as-1]
 #define MASf2(as,t) mssmpara_.MASf[t-1][as-1]
-#define MSf(s,t,g) MASf(g+3*(s-1),t)
-#define MSf2(s,t,g) MASf2(g+3*(s-1),t)
 #define MHiggs(i) mssmpara_.MHiggs[i-1]
 #define Mh0 MHiggs(1)
 #define MHH MHiggs(2)

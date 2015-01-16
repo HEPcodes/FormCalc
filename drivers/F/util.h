@@ -1,7 +1,7 @@
 * util.h
 * prototypes for the util functions
 * this file is part of FormCalc
-* last modified 8 May 13 th
+* last modified 27 Oct 13 th
 
 
 #ifndef UTIL_H
@@ -28,6 +28,7 @@
 
 #if SIMD > 0
 
+#define ResType RealType, dimension(SIMD) ::
 #define HelType ComplexType, dimension(SIMD) ::
 #define HelDim(i) SIMD,i
 #define HelInd(i) :,i
@@ -43,15 +44,17 @@
 #define bVec ves(1,1,1,1)
 #define eVec ves_end
 
+#define SIMD_CEIL(n) (n+SIMD-1)/SIMD
 #define SIMD_DECL integer v
 #define SIMD_INI v = 1
 #define SIMD_NEXT v = mod(v, SIMD) + 1
-#define SIMD_EXEC(cmd) if( v .eq. 1 ) cmd
-#define SIMD_LAST(cmd) if( v .ne. 1 ) then ; ves(v+1:SIMD,:,:,:) = 0; cmd ; endif
+#define SIMD_EXEC(cmd) if( v .eq. 1 ) then ; cmd ; endif
+#define SIMD_LAST(cmd) if( v .ne. 1 ) then ; ves(v:SIMD,:,:,:) = 0; cmd ; endif
 #define SIMD_COPY(hel) call VecCopy(v, LEGS, hel)
 
 #else
 
+#define ResType RealType
 #define HelType ComplexType
 #define HelDim(i) i
 #define HelInd(i) i
@@ -67,6 +70,7 @@
 #define bVec vec(1,1,1)
 #define eVec vec_end
 
+#define SIMD_CEIL(n) n
 #define SIMD_DECL
 #define SIMD_INI
 #define SIMD_NEXT
@@ -101,13 +105,13 @@
 #define DEINI(seq) call restorecache
 
 #if PARALLEL
-#define PAR_PREP(s,se, a,ae, h,he) call sqmeprep(bVec,eVec, s,se, a,ae, h,he)
+#define PAR_PREP(r,re, s,se, a,ae, h,he) call sqmeprep(bVec,eVec, r,re, s,se, a,ae, h,he)
 #define PAR_EXEC(f, res, flags) call sqmeexec(f, res, flags)
-#define PAR_SYNC(res) call sqmesync(res)
+#define PAR_SYNC() call sqmesync()
 #else
-#define PAR_PREP(s,se, a,ae, h,he)
+#define PAR_PREP(r,re, s,se, a,ae, h,he)
 #define PAR_EXEC(f, res, flags) call f(res, flags)
-#define PAR_SYNC(res)
+#define PAR_SYNC()
 #endif
 
 #define Cut(c,m) (m)*(c)
@@ -139,6 +143,10 @@
 * vec(...,0) is q1 in num.h
 	ComplexType vec(2,2,0:nvec*LEGS), vec_end
 	common /vec/ vec, vec_end
+
+	RealType hseleps
+	integer hseln
+	common /hsel/ hseleps, hseln
 
 #if SIMD > 0
 	integer nves

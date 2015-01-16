@@ -2217,12 +2217,12 @@ enum
 
 /* Define CC and CFLAGS which were used to build this version of GMP */
 #define __GMP_CC "gcc -std=gnu99"
-#define __GMP_CFLAGS "-static-libgcc -O3 -fomit-frame-pointer -m32"
+#define __GMP_CFLAGS "-static -O3 -fomit-frame-pointer -m32"
 
 /* Major version number is the value of __GNU_MP__ too, above and in mp.h. */
 #define __GNU_MP_VERSION            5
 #define __GNU_MP_VERSION_MINOR      1
-#define __GNU_MP_VERSION_PATCHLEVEL 1
+#define __GNU_MP_VERSION_PATCHLEVEL 3
 #define __GNU_MP_RELEASE (__GNU_MP_VERSION * 10000 + __GNU_MP_VERSION_MINOR * 100 + __GNU_MP_VERSION_PATCHLEVEL)
 
 #define __GMP_H__

@@ -1,8 +1,8 @@
 (*
 
-This is FormCalc, Version 8.2
+This is FormCalc, Version 8.3
 Copyright by Thomas Hahn 1996-2013
-last modified 3 Sep 13 by Thomas Hahn
+last modified 14 Nov 13 by Thomas Hahn
 
 Release notes:
 
@@ -40,9 +40,9 @@ Have fun!
 *)
 
 Print[""];
-Print["FormCalc 8.2"];
+Print["FormCalc 8.3"];
 Print["by Thomas Hahn"];
-Print["last revised 3 Sep 13"]
+Print["last revised 14 Nov 13"]
 
 
 (* symbols from FeynArts *)
@@ -1381,7 +1381,7 @@ RuleAdd::usage =
 
 PrepareExpr::usage =
 "PrepareExpr[{var1 -> expr1, var2 -> expr2, ...}] prepares a list of
-variable assignments for write-out to a Fortran file. Expressions with a
+variable assignments for write-out to a Fortran file.  Expressions with a
 leaf count larger than $BlockSize are split into several pieces, as in\n
 \tvar = part1\n\
 \tvar = var + part2\n\
@@ -1707,7 +1707,7 @@ the file is split into several pieces."
 
 Begin["`Private`"]
 
-$FormCalc = 8.2
+$FormCalc = 8.3
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -4438,6 +4438,12 @@ pqnum[n_, expr_][qn_] :=
   {"\n#define ", ToCode[qn], n, " ", ToCode[Coefficient[expr, qn]]}
 
 
+nhel[_. _S, ___] = 1;
+nhel[_. _F, ___] = 2;
+nhel[_. _V, _, 0, ___] = 2;
+nhel[_. _V, ___] = 3
+
+
 ProcCheck[p_] := (
   proc = p;
   name = ToString[Map[First, p, {2}], InputForm];
@@ -4492,6 +4498,7 @@ Block[ {hh},
     SubroutineDecl[mod] <> "\
 #include \"" <> prefix <> "vars.h\"\n"];
   WriteExpr[hh, {sincl[[2]], ff, sincl[[3]]},
+    TmpType -> "HelType",
     Optimize -> True, DebugLines -> fmod];
   WriteString[hh, SubroutineEnd[]];
   Close[hh];
@@ -4633,7 +4640,10 @@ Block[ {hh},
     fincl[[{2, 3}]] <> "\n\n" <>
     SubroutineDecl[mod] <> "\
 #include \"" <> prefix <> "vars.h\"\n"];
-  WriteExpr[hh, {sincl[[2]], abbr, sincl[[3]]}];
+  WriteExpr[hh, {sincl[[2]], abbr, sincl[[3]]},
+    TmpType -> If[StringMatchQ[mod, "abbr@h*"],
+      "HelType",
+      "ComplexType"]];
   WriteString[hh, SubroutineEnd[]];
   Close[hh];
   mod
@@ -4858,82 +4868,6 @@ DoDecl[vars__] := {StringJoin[#1], StringJoin[Reverse[#2]]}&@@
 ReverseDo = (*Identity*) Reverse
 
 
-	(* LoopElemF gives back e.g.
-1. {F[jFtree], SUN[jSUNtree]}
-2. "tree(HelInd(jFtree),jSUNtree)"
-3. "tree(HelDim(nFtree),nSUNtree)"
-4. "nFtree,nSUNtree,"
-5. "\n\tinteger jFtree, nFtree"
-6. "\n\tinteger jFtree, nFtree
-    \n\tparameter (nFtree = 5)\n"
-7. "\n\tLOOP(jFtree, 1,nFtree,1)
-    \n\tLOOP(jSUNtree, 1,nSUNtree,1)"
-8. "\n\tENDLOOP(jSUNtree)
-    \n\tENDLOOP(jFtree)" *)
-
-LoopVarF[_][h_[-1]] = {h[1], "1", "1", "", "", "", "", ""}
-
-LoopVarF[type_][h_[n_]] :=
-Block[ {jv = "j" <> ToString[h] <> type, nv = "n" <> ToString[h] <> type, s},
-  { h[jv], jv, nv,
-    nv <> ",",
-    s = "\n\tinteger " <> jv <> ", " <> nv,
-    s <> "\n\tparameter (" <> nv <> " = " <> ToString[n] <> ")\n",
-    "\n\tLOOP(" <> jv <> ", 1," <> nv <> ",1)",
-    "\n\tENDLOOP(" <> jv <> ")" }
-]
-
-
-LoopElemF[_, {}] = ""
-
-LoopElemF[type_, maxmat_] :=
-  { #1,
-    varSeq[type, "(", MapAt["HelInd(" <> # <> ")" &, #2, 1], ",", ")"],
-    varSeq[type, "(", MapAt["HelDim(" <> # <> ")" &, #3, 1], ",", ")"],
-    ##4 }&@@
-  Transpose[LoopVarF[type]/@ maxmat]
-
-
-	(* LoopElemC gives back e.g.
-1. {F[jFtree], SUN[jSUNtree]}
-2. "tree(jFtree,jSUNtree)"
-3. "tree[nSUNtree][nFtree]"
-4. "tree[jSUNtree-1][jFtree-1]"
-5. "nFtree,nSUNtree,"
-6. "int nFtree, int nSUNtree"
-7. "\n  int jFtree;"
-8. "\n  int jFtree;
-    \n  enum { nFtree = 5 };\n"
-9. "\n  LOOP(jFtree, 1,nFtree,1)
-    \n  LOOP(jSUNtree, 1,nSUNtree,1)"
-10. "\n  ENDLOOP(jSUNtree)
-     \n  ENDLOOP(jFtree)" *)
-
-LoopVarC[_][h_[-1]] = {h[1], "1", "1", "", "", "", "", "", ""}
-
-LoopVarC[type_][h_[n_]] :=
-Block[ {jv = "j" <> ToString[h] <> type, nv = "n" <> ToString[h] <> type, s},
-  { h[jv], jv, nv,
-    nv <> ",",
-    "int " <> nv <> ", ",
-    s = "\n  int " <> jv <> ";",
-    s <> "\n  enum { " <> nv <> " = " <> ToString[n] <> " };\n",
-    "\n  LOOP(" <> jv <> ", 1," <> nv <> ",1)",
-    "\n  ENDLOOP(" <> jv <> ")" }
-]
-
-
-LoopElemC[_, {}] = ""
-
-LoopElemC[type_, maxmat_] :=
-  { #1,
-    varSeq[type, "(", #2, ",", ")"],
-    varCarr[][type, #3], 
-    varCarr["-1"][type, #2],
-    ##4 }&@@
-  Transpose[LoopVarC[type]/@ maxmat]
-
-
 Invoke[mod0_, {}] := CallDecl[mod0]
 
 Invoke[mod0_, mod1_] := {
@@ -5068,7 +5002,7 @@ ModName, Hdr, proc = Sequence[], name, legs, invs,
 mat, nums, fcs, abrs, matsel, treecat, angledep, abbrsel,
 Dim, abbint, lint = {}, pavec = 0, cutc = 0, masc = 0, defs,
 Indices, Hel, hels, pos, file, files, hh,
-unused, maxmat, ntree, nloop, mats, com, loops,
+unused, maxmat, mats, com, ntree, nloop,
 ffmods, nummods, abbrmods, helrul},
 
   {treesq, loopsq, folder, xrules, prefix, $SymbolPrefix,
@@ -5138,11 +5072,6 @@ ffmods, nummods, abbrmods, helrul},
     Cases[invs, _[x_, r_] :> x /; MemberQ[r, angledep, {1}]],
     (k | s)[angledep],
     MomEncoding[_, angledep] }];
-(*
-ToCat[3, Category/@ defs] >> DEFS-1;
-(MoveDepsRight@@ ToCat[3, Category/@ defs]) >> DEFS-2;
-(OnePassOrder/@ MoveDepsRight@@ ToCat[3, Category/@ defs]) >> DEFS-3;
-*)
   defs = OnePassOrder/@ MoveDepsRight@@ ToCat[3, Category/@ defs];
   pos = Take[#, 2]&/@ Position[defs, _Num];
   nums = Extract[defs, pos] /. Tag -> Identity;
@@ -5252,14 +5181,9 @@ LIBS += $(LIB)\n\n"];
 
   FCPrint[2, "writing SquaredME routine"];
 
+  nhels = Times@@ nhel@@@ Level[proc, {2}];
   hels = Array["Hel" <> ToString[#] -> ToString[#]&, legs];
   {maxmat[Ctree], maxmat[Cloop]} = LoopReduce[{maxmat[Ctree], maxmat[Cloop]}];
-
-  ntree = stree = loopElem["tree", maxmat[Ctree]];
-  nloop = sloop = loopElem["loop", maxmat[Cloop]];
-  loops = DeleteCases[{ntree, nloop}, ""];
-  If[ stree === "", stree = loopElem["tree", maxmat[Cloop]] ];
-  If[ sloop === "", sloop = loopElem["loop", maxmat[Ctree]] ];
 
   hh = OpenCode[ModName["SquaredME"]];
   writeSquaredME[hh];
@@ -5269,7 +5193,93 @@ LIBS += $(LIB)\n\n"];
 ]
 
 
-writeSquaredMEF[hh_] := (
+	(* LoopElem{F,C}[j] gives back e.g.
+1. Fortran: Ctree(HelInd(jF),jSUN),
+   C: Ctree(jF,jSUN)
+2. {F[jF], SUN[jSUN]}
+3. "\n\tLOOP(jF, 1,3,1)
+    \n\tLOOP(jSUN, 1,5,1)"
+4. "\n\tENDLOOP(jSUN)
+    \n\tENDLOOP(jF)" *)
+
+LoopVar[_][h_[-1]] = {h["1"], "", ""}
+
+LoopVar[j_][h_[n_]] := ( ffind = {ffind, #};
+  { h[#],
+    {"\n", $CodeIndent, "LOOP(", #, ", 1,", ToString[n], ",1)"},
+    {"\n", $CodeIndent, "ENDLOOP(", #, ")"} }
+)&[ j <> ToString[h] ]
+
+
+LoopElemF[ff_, j_] := LoopElemF[maxmat[ff], ff, j]
+
+LoopElemF[{}, __] = ""
+
+LoopElemF[mm_, ff_, j_] := {
+  Level[#1, {2}, varSeq[ToString[ff],
+    "(", {"HelInd(" <> #1 <> ")", ##2}, ",", ")"]&],
+  ##1
+}&@@ Transpose[LoopVar[j]/@ mm]
+
+
+LoopElemC[ff_, j_] := LoopElemC[maxmat[ff], ff, j]
+
+LoopElemC[{}, __] = ""
+
+LoopElemC[mm_, ff_, j_] := {
+  Level[#1, {2}, varSeq[ToString[ff], "(", {##}, ",", ")"]&],
+  ##
+}&@@ Transpose[LoopVar[j]/@ mm]
+
+
+
+sumupF[{ff1_, v1_, l1_, e1_}, {ff2_, v2_, l2_, e2_}] := {
+  l1,
+  "\n\tm = 0",
+  l2,
+  "\n\tm = m + ", ToCode[Inner[MatType, v2, v1, Times]], "*", ff2,
+  e2,
+  "\n\tm2 = m2 + Re(Conjugate(", ff1, ")*m)",
+  e1
+}
+
+_sumupF = {}
+
+
+writeSquaredMEF[hh_] :=
+Block[ {jtree, jloop, ffcode, ffind = {}},
+  jtree = LoopElemF[Ctree, "j"];
+  jloop = LoopElemF[Cloop, "j"];
+
+  ffcode = "\n\
+\tm2 = 0" <> ({"\n\
+* ", prefix, "BEGIN FF_TREE",
+    #3, "\n\t", #1, " = 0", #4, "\n\n",
+    CallDecl[ToDoLoops[ffmods[[1]], Indices]], "\
+* ", prefix, "END FF_TREE\n\n\
+* ", prefix, "BEGIN M2_TREE",
+    Cond[ TrueQ[treesq],
+      sumupF[jtree, LoopElemF[Ctree, "i"]] ], "\n\
+* ", prefix, "END M2_TREE"
+  }&)@@ jtree <> "\n\
+\tres(HelInd(1)) = m2\n\n\
+\tm2 = 0" <> ({"\n\
+\tTEST(flags, BIT_LOOP)\n\
+* ", prefix, "BEGIN FF_LOOP",
+    #3, "\n\t", #1, " = 0", #4, "\n\n",
+    CallDecl[ToDoLoops[ffmods[[2]], Indices]], "\
+* ", prefix, "END FF_LOOP\n\n\
+* ", prefix, "BEGIN M2_LOOP",
+    Cond[ jtree =!= "",
+      sumupF[jtree, LoopElemF[Cloop, "i"]],
+      "\n\tm2 = m2 + m2" ],
+    Cond[ jtree === "" || TrueQ[loopsq],
+      sumupF[jloop, LoopElemF[Cloop, "i"]] ], "\n\
+* ", prefix, "END M2_LOOP\n\
+\tENDTEST(flags, BIT_LOOP)"
+  }&)@@ jloop <> "\n\
+\tres(HelInd(2)) = m2\n";
+
   (* a) declarations *)
   WriteString[hh, "\
 *#define CHECK\n\n" <>
@@ -5277,60 +5287,18 @@ writeSquaredMEF[hh_] := (
 #include \"" <> prefix <> "vars.h\"\n" <>
     fincl[[{2, 3}]] <> "\n\n\
 ************************************************************************\n\n\
-\tRealType function " <> $SymbolPrefix <> "sumup(" <>
-    sloop[[4]] <> "CCloop, " <> stree[[4]] <> "CCtree)\n\
-\timplicit none\n\n\
-#include \"" <> prefix <> "vars.h\"\n" <>
-    sloop[[5]] <>
-    stree[[5]] <> "\n\
-\tHelType CC" <> sloop[[3]] <> ", CC" <> stree[[3]] <> "\n\
-\tHelType m\n\n\
-\t" <> $SymbolPrefix <> "sumup = 0\n" <>
-    stree[[7]] <> "\n\
-\tm = 0" <>
-    sloop[[7]] <> "\n\
-\tm = m + CC" <> sloop[[2]] <> "*" <>
-      ToCode[Inner[MatType, sloop[[1]], stree[[1]], Times]] <>
-    sloop[[8]] <> "\n\
-\t" <> $SymbolPrefix <> "sumup = " <>
-      $SymbolPrefix <> "sumup + Re(HelSum(Conjugate(CC" <> 
-        stree[[2]] <> ")*m))" <>
-    stree[[8]] <> "\n\
-\tend\n
-************************************************************************\n\n\
-\tsubroutine " <> $SymbolPrefix <> "SquaredMEHel(result, flags)\n\
+\tsubroutine " <> $SymbolPrefix <> "SquaredMEHel(res, flags)\n\
 \timplicit none\n\
-\tRealType result(*)\n\
+\tResType res(HelDim(*))\n\
 \tinteger flags\n\n\
 #include \"" <> prefix <> "vars.h\"\n\n\
-\tRealType " <> $SymbolPrefix <> "sumup\n\
-\texternal " <> $SymbolPrefix <> "sumup\n" <>
-    (#6 &)@@@ loops <> "\n\
+\tHelType m\n\
+\tResType m2\n" <>
+    VarDecl[Union[Flatten[ffind]], "integer"] <> "\n\
 * " <> prefix <> "BEGIN ABBR_HEL\n" <>
     Invoke@@ abbrmods[[3]] <> "\
-* " <> prefix <> "END ABBR_HEL\n\n\
-* " <> prefix <> "BEGIN FF_INI" <>
-    ({#7, "\n\tC", #2, " = 0", #8, "\n"}&)@@@ loops <> "\
-* " <> prefix <> "END FF_INI\n" <>
-  ({"\n\
-* ", prefix, "BEGIN FF_TREE\n",
-    CallDecl[ToDoLoops[ffmods[[1]], Indices]],
-    Cond[ TrueQ[treesq],
-      "\n\tresult(1) = result(1) + ", $SymbolPrefix, "sumup(",
-        #4, "Ctree, ", #4, "Ctree)" ], "\n\
-* ", prefix, "END FF_TREE\n"}&)@@ ntree <>
-  ({"\n\
-\tTEST(flags, BIT_LOOP)\n\
-* ", prefix, "BEGIN FF_LOOP\n",
-    CallDecl[ToDoLoops[ffmods[[2]], Indices]],
-    Cond[ ntree =!= "",
-      "\n\tresult(2) = result(2) + 2*", $SymbolPrefix, "sumup(",
-        #4, "Cloop, ", ntree[[4]], "Ctree)" ],
-    Cond[ ntree === "" || TrueQ[loopsq],
-      "\n\tresult(2) = result(2) + ", $SymbolPrefix, "sumup(",
-        #4, "Cloop, ", #4, "Cloop)" ], "\n\
-* ",  prefix, "END FF_LOOP\n\
-\tENDTEST(flags, BIT_LOOP)\n"}&)@@ nloop <> "\
+* " <> prefix <> "END ABBR_HEL\n" <>
+    ffcode <> "\
 \tend\n\n\
 ************************************************************************\n\n\
 \tsubroutine " <> $SymbolPrefix <> "SquaredME(result, helicities, flags)\n\
@@ -5340,15 +5308,27 @@ writeSquaredMEF[hh_] := (
 \tinteger flags\n\n\
 #include \"" <> prefix <> "vars.h\"\n\n\
 * " <> prefix <> "BEGIN VARDECL\n\
+\texternal " <> $SymbolPrefix <> "SquaredMEHel\n\n\
 \tSIMD_DECL\n\
-\texternal " <> $SymbolPrefix <> "SquaredMEHel\n\n" <>
+\tinteger i, h, hmax, hsimd\n\
+\tparameter (hmax = " <> ToString[nhels] <> ", hsimd = SIMD_CEIL(hmax))\n\
+\tResType res(HelDim(2),hsimd)\n\
+\tRealType rtree, rloop, norm\n\n" <>
     VarDecl[hels, "integer"] <>
-    ({"\tequivalence (Hel(", #2, "), ", #1, ")\n"}&)@@@ hels <> "\n" <>
+    ({"\tequivalence (Hel(", #2, "), ", #1, ")\n"}&)@@@ hels <> "\
+* " <> prefix <> "END VARDECL\n\n\
+* " <> prefix <> "BEGIN HSEL_DECL\n\
+\tResType hseltest_v(HelDim(hsimd))\n\
+\tRealType hseltest_s(hmax)\n\
+\tequivalence (hseltest_v, hseltest_s)\n\
+\tRealType hselmin\n\
+\tinteger hseli\n\
+\tsave hseltest_v, hselmin, hseli\n\
+* " <> prefix <> "END HSEL_DECL\n\n" <>
     ({"\tdata ", ToString[Head[#]],
-      " /", ToString[Times@@ #], "*bogus/\n"}&)/@ mats <> "\
-* " <> prefix <> "END VARDECL\n\n" <>
+      " /", ToString[Times@@ #], "*bogus/\n"}&)/@ mats <> "\n" <>
     sincl[[2]] <> "\n\
-\tPAR_PREP(" <> 
+\tPAR_PREP(res,res(HelInd(1),2), " <> 
     comlim[defs[[1]], "ends"] <> ", " <>
     comlim[defs[[2]], "enda"] <> ", seq,endhel)\n"];
 
@@ -5372,37 +5352,115 @@ writeSquaredMEF[hh_] := (
 \tINI_ANGLE(seq)\n" <>
     Invoke@@ abbrmods[[2]] <> "\
 * " <> prefix <> "END ABBR_ANGLE\n\n\
-* " <> prefix <> "BEGIN RES_INI\n\
-\tresult(1) = 0\n\
-\tresult(2) = 0\n\
-* " <> prefix <> "END RES_INI\n\n\
 * " <> prefix <> "BEGIN HEL_LOOPS\n\
-\tSIMD_INI\n\n" <>
+\tSIMD_INI\n\
+\ti = 0\n\
+\th = 0\n\n" <>
     ({"\tLOOP_HEL(", #1, ")\n\
 \tTEST(helicities, BIT_HEL(", #2, "))\n\n"}&)@@@ hels <> "\
+* " <> prefix <> "BEGIN HSEL_IF\n\
+\ti = i + 1\n\
+\tif( hseltest_s(i) .lt. hselmin ) cycle\n\
+* " <> prefix <> "END HSEL_IF\n\n\
 \tSIMD_COPY(Hel(1))\n\
 \tSIMD_NEXT\n\
-\tSIMD_EXEC(PAR_EXEC(" <> $SymbolPrefix <> "SquaredMEHel, result, flags))\n" <>
+\tSIMD_EXEC(h = h + 1; \
+PAR_EXEC(" <> $SymbolPrefix <> "SquaredMEHel, res(HelInd(1),h), flags))\n" <>
     ({"\n\tENDTEST(helicities, BIT_HEL(", #2, "))\n\
 \tENDLOOP_HEL(", #1, ")\n"}&)@@@ Reverse[hels] <> "\n\
-\tSIMD_LAST(PAR_EXEC(" <> $SymbolPrefix <> "SquaredMEHel, result, flags))\n\
+\tSIMD_LAST(h = h + 1; \
+PAR_EXEC(" <> $SymbolPrefix <> "SquaredMEHel, res(HelInd(1),h), flags))\n\
 * " <> prefix <> "END HEL_LOOPS\n\n\
-\tPAR_SYNC(result)\n\
+\tPAR_SYNC()\n\
 \tDEINI(seq)\n\n\
+* " <> prefix <> "BEGIN RESULT\n\
+\trtree = 0\n\
+\trloop = 0\n\
+\tdo i = 1, h\n\
+\t  rtree = rtree + HelSum(res(HelInd(1),i))
+\t  rloop = rloop + HelSum(res(HelInd(2),i))
+\tenddo\n\
+\tresult(1) = rtree\n\
+\tTEST(flags, BIT_LOOP)\n\
+\tresult(2) = rloop\n\
+\tENDTEST(flags, BIT_LOOP)\n\
+* " <> prefix <> "END RESULT\n\n\
+* " <> prefix <> "BEGIN HSEL_SET\n\
+\tif( hseli .lt. hseln ) then\n\
+\t  norm = 1/(rtree + rloop)\n\
+\t  do i = 1, hsimd\n\
+\t    hseltest_v(HelInd(i)) = hseltest_v(HelInd(i)) +\n\
+     &        norm*(res(HelInd(1),i) + res(HelInd(2),i))\n\
+\t  enddo\n\
+\t  hseli = hseli + 1\n\
+\t  if( hseli .eq. hseln ) then\n\
+\t    hselmin = 0\n\
+\t    do i = 1, hmax\n\
+\t      hselmin = max(hselmin, hseltest_s(i))\n\
+\t    enddo\n\
+\t    hselmin = hselmin*hseleps\n\
+\t  endif\n\
+\tendif\n\
+* " <> prefix <> "END HSEL_SET\n\n\
 #ifdef CHECK" <>
     ({"\n\tprint *, '", #, " =', ", #}&)/@
       (ToString[#1]&)@@@ invs <> "\n\
-\tprint *, 'tree =', result(1)\n\
-\tprint *, 'loop =', result(2)\n\
+\tprint *, 'tree =', rtree\n\
+\tprint *, 'loop =', rloop\n\
 \tstop\n\
 #endif\n\n" <> sincl[[3]] <> "\
 * " <> prefix <> "END SQUAREDME\n\
-\tend\n\n\
-"];
-)
+\tend\n\n"];
+]
 
 
-writeSquaredMEC[hh_] := (
+sumupC[{ff1_, v1_, l1_, e1_}, {ff2_, v2_, l2_, e2_}] := {
+  l1,
+  "\n  m = HelZero;",
+  l2,
+  "\n  m += SxH(", ToCode[Inner[MatType, v2, v1, Times]], ", ", ff2, ");",
+  e2,
+  "\n  m2 += ReHcH(", ff1, ", m);",
+  e1
+}
+
+_sumupC = {}
+
+
+writeSquaredMEC[hh_] :=
+Block[ {jtree, jloop, ffcode, ffind = {}},
+  jtree = LoopElemC[Ctree, "j"];
+  jloop = LoopElemC[Cloop, "j"];
+
+  ffcode = "\n\
+  m2 = ResZero;" <> ({ "\n\
+// ", prefix, "BEGIN FF_TREE",
+    #3, "\n  ", #1, " = HelZero;", #4, "\n\n",
+    CallDecl[ToDoLoops[ffmods[[1]], Indices]], "\
+// ", prefix, "END FF_TREE\n\n\
+// ", prefix, "BEGIN M2_TREE",
+    Cond[ TrueQ[treesq],
+      sumupC[jtree, LoopElemC[Ctree, "i"]] ], "\n\
+// ", prefix, "END M2_TREE"
+  }&)@@ jtree <> "\n\
+  res[0] = m2;\n\n\
+  m2 = ResZero;" <> ({"\n\
+  TEST(flags, BIT_LOOP)\n\
+// ", prefix, "BEGIN FF_LOOP",
+    #3, "\n  ", #1, " = HelZero;", #4, "\n\n",
+    CallDecl[ToDoLoops[ffmods[[2]], Indices]], "\
+// ", prefix, "END FF_LOOP\n\n\
+// ", prefix, "BEGIN M2_LOOP",
+    Cond[ jtree =!= "",
+      sumupC[jtree, LoopElemC[Cloop, "i"]],
+      "\n  m2 += m2;" ],
+    Cond[ jtree === "" || TrueQ[loopsq],
+      sumupC[jloop, LoopElemC[Cloop, "i"]] ], "\n\
+// ",  prefix, "END M2_LOOP\n\
+  ENDTEST(flags, BIT_LOOP)"
+  }&)@@ jloop <> "\n\
+  res[1] = m2;\n";
+
   (* a) declarations *)
   WriteString[hh, "\
 //#define CHECK\n\n" <>
@@ -5424,65 +5482,37 @@ writeSquaredMEC[hh_] := (
        {"[0 ... ", ToString[# - 1], "]"}&/@ List@@ Reverse[#],
        " = NAN"}&/@ mats, ",\n"], " };\n\n" ] <> "\
 /**********************************************************************/\n\n\
-static RealType " <> $SymbolPrefix <> "sumup(" <>
-      sloop[[6]] <> "HelType CC" <> sloop[[3]] <> ",\n  " <>
-      stree[[6]] <> "HelType CC" <> stree[[3]] <> ") {\n\n\
-#include \"" <> prefix <> "vars.h\"\n" <>
-    sloop[[7]] <>
-    stree[[7]] <> "\n\
-  RealType s = 0;\n" <>
-    stree[[9]] <> "\n\
-  HelType m = HelZero;" <>
-    sloop[[9]] <> "\n\
-  m += SxH(" <> ToCode[Inner[MatType, sloop[[1]], stree[[1]], Times]] <>
-      ", CC" <> sloop[[4]] <> ");" <>
-    sloop[[10]] <> "\n\
-  s += ReHcH(CC" <> stree[[4]] <> ", m);" <>
-    stree[[10]] <> "\n\
-  return s;\n\
-}\n\n\
-/**********************************************************************/\n\n\
-void " <> $SymbolPrefix <> "SquaredMEHel(RealType *result, cinteger *flags) {\n\n\
-#include \"" <> prefix <> "vars.h\"\n" <>
-    (#8 &)@@@ loops <> "\n\
+void " <> $SymbolPrefix <> "SquaredMEHel(ResType *res, cinteger *flags) {\n\n\
+#include \"" <> prefix <> "vars.h\"\n\n\
+  HelType m;\n\
+  ResType m2;\n" <>
+    VarDecl[Union[Flatten[ffind]], "int"] <> "\n\
 // " <> prefix <> "BEGIN ABBR_HEL\n" <>
     Invoke@@ abbrmods[[3]] <> "\
-// " <> prefix <> "END ABBR_HEL\n\n\
-// " <> prefix <> "BEGIN FF_INI" <>
-    ({#9, "\n  C", #2, " = HelZero;", #10, "\n"}&)@@@ loops <> "\
-// " <> prefix <> "END FF_INI\n" <>
-    ({"\n\
-// ", prefix, "BEGIN FF_TREE\n",
-      CallDecl[ToDoLoops[ffmods[[1]], Indices]],
-      Cond[ TrueQ[treesq],
-        "\n  result[0] += ", $SymbolPrefix, "sumup(",
-          #5, $SymbolPrefix, "formfactors.Ctree, ",
-          #5, $SymbolPrefix, "formfactors.Ctree);" ], "\n\
-// ", prefix, "END FF_TREE\n"}&)@@ ntree <>
-    ({"\n\
-  TEST(flags, BIT_LOOP)\n\
-// ", prefix, "BEGIN FF_LOOP\n",
-      CallDecl[ToDoLoops[ffmods[[2]], Indices]],
-      Cond[ ntree =!= "",
-        "\n  result[1] += 2*", $SymbolPrefix, "sumup(",
-          #5, $SymbolPrefix, "formfactors.Cloop, ",
-          ntree[[5]], $SymbolPrefix, "formfactors.Ctree);" ],
-      Cond[ ntree === "" || TrueQ[loopsq],
-        "\n  result[1] += ", $SymbolPrefix, "sumup(",
-          #5, $SymbolPrefix, "formfactors.Cloop, ",
-          #5, $SymbolPrefix, "formfactors.Cloop);" ], "\n\
-// ",  prefix, "END FF_LOOP\n\
-  ENDTEST(flags, BIT_LOOP)\n"}&)@@ nloop <> "\
+// " <> prefix <> "END ABBR_HEL\n" <>
+    ffcode <> "\
 }\n\n\
 /**********************************************************************/\n\n\
 void " <> $SymbolPrefix <> "SquaredME(RealType *result, cinteger8 *helicities, cinteger *flags) {\n\n\
 #include \"" <> prefix <> "vars.h\"\n\n\
 // " <> prefix <> "BEGIN VARDECL\n\
-  SIMD_DECL;\n" <>
+  SIMD_DECL;\n\
+  int i, h;\n\
+  enum { hmax = " <> ToString[nhels] <> ", hsimd = SIMD_CEIL(hmax) };\n\
+  ResType res[hsimd][2];\n\
+  RealType rtree, rloop, norm;\n\n" <>
     VarDecl[hels, "integer"] <> "\
-// " <> prefix <> "END VARDECL\n\n" <>
+// " <> prefix <> "END VARDECL\n\n\
+// " <> prefix <> "BEGIN HSEL_DECL\n\
+  static union {\n\
+    ResType v[hsimd];\n\
+    RealType s[hmax];\n\
+  } hseltest;\n\
+  static RealType hselmin;\n\
+  static int hseli;\n\
+// " <> prefix <> "END HSEL_DECL\n\n" <>
     sincl[[2]] <> "\n\
-  PAR_PREP(varXs, varXa, helind);\n"];
+  PAR_PREP(res[0], varXs, varXa, helind);\n"];
 
   (* b) definitions of the invariants *)
   WriteExpr[hh, {"\
@@ -5504,33 +5534,57 @@ void " <> $SymbolPrefix <> "SquaredME(RealType *result, cinteger8 *helicities, c
   INI_ANGLE(seq);\n" <>
     Invoke@@ abbrmods[[2]] <> "\
 // " <> prefix <> "END ABBR_ANGLE\n\n\
-// " <> prefix <> "BEGIN RES_INI\n\
-  result[0] = 0;\n\
-  result[1] = 0;\n\
-// " <> prefix <> "END RES_INI\n\n\
 // " <> prefix <> "BEGIN HEL_LOOPS\n\
-  SIMD_INI;\n\n" <>
+  SIMD_INI;\n\
+  i = h = 0;\n\n" <>
     ({"  LOOP_HEL(Hel(", #2, "))\n\
   TEST(helicities, BIT_HEL(", #2, "))\n\n"}&)@@@ hels <> "\
+// " <> prefix <> "BEGIN HSEL_IF\n\
+  if( hseltest.s[i++] < hselmin ) continue;\n\
+// " <> prefix <> "END HSEL_IF\n\n\
   SIMD_COPY(&Hel(1));\n\
   SIMD_NEXT;\n\
-  SIMD_EXEC(PAR_EXEC(" <> $SymbolPrefix <> "SquaredMEHel, result, flags));\n" <>
+  SIMD_EXEC(PAR_EXEC(" <> $SymbolPrefix <> "SquaredMEHel, res[h++], flags));\n" <>
     ({"\n  ENDTEST(helicities, BIT_HEL(", #2, "))\n\
   ENDLOOP_HEL(", #1, ")\n"}&)@@@ Reverse[hels] <> "\n\
-  SIMD_LAST(PAR_EXEC(" <> $SymbolPrefix <> "SquaredMEHel, result, flags));\n\
+  SIMD_LAST(PAR_EXEC(" <> $SymbolPrefix <> "SquaredMEHel, res[h++], flags));\n\
 // " <> prefix <> "END HEL_LOOPS\n\n\
-  PAR_SYNC(result);\n\
+  PAR_SYNC();\n\
   DEINI(seq);\n\n\
+// " <> prefix <> "BEGIN RESULT\n\
+  rtree = rloop = 0;\n\
+  for( i = 0; i < h; ++i ) {\n\
+    rtree += HelSum(res[i][0]);\n\
+    rloop += HelSum(res[i][1]);\n\
+  }\n\
+  result[0] = rtree;\n\
+  TEST(flags, BIT_LOOP)\n\
+  result[1] = rloop;\n\
+  ENDTEST(flags, BIT_LOOP)\n\
+// " <> prefix <> "END RESULT\n\n\
+// " <> prefix <> "BEGIN HSEL_SET\n\
+  if( hseli < hseln ) {\n\
+    norm = 1/(rtree + rloop);\n\
+    for( i = 0; i < hsimd; ++i )\n\
+      hseltest.v[i] += ToRes(norm)*(res[i][0] + res[i][1]);\n\
+    if( ++hseli == hseln ) {\n\
+      hselmin = 0;\n\
+      for( i = 0; i < hmax; ++i )\n\
+        hselmin = fmax(hselmin, hseltest.s[i]);\n\
+      hselmin *= hseleps;\n\
+    }\n\
+  }\n\
+// " <> prefix <> "END HSEL_SET\n\n\
 #ifdef CHECK\n" <>
     ({"!printf(\"", #, " = %g\\n\", ", #, ");\n"}&)/@
       (ToString[#1]&)@@@ invs <> "\
-!printf(\"tree = (%g,%g)\\n\",  Re(result[0]), Im(result[0]));\n\
-!printf(\"loop = (%g,%g)\\n\",  Re(result[1]), Im(result[1]));\n\
+!printf(\"tree = %g\\n\", rtree);\n\
+!printf(\"loop = %g\\n\", rloop);\n\
 !exit(1);\n\
 #endif\n\n" <> sincl[[3]] <> "\
 // " <> prefix <> "END SQUAREDME\n\
 }\n"];
-)
+]
 
 
 (* renormalization constants *)
@@ -5907,7 +5961,6 @@ SetLanguage["C"] := (
   SubroutineDecl = subroutineDeclC;
   SubroutineEnd[] = "}\n";
   callDecl = callDeclC;
-  loopElem = LoopElemC;
   helDim = HelDimC;
   writeSquaredME = writeSquaredMEC;
   OpenCode = OpenC;
@@ -5917,7 +5970,7 @@ SetLanguage["C"] := (
   $CodeIndent = "  ";
   $CodeEoln = ";";
   $CodeIf = "  if( ";
-  $CodeThen = ") {\n";
+  $CodeThen = " ) {\n";
   $CodeElseif = "  else if( ";
   $CodeElse = "  else {\n";
   $CodeEndIf = "  }\n";
@@ -5930,7 +5983,6 @@ SetLanguage["Fortran"] = (
   SubroutineDecl = subroutineDeclF;
   SubroutineEnd[] = "\tend\n";
   callDecl = callDeclF;
-  loopElem = LoopElemF;
   helDim = HelDimF;
   writeSquaredME = writeSquaredMEF;
   OpenCode = OpenFortran;
@@ -6074,14 +6126,14 @@ Attributes[TmpList] = {HoldFirst}
 
 TmpList[expr_] := Reverse[Reap[expr]]
 
-ToTmp[expr_] := (Sow[# -> expr]; #)& @ tmp[]
+ToTmp[expr_, var_] := (Sow[# -> expr]; #)& @ tmp[]
 
 
 Attributes[SplitExpr] = {Listable}
 
 SplitExpr[(ru:Rule | RuleAdd)[var_, expr_]] :=
   BlockSplit @ TmpList[ ru[var, Replace[expr,
-    Plus -> (If[LeafCount[#] > $BlockSize, ToTmp[#], #]&[Plus[##]]&),
+    Plus -> (If[LeafCount[#] > $BlockSize, ToTmp[#, var], #]&[Plus[##]]&),
     {2, Infinity}, Heads -> True]] ]
 
 SplitExpr[other_] := other
@@ -6161,7 +6213,7 @@ Prep[(ru:Rule | RuleAdd)[var_, expr_]] := Prep @
   ru[var, SplitSums[expr]] /; !FreeQ[expr, SumOver]
 
 Prep[(ru:Rule | RuleAdd)[var_, expr_]] := Prep @
-  TmpList[ru[var, expr /. i_IndexIf :> ToTmp[i]]] /;
+  TmpList[ru[var, expr /. i_IndexIf :> ToTmp[i, var]]] /;
   !FreeQ[expr, IndexIf]
 
 Prep[other_] := other

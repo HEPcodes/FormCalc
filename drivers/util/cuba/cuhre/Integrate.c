@@ -3,7 +3,7 @@
 		integrate over the unit hypercube
 		this file is part of Cuhre
 		checkpointing by B. Chokoufe
-		last modified 5 Aug 13 th
+		last modified 17 Sep 13 th
 */
 
 
@@ -11,7 +11,7 @@
 
 typedef struct pool {
   struct pool *next;
-  Region region[];
+  char region[];
 } Pool;
 
 typedef struct {
@@ -91,7 +91,7 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
     cur->next = NULL;
     state->ncur = t->nregions = 1;
 
-    region = cur->region;
+    region = (Region *)cur->region;
     region->div = 0;
     for( B = (b = region->bounds) + t->ndim; b < B; ++b ) {
       b->lower = 0;
@@ -147,7 +147,7 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
     }
 
     maxerr = -INFTY;
-    regionL = cur->region;
+    regionL = (Region *)cur->region;
     npool = state->ncur;
     for( pool = cur; pool; npool = POOLSIZE, pool = pool->next )
       for( ipool = 0; ipool < npool; ++ipool ) {

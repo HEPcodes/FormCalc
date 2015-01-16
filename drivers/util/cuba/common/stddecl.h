@@ -1,7 +1,7 @@
 /*
 	stddecl.h
 		declarations common to all Cuba routines
-		last modified 7 Aug 13 th
+		last modified 17 Sep 13 th
 */
 
 
@@ -34,6 +34,23 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #endif
+#endif
+
+#ifdef HAVE_ALLOCA_H
+#include <alloca.h>
+#elif defined __GNUC__
+#define alloca __builtin_alloca
+#elif defined _AIX
+#define alloca __alloca
+#elif defined _MSC_VER
+#include <malloc.h>
+#define alloca _alloca
+#else
+#include <stddef.h>
+#ifdef  __cplusplus
+extern "C"
+#endif
+void *alloca (size_t);
 #endif
 
 #ifndef NDIM
@@ -364,18 +381,18 @@ typedef struct {
 #define EXPORT_(s) SUFFIX(s)
 
 
-#define CString(s, len) ({ \
+#define CString(cs, fs, len) { \
   char *_s = NULL; \
-  if( s ) { \
+  if( fs ) { \
     int _l = len; \
-    while( _l > 0 && s[_l - 1] == ' ' ) --_l; \
+    while( _l > 0 && fs[_l - 1] == ' ' ) --_l; \
     if( _l > 0 && (_s = alloca(_l + 1)) ) { \
-      memcpy(_s, s, _l); \
+      memcpy(_s, fs, _l); \
       _s[_l] = 0; \
     } \
   } \
-  _s; \
-})
+  cs = _s; \
+}
 
 static inline real Sq(creal x) {
   return x*x;

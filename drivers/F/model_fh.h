@@ -1,7 +1,7 @@
 * model_fh.h
 * declarations for model_fh.F
 * this file is part of FormCalc
-* last modified 1 Aug 13 th
+* last modified 2 Oct 13 th
 
 
 #include "FHRecord.h"
@@ -20,13 +20,13 @@
 	RealType EL, Alfa, Alfa2, GS, Alfas, Alfas2
 	RealType CKMlambda, CKMA, CKMrhobar, CKMetabar
 
-	common /modelpara/ CKM
-	common /modelpara/ Mf, Mf2
-	common /modelpara/ MZ, MZ2, MW, MW2, MH, MH2, MBatMB
-	common /modelpara/ CW, CW2, SW, SW2
-	common /modelpara/ ELMZ, AlfaMZ, GF, AlfaGF, AlfasMZ
-	common /modelpara/ EL, Alfa, Alfa2, GS, Alfas, Alfas2
-	common /modelpara/ CKMlambda, CKMA, CKMrhobar, CKMetabar
+	common /smpara/ CKM
+	common /smpara/ Mf, Mf2
+	common /smpara/ MZ, MZ2, MW, MW2, MH, MH2, MBatMB
+	common /smpara/ CW, CW2, SW, SW2
+	common /smpara/ ELMZ, AlfaMZ, GF, AlfaGF, AlfasMZ
+	common /smpara/ EL, Alfa, Alfa2, GS, Alfas, Alfas2
+	common /smpara/ CKMlambda, CKMA, CKMrhobar, CKMetabar
 
 #ifndef CKMC
 #define CKMC(i,j) Conjugate(CKM(i,j))
@@ -48,36 +48,35 @@
 
 	ComplexType UCha(2,2), VCha(2,2), ZNeu(4,4)
 	ComplexType XHiggs(3,3,2)
-	ComplexType deltaSf(6,6,4), UASf(6,6,5)
+	ComplexType deltaSf(6,6,4), USf(2,2,5,3), UASf(6,6,5)
 	ComplexType MSS2(3,3,5), Afd(2:4,3), Kf(3,3,2:4)
-	ComplexType MUE, Mino1, Mino2, Mino3, SqrtEGl, Deltab
+	ComplexType MUE, Mino1, Mino2, Mino3, SqrtEGl
 	RealType MCha(2), MCha2(2), MNeu(4), MNeu2(4)
-	RealType MSS(5,3), MASf(6,5), MASf2(6,5)
+	RealType MSS(5,3), MSf(2,5,3), MSf2(2,5,3)
+	RealType MASf(6,5), MASf2(6,5)
 	RealType MHiggs(4), MHiggs2(4), MHtree(4), MHtree2(4)
 	RealType MGl, MGl2
 	RealType CB, SB, TB, CB2, SB2, TB2, C2B, S2B
 	RealType CA, SA, CA2, SA2, C2A, S2A
 	RealType CAB, SAB, CBA, SBA, CBA2, SBA2, SAeff
-	integer nmfv
+	integer fv
 
-	common /modelpara/ UCha, VCha, ZNeu
-	common /modelpara/ XHiggs
-	common /modelpara/ deltaSf, UASf
-	common /modelpara/ MSS2, Afd, Kf
-	common /modelpara/ MUE, Mino1, Mino2, Mino3, SqrtEGl, Deltab
-	common /modelpara/ MCha, MCha2, MNeu, MNeu2
-	common /modelpara/ MSS, MASf, MASf2
-	common /modelpara/ MHiggs, MHiggs2, MHtree, MHtree2
-	common /modelpara/ MGl, MGl2
-	common /modelpara/ CB, SB, TB, CB2, SB2, TB2, C2B, S2B
-	common /modelpara/ CA, SA, CA2, SA2, C2A, S2A
-	common /modelpara/ CAB, SAB, CBA, SBA, CBA2, SBA2, SAeff
-	common /modelpara/ nmfv
+	common /mssmpara/ UCha, VCha, ZNeu
+	common /mssmpara/ XHiggs
+	common /mssmpara/ deltaSf, USf, UASf
+	common /mssmpara/ MSS2, Afd, Kf
+	common /mssmpara/ MUE, Mino1, Mino2, Mino3, SqrtEGl
+	common /mssmpara/ MCha, MCha2, MNeu, MNeu2
+	common /mssmpara/ MSS, MSf, MSf2
+	common /mssmpara/ MASf, MASf2
+	common /mssmpara/ MHiggs, MHiggs2, MHtree, MHtree2
+	common /mssmpara/ MGl, MGl2
+	common /mssmpara/ CB, SB, TB, CB2, SB2, TB2, C2B, S2B
+	common /mssmpara/ CA, SA, CA2, SA2, C2A, S2A
+	common /mssmpara/ CAB, SAB, CBA, SBA, CBA2, SBA2, SAeff
+	common /mssmpara/ fv
 
 #ifndef USfC
-#define MSf(s,t,g) MASf(g+3*(s-1),t)
-#define MSf2(s,t,g) MASf2(g+3*(s-1),t)
-#define USf(i,j,t,g) UASf(g+3*(i-1),g+3*(j-1),t)
 #define USfC(i,j,t,g) Conjugate(USf(i,j,t,g))
 #define UASfC(i,j,t) Conjugate(UASf(i,j,t))
 

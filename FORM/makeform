@@ -1,17 +1,22 @@
 #! /bin/sh -x
 # get and build FORM for a given platform
-# last modified 6 Mar 13 th
+# last modified 14 Nov 13 th
 
-gmp=gmp-5.1.1
-zlib=zlib-1.2.7
+gmp=gmp-5.1.3
+zlib=zlib-1.2.8
 
-lin_cflags="-static-libgcc -O3 -fomit-frame-pointer"
-mac_cflags="$lin_cflags -mmacosx-version-min=10.6"
-win_cflags="$lin_cflags"
+cc=clang
+cxx=clang++
+cflags="-O3 -fomit-frame-pointer"
+lin_cflags="$cflags -static"
+mac_cflags="$cflags -mmacosx-version-min=10.6"
+win_cflags="$cflags"
 
 case "$1" in
 Linux)
 	build=i686-unknown-linux-gnu
+	cc=gcc
+	cxx=g++
 	cflags="$lin_cflags -m32"
 	;;
 Linux-x86-64)
@@ -28,14 +33,15 @@ MacOSX-x86-64)
 	;;
 Windows)
 	build=i686-pc-cygwin
-	cflags="$win_cflags -m32"
+	cc=$build-gcc
+	cxx=$build-g++
+	cflags="$win_cflags"
 	;;
 Windows-x86-64)
-# no Cygwin-64 yet, hence for now:
-	ln -s Windows Windows-x86-64
-	exit 0
-	build=x86_64-w64-cygwin
-	cflags="$win_cflags -m64"
+	build=x86_64-pc-cygwin
+	cc=$build-gcc
+	cxx=$build-g++
+	cflags="$win_cflags"
 	;;
 *)
 	cat << _EOF_
@@ -53,40 +59,55 @@ _EOF_
 esac
 
 
+src="$PWD"
+dest=/tmp/makeform-build
+rm -fr $dest
+mkdir $dest
+mv -f $1 $dest/
+cp -pf $gmp.tar.gz $zlib.tar.gz formcvs.tar.gz $dest/
+trap "mv '$dest/$1' '$src'" 0 1 2 3 15
+cd $dest
+
 make BUILD="$build" \
-     DIR="$1" \
-     ABSDIR="$PWD/$1" \
+     SRC="$src" \
+     DEST="$dest/$1" \
+     CC="$cc" \
+     CXX="$cxx" \
      CFLAGS="$cflags" \
      GMP="$gmp" \
      ZLIB="$zlib" -f - << \_EOF_
 
-CONF1 = CFLAGS="$(CFLAGS)" CXXFLAGS="$(CFLAGS)" ./configure --prefix=$(ABSDIR)
+CONF1 = \
+CC="$(CC)" CFLAGS="$(CFLAGS)" \
+CXX="$(CXX)" CXXFLAGS="$(CFLAGS)" ./configure --prefix=$(DEST)
 
 CONF2 = $(CONF1) --build="$(BUILD)"
 
-formcvs/sources/tform: $(DIR)/lib/libgmp.a $(DIR)/lib/libz.a formcvs.tar.gz
+formcvs/sources/tform: $(DEST)/lib/libgmp.a $(DEST)/lib/libz.a formcvs.tar.gz
 	tar xvfz formcvs.tar.gz
 	cd formcvs && autoreconf -i
-	cd formcvs && $(CONF2) --with-gmp=$(ABSDIR) --with-zlib=$(ABSDIR)
+	cd formcvs && $(CONF2) --with-gmp=$(DEST) --with-zlib=$(DEST)
 	sed -i \
-	  -e 's|-lz|$(ABSDIR)/lib/libz.a|' \
-	  -e 's|-lgmp|$(ABSDIR)/lib/libgmp.a|' formcvs/sources/Makefile
+	  -e 's|-lz|"$(DEST)/lib/libz.a"|' \
+	  -e 's|-lgmp|"$(DEST)/lib/libgmp.a"|' formcvs/sources/Makefile
 	cd formcvs && $(MAKE) install
 	rm -fr formcvs
 
 formcvs.tar.gz:
 	wget -O formcvs.tar.gz 'http://www.nikhef.nl/~form/formcvs.php?dl=formcvs.tar.gz'
+	cp -p formcvs.tar.gz "$(SRC)/"
 
-$(DIR)/lib/libgmp.a: $(GMP).tar.bz2
-	tar xvfj $(GMP).tar.bz2
+$(DEST)/lib/libgmp.a: $(GMP).tar.gz
+	tar xvfz $(GMP).tar.gz
 	cd $(GMP) && $(CONF2) --disable-shared
 	cd $(GMP) && $(MAKE) install
 	rm -fr $(GMP)
 
-$(GMP).tar.bz2:
-	wget http://ftp.gnu.org/gnu/gmp/$(GMP).tar.bz2
+$(GMP).tar.gz:
+	wget http://ftp.gnu.org/gnu/gmp/$(GMP).tar.gz
+	cp -p $(GMP).tar.gz "$(SRC)/"
 
-$(DIR)/lib/libz.a: $(ZLIB).tar.gz
+$(DEST)/lib/libz.a: $(ZLIB).tar.gz
 	tar xvfz $(ZLIB).tar.gz
 	cd $(ZLIB) && $(CONF1)
 	cd $(ZLIB) && $(MAKE) SHAREDLIBV= install
@@ -94,6 +115,7 @@ $(DIR)/lib/libz.a: $(ZLIB).tar.gz
 
 $(ZLIB).tar.gz:
 	wget http://zlib.net/$(ZLIB).tar.gz
+	cp -p $(ZLIB).tar.gz "$(SRC)/"
 
 _EOF_
 
