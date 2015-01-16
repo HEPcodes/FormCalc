@@ -1,4 +1,4 @@
-FormCalc 1.4 README file
+FormCalc 1.5 README file
 
 FormCalc calculates and simplifies one-loop Feynman diagrams. It reads
 amplitudes generated with FeynArts and returns the results in a way well
@@ -33,7 +33,7 @@ ZZ -> ZZ and e^+e^- -> t\bar t, to show how these programs are used.
 
 Installation notes for the impatient:
 
-- unpack the archive FormCalc14.tar.gz in some directory
+- unpack the archive FormCalc15.tar.gz in some directory
   (presumably you did this already or else you wouldn't be reading
   this file)
 
@@ -45,6 +45,8 @@ Installation notes for the impatient:
 
 For more detailed instructions see the manual in FCLTGuide.ps.gz.
 
+The latest version of FormCalc can be downloaded from
+http://www.feynarts.de/formcalc.
 
 Enjoy!
 

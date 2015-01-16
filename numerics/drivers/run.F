@@ -1,21 +1,16 @@
 *	run.F
 *	defines parameter settings for one run, then includes num.F
-*	last modified 28 Apr 99 th
+*	last modified 24 Aug 99 th
 
 * Whether to run in debugging mode
 
 #define DEBUG
 
-* (Probably useful in the SM only:) Whether to apply Dyson summation
-* to the resonant Higgs propagator
-
-*#define DYSON
-
 * The variables in VAROUT are written out as comments into the
 * data file using the format VARFMT
 
 #define VAROUT MH
-#define VARFMT "# MH=", G
+#define VARFMT "# MH=", F10.2
 
 * You can define LOOP[1..10] for scanning the parameter space. LOOP1
 * will be the outermost loop. Do not remove #defines which are not

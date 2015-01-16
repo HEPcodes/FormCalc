@@ -2,7 +2,7 @@
 	softbrems.m
 		calculates the soft-photon bremsstrahlung factor
 		which multiplies the Born matrix element
-		last modified 3 Mar 99 th
+		last modified 26 Aug 99 th
 
 Reference:
 	Ansgar Denner, "Techniques for the calculation of electroweak
@@ -129,7 +129,7 @@ SoftPre := SoftPre = Sum[
 (* uncomment the /. EE -> xEE ... if you want the soft photon factor
    in terms of S, T, U instead of EE[i] and Pin, Pout *)
 
-SoftBrems := -4 Pi Alpha/(2 Pi)^3/2 *
+SoftBrems := -4 Pi Alpha/(2 Pi)^3 *
   Collect[SoftPre (* /. EE -> xEE /. Pin -> xPin /. Pout -> xPout *),
     {Li2[__], log[__]}, Simplify]
 
@@ -145,7 +145,7 @@ Block[ {plus, abbr, res, qq, qqc = 0},
 ]
 
 Unprotect[Rule];
-Format[Rule[a_, b_], FortranForm] := SequenceForm[a, " = ", b];
+Format[a_ -> b_, FortranForm] := SequenceForm[a, " = ", b];
 Protect[Rule]
 
 
@@ -156,14 +156,14 @@ hh = OpenWrite[
   FormatType -> FortranForm, PageWidth -> 67]
 
 WriteString[hh,
-  "#define ESOFT YouHaventDefinedESOFTYet\n\n",
-  "\tdouble precision function softphot()\n",
-  "\timplicit double precision (q)\n",
-  "\timplicit logical (a-p,r-z)\n",
-  "#include \"kin.h\"\n\n",
-  "\tdouble precision delta\n",
-  "\tcommon /ffcut/ delta\n\n",
-  "\tdouble precision Li2\n",
+  "#define ESOFT YouHaventDefinedESOFTYet\n\n" <>
+  "\tdouble precision function softphot()\n" <>
+  "\timplicit double precision (q)\n" <>
+  "\timplicit logical (a-p,r-z)\n" <>
+  "#include \"kin.h\"\n\n" <>
+  "\tdouble precision delta\n" <>
+  "\tcommon /ffcut/ delta\n\n" <>
+  "\tdouble precision Li2\n" <>
   "\texternal Li2\n\n"]
 
 dSB = Optimize[SoftBrems] /.

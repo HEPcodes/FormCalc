@@ -10,6 +10,5 @@
 
 << ../../numerics/NumPrep.m
 
-MakeCode[ "fc", "fortran",
-  ProcessH -> "process.h_zzzz" ]
+MakeCode["fc", "fortran"]
 

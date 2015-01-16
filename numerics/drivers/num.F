@@ -1,7 +1,7 @@
 *	num.F
 *	this is the driver program for a 2 -> 2 process
 *	for code produced by NumPrep.m
-*	last modified 23 Jun 99 th
+*	last modified 22 Oct 99 th
 
 #include "feyn.F"
 #include "process.h"
@@ -11,9 +11,6 @@
 #define FERMION 1
 #define PHOTON 2
 #define VECTOR 3
-#define FERMIONIC \
-  (TYPE1 == FERMION || TYPE2 == FERMION || \
-   TYPE3 == FERMION || TYPE4 == FERMION)
 
 #ifdef DEBUG
 #define THETASTEP (125D0*degree)
@@ -74,7 +71,7 @@
 #include "tools.h"
 
 	integer*4 iargc, argc, lnblnk
-	external iargc, getarg, lnblnk
+	external iargc, lnblnk
 	character*40 argv, outf, basename
 	double precision Ecmsfrom, Ecmsto
 
@@ -126,7 +123,6 @@
 	call setup
 	open(11, file=outf, status='UNKNOWN')
 
-26	format(3G24.15)
 27	format(VARFMT)
 28	format()
 
@@ -153,38 +149,23 @@
 	Ecms = max(Ecmsfrom,
      +    MASS1 + MASS2 + .01D0,
      +    MASS3 + MASS4 + .01D0)
-	if(Ecms .ne. Ecmsfrom) print *, "Warning: sqrt(s) = ",
-     +    Ecmsfrom, " is below threshold."
+	if(Ecms .ne. Ecmsfrom) print *,
+     +    "Warning: sqrt(s) = ", Ecmsfrom, " is below threshold."
 
 	if(argc .eq. 5) then
 	  call setenergy
 	  do th = CUTOFF, pi - CUTOFF, THETASTEP
 	    print *, "th =", th
 	    call getamp
-	    bornamp = bornamp*kinf
-#ifdef oneloop
-	    loopamp = 999D0
-#else
-	    loopamp = loopamp*kinf
-#endif
-	    write(11, 26) th, bornamp, loopamp
-	    call flush(11)
+	    call writeout(th, treeamp, loopamp)
 	    Cptr = Cptr2
 	    Dptr = Dptr2
 	  enddo
 	else
 18	  continue
 	  call intgauss
-	  bornamp = bornsum*kinf
-#ifdef oneloop
-	  loopamp = 999D0
-	  loopAfb = 999D0
-#else
-	  loopamp = loopsum*kinf
-#endif
-	  write(11, 26) Ecms, bornamp, loopamp
-*	  write(11, 26) Ecms, bornAfb, loopAfb
-	  call flush(11)
+	  call writeout(Ecms, treesum, loopsum)
+* or:	  call writeout(Ecms, treeAfb, loopAfb)
 	  if(Ecms .lt. Ecmsto) then
 	    Ecms = Ecms + ECMSSTEP
 	    goto 18
@@ -268,18 +249,31 @@
 	end
 
 ************************************************************************
+	subroutine writeout(x, treeres, loopres)
+	implicit none
+	double precision x, treeres, loopres
+#include "kin.h"
+
+	loopres = (treeres + loopres)*kinf
+	treeres = treeres*kinf
+
+26	format(3G24.15)
+	write(11, 26) x, treeres, loopres
+	call flush(11)
+	end
+
+************************************************************************
 	subroutine setup
 	implicit none
 #include "kin.h"
 
-	double complex ds2I, ds2mI
-	parameter (ds2I = dcmplx(0D0, ds2),
-     +    ds2mI = dcmplx(0D0, -ds2))
+	double complex ds2I
+	parameter (ds2I = dcmplx(0D0, ds2))
 
 	integer i, j
 
 	do i = 1, 4
-	  do j = 1, 16 
+	  do j = 1, 16
 	    v4(i, j) = dcmplx(0D0)
 	  enddo
 	enddo
@@ -287,17 +281,17 @@
 	e1(1, 2) = -ds2
 	e1(1, 3) = ds2I
 	e1(2, 2) = -ds2
-	e1(2, 3) = ds2mI
+	e1(2, 3) = -ds2I
 
 	e2(1, 2) = ds2
 	e2(1, 3) = ds2I
 	e2(2, 2) = ds2
-	e2(2, 3) = ds2mI
+	e2(2, 3) = -ds2I
 
-	e3(1, 3) = ds2mI
+	e3(1, 3) = -ds2I
 	e3(2, 3) = ds2I
 
-	e4(1, 3) = ds2mI
+	e4(1, 3) = -ds2I
 	e4(2, 3) = ds2I
 
 	call bcaini
@@ -309,11 +303,6 @@
 #include "tools.h"
 #include "kin.h"
 #include "rcsm.h"
-
-#ifdef DYSON
-	double complex shh
-	external shh
-#endif
 
 	double precision kallen, ma, mb
 	kallen(ma, mb) =
@@ -330,13 +319,6 @@
 	EE(4) = sqrt(Pout2 + mass(4))
 	Pin = sqrt(Pin2)
 	Pout = sqrt(Pout2)
-
-#ifdef DYSON
-	reso = 1D0/(S - MH2 + shh(S))
-#else
-	reso = 1D0/(S - MH2)
-	resoc = 1D0/(S - MH2 + dcmplx(0D0, 1D0)*GammaHMH)
-#endif
 
 	Cptr = 1
 	Dptr = 1
@@ -368,23 +350,10 @@
 	implicit none
 #include "kin.h"
 
-#ifdef DYSON
-	double complex shh
-	external shh
-#endif
-
 	st = sin(th)
 	ct = cos(th)
 	T = mass(1) + mass(3) - 2D0*(EE(1)*EE(3) - Pin*Pout*ct)
 	U = mass(2) + mass(4) - 2D0*(EE(2)*EE(4) + Pin*Pout*ct)
-
-#ifdef DYSON
-	resoT = 1D0/(T - MH2 + shh(T))
-	resoU = 1D0/(U - MH2 + shh(U))
-#else
-	resoT = 1D0/(T - MH2)
-	resoU = 1D0/(U - MH2)
-#endif
 
 	call calc_bca2
 
@@ -468,7 +437,10 @@
      +      v4(od(1, r), i)*v4(od(2, r), j)*
      +        v4(od(3, r), k)*v4(od(4, r), l)
 	enddo
-	Eps = Eps*dcmplx(0D0, -1D0)
+* Note: although Eps is defined as -I*(Levi-Civita tensor) in FormCalc,
+* we have to multiply with I (not -I) here because we've neglected
+* the metric in the summation above.
+	Eps = Eps*dcmplx(0D0, 1D0)
 	end
 
 ************************************************************************
@@ -491,94 +463,30 @@
 #endif
 
 ************************************************************************
-	double precision function norm(z)
-	implicit none
-	double complex z
-
-	norm = dble(z)**2 + dimag(z)**2
-	end
-
-************************************************************************
 	subroutine getamp
 	implicit none
-#include "kin.h"
-#include "rcsm.h"
+#include "vars.h"
 
-#if FERMIONIC
-#  define RESTYPE double precision
-#else
-#  define RESTYPE double complex
-	double precision norm
-	external norm
-#  ifdef BORN
-	double complex BORN
-	external BORN
-#  endif
-#endif
-
-	RESTYPE Mborn, Mloop
-	RESTYPE born
-	external born
-
-#ifndef oneloop
-	RESTYPE oneloop
-	external oneloop
-#endif
-
-#ifdef BREMSSTRAHLUNG
-	double precision dSB
-#  ifndef softphot
+#if defined(BREMSSTRAHLUNG) && !defined(softphot)
 	double precision softphot
 	external softphot
-#  endif
 #endif
 
 	call settheta
-#ifdef BREMSSTRAHLUNG
-	dSB = softphot()
-#  ifdef DEBUG
-	print *, "dSB =", dSB
-#  endif
-#endif
-	bornamp = 0D0
+	treeamp = 0D0
 	loopamp = 0D0
-	do i4 = bpol(4), epol(4)
-	  do i3 = bpol(3), epol(3)
-	    do i2 = bpol(2), epol(2)
-	      do i1 = bpol(1), epol(1)
-	        call calc_sme
-	        call calc_abbr
-#if FERMIONIC
-		call calc_mat
-		Mborn = born()
-		bornamp = bornamp + Mborn
-		Mloop = oneloop()
-#  ifdef BREMSSTRAHLUNG
-	        Mborn = Mborn*dSB
-#  endif
-		loopamp = loopamp + Mborn + Mloop
-#else
-	        Mborn = born()
-	        bornamp = bornamp + norm(Mborn)
-	        Mloop = oneloop()
-#  ifdef BREMSSTRAHLUNG
-	        Mloop = Mloop + Mborn*dSB
-#  endif
-	        loopamp = loopamp + 2D0*dble(dconjg(Mborn)*Mloop)
-#  ifdef BORN
-	        Mborn = BORN()
-#  endif
-	        loopamp = loopamp + norm(Mborn)
-#endif
 
-#ifdef DEBUG
-	        print *, "  Mborn =", Mborn
-	        print *, "  Mloop =", Mloop
+	do 1 i4 = bpol(4), epol(4)
+	do 1 i3 = bpol(3), epol(3)
+	do 1 i2 = bpol(2), epol(2)
+	do 1 i1 = bpol(1), epol(1)
+	  call calc_abbr
+	  call calc_amp
+1	continue
+
+#ifdef BREMSSTRAHLUNG
+	loopamp = loopamp + treeamp*softphot()
 #endif
-	      enddo
-	    enddo
-	  enddo
-	enddo
 	end
 
 ************************************************************************
@@ -592,7 +500,7 @@
 
 	integer i
 	double precision x, w
-	double precision bornsumF, bornsumB, loopsumF, loopsumB
+	double precision treesumF, treesumB, loopsumF, loopsumB
 	double precision lower, upper, mid1, mid2, range
 	parameter ( lower = CUTOFF, upper = pi - CUTOFF,
      +    mid1 = .5D0*(lower + .5D0*pi),
@@ -609,9 +517,9 @@
 * with 16 over each half.
 
 	call setenergy
-	bornsumF = 0D0
+	treesumF = 0D0
 	loopsumF = 0D0
-	bornsumB = 0D0
+	treesumB = 0D0
 	loopsumB = 0D0
 	do i = 1, GAUSSPOINTS/2
 	  x = gauss_x(i)*range
@@ -620,29 +528,29 @@
 *			possibly /2 because of identical particles
 	  th = mid1 + x
 	  call getamp
-	  bornsumF = bornsumF + st*w*bornamp
+	  treesumF = treesumF + st*w*treeamp
 	  loopsumF = loopsumF + st*w*loopamp
 	  th = mid1 - x
 	  call getamp
-	  bornsumF = bornsumF + st*w*bornamp
+	  treesumF = treesumF + st*w*treeamp
 	  loopsumF = loopsumF + st*w*loopamp
 	  th = mid2 + x
 	  call getamp
-	  bornsumB = bornsumB + st*w*bornamp
+	  treesumB = treesumB + st*w*treeamp
 	  loopsumB = loopsumB + st*w*loopamp
 	  th = mid2 - x
 	  call getamp
-	  bornsumB = bornsumB + st*w*bornamp
+	  treesumB = treesumB + st*w*treeamp
 	  loopsumB = loopsumB + st*w*loopamp
 	  Cptr = Cptr2
 	  Dptr = Dptr2
 	enddo
-	bornsum = bornsumF + bornsumB
+	treesum = treesumF + treesumB
 	loopsum = loopsumF + loopsumB
-	if(bornsum .eq. 0D0) then
-	  bornAfb = 999D0
+	if(treesum .eq. 0D0) then
+	  treeAfb = 999D0
 	else
-	  bornAfb = (bornsumF - bornsumB)/bornsum
+	  treeAfb = (treesumF - treesumB)/treesum
 	endif
 	if(loopsum .eq. 0D0) then
 	  loopAfb = 999D0

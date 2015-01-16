@@ -1,5 +1,5 @@
 #!/bin/sh
-# last modified 27 May 99 th
+# last modified 30 Aug 99 th
 
 # This is a script to convert the f77 code files made by NumPrep to
 # quadruple-precision f90 code in another directory. At the present
@@ -13,9 +13,8 @@
 # will make a new subdirectory called xprec where the results are put.
 # Also, be sure to adjust the following paths:
 
-fc=$HOME/FormCalc/numerics
-lt=$HOME/LoopTools/include
-rc=$fc/rconst/fortran
+looptoolsdir=$HOME/LoopTools/include
+renconstdir=$HOME/FormCalc/numerics/rconst/fortran
 
 if [ -d xprec ] ; then
   echo "subdirectory xprec exists already"
@@ -32,8 +31,9 @@ mkdir xprec
 MAXLINELENGTH=110
 export MAXLINELENGTH
 
-for file in $fc/kin.h $fc/gauss.F $fc/*ini.F \
-  $lt/tools.[Fh] $lt/ff.h $rc/* *.[Fh]
+for file in *.[Fh] \
+            $looptoolsdir/tools.[Fh] $looptoolsdir/ff.h \
+            $renconstdir/*
 do
   echo $file
   case $file in
@@ -43,8 +43,8 @@ do
   f77290 $file xprec/$outname
 done
 
-cp $lt/qcomplex.f90 $fc/*.f90 xprec/
-ln -s $lt/defs.h xprec/defs.h90
+cp *.f90 $looptoolsdir/qcomplex.f90 xprec/
+ln -s $looptoolsdir/defs.h xprec/defs.h90
 
 sed    's/-I$([^ ]*//g
 	/=/!s/$([^)]*DIR)//g
@@ -53,6 +53,7 @@ sed    's/-I$([^ ]*//g
 	s/-extend_source//g
 	s/-lff/-lffx/g
 	s/f77/f90 -r16/g
+	s/-O/-O0/g
 	s/\.F/.f90/g
 	s/\.h/.h90/g
 	s/-g/-cpp/g
@@ -62,8 +63,5 @@ sed    's/-I$([^ ]*//g
 cat << _EOF_ >> xprec/GNUmakefile
 qcomplex.o pdflibcoupler.o: %.o: %.f90
 	f90 -c $<
-
-abbr.o: abbr.f90 kin.h90 vars.h90
-	$(subst -O,-O0,$(FC)) -c $<
 _EOF_
 

@@ -2,29 +2,22 @@
 *	common blocks with kinematical variables for num.F
 *	(yeah, and some other variables, too, so we do not need so
 *	many include files)
-*	last modified 21 Jun 98 th
+*	last modified 14 Sep 99 th
 
 	double precision mass(4)
 	integer type(4)
 	common /process/ mass, type
 
-	double complex resoc
-#ifdef DYSON
-	double complex reso, resoT, resoU
-#else
-	double precision reso, resoT, resoU
-#endif
 	double precision EE(4), Ecms, Pin, Pout, Pin2, Pout2
 	double precision th, st, ct, S, T, U, kinf
-	double precision bornamp, loopamp, bornsum, loopsum
-	double precision bornAfb, loopAfb
+	double precision treeamp, loopamp, treesum, loopsum
+	double precision treeAfb, loopAfb
 	integer Cptr2, Dptr2
 	common /kin/ 
-     +    resoc, reso, resoT, resoU,
      +    EE, Ecms, Pin, Pout, Pin2, Pout2,
      +    th, st, ct, S, T, U, kinf,
-     +    bornamp, loopamp, bornsum, loopsum,
-     +    bornAfb, loopAfb,
+     +    treeamp, loopamp, treesum, loopsum,
+     +    treeAfb, loopAfb,
      +    Cptr2, Dptr2
 
 	double complex v4(4, 16)
@@ -67,6 +60,7 @@
 	double precision MSNE(3), MSLE1(3), MSQU1(3), MSQD1(3)
 	double precision MSLE2(3), MSQU2(3), MSQD2(3)
 	double precision Mh0, MHH, MA0, MG0, MHp, MGp, MGl, MSusy
+	double precision Mh02, MHH2, MA02, MG02, MHp2, MGp2, MGl2
 	double precision CB, SB, TB, C2B, S2B
 	double precision CA, SA, C2A, S2A
 	double precision CAB, SAB, CBA, SBA
@@ -78,6 +72,7 @@
      +    MSNE, MSLE1, MSQU1, MSQD1,
      +    MSLE2, MSQU2, MSQD2,
      +    Mh0, MHH, MA0, MG0, MHp, MGp, MGl, MSusy,
+     +    Mh02, MHH2, MA02, MG02, MHp2, MGp2, MGl2,
      +    CB, SB, TB, C2B, S2B,
      +    CA, SA, C2A, S2A,
      +    CAB, SAB, CBA, SBA

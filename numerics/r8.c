@@ -3,7 +3,7 @@
 		replaces all real constants by Fortran-style
 		double precision numbers (1.234D0) in Mma
 		FortranForm output
-		last modified 16 Mar 99 th
+		last modified 14 Sep 99 th
 */
 
 #include <stdio.h>
@@ -24,11 +24,12 @@ main(int argc, char **argv)
     }
     else {
       *s = 0;
-      gets(s);
+      fgets(s, sizeof(s), stdin);
     }
     p = s + strlen(s) - 1;
+    *p-- = 0;
     if(*p == '\\') {
-      gets(next);
+      fgets(next, sizeof(next), stdin);
       di = next + 6 + strspn(next + 6, " \t");
       si = di + strcspn(di, " */()");
       memcpy(p, di, (int)(si - di));

@@ -33,18 +33,10 @@
 	dZH1 = 0D0
 	dZphi1 = 0D0
 	dZchi1 = 0D0
-	dWFZ = 0D0
-	dWFW = 0D0
+	dWFZ1 = 0D0
+	dWFW1 = 0D0
 	dZe1 = 0D0
 	dTad1 = 0D0
 	GammaHMH = 1D0
 	end
 
-#ifdef DYSON
-	double complex function shh(K2)
-	implicit none
-	double precision K2
-
-	shh = 1D0
-	end
-#endif

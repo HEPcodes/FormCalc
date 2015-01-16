@@ -1,23 +1,23 @@
 * this is OneLoop.h1, the Form part of FormCalc
-* last modified 8 Jul 99 th
+* last modified 4 Oct 99 th
 
 * Note: this program is meant to run with Form 1. It is clearly
-* inferior to the Form 2 code in pavered.h2 and is kept for
+* inferior to the Form 2 code in OneLoop.h2 and is kept for
 * compatibility reasons only. E.g. tensors are not generically
 * reduced, and the algorithm gets pretty slow if spinor chains
-* are involved. You will almost certainly want to put
-* DiracSimplify -> False in OneLoop.
+* are involved.
 
 .sort
 
-s r2, CW, SW, C4, S4, C2, S2, EL, a2;
-cf fme, DEN, A0, B0m, B1m, B00m, B11m;
+s r2, CW, SW, C4, S4, C2, S2, EL, GS, a2, as2, unknown;
+cf abb, Mat, fme, sun, DEN;
+cf A0, B0m, B1m, B00m, B11m;
 cf pave1, pave2, pave3, pave4, pave5;
 
 .global
 
 i J1, J2, J3, J4, C, IND1, IND2, IND3, IND4;
-s M1, M2, M3, M4, X1, X2, unknown;
+s M1, M2, M3, M4, X1, X2;
 v P1, P2, P3;
 f GA, ga2, fc, chp, ncm;
 cf eq, neq, repl, hide, pivot, d0, c0, b0, a0, pv;
@@ -35,6 +35,7 @@ id SW^-4 = S4;
 id CW^-2 = C2;
 id SW^-2 = S2;
 id EL^4 = 16 * Pi^2 * a2;
+id GS^4 = 16 * Pi^2 * as2;
 #endprocedure
 
 
@@ -352,8 +353,8 @@ id ga(C?, P1?) = fc(C, ga(P1));
 #do i = 1, 4
   id,once, ga(C?, J1?) = fc(C, ga(IND'i')) * d_(J1, IND'i');
   id ga(C?, IND'i') = fc(C, ga(IND'i'));
+  id d_(J1?, IND'i') = 1;
 #enddo
-id e_(J1?, J2?, J3?, J4?INDices) = fme(e_(J1, J2, J3, J4));
 #if 'VADecomp' == 1
   id omp(C?) = 1/2 + fc(C, ga5)/2;
   id omm(C?) = 1/2 - fc(C, ga5)/2;
@@ -363,16 +364,45 @@ id e_(J1?, J2?, J3?, J4?INDices) = fme(e_(J1, J2, J3, J4));
 repeat;
   id fc(C?, ?) * fc(C?, ??) = fc(C, ., ..);
 endrepeat;
+
+id e_(J1?, J2?, J3?, J4?INDices) =
+  fme(e_(J1, J2, J3, J4));
 id Spinor(?) * fc(C?, ??) * Spinor(???) =
   fme(ncm(Spinor(.), .., Spinor(...)));
-id Spinor(?) * Spinor(??) =   
-  fme(ncm(Spinor(.), Spinor(..)));
+id Spinor(?) * Spinor(??) = fme(ncm(Spinor(.), Spinor(..)));
 id fc(C?, ?) = fme(ncm(.));
 repeat;
   id fme(X1?) * fme(X2?) = fme(X1 * X2);
 endrepeat;
 
 #endif
+
+
+#if 'SUNStuff' == 1
+
+.sort
+cf SUNT, SUNF, SUNFSum, SUND, PP;
+set SUNobjs: SUNT, SUNF, SUNFSum, SUND;
+
+repeat;
+  id PP?SUNobjs(J1?, ?) * SumOver(J1?, ??) =
+    PP(J1, .) * sun(SumOver(J1, ..));
+  id PP?SUNobjs(J1?, J2?, ?) * SumOver(J2?, ??) =
+    PP(J1, J2, .) * sun(SumOver(J2, ..));
+  id PP?SUNobjs(J1?, J2?, J3?, ?) * SumOver(J3?, ??) =
+    PP(J1, J2, J3, .) * sun(SumOver(J3, ..));
+  id SUNFSum(J1?, J2?, J3?, J4?) * SumOver(J4?, ??) =
+    SUNFSum(J1, J2, J3, J4) * sun(SumOver(J4, ..));
+endrepeat;
+
+id PP?SUNobjs(?) = sun(PP(.));
+
+repeat;
+  id sun(X1?) * sun(X2?) = sun(X1 * X2);
+endrepeat;
+
+#endif
+  
 
 .sort
 
@@ -400,3 +430,24 @@ id D = 4;
 
 #call Mandelstam{}
 
+
+* the Mat(...) are kept at the almost-outermost level (only SumOver
+* comes before), i.e. the amplitude is of the form Sum[c[i] Mat[i], i]
+* -> need this for the calculation of the squared amplitude
+
+id fme(X1?) = Mat(fme(X1));
+id sun(X1?) = Mat(sun(X1));
+
+repeat;
+  id Mat(X1?) * Mat(X2?) = Mat(X1 * X2);
+endrepeat;
+
+* in contrast, abb(...) remain at the innermost level because they'll
+* be abbreviated anyway.
+
+id P1? . P2? = abb(P1 . P2);
+id e_(J1?, J2?, J3?, J4?) = abb(e_(J1, J2, J3, J4));
+
+repeat;
+  id abb(X1?) * abb(X2?) = abb(X1 * X2);
+endrepeat;

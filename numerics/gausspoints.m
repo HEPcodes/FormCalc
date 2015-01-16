@@ -1,7 +1,7 @@
 (*
 	gausspoints.m
 		calculate the abscissas & weigths for Gauss int
-		last modified 16 Mar 99 th
+		last modified 30 Aug 99 th
 *)
 
 
@@ -23,7 +23,8 @@ dif2[n_, x_] := D[LegendreP[n, y], y]^2 /. y -> x
 
 Weights[n_] := 2/((1 - #^2) dif2[n, #])&/@ SamplingPoints[n]
 
-ff = OpenWrite["!./r8_" <> Environment["HOSTTYPE"] <> " > gauss.F"];
+ff = OpenWrite["!./r8_" <> Environment["HOSTTYPE"] <>
+               " > fortran/gauss.F"];
 c = 0
 
 WriteString[ff,

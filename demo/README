@@ -55,7 +55,7 @@ Please use a new Mathematica session for every part of the demo.)
 
 > Edit fa.m and supply the correct path to your FeynArts distribution
   in the line
-	<< ~/develop/HighEnergyPhysics/FeynArts.m
+	<< ~/FeynArts/FeynArts.m
   (you guessed it, that's where my FeynArts distribution is).
 
 > Run fa.m, this produces files called
@@ -74,6 +74,12 @@ Please use a new Mathematica session for every part of the demo.)
 
 > Run fortran.m, this produces Fortran code in files like self.m or
   boxT1.m in the directory fortran. It also produces a GNUmakefile.
+
+  Note: NumPrep by default writes instructions for linking with the
+  CERNlib into the makefile. This is not necessary for Standard Model
+  processes. If you don't have the CERNlib installed, simply remove
+  the flags "-L$(CERN)/$(CERN_LEVEL)/lib -lpdflib -lmathlib -lpacklib"
+  from the makefile.
 
 > Change into the directory fortran/ and type "gmake". You may want to
   look in run.F for changing parameters. The resulting executable will
@@ -115,10 +121,8 @@ An example of why the numerical evaluation cannot be fully automatized:
 In the ZZ -> ZZ process, if you compile the program with a Higgs mass
 larger than 2 MZ (\sim 182 GeV), and happen to run straight into s ==
 MH^2, the program will crash with a division by zero error. This is
-because the s-channel Higgs resonance is not treated. NumPrep can treat
-the resonance if $Resonance = True is set. However, ambiguities remain
-(see $ModifyingFunction in NumPrep.m) and it is quite clear that the user
-should have leverage over this.
+because the s-channel Higgs resonance is not treated. This is a specific
+thing that must be taken care of by the user.
 
 
 Send bug reports, omissions, fan mail etc to

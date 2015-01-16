@@ -1,4 +1,4 @@
-<< ~/develop/HighEnergyPhysics/FeynArts.m
+<< ~/FeynArts/FeynArts.m
 
 amps :=
   ToFA1Conventions[

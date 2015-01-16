@@ -1,13 +1,14 @@
 * this is OneLoop.h2, the Form part of FormCalc
-* last modified 8 Jul 99 th
+* last modified 4 Oct 99 th
 
 * Note: this program runs only with the (commercial) version 2 of
 * Form. It should be much better than the Form 1 code in pavered.h1.
 
 .sort
 
-s r2, CW, SW, C4, S4, C2, S2, EL, a2;
-cf fme, IndexDelta, DEN, A0, B0m, B1m, B00m, B11m;
+s r2, CW, SW, C4, S4, C2, S2, EL, GS, a2, as2;
+cf abb, Mat, fme, sun, IndexDelta, DEN;
+cf A0, B0m, B1m, B00m, B11m;
 cf pave1, pave2, pave3, pave4, pave5;
 
 .global
@@ -31,6 +32,7 @@ id SW^-4 = S4;
 id CW^-2 = C2;
 id SW^-2 = S2;
 id EL^4 = 16 * Pi^2 * a2;
+id GS^4 = 16 * Pi^2 * as2;
 #endprocedure
 
 
@@ -245,9 +247,8 @@ id ga(C?, P1?) = fc(C, ga(P1));
 #do i = 1, 4
   id,once, ga(C?, J1?) = fc(C, ga(IND'i')) * d_(J1, IND'i');
   id ga(C?, IND'i') = fc(C, ga(IND'i'));
+  id d_(J1?, IND'i') = 1;
 #enddo
-id e_(J1?, J2?, J3?, J4?{IND1,IND2,IND3,IND4}) =
-  fme(e_(J1, J2, J3, J4));
 #if 'VADecomp' == 1
   id omp(C?) = 1/2 + fc(C, ga5)/2;
   id omm(C?) = 1/2 - fc(C, ga5)/2;
@@ -255,6 +256,9 @@ id e_(J1?, J2?, J3?, J4?{IND1,IND2,IND3,IND4}) =
   id chp?oma(C?) = fc(C, chp);
 #endif
 repeat id fc(C?, ?) * fc(C?, ??) = fc(C, ., ..);
+
+id e_(J1?, J2?, J3?, J4?{IND1,IND2,IND3,IND4}) =
+  fme(e_(J1, J2, J3, J4));
 id Spinor(?) * fc(C?, ??) * Spinor(???) =
   fme(ncm(Spinor(.), .., Spinor(...)));
 id Spinor(?) * Spinor(??) =
@@ -263,6 +267,22 @@ id fc(C?, ?) = fme(ncm(.));
 repeat id fme(X1?) * fme(X2?) = fme(X1 * X2);
 
 #endif
+
+
+#if 'SUNStuff' == 1
+
+.sort
+cf SUNT, SUNF, SUNFSum, SUND;
+set SUNobjs: SUNT, SUNF, SUNFSum, SUND;
+
+repeat id PP?SUNobjs(?, J1?, ??) * SumOver(J1?, ???) =
+  PP(., J1, ..) * sun(SumOver(J1, ...));
+id PP?SUNobjs(?) = sun(PP(.));
+
+repeat id sun(X1?) * sun(X2?) = sun(X1 * X2);
+
+#endif
+
 
 .sort
 
@@ -291,4 +311,22 @@ id D = 4;
 #endif
 
 #call Mandelstam{}
+
+
+* the Mat(...) are kept at the almost-outermost level (only SumOver
+* comes before), i.e. the amplitude is of the form Sum[c[i] Mat[i], i]
+* -> need this for the calculation of the squared amplitude
+
+id fme(X1?) = Mat(fme(X1));
+id sun(X1?) = Mat(sun(X1));
+
+repeat id Mat(X1?) * Mat(X2?) = Mat(X1 * X2);
+
+* in contrast, abb(...) remain at the innermost level because they'll
+* be abbreviated anyway.
+
+id P1? . P2? = abb(P1 . P2);
+id e_(J1?, J2?, J3?, J4?) = abb(e_(J1, J2, J3, J4));
+
+repeat id abb(X1?) * abb(X2?) = abb(X1 * X2);
 

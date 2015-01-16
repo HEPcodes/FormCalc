@@ -2,12 +2,12 @@
 	rconst_fa.m
 		generates the amplitudes for the self-energies
 		needed for calculating the renormalization constants
-		last modified 25 Feb 99 th
+		last modified 9 Aug 99 th
 *)
 
 << Utilities`FilterOptions`
 
-<< ~/develop/HighEnergyPhysics/FeynArts.m
+<< ~/FeynArts/FeynArts.m
 
 SetOptions[Paint, ColumnsXRows -> 4, Destination -> File]
 

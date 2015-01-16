@@ -2,7 +2,7 @@
 	2to2kin.m
 		Various kinematical variables for a 2 -> 2 process,
 		uses same conventions as num.F
-		last modified 27 Mar 99 th
+		last modified 8 Sep 99 th
 *)
 
 
@@ -35,21 +35,43 @@ Pin2 = (S + Mass[2]^2 - Mass[1]^2)^2/4/S - Mass[2]^2;
 Pout2 = (S + Mass[4]^2 - Mass[3]^2)^2/4/S - Mass[4]^2;
 Pin = Sqrt[Pin2];
 Pout = Sqrt[Pout2];
+
 EE[1] = Sqrt[Pin2 + Mass[1]^2];
 EE[2] = Sqrt[Pin2 + Mass[2]^2];
 EE[3] = Sqrt[Pout2 + Mass[3]^2];
 EE[4] = Sqrt[Pout2 + Mass[4]^2];
+
 T = Mass[1]^2 + Mass[3]^2 - 2 (EE[1] EE[3] - Pin Pout Cos[th]);
 U = Mass[2]^2 + Mass[4]^2 - 2 (EE[2] EE[4] + Pin Pout Cos[th]);
-
-Pair[a_List, b_List] := Pair[a, b] = 
-  Simplify[ a[[1]] b[[1]] - a[[2]] b[[2]] - a[[3]] b[[3]] - a[[4]] b[[4]] ]
-
-MomSquare[a_List] := Pair[a, a]
-
-Eps[a_List, b_List, c_List, d_List] := Eps[a, b, c, d] = Det[{a, b, c, d}]
-
 (* or, if you prefer:
 T = MomSquare[k[1] - k[3]];
 U = MomSquare[k[1] - k[4]];
 *)
+
+
+KinSimplify[expr_] := Simplify[expr] /; FreeQ[expr, _^_Rational]
+
+KinSimplify[expr_] :=
+Block[ {sym, exp = Simplify[expr]},
+  sym = Complement[
+    Cases[Cases[exp, r_^_Rational -> r, Infinity],
+      x_Symbol /; Context[x] =!= "System`", {-1}],
+    {S, Mass[1], Mass[2], Mass[3], Mass[4], Mass} ];
+(* assuming that S and the masses are positive real quantities: *)
+  If[ Length[sym] === 0, Simplify[PowerExpand[exp]], exp ]
+]
+
+Pair[a_List, b_List] := Pair[a, b] = 
+  KinSimplify[
+    a[[1]] b[[1]] - a[[2]] b[[2]] - a[[3]] b[[3]] - a[[4]] b[[4]] ]
+
+MomSquare[a_List] := Pair[a, a]
+
+
+Eps[a_List, b_List, c_List, d_List] := Eps[a, b, c, d] =
+  KinSimplify[ I Det[{a, b, c, d}] ]
+
+(* Note: although Eps is defined as -I*(Levi-Civita tensor) in FormCalc,
+   we have to multiply with I (not -I) here because Det uses the
+   Euclidean metric. *)
+

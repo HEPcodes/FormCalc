@@ -81,7 +81,7 @@ main(int argc, char **argv)
 
   while(!feof(stdin)) {
     *s = 0;
-    gets(s);
+    fgets(s, sizeof(s), stdin);
     if(*s == 0) continue;
     d = s;
     v = s + strspn(s, " ");

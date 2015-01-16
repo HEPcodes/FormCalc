@@ -34,7 +34,7 @@ int main(int argc, char **argv)
   while(!feof(stdin)) {
     da2->next = da = malloc(sizeof(DATA));
     *(da->s) = 0;
-    gets(da->s);
+    fgets(da->s, sizeof(da->s), stdin);
     if(strncmp(da->s, "\\put(", 5) == 0 &&
        (pos = strstr(da->s, "\\makebox(0,0)[")) &&
        (*(pos += 14) == 'r' || *pos == 'l')) {
@@ -53,16 +53,16 @@ int main(int argc, char **argv)
         y = strtod(++pos, &p2);
         *pos = 0;
         sprintf(da2->s, "%s%d%s", t, y - addto, p2);
-        sprintf(t, "%d M", y);
+        sprintf(t, "%d M\n", y);
         i = strlen(t);
         for(r = start->next; r != on; r = r->next)
           if(strncmp(t, pos = r->s + strlen(r->s) - i, i) == 0) {
             if(abs(x - atoi(r->s)) > 350) continue;
-            sprintf(pos, "%d M", y - addto);
+            sprintf(pos, "%d M\n", y - addto);
             pos = (r = r->next)->next->s;
-            if(*(pos + strlen(pos) - 1) == 'R') {
+            if(*(pos + strlen(pos) - 2) == 'R') {
               sscanf(pos, "%d %d", &dx, &dy);
-              sprintf(pos, "%d %d R", dx, dy + addto);
+              sprintf(pos, "%d %d R\n", dx, dy + addto);
             }
             break;
           }
@@ -73,7 +73,7 @@ int main(int argc, char **argv)
   }
 
   while(start != da) {
-    puts((da2 = start->next)->s);
+    fputs((da2 = start->next)->s, stdout);
     free(start);
     start = da2;
   }

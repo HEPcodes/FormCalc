@@ -1,27 +1,23 @@
 (*
 	NumPrep.m
 		prepares Fortran code from FormCalc output
-		last modified 24 Jun 99 th
+		last modified 28 Oct 99 th
 
 NumPrep is a program for generating Fortran code out of FormCalc output.
 It has been tested only for 2 -> 2 processes.
 
 The philosophy behind NumPrep is that the user should NOT HAVE TO MODIFY
-the code after NumPrep did its job since that is typically the point where
-most bugs creep in. NumPrep thus produces all modules of code, the
+the code after NumPrep did its job since that is typically the point
+where most bugs creep in. NumPrep thus produces all modules of code, the
 necessary include files, and a Makefile.
-
-In order for this to work, NumPrep assumes some intelligence on the side
-of the user: In particular, that the diagrams were split into groups (e.g.
-self energies, vertices, boxes), and that the files are reasonably named.
 
 *)
 
 
 Print[""];
-Print["NumPrep 1.4"];
+Print["NumPrep 1.5"];
 Print["by Thomas Hahn"];
-Print["last revision: 24 Jun 99"];
+Print["last revision: 28 Oct 99"];
 
 
 NumPrep`$NumPrepDir =
@@ -54,20 +50,7 @@ MakeCode::usage = "MakeCode[indir, outdir, mask] is the main function of
 NumPrep. It takes two mandatory arguments: fromdir points to a directory
 containing the input files, and outdir to the directory where the Fortran
 files are put. mask is an optional parameter (default value *.m) which
-specifies a mask to apply to find the input files."
-
-Resonance::usage = "Resonance is an option of MakeCode. If set to True,
-MakeCode treats the Higgs resonance. Further options which influence this
-are Dyson and ModifyingFunction."
-
-ModifyingFunction::usage = "ModifyingFunction is an option of MakeCode. It
-specifies an additional multiplicative factor - e.g. MH^2/S - used in
-applying the pole scheme when treating the Higgs resonance. See also the
-options Resonance and Dyson."
-
-Dyson::usage = "Dyson is an option of MakeCode and specifies whether the
-Higgs resonance should be treated using Dyson resummation of the self
-energies. See also the options Resonance and ModifyingFunction."
+specifies a mask to select the input files."
 
 AbbrFile::usage = "AbbrFile is an option of MakeCode and specifies the
 file in which the abbreviations were saved."
@@ -82,18 +65,28 @@ code modules which contain Born amplitudes."
 RenConst::usage = "RenConst is an option of MakeCode. It tells MakeCode
 how the file containing the renormalization constants is called."
 
-ProcessH::usage = "ProcessH is an option of MakeCode. It points to the
-Fortran include file (included by num.F) which contains the definitions
-for the process. This file is copied to process.h in the destination
-directory so that changes can be made without overwriting the original."
+Drivers::usage = "Drivers points to a directory containing customised
+versions of the driver programs for running the generated Fortran code.
+This directory need not contain all driver programs: files not contained
+therein are taken from the default directory, " <> $NumPrepDir <>
+"drivers."
 
-RunF::usage = "RunF is an option of MakeCode. It points to the parameter
-definition file for a run. This file is copied to run.F in the destination
-directory so that changes can be made without overwriting the original."
+Abb::usage = "Abb[i] denotes the ith abbreviation introduced by FormCalc."
 
-NumF::usage = "NumF is an option of MakeCode. It points to the main
-driver program, This file is copied to num.F in the destination directory
-so that changes can be made without overwriting the original."
+AbbSum::usage = "AbbSum[i] denotes the ith sum of abbreviations introduced
+by FormCalc."
+
+F::usage = "F[i] denotes the ith fermion matrix element introduced by
+FormCalc."
+
+Mat::usage = "Mat[Fi, Fj] is the helicity matrix element composed of the
+fermion chains Fi and Fj."
+
+Ctree::usage = "Ctree[Fi] is the coefficient of Fi of the tree-level
+amplitude."
+
+Cloop::usage = "Cloop[Fi] is the coefficient of Fi of the one-loop
+amplitude."
 
 $NumPrepDir::usage = "$NumPrepDir is the path where NumPrep and its
 companion files are located."
@@ -103,6 +96,9 @@ which Fortran code is produced. This affects only the calling sequence for
 the Fortran compiler, and is closely connected with the $F77 variable. If
 you want the code to be produced always for the same architecture on which
 NumPrep is running on, put $GenerateCodeFor = $SystemID."
+
+$ExtraLibs::usage = "$ExtraLibs specifies additional libraries needed for
+linking the final executable. By default, this is the CERNlib."
 
 $LoopToolsDir::usage = "$LoopToolsDir is the path where the include files
 for LoopTools are located."
@@ -126,24 +122,6 @@ $F77::usage = "$F77 specifies the command line for the Fortran compiler."
 $IntArgFuncs = "$IntArgFuncs is a list of functions (typically Fortran
 arrays) whose arguments must be integers."
 
-reso::usage = "reso is a variable which is automatically substituted
-for the propagator 1/(S - MH^2) in order to make treatment of the Higgs
-resonance easier in Fortran."
-
-resoT::usage = "resoT is a variable which is automatically substituted for
-the propagator 1/(T - MH^2) in order to make treatment of the Higgs
-resonance easier in Fortran."
-
-resoU::usage = "resoU is a variable which is automatically substituted for
-the propagator 1/(U - MH^2) in order to make treatment of the Higgs
-resonance easier in Fortran."
-
-coeff0::usage = "coeff0 is the array of the coefficients of the Born
-matrix elements in Fortran."
-
-coeff1::usage = "coeff1 is the array of the coefficients of the one-loop
-matrix elements in Fortran."
-
 dconjg::usage = "dconjg[x] is the complex conjugate of x in Fortran.
 MakeCode replaces all Conjugate by dconjg."
 
@@ -162,189 +140,21 @@ is multiplied is to be summed in the index i over the range r."
 PrependTo[$ContextPath, "Parameters`"]
 
 { A0, B0, B1, B00, B11, DB0, DB1, DB00, DB11,
-  C0i, Cget, D0i, Dget,
-  DEN, S, T, U, e, k, s, Hel, Mat, Scale, MH2,
-  dZfL1, dZfR1, dMf1,
-  MLE, MQU, MQD,
-  ME, ME2, MU, MU2, MD, MD2,
-  MM, MM2, MC, MC2, MS, MS2,
-  ML, ML2, MT, MT2, MB, MB2 }
+  C0i, Cget, D0i, Dget, IndexDelta, Pair, Eps,
+  DEN, S, T, U, e, k, s, Hel, Scale,
+  Trivial, MatTrivial }
 
 
 Begin["`Private`"]
-
-r8cmd = "!" <> $NumPrepDir <> "r8_" <> Environment["HOSTTYPE"] <> " > "
 
 AppendTo[$ContextPath, "Parameters`"]
 
 $NumberMarks = False
 
-Off[FileDate::nffil]
+Off[CopyFile::filex]
 
-DEN[S, MH2] = reso;
-DEN[T, MH2] = resoT;
-DEN[U, MH2] = resoU;
+
 DEN[p_, m_] := (p - m)^-1
-
-MLE2[1] = ME2; MLE2[2] = MM2; MLE2[3] = ML2;
-MQU2[1] = MU2; MQU2[2] = MC2; MQU2[3] = MT2;
-MQD2[1] = MD2; MQD2[2] = MS2; MQD2[3] = MB2
-
-NN[x_] := N[x, 35] /. 0 -> 0.
-
-Num[expr_] := NN[expr] /. {1. -> 1, -1. -> -1} /.
-  rc:$IntArgFuncs[__] :> (rc /. r_Real :> Floor[r])
-
-
-k[n_Integer] = n
-
-s[n_Integer] := 2 + 3 n		(* the longitudinal polarization vector *)
-
-e[n_Integer] := ToExpression["i" <> ToString[n]]
-
-Hel[n_Integer] := ToExpression["i" <> ToString[n]]
-
-A0[0] = 0
-
-Derivative[1, 0, 0][B0] = DB0;
-Derivative[1, 0, 0][B1] = DB1;
-Derivative[1, 0, 0][B11] = DB11;
-Derivative[1, 0, 0][B00] = DB00
-
-
-ResoReplace[expr_] := expr /; FreeQ[expr, reso]
-
-ResoReplace[expr_Times] :=
-Block[ {stu, amp, yy, dsigma},
-  amp = expr/reso;
-  yy = amp /. U -> stu - S - T /. S -> MH2 /. stu -> S + T + U;
-  yy *= $ModifyingFunction;
-  If[ FreeQ[amp, reso],
-    yy resoc + (amp - yy) reso,
-  (* else *)
-    dsigma = D[amp/reso, S] /. S -> MH2;
-    dsigma *= $ModifyingFunction;
-    dsigma resoc + (amp - yy - dsigma) reso
-  ]
-]
-
-ResoReplace[plu_Plus] := ResoReplace/@ plu
-
-
-Chunks[expr_, var_] :=
-Block[ {theexpr = expr},
-  If[ LeafCount[expr] > $BlockSize,
-    If[ Head[expr] === Plus && !MemberQ[var, _Symbol],
-      theexpr = List@@ expr /. Plus -> PlusChop;
-      ChopUp[Plus@@ theexpr, var];
-      Return[] ];
-    theexpr = expr /. Plus -> PlusChop
-  ];
-  WriteString[hh, "\n\t", var//FortranForm, " = "];
-  If[MatchQ[var, _coeff0 | _coeff1],
-    WriteString[hh, var//FortranForm, " +\n     -  "] ];
-  Write[hh, theexpr];
-]
-
-
-PlusChop[expr__] := ChopUp[Plus[expr], Unique["tmp"]] /;
-  LeafCount[{expr}] > $BlockSize
-
-PlusChop[expr__] := Plus[expr]
-
-ChopUp[expr_, var_] :=
-Block[ {i, l = ToString[var//FortranForm], $FileSize = $BlockSize},
-  i = "\n\t" <> l <> " = ";
-  l = i <> l <> " +\n     -  ";
-  If[MatchQ[var, _coeff0 | _coeff1], i = l];
-  Scan[(WriteString[hh, i]; Write[hh, #]; i = l)&,
-    Flatten[CodeBlocks@@ expr]];
-  var
-]
-
-
-CodeBlocks[a_, b_, r___] :=
-  CodeBlocks[a + b, r] /; LeafCount[{a, b}] < $FileSize
-
-CodeBlocks[a_, r___] := {a, CodeBlocks[r]}
-
-CodeBlocks[] = Sequence[]
-
-
-FortDecl[decl_, vars_] :=
-Block[ {llen = Infinity, line = ""},
-  Scan[
-    ( l = StringLength[#] + 2;
-      If[llen + l > 60,
-        line = line <> decl <> #;
-        llen = StringLength[decl],
-      (* else *)
-        line = line <> ", " <> #;
-        llen += l ] )&,
-    ToString[FortranForm[#]]&/@ vars ];
-  WriteString[hh, line];
-]
-
-
-AddList[li_] :=
-Block[ {r, j = 0},
-  If[ li === {}, Return["0D0"] ];
-  r = First[li] <> "()";
-  Scan[
-    ( r = r <> " + ";
-      If[ StringLength[r] - j > 45,
-        j = StringLength[r = r <> "\n     -    "] ];
-      r = r <> # <> "()" )&,
-    Rest[li]];
-  r
-]
-
-
-OpenWriteFortran[file_] := OpenWrite[r8cmd <> file,
-  FormatType -> FortranForm, PageWidth -> 67]
-
-
-WriteVars[vars_, type_, common_] :=
-Block[ {v, p},
-  If[ Length[vars] =!= 0,
-    v = Select[First/@ vars, StringTake[ToString[#], 1] =!= "t" &];
-    p = Position[v, _[_Symbol..], 1, Heads -> False];
-    FortDecl["\n\t" <> type, MapAt[IndexRange/@ # &, v, p]];
-    FortDecl["\n\tcommon " <> common, MapAt[Head, v, p]];
-    WriteString[hh, "\n"];
-  ]
-]
-
-
-WriteAbbr[abbr_, subr_] :=
-Block[ {thisdo = {}, lastdo = ""},
-  WriteString[hh, "\tsubroutine ", subr, "\n"];
-  If[ Length[abbr] =!= 0,
-    WriteString[ hh,
-      "\timplicit logical (a-s,u-z)\n",
-      "\timplicit double complex (t)\n",
-      "#include \"vars.h\"\n",
-      "\tdouble complex Pair, Eps\n",
-      "\texternal Pair, Eps\n",
-      "\tdouble complex A0, B0, DB0, B1, DB1, B00, DB00, B11, DB11\n",
-      "\texternal A0, B0, DB0, B1, DB1, B00, DB00, B11, DB11\n",
-      "\tinteger Cget, Dget\n",
-      "\texternal Cget, Dget\n\n"];
-    Scan[
-      ( If[ thisdo =!= #[[1]],
-          WriteString[hh, lastdo, "\n"];
-          WriteString[hh, "\tdo ", #, " = 1, ", IndexRange[#], "\n"]&/@
-            (thisdo = #[[1]]);
-          lastdo = StringJoin[Table["\tenddo\n", {Length[thisdo]}]] ];
-        WriteString[hh, "\t", #[[2]]//FortranForm, " = "];
-        Write[hh, #[[3]] ] )&,
-      Sort[Apply[{Cases[#1, _Symbol], #1, #2}&, abbr, 1],
-        OrderedQ[First/@ {##}]&] ];
-    WriteString[hh, lastdo];
-  ];
-  WriteString[hh, "\tend\n\n"];
-]
-
 
 SumOver[index_, range_] := (
   IndexRange[index] = range;
@@ -353,333 +163,605 @@ SumOver[index_, range_] := (
 )
 
 
-WriteCode[indir_, outdir_][file_] :=
-Block[ {oname, onamex, amp, hd},
-  oname = StringReplace[file, {indir -> "", "/" -> "", ".m" -> ""}];
-  Print["processing class ", oname];
-  amp = Get[file];
-  If[hreso, amp = ResoReplace[amp]];
-  amp = Num[amp];
-  amp = amp /. bca:(abfunc | C0i | D0i)[__] -> abr[bca];
-  If[ Length[fabbr] =!= 0,
-    hd = If[ StringMatchQ[oname, bornmask],
-      amp = amp /. unused0 -> 0; coeff0,
-      amp = amp /. unused1 -> 0; coeff1 ];
-    amp = Collect[amp, fabbr]
-  ];
+NN[x_] := N[x, 35] /. 0 -> 0.
 
-  If[LeafCount[amp] > $FileSize && Head[amp] === Plus,
-    MapIndexed[
-      ( onamex = oname <> FromCharacterCode[#2[[1]] + 96];
-        Indices[onamex] = Indices[oname];
-        WriteFile[onamex, outdir, #1] )&,
-      Flatten[CodeBlocks@@ amp]],
-  (* else *)
-    WriteFile[oname, outdir, amp] ];
+Num[expr_] := NN[expr] /. {1. -> 1, -1. -> -1} /.
+  rc:$IntArgFuncs[__] :> (rc /. r_Real :> Floor[r])
+
+
+ToFortran[s_String] = s
+
+ToFortran[s_] := ToString[FortranForm[s]]
+
+
+ToSymbol[x__] := ToExpression[ StringJoin[ToString/@ Flatten[{x}]] ]
+
+
+k[n_Integer] = n
+
+s[n_Integer] := 2 + 3 n		(* the longitudinal polarization vector *)
+
+e[n_Integer] := e[n] = ToSymbol["i", n]
+
+Hel[n_Integer] := Hel[n] = ToSymbol["i", n]
+
+
+(* convert FormCalc's abbreviations (symbols) to arrays which are easier
+   to handle in Fortran: *)
+
+ToArray[s_Symbol] :=
+Block[ {c = Characters[ToString[s]], h},
+  {h, c} = ToExpression[StringJoin[#]]&/@
+    {Select[c, LetterQ], Select[c, DigitQ]};
+  ubound[h] = Max[ubound[h], c];
+  s = h[c]
+]
+
+ToArray[s_] = s
+
+
+ubound[_] = 0
+
+
+Unprotect[Max]
+
+Max[s_[i_Integer], s_[j_Integer]] := s[Max[i, j]]
+
+Protect[Max]
+
+
+ToList[a_Max] := List@@ a
+
+ToList[a_List] = a
+
+ToList[a_] = {a}
+
+
+MatType[h_[i_], h_[j_]] := MatType[h][i, j]
+
+MatType[h_] := MatType[h] = ToSymbol["Mat", h]
+
+MatTrivial[__] = 1
+
+Mat[0] = 0
+
+
+A0[0] = 0
+
+
+(* CodeBlocks partitions an expression such that each part has a
+   LeafCount less than $FileSize. *)
+
+CodeBlocks[h_][a_, b_, r___] :=
+  CodeBlocks[h][{a, b}, r] /; LeafCount[{a, b}] < $FileSize
+
+CodeBlocks[h_][a_, r___] := cb[ h@@ Flatten[{a}], CodeBlocks[h][r] ]
+
+CodeBlocks[_][] = Sequence[]
+
+
+(* Chunks writes "var = expr" to file handle hh in blocks whose
+   LeafCount is <= $BlockSize. Expressions longer than $BlockSize
+   are written as
+	var = part1
+	var = var + part2
+	...				*)
+
+Chunks[var_, expr_] :=
+Block[ {theexpr = expr, ini},
+  ini[_Ctree | _Cloop] = True;		(* always add to these *)
+  If[ LeafCount[expr] > $BlockSize,
+    If[ Head[expr] === Plus,
+      theexpr = List@@ expr /. Plus -> PlusChop;
+      ChopUp[var, Plus@@ theexpr];
+      Return[] ];
+    theexpr = expr /. Plus -> PlusChop
+  ];
+  WriteAssign[var, theexpr];
 ]
 
 
-WriteFile[oname_, outdir_, amp_] :=
-Block[ {ofile, hh},
-  AppendTo[procs, oname];
-  Print["  writing ", ofile = outdir <> "/" <> oname <> ".F"];
-  hh = OpenWriteFortran[ofile];
-  If[ Length[fabbr] === 0,
-    WriteString[hh,
-      "#include \"defs.h\"\n\n",
-      "\tdouble complex function ", oname, "()\n",
-      "\timplicit logical (a-s,u-z)\n",
-      "\timplicit double complex (t)\n",
-      "\tinteger IndexDelta\n",
-      "\texternal IndexDelta\n",
-      "#include \"vars.h\"\n"];
-    Chunks[amp, oname];
-    WriteString[hh,
-      "\n#ifdef DEBUG\n",
-      "\tprint *, '", oname, " =',", oname,
-      "\n#endif"],
+PlusChop[expr__] := ChopUp[Unique["tmp"], Plus[expr]] /;
+  LeafCount[{expr}] > $BlockSize
+
+PlusChop[expr__] := Plus[expr]
+
+ChopUp[var_, expr_] :=
+Block[ {$FileSize = $BlockSize},
+  Scan[WriteAssign[var, #]&, Flatten[Operate[CodeBlocks, expr]]];
+  var
+]
+
+
+WriteAssign[var_, expr_] :=
+Block[ {as, v = ToFortran[var]},
+  as = "\t" <> v <> " = ";
+  If[ ini[var] =!= True, ini[var] = True,
+    as = as <> v <>
+      If[StringTake[ToFortran[expr], 1] === "-",
+        "\n     -  ",
+        " +\n     -  "] ];
+  WriteString[hh, as];
+  Write[hh, expr];
+  newline
+]
+
+
+r8cmd = "!" <> $NumPrepDir <> "r8_" <> Environment["HOSTTYPE"] <> " > "
+
+OpenWriteFortran[file_] := OpenWrite[ r8cmd <> outdir <> file <> ".F",
+  FormatType -> FortranForm, PageWidth -> 67 ]
+
+
+(*
+   FormCalc-generated code is written out in five parts:
+
+				     |	handled by NumPrep-function
+   ----------------------------------|--------------------------------
+   1. the code modules		     |	WriteCode (-> WriteCodeModule)
+   2. the variable declarations      |	WriteVars (-> WriteVarDecl)
+   3. the abbreviations		     |	WriteAbbr (-> WriteAbbrModule)
+   4. the makefile		     |	MakeCode
+   5. the control file		     |	MakeCode (-> WriteSubroutine)
+   6. copy the driver files          |  MakeCode
+*)
+
+
+TakeVar[v_ -> _] = v
+
+TakeVar[v_] = v
+
+
+WriteVars[_[], _, _] = {}
+
+WriteVars[vars_, type_, common_] :=
+Block[ {v, p},
+  v = Select[TakeVar/@ vars, StringTake[ToString[#], 1] =!= "t" &];
+  p = Position[v, _[_Symbol..], 1, Heads -> False];
+  WriteVarDecl["\n\t" <> type, MapAt[IndexRange/@ # &, v, p]];
+  p = Position[v, _[__], 1, Heads -> False];
+  WriteVarDecl["\n\tcommon " <> common, MapAt[Head, v, p]];
+  WriteString[hh, "\n"];
+]
+
+WriteVarDecl[_, _[]] = {}
+
+WriteVarDecl[decl_, vars_] :=
+Block[ {llen = Infinity, dl = StringLength[decl], l, s},
+  WriteString[hh,
+    Fold[
+      ( l = StringLength[s = ToFortran[#2]];
+        {#1, If[(llen += l + 2) > 64, llen = dl + l; decl, ", "], s} )&,
+		(* 64 = 70 - 8 for the tab + 1 for \t + 1 for \n *)
+      "",
+      vars ]//StringJoin]
+]
+
+
+(* OrderAbbr orders the abbreviations such that the definition of
+   each abbreviation comes before its first use. This is necessary
+   because the calculation of fermionic matrix elements may have
+   introduced new abbreviations which of course must be computed
+   before the fermionic ME. *)
+
+IndependentQ[{_, _Real, _}, _] = True;
+IndependentQ[_, {_, _Real, _}] = False;
+IndependentQ[_, _] = True
+
+Affected["A"] = Affected["t"] = True;	(* select Abb*, tmp* *)
+Affected[_] = False
+
+OrderAbbr[abbr_] :=
+Block[ {a2, as, l, i = 1},
+  a2 = Select[abbr, Affected[StringTake[#[[1]]//ToString, 1]]&];
+  as = MapIndexed[Join[List@@ #1, #2]&, a2];
+  l = Length[as];
+  Block[#,
+    Scan[(# = Random[])&, Complement[#, First/@ a2]];
+    as = Sort[as, IndependentQ];
+    While[i < l,
+      If[ !NumberQ[#], # = Random[]; as = as ]&[ as[[i, 1]] ];
+      If[ NumberQ[ as[[i, 2]] ], ++i, as = Sort[as, IndependentQ] ]
+    ]
+  ]&[Cases[a2, _Symbol, {-1}]//Union];
+  Join[ 
+    Select[abbr, !Affected[StringTake[#[[1]]//ToString, 1]]&],
+    a2[[Last/@ as]] ]
+]
+
+
+WriteAbbr[_, _, _[]] = {}
+
+WriteAbbr[abbr_, oname_] :=
+Block[ {ab, do, onamex, mod = {}},
+  do[_] = {};
+  AppendTo[ do[Evaluate[Cases[#[[1]], _Symbol]]], # ]&/@ abbr;
+  ab = Cases[ DownValues[do],
+    _[_[_[ind_List]], a_] :> doloop[ind, a] ];
+  If[ LeafCount[ab] > $FileSize,
+    MapIndexed[
+      ( onamex = oname <> FromCharacterCode[#2[[1]] + 96];
+        WriteAbbrModule[#1, onamex] )&,
+      Flatten[Operate[CodeBlocks, ab]]],
   (* else *)
-    WriteString[hh,
-      "#include \"defs.h\"\n\n",
-      "\tsubroutine ", oname, "\n",
-      "\timplicit logical (a-s,u-z)\n",
-      "\timplicit double complex (t)\n",
-      "\tinteger IndexDelta\n",
-      "\texternal IndexDelta\n",
-      "#include \"vars.h\"\n"];
-    WriteME/@ If[Head[amp] === Plus, amp, {amp}]
-  ];
-  WriteString[hh, "\n\tend\n"];
+    WriteAbbrModule[ab, oname] ];
+  mod
+]
+
+WriteAbbrModule[abbr_, oname_] :=
+Block[ {hh},
+  AppendTo[mod, oname];
+  Print["writing ", oname, ".F"];
+  hh = OpenWriteFortran[oname];
+  WriteString[hh, "\tsubroutine " <> oname <> "\n"];
+  WriteDecl[
+    {Pair, Eps, A0, B0, DB0, B1, DB1, B00, DB00, B11, DB11},
+    {Cget, Dget}, abbr];
+  Scan[WriteDef, abbr];
+  WriteString[hh, "\tend\n"];
   Close[hh]
 ]
 
 
-abfunc = A0 | B0 | B1 | B00 | B11 | DB0 | DB1 | DB00 | DB11
+WriteDecl[_, _, 0] = WriteDecl[_, _, _[]] = {}
 
-C0[args__] = C0i[cc0, args]
-
-D0[args__] = D0i[dd0, args]
-
-abr[ bca:abfunc[args__] ] :=
-Block[ {uu = Unique["ab"]},
-  in = Select[Indices[oname], !FreeQ[{args}, #]&];
-  If[ Length[in] =!= 0, uu = uu@@ in ];
-  cresolve[uu] = bca;
-  abr[bca] = uu
+WriteDecl[cext_, iext_, expr_] :=
+Block[ {ce, ie},
+  WriteString[hh,
+    "\timplicit logical (a-s,u-z)\n" <>
+    "\timplicit double complex (t)\n" <>
+    "#include \"vars.h\""];
+  ce = Select[cext, !FreeQ[expr, #]&];
+  ie = Select[iext, !FreeQ[expr, #]&];
+  WriteVarDecl["\n\tdouble complex ", ce];
+  WriteVarDecl["\n\tinteger ", ie];
+  WriteVarDecl["\n\texternal ", Join[ce, ie]];
+  WriteString[hh, "\n\n"]
 ]
 
+
+doloop[_[], _[abbr__]] = abbr
+
+WriteDef[doloop[ind_, abbr_]] :=
+  WriteDoLoop[Apply[Chunks, abbr, 1], ind]
+
+WriteDef[abbr_] := Chunks@@ abbr
+
+
+Attributes[WriteDoLoop] = {HoldFirst}
+
+WriteDoLoop[cmd_, _[]] := cmd
+
+WriteDoLoop[cmd_, ind_] := (
+  WriteString[hh, "\n"];
+  Scan[WriteString[hh, "\tdo ", #, " = 1, ", IndexRange[#], "\n"]&, ind];
+  cmd;
+  WriteString[hh, StringJoin[Table["\tenddo\n", {Length[ind]}]] ];
+)
+
+
+pave = A0 | B0 | B1 | B00 | B11 | DB0 | DB1 | DB00 | DB11 | C0i | D0i
+
+WriteCode[file_] :=
+Block[ {oname, onamex, amp, newline, coeffh},
+  oname = StringReplace[file, ".m" -> ""];
+  amp = Num[Get[indir <> file]] /. bca:pave[__] :> abr[bca];
+  coeffh = If[ StringMatchQ[oname, bornmask],
+    amp = amp /. unusedtree -> 0; Ctree,
+    amp = amp /. unusedloop -> 0; Cloop ];
+
+  newline := WriteString[hh, "\n"];
+  If[LeafCount[amp] > $FileSize && Head[amp] === Plus,
+    MapIndexed[
+      ( onamex = oname <> FromCharacterCode[#2[[1]] + 96];
+        Indices[onamex] = Indices[oname];
+        WriteCodeModule[#1, onamex] )&,
+      Flatten[Operate[CodeBlocks, amp]]],
+  (* else *)
+    WriteCodeModule[amp, oname] ]
+]
+
+WriteCodeModule[amp_, oname_] :=
+Block[ {hh},
+  AppendTo[codemod, oname];
+  Print["writing ", oname, ".F"];
+  hh = OpenWriteFortran[oname];
+  WriteString[hh, "\
+#include \"defs.h\"\n\n\
+\tsubroutine " <> oname <> "\n"];
+  WriteDecl[{Pair, Eps}, {IndexDelta}, amp];
+
+  maxmat[coeffh] = Fold[ Max,
+    maxmat[coeffh],
+    Apply[(Chunks[Level[#1, {-1}, coeffh], #2]; #1)&,
+      MapAt[coefflist, Flatten[{amp} /. Mat -> ToCoeff], -1], 1]
+  ];
+
+  WriteString[hh, "\tend\n"];
+  Close[hh]
+]
+
+
+	(* note: ToCoeff assumes that ordering occurs in the same
+	   way for coefficients and matrix elements *)
+ToCoeff[s_] := coeff[{s} /. Times -> Sequence]
+
+
+coeff/: coeff[n_] x_ := coeff[n, x]
+
+coeff/: coeff[n_, x_] + r_ := {coeff[n, x], r}
+
+coefflist[c_coeff] = c
+
+coefflist[c_] := coeff[{Trivial[1]}, c]
+
+
 abr[ C0i[i_, args__] ] :=
-Block[ {uu = Unique["cd"]},
-  in = Select[Indices[oname], !FreeQ[{args}, #]&];
-  If[ Length[in] =!= 0, uu = uu@@ in ];
-  iresolve[uu] = Cget[args]//Num;
+Block[ {uu = Unique["iint"], ind},
+  ind = Select[Indices[oname], !FreeQ[{args}, #]&];
+  If[ Length[ind] =!= 0, uu = uu@@ ind ];
+  ibca = {ibca, uu -> Num[Cget[args]]};
   abr[C0i[id_, args]] = Cval[id, uu];
   Cval[i, uu]
 ]
 
 abr[ D0i[i_, args__] ] :=
-Block[ {uu = Unique["cd"]},
-  in = Select[Indices[oname], !FreeQ[{args}, #]&];
-  If[ Length[in] =!= 0, uu = uu@@ in ];
-  iresolve[uu] = Dget[args]//Num;
+Block[ {uu = Unique["iint"], ind},
+  ind = Select[Indices[oname], !FreeQ[{args}, #]&];
+  If[ Length[ind] =!= 0, uu = uu@@ ind ];
+  ibca = {ibca, uu -> Num[Dget[args]]};
   abr[D0i[id_, args]] = Dval[id, uu];
   Dval[i, uu]
 ]
 
+abr[ func_ ] :=
+Block[ {uu = Unique["cint"], ind},
+  ind = Select[Indices[oname], !FreeQ[func, #]&];
+  If[ Length[ind] =!= 0, uu = uu@@ ind ];
+  cbca = {cbca, uu -> func};
+  abr[func] = uu
+]
 
-MEtoNum[me_] := ToExpression[StringDrop[ToString[me], 1]]
+
+	(* LoopComponents gives back e.g.
+		1. {F[4], SUN[3]}
+		2. {F[i1], SUN[i2]}
+		3. Ctree[4, 3]
+		4. Ctree[i1, i2]
+		5. "\tdo i1 = 1, 4\n\tdo i2 = 1, 3\n"
+		6. "\tenddo\n\tenddo\n"			*)
+LoopComponents[arr_] :=
+Block[ {n, vars, vdo},
+  n = ToList[maxmat[arr]];
+  vars = If[ #[[1]] === 1, 1, Unique["j"] ]&/@ n;
+  vdo = DeleteCases[Thread[vars -> Level[n, {-1}]], 1 -> _];
+  { n,
+    MapThread[Head[#1][#2]&, {n, vars}],
+    Level[n, {-1}, arr],
+    arr@@ vars,
+    Apply[
+      "\tdo " <> ToString[#1] <> " = 1, " <> ToString[#2] <> "\n" &,
+      vdo, 1 ]//StringJoin,
+    Table["\tenddo\n", {Length[vdo]}]//StringJoin }
+]
+
+
+WriteSubroutine[name_, {sub_}] :=
+  WriteString[hh, "\n#define " <> name <> " " <> sub <> "\n"]
+
+WriteSubroutine[name_, tocall_] :=
+  WriteString[hh, "\n\tsubroutine " <> name <>
+    ({"\n\tcall ", #}&)/@ tocall <> "\n\tend\n"]
+
+
+GetFile[file_] := Flatten[Get/@ file]
 
 
 Options[MakeCode] = {
-  Resonance -> False,
-  ModifyingFunction -> 1,
-  Dyson -> False,
   AbbrFile -> "abbr",
-  MatFile -> "mat",
+  MatFile -> "mat*",
   BornMask -> "born*",
   RenConst -> "rcsm_dimD.F",
-  ProcessH -> $NumPrepDir <> "process.h_template",
-  RunF -> $NumPrepDir <> "run.F_template",
-  NumF -> $NumPrepDir <> "num.F"
+  Drivers -> "drivers"
 }
 
-MakeCode::selfdyson =
-  "Warning: Applying Dyson summation to self energies!"
+MakeCode[idir_, odir_, mask_String:"*.m", opt___Rule] :=
+Block[ {abbr, mat, bornmask, rconst, drivers,
+indir, outdir, files, oname, hh, n,
+nonzero, unusedtree, unusedloop, maxmat, matmem, ntree, nloop,
+cbca, ibca, cstore, dstore, Indices,
+codemod, abbrmod, bcamod, bca2mod,
+Conjugate = dconjg},
 
-MakeCode[indir_, outdir_, mask_String:"*.m", opt___Rule] :=
-Block[ {hreso, modifunc, dyson, abbr, mat, bornmask, rconst, processh,
-runf, numf, i, j, hh, hd, procs, fprocs, bornprocs, cbca, ibca, Indices,
-sums, oname, ofile, files, fabbr, WriteME, MEmax, ncoeff, nonzero,
-unused0, unused1, Conjugate = dconjg},
+  {abbr, mat, bornmask, rconst, drivers} =
+    {AbbrFile, MatFile, BornMask, RenConst, Drivers} /.
+    {opt} /. Options[MakeCode];
 
-  {hreso, modifunc, dyson, abbr, mat, bornmask,
-    rconst, processh, runf, numf} =
-    {Resonance, ModifyingFunction, Dyson, AbbrFile,
-      MatFile, BornMask, RenConst, ProcessH, RunF, NumF} /.
-      {opt} /. Options[MakeCode];
+  outdir = SetDirectory[odir] <> "/";
+  ResetDirectory[];
 
-  files = DeleteCases[
-    FileNames[Flatten[{mask, bornmask <> ".m"}], indir],
-    abbr | mat ];
-  If[ dyson && StringMatchQ[StringJoin[files], "*" <> indir <> "/self*"],
-    Message[MakeCode::selfdyson] ];
+  indir = SetDirectory[idir] <> "/";
+  mat = FileNames[mat];
+  abbr = FileNames[abbr];
+  files = Complement[
+    FileNames[Flatten[{mask, bornmask <> ".m"}]],
+    abbr, mat ];
+  mat = GetFile[mat] /. m_Mat :> ToArray/@ m;
+  abbr = Select[GetFile[abbr], AtomQ[ #[[1]] ]&]//OrderAbbr;
+  ResetDirectory[];
 
-  abbr = Get[indir <> "/" <> abbr];
-  fabbr = First/@ Select[abbr, !FreeQ[#, NonCommutativeMultiply]&];
-  abbr = Select[abbr, FreeQ[#, NonCommutativeMultiply]&];
-  MEmax[_] = 0;
+  nonzero = First/@ DeleteCases[mat, _ -> 0];
+  unusedtree = Alternatives@@
+    Select[ Union[#[[1, 2]]&/@ mat], FreeQ[nonzero, Mat[_, #]]& ];
+  unusedloop = Alternatives@@
+    Select[ Union[#[[1, 1]]&/@ mat], FreeQ[nonzero, Mat[#, _]]& ];
+  maxmat[_] = {};
+  mat = Num[mat];
 
-  WriteME[(me:Evaluate[Alternatives@@ fabbr]) coeff_] :=
-  Block[ {n = MEtoNum[me],},
-    MEmax[hd] = Max[MEmax[hd], n];
-    Chunks[coeff, hd[n]]
-  ];
+(* Part 1: the code modules *)
 
-  If[ FileType[ofile = indir <> "/" <> mat] === File,
-    mat = Get[ofile];
-    nonzero = First/@ DeleteCases[mat, _ -> 0];
-    unused0 = Alternatives@@
-      Select[ Union[#[[1, 2]]&/@ mat], FreeQ[nonzero, Mat[_, #]]& ];
-    unused1 = Alternatives@@
-      Select[ Union[#[[1, 1]]&/@ mat], FreeQ[nonzero, Mat[#, _]]& ];
-    mat = Apply[(MEtoNum/@ #1) -> Num[#2] &, mat, 1]
-  ];
+  codemod = cbca = ibca = Indices[_] = {};
+  Scan[WriteCode, files];
 
-  Indices[_] = {};
+(* Part 2: the variable declarations *)
 
-  procs = fprocs = {};
-  Scan[WriteCode[indir, outdir], files];
+  ibca = Flatten[ibca];
+  cbca = Flatten[cbca];
+  dstore = Plus@@ Cases[ibca, (v_ -> _Dget) :>
+    Times@@ IndexRange/@ Cases[v, _Symbol]];
+  cstore = Plus@@ Cases[ibca, (v_ -> _Cget) :>
+    Times@@ IndexRange/@ Cases[v, _Symbol]];
+	(* now take into account:
+	   a) each D0i invokes 4 C0i's
+	   b) integration is done separately for the left and right
+	      hemisphere; also, sampling takes place in two halves due
+	      to the Gauss algorithm, so altogether we need 4 times the
+	      number of integrals as for the differential cross-section. *)
+  cstore = ToString[4 (cstore + 4 dstore) + 1];
+  dstore = ToString[4 dstore + 1];
 
-  Print["writing ", ofile = outdir <> "/GNUmakefile"];
-  hh = OpenWrite[ofile];
-  WriteString[hh,
-    "DIR = ", $NumPrepDir,
-    "\nRCDIR = ", $RenConstDir,
-    "\nLTDIR = ", $LoopToolsDir,
-    "\nLIBS = -L$(LTDIR)$(HOSTTYPE) -lff",
-    " -L$(CERN)/$(CERN_LEVEL)/lib -lpdflib -lmathlib -lpacklib",
-    "\nFC = ", $F77, " -I. -I$(DIR) -I$(LTDIR)include -I$(RCDIR)",
-      If[dyson, " -DDYSON", ""],
-      " -g\nOBJS = abbr.o"];
-  WriteString[hh, " \\\n ", #, ".o"]&/@ procs;
-  WriteString[hh,
-    "\n\ndefault: run\n\n",
-    "renconst.o: $(RCDIR)", rconst, " $(DIR)kin.h\n",
-    "\t$(FC) -c -o $@ $<\n\n",
-    "$(OBJS): %.o: %.F $(DIR)kin.h vars.h\n",
-    "\t$(FC) -c $< # -DDEBUG\n\n",
-    "clean:\n",
-    "\trm -f *.o\n\n",
-    "%: %.F num.F $(LTDIR)include/tools.F $(DIR)kin.h ",
-      "process.h feyn.F $(OBJS) renconst.o\n",
-    "\t$(FC) -o $@ $< renconst.o $(OBJS) $(LIBS)\n\n"];
-  Close[hh];
+  Print["writing vars.h"];
+  hh = OpenWrite[outdir <> "vars.h"];
+  WriteString[hh, "\
+#include \"kin.h\"\n\
+#include \"rcsm.h\"\n\n\
+\tdouble complex Cval(13, " <> cstore <> ")\n\
+\tcommon /cpave/ Cval\n\n\
+\tdouble complex Dval(46, " <> dstore <> ")\n\
+\tcommon /dpave/ Dval\n"];
 
-  Print["writing ", ofile = outdir <> "/vars.h"];
-  hh = OpenWrite[ofile];
-  WriteString[hh,
-    "#include \"kin.h\"\n",
-    "#include \"rcsm.h\"\n\n",
-    "\tdouble complex Cval(13,1)\n",
-    "\tcommon /cpave/ Cval\n\n",
-    "\tdouble complex Dval(46,1)\n",
-    "\tcommon /dpave/ Dval"];
   WriteVars[
     If[ FreeQ[abbr, Scale], abbr,
       WriteString[hh,
-        "\n\tdouble precision Scale\n\tcommon /sme/ Scale\n"];
+        "\n\tdouble precision Scale\n\tcommon /abbrvar/ Scale\n"];
       DeleteCases[abbr, Scale -> _] ],
-    "double complex ", "/sme/ "];
-  cbca = Apply[#1[[1, 1]] -> #2 &, DownValues[cresolve], 1];
-  WriteVars[cbca, "double complex ", "/bca/ "];
-  ibca = Apply[#1[[1, 1]] -> #2 &, DownValues[iresolve], 1];
-  WriteVars[ibca, "integer ", "/bca/ "];
-  WriteVars[{#[[1, 1, 1]]}&/@ DownValues[IndexRange],
+    "double complex ", "/abbrvar/ "];
+
+  WriteVars[cbca, "double complex ", "/bcavar/ "];
+  WriteVars[ibca, "integer ", "/bcavar/ "];
+  WriteVars[#[[1, 1, 1]]&/@ DownValues[IndexRange],
     "integer ", "/indices/ "];
-  ncoeff = Max[MEmax[coeff0], MEmax[coeff1]];
-  If[ MEmax[coeff0] =!= 0,
-    WriteString[hh,
-      "\n\tdouble complex coeff0(", MEmax[coeff0],
-      "), coeff1(", Max[1, MEmax[coeff1]],
-      ")\n\tdouble precision Mat(", ncoeff, ",", MEmax[coeff0],
-      ")\n\tcommon /mat/ coeff0, coeff1, Mat\n"] ];
+
+  ntree = LoopComponents[Ctree];
+  nloop = LoopComponents[Cloop];
+  n = MapThread[MatType,
+    {ToList[Max[ ntree[[1]], nloop[[1]] ]], ntree[[1]]}];
+  WriteVars[
+    {ntree[[3]], nloop[[3]], DeleteCases[n, 1]}//Flatten,
+    "double complex ", "/coeff/ " ];
+
   Close[hh];
 
-  Print["writing ", ofile = outdir <> "/abbr.F"];
-  hh = OpenWriteFortran[ofile];
-  WriteAbbr[Select[abbr, FreeQ[#, Plus]&]//ReleaseHold, "calc_sme"];
-  WriteAbbr[Select[abbr, !FreeQ[#, Plus]&], "calc_abbr"];
-  WriteAbbr[
-    If[ Head[mat] =!= List, {},
-      Select[ mat,
-        #[[1, 1]] <= ncoeff && #[[1, 2]] <= MEmax[coeff0] & ] ],
-    "calc_mat" ];
+(* Part 3: the abbreviations *)
+
+  abbrmod = WriteAbbr[Join[abbr, mat /. Mat -> MatType], "abbr"];
 
   cbca = Join[cbca, ibca];
-  WriteAbbr[Select[cbca, FreeQ[#, T | U]&], "calc_bca"];
-  WriteAbbr[Select[cbca, !FreeQ[#, T | U]&], "calc_bca2"];
+  bcamod = WriteAbbr[Select[cbca, FreeQ[#, T | U]&], "bca"];
+  bca2mod = WriteAbbr[Select[cbca, !FreeQ[#, T | U]&], "bca2"];
+
+(* Part 4: the makefile *)
+
+  Print["writing GNUmakefile"];
+  hh = OpenWrite[outdir <> "GNUmakefile"];
+  WriteString[hh, "\
+LTDIR = " <> $LoopToolsDir <> "\n\
+LIBS = -L$(LTDIR)$(HOSTTYPE) -lff\n\
+EXTRALIBS = " <> $ExtraLibs <> "\n\
+FC = " <> $F77 <> " -I. -I$(LTDIR)include -g\n\
+OBJS =" <> ({" \\\n ", #, ".o"}&)/@
+             Join[abbrmod, bcamod, bca2mod, codemod] <> "\n\n\
+default: run\n\n\
+renconst.o: " <> rconst <> " kin.h\n\
+\t$(FC) -c -o $@ $<\n\n\
+$(OBJS): %.o: %.F kin.h vars.h\n\
+\t$(FC) -c $<\n\n\
+clean:\n\
+\trm -f *.o\n\n\
+%: %.F num.F $(LTDIR)include/tools.F\
+ kin.h process.h feyn.F $(OBJS) renconst.o\n\
+\t$(FC) -o $@ $< renconst.o $(OBJS) $(LIBS) $(EXTRALIBS)\n\n"];
   Close[hh];
 
-  Print["writing ", ofile = outdir <> "/feyn.F"];
-  hh = OpenWriteFortran[ofile];
-  j = Plus@@ Cases[cbca, (v_ -> _Dget) :>
-    Times@@ IndexRange/@ Cases[v, _Symbol]];
-  i = Plus@@ Cases[cbca, (v_ -> _Cget) :>
-    Times@@ IndexRange/@ Cases[v, _Symbol]];
-  WriteString[hh,
-    "*#define LAMBDA 1D10\n",
-    "*#define MUDIM 1D10\n\n",
-    "#define CSTORE ", 4 (i + 4 j) + 1,
-    "\n#define DSTORE ", 4 j + 1, "\n",
-    StringJoin[
-      If[ NumberQ[ hd = NN[ToExpression[#]] ],
-        {"#define ", #, " ", FortranForm[hd]//ToString, "\n"}, {} ]&/@
-        Names["Parameters`*"] ] ];
+(* Part 5: the control file feyn.F *)
 
-  bornprocs = Select[procs, StringMatchQ[#, bornmask]&];
-  procs = Complement[procs, bornprocs];
-  If[ Length[procs] === 0,
-    WriteString[hh, "\n#define oneloop() 0D0\n"],
-  (* else *)
-    sums[_] = {};
-	(* make sure "oneloop" is initialized: *)
-    sums[{}];
-    AppendTo[sums[Indices[#]], #]&/@ procs;
+  Print["writing feyn.F"];
+  hh = OpenWriteFortran["feyn"];
+  WriteString[hh, "\
+*#define LAMBDA 1D10\n\
+*#define MUDIM 1D10\n\n\
+#define CSTORE " <> cstore <> "\n\
+#define DSTORE " <> dstore <> "\n" <>
+    (If[ NumberQ[ n = NN[ToExpression[#]] ],
+       {"#define ", #, " ", ToFortran[n], "\n"}, {} ]&)/@
+      Names["Parameters`*"] <>
+    "\n"];
 
-    If[Length[fabbr] === 0,
-      WriteString[hh,
-        "\n\tdouble complex function oneloop()\n",
-        "#include \"vars.h\"\n"];
-      WriteString[hh, "\n\tdouble complex ", #,
-        "\n\texternal ", #]&/@ procs;
+  WriteSubroutine["calc_abbr", abbrmod];
+  WriteSubroutine["calc_bca", bcamod];
+  WriteSubroutine["calc_bca2", bca2mod];
 
-      i = "\n\n\toneloop = ";
-      Cases[DownValues[sums], (_[_[ind_List]] :> prc_) :>
-        ( WriteString[hh, "\n\tdo ", #, " = 1, ",
-            IndexRange[#]]&/@ ind;
-          WriteString[hh, i, AddList[prc],
-            StringJoin[Table["\n\tenddo", {Length[ind]}]]];
-          i = "\n\toneloop = oneloop + "; )];
-      WriteString[hh, "\n\tend\n"],
+  ntree2 = LoopComponents[Ctree];
 
-    (* else (fermionic subroutine) *)
-      WriteString[hh, "\n\tdouble precision function oneloop()",
-        "\n#include \"vars.h\"",
-        "\n\tinteger i, j\n\tdouble complex me\n",
-        "\n\tdo i = 1, ", MEmax[coeff1],
-        "\n\t  coeff1(i) = dcmplx(0D0)",
-        "\n\tenddo\n"];
+  WriteString[hh, "\n\n\
+\tsubroutine calc_amp\n\
+\timplicit integer (j)\n\
+\timplicit logical (a-i,k-z)\n\
+\tdouble complex c, m\n\
+#include \"vars.h\"\n\n\
+" <> ntree[[5]] <> "\
+\t" <> ToFortran[ ntree[[4]] ] <> " = dcmplx(0D0)\n\
+" <> ntree[[6]] <> "\n\
+" <> nloop[[5]] <> "\
+\t" <> ToFortran[ nloop[[4]] ] <> " = dcmplx(0D0)\n\
+" <> nloop[[6]] <> "\n"];
 
-      Cases[DownValues[sums], (_[_[ind_List]] :> prc_) :>
-        ( WriteString[hh, "\n\tdo ", #, " = 1, ",
-            IndexRange[#]]&/@ ind;
-          WriteString[hh, "\n\tcall ", #]&/@ prc;
-          WriteString[hh,
-            StringJoin[Table["\n\tenddo", {Length[ind]}]]] )];
-
-      WriteString[hh, "\n\n\tme = dcmplx(0d0)",
-        "\n\tdo i = 1, ", MEmax[coeff1],
-        "\n\t  do j = 1, ", MEmax[coeff0],
-        "\n\t    me = me + coeff1(i)*dconjg(coeff0(j))*Mat(i,j)",
-        "\n\t  enddo",
-        "\n\tenddo",
-        "\n\toneloop = 2D0*dble(me)",
-        "\n\tend\n"]
-    ];
+  sums[_] = {};
+  Scan[AppendTo[sums[Indices[#]], #]&, codemod];
+  Cases[ DownValues[sums], (_[_[ind_List]] :> prc_) :>
+    WriteDoLoop[
+      WriteString[hh, StringJoin[{"\tcall ", #, "\n"}&/@ prc]], ind ]
   ];
 
-  If[ Length[bornprocs] === 0,
-    WriteString[hh, "\n#define born() 0D0\n"],
-  (* else *)
-    If[Length[fabbr] === 0,
-      If[ Length[bornprocs] > 1,
-        WriteString[hh, "\n#define BORN ",
-          DeleteCases[bornprocs, "born"][[1]], "\n"] ],
+  WriteString[hh, "\n\
+" <> ntree2[[5]] <> "\
+\tc = dconjg(" <> ToFortran[ ntree2[[4]] ] <> ")\n\n\
+\tm = dcmplx(0D0)\n\
+" <> ntree[[5]] <> "\
+\tm = m + " <>
+  ToFortran[ ntree[[4]] *
+    Inner[MatType, ntree[[2]], ntree2[[2]], Times] ] <> "\n\
+" <> ntree[[6]] <> "\
+\ttreeamp = treeamp + dble(c*m)\n\n\
+\tm = dcmplx(0D0)\n\
+" <> nloop[[5]] <> "\
+\tm = m + " <>
+  ToFortran[ nloop[[4]] *
+    Inner[MatType, nloop[[2]], ntree2[[2]], Times] ] <> "\n\
+" <> nloop[[6]] <> "\
+\tloopamp = loopamp + 2D0*dble(c*m)\n\
+" <> ntree2[[6]] <> "\n\
+\tend\n"];
 
-    (* else (fermionic) *)
-      WriteString[hh, "\n\tdouble precision function born()",
-        "\n#include \"vars.h\"",
-        "\n\tinteger i, j\n\tdouble complex me\n",
-        "\n\tdo i = 1, ", MEmax[coeff0],
-        "\n\t  coeff0(i) = dcmplx(0D0)",
-        "\n\tenddo\n"];
-
-      WriteString[hh, "\n\tcall ", #]&/@ bornprocs;
-
-      WriteString[hh, "\n\n\tme = dcmplx(0d0)",
-        "\n\tdo i = 1, ", MEmax[coeff0],
-        "\n\t  do j = 1, ", MEmax[coeff0],
-        "\n\t    me = me + coeff0(i)*dconjg(coeff0(j))*Mat(i,j)",
-        "\n\t  enddo",
-        "\n\tenddo",
-        "\n\tborn = dble(me)"];
-      WriteString[hh, "\n\tend\n"]
-    ];
-  ];
   Close[hh];
-  CopyFile[processh, outdir <> "/process.h"];
-  CopyFile[runf, outdir <> "/run.F"];
-  CopyFile[numf, outdir <> "/num.F"];
+
+(* Part 6: copy the driver files *)
+
+  files = {};
+
+  If[ FileType[drivers] === Directory,
+    SetDirectory[drivers];
+    CopyFile[#, outdir <> #]&/@ (files = FileNames[]);
+    ResetDirectory[]
+  ];
+
+  SetDirectory[$NumPrepDir <> "drivers"];
+  CopyFile[#, outdir <> #]&/@ Complement[FileNames[], files];
+  ResetDirectory[];
+
+  SetDirectory[$RenConstDir];
+  CopyFile[#, outdir <> #]&/@ FileNames[{rconst, "*.h"}];
+  ResetDirectory[];
 ]
 
 End[]
@@ -710,16 +792,18 @@ $F77 := $F77 = Switch[ $GenerateCodeFor,
 
 $GenerateCodeFor = "DEC-AXP"
 
+$ExtraLibs = "-L$(CERN)/$(CERN_LEVEL)/lib -lpdflib -lmathlib -lpacklib"
+
 $BlockSize = 700
 
-$FileSize = 50 $BlockSize
+$FileSize = 30 $BlockSize
 
 $LoopToolsDir = HomeDirectory[] <> "/LoopTools/"
 
 $RenConstDir = $NumPrepDir <> "rconst/fortran/"
 
 	(* these functions must always have integer arguments *)
-$IntArgFuncs = dZfL1 | dZfR1 | dMf1 | Af |
+$IntArgFuncs = F | SUN | dZfL1 | dZfR1 | dMf1 | Af |
   MSf | MSf2 | MCha | MCha2 | MNeu | MNeu2 |
   USf | USfC | UCha | UChaC | VCha | VChaC | ZNeu | ZNeuC
 

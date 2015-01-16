@@ -21,7 +21,7 @@
 MCC=`csh -cf "which ${MCC:-mcc}"`
 
 if [ ! -x "$MCC" ] ; then
-  echo "You need mcc (the MathLink C compiler) to compile TopEdit"
+  echo "You need mcc (the MathLink C compiler) to compile ReadForm"
   exit
 fi
 
@@ -36,19 +36,24 @@ ReadForm_$HOSTTYPE: ReadForm.tm
 	CC=gcc ; export CC ; \\
 	sed "s/ cc / gcc /g" $MCC | \\
 	sh -s ReadForm.tm -O6 $* -o ReadForm_$HOSTTYPE $SUNLIBS
+	strip ReadForm_$HOSTTYPE
 
 numerics/r8_$HOSTTYPE: numerics/r8.c
 	gcc -O6 $* -o numerics/r8_$HOSTTYPE numerics/r8.c
+	strip numerics/r8_$HOSTTYPE
 
 numerics/restack_$HOSTTYPE: numerics/restack.c
 	gcc -O6 $* -o numerics/restack_$HOSTTYPE numerics/restack.c
+	strip numerics/restack_$HOSTTYPE
 	(cd numerics ; ln -sf restack_$HOSTTYPE restack)
 
 numerics/ladj_$HOSTTYPE: numerics/ladj.c
 	gcc -O6 $* -o numerics/ladj_$HOSTTYPE numerics/ladj.c
+	strip numerics/ladj_$HOSTTYPE
 
 numerics/plot_$HOSTTYPE: numerics/plot.c
 	gcc -O6 $* -o numerics/plot_$HOSTTYPE numerics/plot.c -lm
+	strip numerics/plot_$HOSTTYPE
 	(cd numerics ; ln -sf plot_$HOSTTYPE plot)
 _EOF_
 

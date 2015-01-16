@@ -1,8 +1,6 @@
 << ../../FormCalc.m
 
-$O1ME = Sqrt[S]
-
-SetOptions[OneLoop, CancelEps -> True]
+$Scale = Sqrt[S]
 
 time1 = SessionTime[]
 
