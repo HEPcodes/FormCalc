@@ -1,7 +1,12 @@
 * opp.h
 * declarations for the OPP routines
 * this file is part of FormCalc
-* last modified 8 Oct 12 th
+* last modified 7 Jul 14 th
+
+
+#if SIMD > 0
+#error SIMD must be set to 0 in distrib.h for OPP
+#endif
 
 
 #ifndef Bcut
@@ -12,7 +17,18 @@
 #define Mee 1
 #define Mff 1
 
-#ifdef SAMURAI
+#ifdef NINJA
+#define Bcut NJBcut
+#define Ccut NJCcut
+#define Dcut NJDcut
+#define Ecut NJEcut
+#define Fcut NJFcut
+#define Bmas NJBmas
+#define Cmas NJCmas
+#define Dmas NJDmas
+#define Emas NJEmas
+#define Fmas NJFmas
+#elif defined SAMURAI
 #define Bcut SABcut
 #define Ccut SACcut
 #define Dcut SADcut
@@ -35,11 +51,15 @@
 #define Emas CTEmas
 #define Fmas CTFmas
 #else
-#error Neither SAMURAI nor CUTTOOLS defined
+#error No OPP method (NINJA, SAMURAI, CUTTOOLS) defined in user.h
 #endif
 
 #endif
 
 	ComplexType Bcut, Ccut, Dcut, Ecut, Fcut
 	external Bcut, Ccut, Dcut, Ecut, Fcut
+
+#ifdef NINJA
+	external None
+#endif
 

@@ -2,7 +2,7 @@
 * all parameters for the MSSM are initialized here
 * this file is part of FormCalc
 * Christian Schappacher, 17 Feb 99
-* last modified 18 Apr 13 th
+* last modified 31 Jul 14 th
 
 
 * The input parameters for model_mssm are:
@@ -48,9 +48,12 @@
 *   (alpha and beta) such that the MSSM Higgs sector looks like
 *   a SM Higgs sector.
 
-* NMFV
+* FV
 *   If defined, initialize also the fully 6x6 mixed sfermion mass
 *   matrices with the flavour-violating parameters deltaSf.
+*   FV = 2 initializes sl, su, sd,
+*   FV = 3 only su, sd,
+*   FV = 4 only sd
 
 * NO_EXCLUSION_LIMITS
 *   If defined, the experimental exclusion limits are ignored.
@@ -160,8 +163,8 @@
 	  Xf_flat(i) = 0
 	enddo
 
-#ifdef NMFV
-	do i = 1, 6*6*2
+#if FV
+	do i = 1, 6*6*4
 	  deltaSf_flat(i) = 0
 	enddo
 #endif
@@ -292,16 +295,23 @@
 	INFO "Slepton    e:  ", MSf(1,2,1), MSf(2,2,1)
 	INFO "           mu: ", MSf(1,2,2), MSf(2,2,2)
 	INFO "           tau:", MSf(1,2,3), MSf(2,2,3)
+#if FV >=2
+	INFO "Slepton fv     ", MASf(1,2), MASf(2,2)
+	INFO "               ", MASf(3,2), MASf(4,2)
+	INFO "               ", MASf(5,2), MASf(6,2)
+#endif
 	INFO "u-Squark   u:  ", MSf(1,3,1), MSf(2,3,1)
 	INFO "           c:  ", MSf(1,3,2), MSf(2,3,2)
 	INFO "           t:  ", MSf(1,3,3), MSf(2,3,3)
-	INFO "d-Squark   d:  ", MSf(1,4,1), MSf(2,4,1)
-	INFO "           s:  ", MSf(1,4,2), MSf(2,4,2)
-	INFO "           b:  ", MSf(1,4,3), MSf(2,4,3)
-#ifdef NMFV
+#if FV >= 3
 	INFO "u-Squark fv    ", MASf(1,3), MASf(2,3)
 	INFO "               ", MASf(3,3), MASf(4,3)
 	INFO "               ", MASf(5,3), MASf(6,3)
+#endif
+	INFO "d-Squark   d:  ", MSf(1,4,1), MSf(2,4,1)
+	INFO "           s:  ", MSf(1,4,2), MSf(2,4,2)
+	INFO "           b:  ", MSf(1,4,3), MSf(2,4,3)
+#if FV >= 4
 	INFO "d-Squark fv    ", MASf(1,4), MASf(2,4)
 	INFO "               ", MASf(3,4), MASf(4,4)
 	INFO "               ", MASf(5,4), MASf(6,4)
@@ -343,7 +353,7 @@
 	external f1f2
 #endif
 
-#ifdef NMFV
+#if FV
 	integer as, g2
 	ComplexType MX2(6,6), m1, m2, m3
 
@@ -473,13 +483,13 @@
 	endif
 #endif
 
-#ifdef NMFV
+#if FV
 * Note: we compute two sets of squark masses.
 * 1) the "regular" ones with only left-right mixing,
 * 2) the fully 6x6 mixed ones.
 * The "regular" ones are needed for computing the Higgs mass.
 
-	do t = 3, 4
+	do t = FV, 4
 	  MX2_LL(1,1) = MSS2(1,4,1)
 	  MX2_LL(2,2) = MSS2(1,4,2)
 	  MX2_LL(3,3) = MSS2(1,4,3)
@@ -715,7 +725,7 @@
 
 
 *-----------------------------------------------------------------------
-* Higgs sector: some parts need to be evaluated in the `Var' part,
+* Higgs sector: some parts need to be evaluated in the "Var" part,
 * e.g. FeynHiggs needs the gluino mass, which is known only after
 * alpha_s(s) is set.
 
@@ -986,15 +996,24 @@
      &    Qtau, Qt, Qb)
         if( fail .ne. 0 ) return
 
-#ifdef NMFV
+#if FV >= 2
+	call FHSetLFV(fail,
+     &    deltaLLL12, deltaLLL23, deltaLLL13,
+     &    deltaELR12, deltaELR23, deltaELR13,
+     &    deltaERL12, deltaERL23, deltaERL13,
+     &    deltaERR12, deltaERR23, deltaERR13)
+	if( fail .ne. 0 ) return
+#endif
+
+#if FV >= 3
 	call FHSetNMFV(fail,
-     &    deltaLL12, deltaLL23, deltaLL13,
-     &    deltaLRuc, deltaLRct, deltaLRut,
-     &    deltaRLuc, deltaRLct, deltaRLut,
-     &    deltaRRuc, deltaRRct, deltaRRut,
-     &    deltaLRds, deltaLRsb, deltaLRdb,
-     &    deltaRLds, deltaRLsb, deltaRLdb,
-     &    deltaRRds, deltaRRsb, deltaRRdb)
+     &    deltaQLL12, deltaQLL23, deltaQLL13,
+     &    deltaULR12, deltaULR23, deltaULR13,
+     &    deltaURL12, deltaURL23, deltaURL13,
+     &    deltaURR12, deltaURR23, deltaURR13,
+     &    deltaDLR12, deltaDLR23, deltaDLR13,
+     &    deltaDRL12, deltaDRL23, deltaDRL13,
+     &    deltaDRR12, deltaDRR23, deltaDRR13)
 	if( fail .ne. 0 ) return
 #endif
 

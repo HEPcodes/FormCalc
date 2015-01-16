@@ -1,7 +1,7 @@
 * util.h
 * prototypes for the util functions
 * this file is part of FormCalc
-* last modified 27 Oct 13 th
+* last modified 8 Sep 14 th
 
 
 #ifndef UTIL_H
@@ -26,6 +26,9 @@
 #define ec0(i) (3+nvec*(i-1)-Hel(i))
 #define Spinor0(i,af,d) (af*2+d+7+nvec*(i-1)+Hel(i))
 
+#define Finite ishft(1, -epsi)
+#define PVC(i) i+epsi
+
 #if SIMD > 0
 
 #define ResType RealType, dimension(SIMD) ::
@@ -45,12 +48,12 @@
 #define eVec ves_end
 
 #define SIMD_CEIL(n) (n+SIMD-1)/SIMD
-#define SIMD_DECL integer v
-#define SIMD_INI v = 1
-#define SIMD_NEXT v = mod(v, SIMD) + 1
-#define SIMD_EXEC(cmd) if( v .eq. 1 ) then ; cmd ; endif
-#define SIMD_LAST(cmd) if( v .ne. 1 ) then ; ves(v:SIMD,:,:,:) = 0; cmd ; endif
-#define SIMD_COPY(hel) call VecCopy(v, LEGS, hel)
+#define SIMD_ONLY(x) x
+#if SIMD > 1
+#define SIMD_MULT(x) x
+#else
+#define SIMD_MULT(x)
+#endif
 
 #else
 
@@ -71,13 +74,8 @@
 #define eVec vec_end
 
 #define SIMD_CEIL(n) n
-#define SIMD_DECL
-#define SIMD_INI
-#define SIMD_NEXT
-#define SIMD_EXEC(cmd) cmd
-#define SIMD_LAST(cmd)
-#define SIMD_COPY(hel)
-
+#define SIMD_ONLY(x)
+#define SIMD_MULT(x)
 #endif
 
 #define MomEncoding(f,i) iand(f,JK-1)*JK**(i-1)
@@ -96,9 +94,7 @@
 
 #define BIT_RESET 0
 #define BIT_LOOP 1
-#define BIT_HEL(i) (5*(LEGS-i)+Hel(i)+2)
-#define LOOP_HEL(h) do h = -2, 2
-#define ENDLOOP_HEL(h) enddo
+#define MASK_HEL(i) (two**(5*(LEGS-i)+Hel(i)+2))
 
 #define INI_S(seq) call clearcache
 #define INI_ANGLE(seq) call markcache
@@ -137,11 +133,21 @@
 #define LEGS 1
 #endif
 
+* special vectors needed by num.h; overlaps intended
+	integer vTnj, v0nj, v1nj, v2nj, v3nj, v4nj, q1, minvec
+	parameter (vTnj = 0)
+	parameter (v0nj = -2)
+	parameter (v1nj = -3)
+	parameter (v2nj = -2)
+	parameter (v3nj = -1)
+	parameter (v4nj = 0)
+	parameter (q1 = 0)
+	parameter (minvec = -3)
+
 	integer nvec
 	parameter (nvec = 12)
 
-* vec(...,0) is q1 in num.h
-	ComplexType vec(2,2,0:nvec*LEGS), vec_end
+	ComplexType vec(2,2,minvec:nvec*LEGS), vec_end
 	common /vec/ vec, vec_end
 
 	RealType hseleps
@@ -152,16 +158,15 @@
 	integer nves
 	parameter (nves = 8)
 
-	HelType ves(HelDim(2),2,0:nves*LEGS), ves_end
+	HelType ves(HelDim(2),2,minvec:nves*LEGS), ves_end
 	common /ves/ ves, ves_end
 #endif
 
 	RealType momspec(12,LEGS)
 	common /momspec/ momspec
 
-* encoding base for momenta
-	integer*8 JK
-	parameter (JK = 256)
-
+* JK is encoding base for momenta
+	integer*8 two, JK
+	parameter (two = 2, JK = 256)
 #endif
 

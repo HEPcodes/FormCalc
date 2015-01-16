@@ -1,7 +1,7 @@
 * softphoton.F
 * routines for the treatment of soft-photon radiation
 * this file is part of FormCalc
-* last modified 27 Oct 13 th
+* last modified 19 Nov 13 th
 
 
 ************************************************************************
@@ -144,7 +144,7 @@
 	kjdelta = momspec(SPEC_DELTAK, j)
 	kjlog = log(kjdelta/(kj0 + kj))
 
-	kikj = Re(Pair(k(i), k(j)))
+	kikj = Re(Pair(k0(i), k0(j)))
 
 	d = sqrt((kikj - mi*mj)*(kikj + mi*mj))
 	alpha = (kikj + d)/mi**2

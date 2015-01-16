@@ -1,7 +1,7 @@
 * run.F
 * defines parameter settings for one run, then includes main.F
 * this file is part of FormCalc
-* last modified 7 Mar 11 th
+* last modified 31 Jul 14 th
 
 
 * Whether to run in debugging mode
@@ -34,7 +34,7 @@ c#define HIGGS_MASSES TREE
 c#define HIGGS_MASSES SIMPLE
 c#define HIGGS_MASSES FEYNHIGGS
 c#define SM_HIGGS
-c#define NMFV
+c#define FV 3
 c#define NO_EXCLUSION_LIMITS
 c#define NO_GUT_RELATION
 

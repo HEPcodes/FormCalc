@@ -3,7 +3,7 @@
 	prototypes for the util functions
 	this file is part of FormCalc
 	SIMD functions by J.-N. Lang
-	last modified 11 Nov 13 th
+	last modified 8 Sep 14 th
 #endif
 
 
@@ -11,22 +11,32 @@
 #define LEGS 1
 #endif
 
-static struct {
+struct {
   RealType eps;
   int n;
 } hsel_;
 
-#define hseln hsel_.n
 #define hseleps hsel_.eps
+#define hseln hsel_.n
 
+/* special vectors needed by num.h; overlaps intended */
+enum {
+  vTnj = 0,
+  v0nj = -2,
+  v1nj = -3,
+  v2nj = -2,
+  v3nj = -1,
+  v4nj = 0,
+  q1 = 0,
+  minvec = -3 };
 
 enum { nvec = 12 };
 
 struct {
-  ComplexType vec[LEGS*nvec+1][2][2];
+  ComplexType vec[LEGS*nvec-minvec+1][2][2];
 } vec_;
 
-#define vec(i,j,n) vec_.vec[n][j-1][i-1]
+#define vec(i,j,n) vec_.vec[n-minvec][j-1][i-1]
 
 #define k0(i) (1+nvec*(i-1))
 #define s0(i) (3+nvec*(i-1))
@@ -34,11 +44,23 @@ struct {
 #define ec0(i) (3+nvec*(i-1)-Hel(i))
 #define Spinor0(i,af,d) (af*2+d+7+nvec*(i-1)+Hel(i))
 
+#define SIMD_ONLY(x)
+#define SIMD_MULT(x)
+#define SIMD_CEIL(n) n
+
 #if SIMD > 0 && !defined DEPS
 
 #include <immintrin.h>
 
+#undef SIMD_ONLY
+#define SIMD_ONLY(x) x
+
 #if SIMD == 2 && defined __AVX__
+
+#undef SIMD_MULT
+#define SIMD_MULT(x) x
+#undef SIMD_CEIL
+#define SIMD_CEIL(n) (n+SIMD-1)/SIMD
 
 typedef __m128d ResType;
 typedef const ResType cResType;
@@ -46,10 +68,6 @@ typedef __m256d HelType;
 typedef const HelType cHelType;
 #define HelZero _mm256_setzero_pd()
 #define ResZero _mm_setzero_pd()
-
-static inline ResType ToRes(cRealType a) {
-  return _mm_load1_pd(&a);
-}
 
 static inline HelType ToH(cComplexType a) {
   return _mm256_broadcast_pd((__m128d *)&a);
@@ -84,6 +102,14 @@ static inline RealType HelSum(cResType a) {
   return _mm_hadd_pd(a, a)[0];
 }
 
+static inline ResType ResAbs(cResType a) {
+  return (ResType){fabs(a[0]), fabs(a[1])};
+}
+
+static inline ResType ToRes(cRealType a) {
+  return _mm_load1_pd(&a);
+}
+
 #elif SIMD == 1 && defined __SSE3__
 
 typedef RealType ResType;
@@ -93,6 +119,7 @@ typedef const HelType cHelType;
 #define HelZero _mm_setzero_pd()
 #define ResZero 0
 #define HelSum(a) (a)
+#define ResAbs(a) fabs(a)
 #define ToRes(a) (a)
 
 static inline HelType ToH(cComplexType a) {
@@ -136,7 +163,6 @@ typedef const HelType cHelType;
 #define HelZero 0
 #define ResZero 0
 
-#define ToRes(a) (a)
 #define ToH(a) (a)
 #define HxH(a,b) (a)*(b)
 #define SxH(a,b) (a)*(b)
@@ -144,6 +170,8 @@ typedef const HelType cHelType;
 #define RxH(a,b) (a)*(b)
 #define ReHcH(a,b) Re(Conjugate(a)*(b))
 #define HelSum(a) (a)
+#define ResAbs(a) fabs(a)
+#define ToRes(a) (a)
 
 #endif
 
@@ -171,14 +199,6 @@ struct {
 
 extern void veccopy_(cinteger *v, cinteger *n, cinteger *hel);
 
-#define SIMD_CEIL(n) (n+SIMD-1)/SIMD
-#define SIMD_DECL integer v
-#define SIMD_INI v = 1
-#define SIMD_NEXT v = v % SIMD + 1
-#define SIMD_EXEC(cmd) if( v == 1 ) cmd
-#define SIMD_LAST(cmd) if( v != 1 ) cmd
-#define SIMD_COPY(hel) veccopy_(&v, (integer []){LEGS}, hel)
-
 #else
 
 typedef RealType ResType;
@@ -188,7 +208,6 @@ typedef const HelType cHelType;
 #define HelZero 0
 #define ResZero 0
 
-#define ToRes(a) (a)
 #define ToH(a) (a)
 #define HxH(a,b) (a)*(b)
 #define SxH(a,b) (a)*(b)
@@ -196,6 +215,8 @@ typedef const HelType cHelType;
 #define RxH(a,b) (a)*(b)
 #define ReHcH(a,b) Re(Conjugate(a)*(b))
 #define HelSum(a) (a)
+#define ResAbs(a) fabs(a)
+#define ToRes(a) (a)
 
 #define k k0
 #define s s0
@@ -204,14 +225,6 @@ typedef const HelType cHelType;
 #define Spinor Spinor0
 #define Vec(x,y,i) vec(x,y,i)
 #define bVec vec_
-
-#define SIMD_CEIL(n) n
-#define SIMD_DECL
-#define SIMD_INI
-#define SIMD_NEXT
-#define SIMD_COPY(hel)
-#define SIMD_EXEC(cmd) cmd
-#define SIMD_LAST(cmd)
 
 #endif
 
@@ -223,9 +236,7 @@ typedef const HelType cHelType;
 
 #define BIT_RESET 0
 #define BIT_LOOP 1
-#define BIT_HEL(i) (5*(LEGS-i)+Hel(i)+2)
-#define LOOP_HEL(h) for( h = -2; h <= 2; ++h ) {
-#define ENDLOOP_HEL(h) }
+#define MASK_HEL(i) (1ULL << (5*(LEGS-i)+Hel(i)+2))
 
 #define INI_S(seq) clearcache()
 #define INI_ANGLE(seq) markcache()

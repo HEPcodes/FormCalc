@@ -1,7 +1,7 @@
 * CTBcut.F
 * the FormCalc wrapper for the CutTools two-point function
 * this file is part of FormCalc
-* last modified 6 Oct 12 th
+* last modified 4 Jul 14 th
 
 #include "types.h"
 
@@ -44,24 +44,31 @@
 	mj(1) = m1
 	mj(2) = m2
 
-c	PRINT *, "CTBcut:", rank
-c	PRINT *, "k1=", kj(0,2)
-c	PRINT *, "   ", kj(1,2)
-c	PRINT *, "   ", kj(2,2)
-c	PRINT *, "   ", kj(3,2)
-c	PRINT *, "m1=", m1
-c	PRINT *, "m2=", m2
+#if CTDEBUG >= 2
+	print *, "  rank =", rank
+	print *, "  k1 =", kj(0,2)
+	print *, "      ", kj(1,2)
+	print *, "      ", kj(2,2)
+	print *, "      ", kj(3,2)
+	print *, "  m1 =", mj(1)
+	print *, "  m2 =", mj(2)
+	call flush(6)
+#endif
 
 	call ctsxcut(imode, rootsvalue, muscale, 2, num, CTmpnum,
      &    rank, kj, mj, res(0), res(1), res(2), stable)
-	CTBcut = res(epscoeff)
-	if( epscoeff .eq. 0 ) then
+	CTBcut = res(epsi)
+	if( epsi .eq. 0 ) then
 	  call setscaloop(4)
 	  call ctsxcut(imode, rootsvalue, muscale, 2, numeps, CTmpnum,
      &      rank, kj, mj, res(0), res(1), res(2), stable)
 	  CTBcut = CTBcut - 2*res(1)
 	  call setscaloop(1)
 	endif
-c	PRINT *, "CTBcut=", CTBcut
+
+#if CTDEBUG
+	print *, "CTBcut =", CTBcut
+	call flush(6)
+#endif
 	end
 

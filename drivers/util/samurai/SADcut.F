@@ -1,7 +1,7 @@
 * SADcut.F
 * the FormCalc wrapper for the Samurai four-point function
 * this file is part of FormCalc
-* last modified 6 Oct 12 th
+* last modified 29 Aug 14 th
 
 #include "types.h"
 
@@ -29,7 +29,7 @@
 #include "SA.h"
 
 	RealType kj(4,4), mj(4)
-	ComplexType tot(-2:0), totr
+	ComplexType res(-2:0), resr
 	logical ok
 
 	SADcut = 0
@@ -48,32 +48,35 @@
 	mj(3) = m3
 	mj(4) = m4
 
-c	PRINT *, "SADcut:", rank
-c	PRINT *, "k1=", kj(2,4)
-c	PRINT *, "   ", kj(2,1)
-c	PRINT *, "   ", kj(2,2)
-c	PRINT *, "   ", kj(2,3)
-c	PRINT *, "k2=", kj(3,4)
-c	PRINT *, "   ", kj(3,1)
-c	PRINT *, "   ", kj(3,2)
-c	PRINT *, "   ", kj(3,3)
-c	PRINT *, "k3=", kj(4,4)
-c	PRINT *, "   ", kj(4,1)
-c	PRINT *, "   ", kj(4,2)
-c	PRINT *, "   ", kj(4,3)
-c	PRINT *, "m1=", m1
-c	PRINT *, "m2=", m2
-c	PRINT *, "m3=", m3
-c	PRINT *, "m4=", m4
+#if SADEBUG >= 4
+	print *, "  rank =", rank
+	print '("   k1: ",Z8.8)', k1
+	print *, "  k1 =", kj(2,4)
+	print *, "      ", kj(2,1)
+	print *, "      ", kj(2,2)
+	print *, "      ", kj(2,3)
+	print '("   k2: ",Z8.8)', k2
+	print *, "  k2 =", kj(3,4)
+	print *, "      ", kj(3,1)
+	print *, "      ", kj(3,2)
+	print *, "      ", kj(3,3)
+	print '("   k3: ",Z8.8)', k3
+	print *, "  k3 =", kj(4,4)
+	print *, "      ", kj(4,1)
+	print *, "      ", kj(4,2)
+	print *, "      ", kj(4,3)
+	print *, "  m1 =", mj(1)
+	print *, "  m2 =", mj(2)
+	print *, "  m3 =", mj(3)
+	print *, "  m4 =", mj(4)
+	call flush(6)
+#endif
 
-	call samurai(num, tot, totr, kj, mj, 4, rank, 1, mudim, ok)
-	SADcut = tot(epscoeff)
-	if( epscoeff .eq. 0 ) then
-	  call setisca(5)
-	  call samurai(numeps, tot, totr, kj, mj, 4, rank, 1, mudim, ok)
-	  SADcut = SADcut - 2*tot(-1)
-	  call setisca(4)
-	endif
-c	PRINT *, "SADcut=", SADcut
+	call fcsamurai(num, numeps, 4, rank, kj, mj, SADcut)
+
+#if SADEBUG
+	print *, "SADcut =", SADcut
+	call flush(6)
+#endif
 	end
 

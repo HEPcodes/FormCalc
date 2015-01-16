@@ -5,7 +5,7 @@
 		then do a main integration over all regions
 		this file is part of Divonne
 		checkpointing by B. Chokoufe
-		last modified 5 Aug 13 th
+		last modified 24 May 14 th
 */
 
 
@@ -29,8 +29,8 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
   Totals *tot, *Tot = state->totals + t->ncomp;
   Bounds *b, *B;
   Result *res;
-  count comp, err, iregion;
-  number nwant;
+  count comp, iregion;
+  number nwant, err;
   real nneed;
   ML_ONLY(number neff;)
   int fail;
@@ -38,6 +38,7 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
   if( VERBOSE > 1 ) {
     sprintf(out, "Divonne input parameters:\n"
       "  ndim " COUNT "\n  ncomp " COUNT "\n"
+      ML_NOT("  nvec " NUMBER "\n")
       "  epsrel " REAL "\n  epsabs " REAL "\n"
       "  flags %d\n  seed %d\n"
       "  mineval " NUMBER "\n  maxeval " NUMBER "\n"
@@ -46,6 +47,7 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
       "  ngiven " NUMBER "\n  nextra " NUMBER "\n"
       "  statefile \"%s\"",
       t->ndim, t->ncomp,
+      ML_NOT(t->nvec,)
       t->epsrel, t->epsabs,
       t->flags, t->seed,
       t->mineval, t->maxeval,
@@ -132,7 +134,7 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
   /* Step 1: partition the integration region */
 
   if( t->phase == 1 ) {
-    if( VERBOSE ) Print("Partitioning phase:");
+    if( VERBOSE ) Print("\nPartitioning phase:");
 
     if( ini ) Iterate(t, 0, INIDEPTH, 0, NULL);
 
@@ -230,7 +232,7 @@ if( StateWriteTest(t) ) { \
     tot->maxerrsq = Sq(maxerr);
     tot->mindevsq = tot->maxerrsq*Sq(t->mindeviation);
   }
-  nwant = (number)Min(ceil(nneed), MARKMASK/40.);
+  nwant = (number)Min(ceil(nneed), NWANTMAX/40.);
 
   err = SamplesLookup(t, &t->samples[1], t->key2, nwant,
     (t->maxeval - t->neval)/t->nregions + 1, t->samples[0].n + 1);
@@ -308,11 +310,11 @@ refine:
                 Iterate(t, state->iregion, POSTDEPTH, 1, state->totals);
 
                 if( can_adjust ) {
-                  cnumber nnew = (tot->spreadsq/Sq(MARKMASK) > tot->maxerrsq) ?
-                    MARKMASK :
+                  cnumber nnew = (tot->spreadsq/Sq(NWANTMAX) > tot->maxerrsq) ?
+                    NWANTMAX :
                     (number)ceil(sqrt(tot->spreadsq/tot->maxerrsq));
                   if( nnew > nwant + nwant/64 ) {
-                    ccount err = SamplesLookup(t, &t->samples[1], t->key2, nnew,
+                    cnumber err = SamplesLookup(t, &t->samples[1], t->key2, nnew,
                       (t->maxeval - t->neval)/t->nregions + 1, t->samples[1].n);
                     fail += Unmark(err)*t->nregions;
                     nwant = nnew;
@@ -482,8 +484,7 @@ refine:
 #endif
 
 abort:
-  WaitCores(t);
-  FORK_ONLY(FrameFree(t, ShmRm(t));)
+  FORK_ONLY(FrameFree(t, Master);)
 
   RuleFree(t);
   SamplesFree(&t->samples[2]);

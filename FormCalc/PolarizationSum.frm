@@ -1,7 +1,7 @@
 * PolarizationSum.frm
 * the FORM part of the PolarizationSum function
 * this file is part of FormCalc
-* last modified 17 Apr 13 th
+* last modified 4 Nov 14 th
 
 
 #procedure Fewest(foo)
@@ -113,7 +113,7 @@ ab `Vectors', `Invariants', dotM;
 .sort
 off oldFactArg;
 
-collect dotM;
+collect dotM, dotM, 50;
 
 #call InvSimplify(dotM)
 id dotM(0) = 0;
@@ -121,8 +121,8 @@ id dotM(0) = 0;
 repeat id TAG * dotM([x]?) = TAG * [x];
 id TAG = 1;
 
-makeinteger dotM;
-id dotM(dotM(?x)) = dotM(?x);
+*makeinteger dotM;
+*id dotM(dotM(?x)) = dotM(?x);
 
 argument dotM;
 id dotM([x]?) = dotM(nterms_([x]), [x]);
@@ -235,9 +235,12 @@ mul DF;
 #if `m' == "0"
 * massless case
 
-id DF * ET([mu]?) * ETC([nu]?) = -d_([mu], [nu]) +
-  (d_(eta`i', [mu])*d_(k`i', [nu]) +
-   d_(eta`i', [nu])*d_(k`i', [mu]))/(eta`i'.k`i');
+id DF * ET([mu]?) * ETC([nu]?) = -d_([mu], [nu])
+#if "`GaugeTerms'" != "Off"
+  + (d_(eta`i', [mu])*d_(k`i', [nu]) +
+     d_(eta`i', [nu])*d_(k`i', [mu]))/(eta`i'.k`i')
+#endif
+  ;
 * The eta are gauge-dependent vectors.
 * Their appearance in the result is supposed to alert
 * the user to the presence of gauge-dependent terms.
@@ -291,11 +294,13 @@ id k`i' = `k`i'';
 #endif
 #enddo
 
-#if `GaugeTerms' == 0
+#if "`GaugeTerms'" == "False"
 #do i = 1, `Legs'
 id eta`i' = 0;
 #enddo
 #endif
+
+#call EtaSubst
 
 id D = Dminus4Eps + 4;
 

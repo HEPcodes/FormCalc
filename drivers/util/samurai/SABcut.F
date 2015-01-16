@@ -1,7 +1,7 @@
 * SABcut.F
 * the FormCalc wrapper for the Samurai two-point function
 * this file is part of FormCalc
-* last modified 6 Oct 12 th
+* last modified 29 Aug 14 th
 
 #include "types.h"
 
@@ -27,7 +27,7 @@
 #include "SA.h"
 
 	RealType kj(2,4), mj(2)
-	ComplexType tot(-2:0), totr
+	ComplexType res(-2:0), resr
 	logical ok
 
 	SABcut = 0
@@ -42,22 +42,23 @@
 	mj(1) = m1
 	mj(2) = m2
 
-c	PRINT *, "SABcut:", rank
-c	PRINT *, "k1=", kj(2,4)
-c	PRINT *, "   ", kj(2,1)
-c	PRINT *, "   ", kj(2,2)
-c	PRINT *, "   ", kj(2,3)
-c	PRINT *, "m1=", m1
-c	PRINT *, "m2=", m2
+#if SADEBUG >= 2
+	print *, "  rank =", rank
+	print '("   k1: ",Z8.8)', k1
+	print *, "  k1 =", kj(2,4)
+	print *, "      ", kj(2,1)
+	print *, "      ", kj(2,2)
+	print *, "      ", kj(2,3)
+	print *, "  m1 =", mj(1)
+	print *, "  m2 =", mj(2)
+	call flush(6)
+#endif
 
-	call samurai(num, tot, totr, kj, mj, 2, rank, 1, mudim, ok)
-	SABcut = tot(epscoeff)
-	if( epscoeff .eq. 0 ) then
-	  call setisca(5)
-	  call samurai(numeps, tot, totr, kj, mj, 2, rank, 1, mudim, ok)
-	  SABcut = SABcut - 2*tot(-1)
-	  call setisca(4)
-	endif
-c	PRINT *, "SABcut=", SABcut
+	call fcsamurai(num, numeps, 2, rank, kj, mj, SABcut)
+
+#if SADEBUG
+	print *, "SABcut =", SABcut
+	call flush(6)
+#endif
 	end
 

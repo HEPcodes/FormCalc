@@ -1,7 +1,7 @@
 * process.h
 * defines all process-dependent parameters
 * this file is part of FormCalc
-* last modified 18 Apr 13 th
+* last modified 19 Nov 13 th
 
 
 * When using Dirac fermions (FermionChains -> Chiral|VA) and
@@ -44,12 +44,6 @@ c#define DIRACFERMIONS
 
 c#define BREMSSTRAHLUNG
 #define ESOFTMAX .1D0*sqrtS
-
-
-* Possibly some wave-function renormalization
-* (e.g. if calculating in the background-field method)
-
-c#define WF_RENORMALIZATION (nW*dWFW1 + nZ*dWFZ1)
 
 
 * NCOMP is the number of components of the result vector.  Currently

@@ -3,19 +3,27 @@
 		the serial sampling routine
 		for the C versions of the Cuba routines
 		by Thomas Hahn
-		last modified 19 Dec 11 th
+		last modified 9 Oct 14 th
 */
 
 
-static inline number SampleRaw(cThis *t, number n, creal *x, real *f
-  VES_ONLY(, creal *w, ccount iter))
+coreinit cubafun_;
+extern int cubaverb_;
+extern corespec cubaworkers_;
+
+
+static inline number SampleRaw(This *t, number n, creal *x, real *f,
+  cint core VES_ONLY(, creal *w, ccount iter))
 {
-  for( ; n; --n ) {
-    if( t->integrand(&t->ndim, x, &t->ncomp, f, t->userdata
-          VES_ONLY(, w++, &iter)
+  number nvec;
+  for( nvec = t->nvec; n > 0; n -= nvec ) {
+    nvec = IMin(n, nvec);
+    if( t->integrand(&t->ndim, x, &t->ncomp, f, t->userdata, &nvec, &core
+          VES_ONLY(, w, &iter)
           DIV_ONLY(, &t->phase)) == ABORT ) return -1;
-    x += t->ndim;
-    f += t->ncomp;
+    VES_ONLY(w += nvec;)
+    x += nvec*t->ndim;
+    f += nvec*t->ncomp;
   }
   return 0;
 }
@@ -25,8 +33,9 @@ static inline number SampleRaw(cThis *t, number n, creal *x, real *f
 static inline void DoSampleSerial(This *t, cnumber n, creal *x, real *f
   VES_ONLY(, creal *w, ccount iter))
 {
+  MasterInit();
   t->neval += n;
-  if( SampleRaw(t, n, x, f VES_ONLY(, w, iter)) ) 
+  if( SampleRaw(t, n, x, f, -1 VES_ONLY(, w, iter)) ) 
     longjmp(t->abort, -99);
 }
 
@@ -43,7 +52,13 @@ DIV_ONLY(static int Explore(This *t, cint iregion);)
 #define DoSample DoSampleSerial
 #define Explore ExploreSerial
 #define ForkCores(t)
-#define WaitCores(t)
+
+static inline void WaitCores(This *t, Spin **pspin)
+{
+  if( Invalid(pspin) ) MasterExit();
+}
+
+#define WaitCores(t, pspin)
 
 #endif
 
@@ -51,7 +66,7 @@ DIV_ONLY(static int Explore(This *t, cint iregion);)
 static inline count SampleExtra(This *t, cBounds *b)
 {
   number n = t->nextra;
-  t->peakfinder(&t->ndim, b, &n, t->xextra);
+  t->peakfinder(&t->ndim, b, &n, t->xextra, t->userdata);
   DoSample(t, n, t->xextra, t->fextra);
   return n;
 }
@@ -60,7 +75,7 @@ static inline count SampleExtra(This *t, cBounds *b)
 #include "common.c"
 
 #ifdef HAVE_FORK
-#include "Fork.c"
+#include "Parallel.c"
 #endif
 
 #include "Integrate.c"

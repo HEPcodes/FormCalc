@@ -3,7 +3,7 @@
 		explicit representation of external vectors
 		and derived quantities
 		this file is part of FormCalc
-		last modified 9 Nov 12 th
+		last modified 23 Jan 14 th
 *)
 
 
@@ -18,6 +18,15 @@ appearing in expr by their components as set by VecSet.  The argument
 pol specifies the polarizations of the external particles, they are
 either given as a list of integers (-1 = left-handed, +1 = right-handed,
 0 = longitudinal) or as a string of \"+\", \"-\", \"0\"."
+
+SInvariant::usage = "SInvariant[i, j] computes the invariant (k_i + k_j)^2."
+
+TInvariant::usage = "TInvariant[i, j] computes the invariant (k_i - k_j)^2."
+
+ThreeMom::usage = "ThreeMom[sqrtS, ma, mb] computes the length of
+\\vec p_b in the frame in which \\vec p_a + \\vec p_b vanishes, where
+ma and mb are the masses corresponding respectively to p_a and p_b."
+
 
 { VecK, VecE, MomSpec, Spi,
   SpecM, SpecK, SpecE, SpecDeltaK, SpecEx, SpecEy, SpecEz,
@@ -122,7 +131,7 @@ ToComponents[expr_, pol_List] :=
 Block[ {ChainHead},
   expr /. WeylChain -> SplitChain /.
     Flatten[MapIndexed[vecrule, pol]] /.
-    h:_ChainHead | Pair | Eps :> rep[h] /.
+    h:_ChainHead | Pair | Eps | Invariant :> rep[h] /.
     Hel[i_] :> pol[[i]]
 ]
 
@@ -131,6 +140,20 @@ vecrule[pol_, {n_}] := {
   k[n] -> VecK[n],
   e[n] -> VecE[n, pol],
   ec[n] -> VecE[n, -pol] }
+
+
+inv[i_, j_, s_] :=
+Block[ {vij = VecK[i][[##]] + s VecK[j][[##]] &},
+  vij[1,1] vij[2,2] - vij[1,2] (vij[1,2] /. I -> -I)
+]
+
+SInvariant[i_Integer, j_Integer] := inv[i, j, +1]
+
+TInvariant[i_Integer, j_Integer] := inv[i, j, -1]
+
+
+ThreeMom[sqrtS_, ma_, mb_] := Sqrt[(# - mb) (# + mb)]&[
+  1/2 (sqrtS - (ma - mb)*(ma + mb)/sqrtS) ]
 
 
 Attributes[rep] = {HoldAll}

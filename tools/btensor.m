@@ -3,11 +3,12 @@
 		explicit decompositions of the two-point
 		tensor-coefficient functions
 		this file is part of FormCalc
-		last modified 3 Oct 09 th
+		last modified 31 Jan 14 th
 *)
 
 
-Clear[A0, A00, B0, B1, B00, B11, B001, B111, DB0, DB1, DB00, DB11]
+Clear[A0, A00, B0, B1, B00, B11, B001, B111,
+  DB0, DB1, DB00, DB11, DB001, DB111]
 
 
 A0[0] = 0
@@ -111,7 +112,9 @@ B111a[p_, m1_, m2_] := -1/(2 p) (
 Derivative[1, 0, 0][B0] = DB0;
 Derivative[1, 0, 0][B1] = DB1;
 Derivative[1, 0, 0][B00] = DB00;
-Derivative[1, 0, 0][B11] = DB11
+Derivative[1, 0, 0][B11] = DB11;
+Derivative[1, 0, 0][B001] = DB001;
+Derivative[1, 0, 0][B111] = DB111
 
 DB0[0, m_, m_] := 1/(6 m)
 
@@ -124,18 +127,20 @@ DB1[0, m_, m_] = -1/(12 m)
 DB1[0, m1_, m2_] =
   (2 m2/(m1 - m2) (B1[0, m1, m2] - B1[0, m2, m2]) - 1/3)/(m1 - m2)
 
-DB1[p_, m1_, m2_] = D[B1[p, m1, m2], p]//Simplify
+DB1[p_, m1_, m2_] = D[B1[p, m1, m2], p] //Simplify
 
 
-(*DB00[p_, m1_, m2_] = D[B00[p, m1, m2], p]//Simplify*)
+(*DB00[p_, m1_, m2_] = D[B00[p, m1, m2], p] //Simplify*)
 DB00[p_, m1_, m2_] :=
   1/6 (2 m1 DB0[p, m1, m2] + B1[p, m1, m2] +
     (p + m1 - m2) DB1[p, m1, m2] - 1/3)
 
 
-DB11[p_, m1_, m2_] = D[B11[p, m1, m2], p]//Simplify
+DB11[p_, m1_, m2_] = D[B11[p, m1, m2], p] //Simplify
 
-DB001[p_, m1_, m2_] := D[B001[p, m1, m2], p]//Simplify
+DB001[p_, m1_, m2_] = D[B001[p, m1, m2], p] //Simplify
+
+DB111[p_, m1_, m2_] = D[B111[p, m1, m2], p] //Simplify
 
 
 B0[p_, m1_, m2_] := B0[p, m2, m1] /; !OrderedQ[{m1, m2}];

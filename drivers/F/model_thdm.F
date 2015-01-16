@@ -2,7 +2,7 @@
 * all parameters for the THDM are initialized here
 * this file is part of FormCalc
 * Abdesslam Arhrib, 2 Jun 03
-* last modified 30 Nov 11 th
+* last modified 25 Aug 14 th
 
 
 * The input parameters for model_thdm are:
@@ -74,7 +74,9 @@
 	SAB = SA*CB + CA*SB
 	CAB = CA*CB - SA*SB
 	SBA = SB*CA - CB*SA
+	SBA2 = SBA**2
 	CBA = CB*CA + SB*SA
+	CBA2 = CBA**2
 
 #ifdef MODEL_TYPE_I
 	Yuk1 = CA/SB

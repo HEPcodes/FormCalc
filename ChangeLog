@@ -1,3 +1,131 @@
+27 Nov 14:
+
+- Upgraded to Cuba 4.1.
+
+
+4 Nov 14:
+
+- Minor fixes in drivers/tools/fcc for Mathematica 10.0.1.
+
+
+28 Oct 14:
+
+- Made PolarizationSum honor definitions for eta[i].
+
+
+19 Oct 14:
+
+- Made $ReadFormHandle publicly available, use it to do
+  Uninstall[$ReadFormHandle] before quitting the Kernel to avoid
+  (as yet ununderstood) freezes in Mathematica 10.
+
+- Introduced RenConstHook in analogy to InsertFieldsHook and
+  CreateFeynAmpHook.
+
+
+10 Oct 14:
+
+- Fixed technical problem with PaVeReduce which would leave
+  denominators containing q1 in the result.
+
+- Split off model-specific definitions to FormCalc/ModelSpecific.m.
+
+- Disabled loading of model-specific defs if $NoModelSpecific = True.
+
+
+8 Sep 14:
+
+- Fixed comparison of helicities in SquaredME.F, former code
+  was correct for unpolarized cross-sections only.
+
+
+31 Jul 14:
+
+- Unified FV variables in new file model_fv.h, included by
+  model_mssm.h and model_fh.h.
+
+- Renamed NMFV preprocessor flag to FV, includes LFV now.
+  FV = 2 means sl, su, sd are initialized, FV = 3 only su, sd,
+  FV = 4 only sd.
+
+
+15 Jul 14:
+
+- Various fixes (mostly internal stuff) for Mathematica 10.
+
+
+10 Jul 14:
+
+- The OffShell function now acts on spinors, too.
+
+
+8 Jul 14:
+
+- Added OnShell -> ExceptDirac option which avoids using the
+  Dirac equation on on-shell momenta.
+
+
+3 Jul 14:
+
+- Repaired initial build of util.a in compile.
+
+
+26 Jun 14:
+
+- Fixed problem with shortened routine names in makefile.
+
+
+4 Jun 14:
+
+- Introduced 'silent' (non-integrating) kinematic variables
+  for output only (Show(v) only relevant field), must have
+  Step(v) = -999.
+
+
+2 Jun 14:
+
+- Made build of generated code parallelizable (make -j).
+  Still uses libraries, but scripts tools/ar and tools/ranlib
+  trick make into building concurrently.
+
+
+9 Apr 14:
+
+- Added Ninja interfacing code (beta).
+
+
+7 Mar 14:
+
+- Corrected conjugation properties in ApplyUnitarity.
+
+- Extended OnePassOrder to properly handle IndexIf constructs.
+
+- Extended Folder option of WriteSquaredME to digest composite
+  names, such as {"squaredme", ProcName}, where ProcName is
+  a (Fortran-, C-, and file-system-safe) name generated from
+  the process name.
+
+- Modified makefile.in to handle subdirectory structure underneath
+  the squaredme folder, such that several subprocesses will be
+  compiled automatically.
+
+- Fixed subtle error in RemoveDups (Optimized -> True in
+  PrepareExpr/WriteExpr), where restricted detection but
+  unrestricted substitution of subexpressions could lead to
+  out-of-the-order "dup" variables.
+
+
+7 Feb 14:
+
+- Moved to different internal representation for subroutines
+  (Nput & friends).  Function is no longer used on the r.h.s.,
+  this makes things easier in many ways (due to functions having
+  delayed evaluation).
+
+- Straightened out SIMD_* macros, to make the no-SIMD fallback
+  version Fortran 77 compliant.
+
+
 14 Nov 13:
 
 - Added proper initialization with zero of loop result also for
@@ -9,6 +137,9 @@
   In the event of a segfault in FORM please replace
   Linux{,-x86-64}/tform by the respective shared version
   FORM/Linux{,-x86-64}/bin/tform-shared.
+
+- Introduced FCHSELN and FCHSELEPS environment variables to detect
+  and eliminate negligible helicity combinations.
 
 
 13 Nov 13:

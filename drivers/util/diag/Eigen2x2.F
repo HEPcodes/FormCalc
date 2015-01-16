@@ -1,7 +1,7 @@
 * Eigen2x2.F
 * diagonalization of a Hermitian 2-by-2 matrix
 * this file is part of FormCalc
-* last modified 30 Nov 11 th
+* last modified 4 Dec 13 th
 
 #include "diag-f.h"
 
@@ -17,7 +17,7 @@
 	RealType M12sq, delta, t, c, m1, m2
 	ComplexType s
 
-	M12sq = DBLE(M12)**2 + DIMAG(M12)**2
+	M12sq = Re(M12)**2 + Im(M12)**2
 	t = .5D0*(M11 - M22)
 	t = 1/(t + sign(sqrt(t**2 + M12sq), t))
 
@@ -31,7 +31,7 @@
 	if( m1 .gt. m2 ) then
 	  msq(1) = m2
 	  msq(2) = m1
-	  U(1,1) = -DCONJG(s)
+	  U(1,1) = -Conjugate(s)
 	  U(2,2) = s
 	  U(1,2) = c
 	  U(2,1) = c
@@ -41,7 +41,7 @@
 	  U(1,1) = c
 	  U(2,2) = c
 	  U(1,2) = s
-	  U(2,1) = -DCONJG(s)
+	  U(2,1) = -Conjugate(s)
 	endif
 
 	if( msq(1) .lt. 0 ) then

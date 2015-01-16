@@ -1,7 +1,7 @@
 * xsection.F
 * routines to compute the cross-section
 * this file is part of FormCalc
-* last modified 8 Nov 13 th
+* last modified 8 Dec 14 th
 
 #define DRIVER
 
@@ -25,6 +25,9 @@
 	subroutine ProcessIni(fail, pol,
      &    sqrtSfrom, sqrtSto, sqrtSstep,
      &    argc, argv)
+#ifdef SAMURAI
+	use msamurai
+#endif
 	implicit none
 	integer fail, argc
 	character*(*) pol
@@ -41,7 +44,10 @@
 
 	integer i, c, bits, df
 
-#define SCALAR Z'001'
+* important: the low byte of the following must be consistent
+* with the definition of MASK_HEL in util.h
+#define SCALAR Z'004'
+#define GHOST SCALAR
 #define FERMION Z'10A'
 #define PHOTON Z'20A'
 #define GLUON PHOTON
@@ -92,7 +98,7 @@
 #ifdef DIRACFERMIONS
 	  if( type(i) .eq. FERMION ) then
 	    df = df/2
-	    bits = 1
+	    bits = 4
 	  endif
 #endif
 
@@ -120,7 +126,7 @@
 
 #ifdef CUTTOOLS
 * args are:
-* 1. limitvalue = upper limit of precision above which the mp routines activate
+* 1. limitvalue = precision limit above which the mp routines are activated
 * 2. scaloop = scalar integrals (1: LoopTools)
 	rootsvalue = sqrtSfrom
 	call ctsinit(1D-2, 1)
@@ -135,6 +141,11 @@
 	call initsamurai("diag", 4, 3, 1)
 #endif
 
+#ifdef NINJA
+c	call NinjaFormCalcSetVerbosity(3)
+c	call NinjaFormCalcDebug(1)
+#endif
+
 	call ModelDefaults(argc, argv)
 	call LumiDefaults(argc, argv)
 
@@ -147,7 +158,14 @@
 ** messages, deallocates arrays etc.
 
 	subroutine ProcessExi
+#ifdef SAMURAI
+	use msamurai
+#endif
 	implicit none
+
+#ifdef SAMURAI
+	call exitsamurai
+#endif
 
 	call ltexi
 	end
@@ -324,7 +342,8 @@
 	external DifferentialCS
 
 	RealType result(NCOMP), error(NCOMP), show(nvars)
-	integer fail, f, v, nfix, ndim, fix(nvars)
+	integer fail, f, v, ndim
+	integer nshow, nfix, ishow(nvars), ifix(nvars)
 
 	call ModelConstIni(fail)
 	if( fail .ne. 0 ) goto 999
@@ -347,30 +366,26 @@
 	mudim = getmudim()
 	muscale = mudim
 	lambda = getlambda()
-	if( lambda .eq. -2 ) then
-	  epscoeff = -2
-	  Finite = 0
-	else if( lambda .eq. -1 ) then
-	  epscoeff = -1
-	  Finite = 0
-	else
-	  epscoeff = 0
-	  Finite = 1
-	endif
+	epsi = getepsi()
 
 	call KinIni(fail)
 	if( fail .ne. 0 ) goto 999
 
+	nshow = 0
 	nfix = 0
 	do v = MINVAR, MAXVAR
 	  if( Step(v) .ne. 0 ) then
-	    nfix = nfix + 1
-	    fix(nfix) = v
-	    Var(v) = Lower(v)
+	    nshow = nshow + 1
+	    ishow(nshow) = v
+	    if( Step(v) .ne. -999 ) then
+	      nfix = nfix + 1
+	      ifix(nfix) = v
+	      Var(v) = Lower(v)
+	    endif
 	  endif
 	enddo
 
-	ndim = nvars - nfix
+	ndim = nvars - nshow
 
 	call LumiIni(fail)
 	if( fail .ne. 0 ) goto 999
@@ -452,16 +467,16 @@
 
 1	call Cuba(ndim, DifferentialCS, result, error)
 
-	do f = 1, nfix
-	  show(f) = Show(fix(f))
+	do f = 1, nshow
+	  show(f) = Show(ishow(f))
 	enddo
 
 #ifdef MMA
-	call MmaData(show, nfix, result, error, NCOMP)
+	call MmaData(show, nshow, result, error, NCOMP)
 #else
 * Note: "real" data lines are tagged with "|" in the output.
 101	format("| ", 10(4G19.10, :, /"|+"))
-	print 101, (show(f), f = 1, nfix)
+	print 101, (show(f), f = 1, nshow)
 
 102	format("|+   ", NCOMP G24.15)
 	print 102, result
@@ -471,7 +486,7 @@
 #endif
 
 	do f = nfix, 1, -1
-	  v = fix(f)
+	  v = ifix(f)
 	  Var(v) = Var(v) + Step(v)
 	  if( (Var(v) - Upper(v))/Step(v) .lt. 1D-10 ) goto 1
 	  Var(v) = Lower(v)
@@ -567,16 +582,12 @@
 #ifdef BREMSSTRAHLUNG
 	result(2) = result(2) + SoftPhotonFactor()*result(1)
 #endif
-
-#ifdef WF_RENORMALIZATION
-	result(2) = result(2) + (WF_RENORMALIZATION)*result(1)
-#endif
 	end
 
 
 ************************************************************************
 ** Cuba is a chooser for the Cuba routines, with special cases
-** for ndim = 0 (integrand evaluation) and ndim = 1 (Patterson
+** for ndim = 0 (integrand evaluation) and ndim = 1 (non-Cuba
 ** integration).
 
 	subroutine Cuba(ndim, integrand, result, error)
@@ -640,41 +651,41 @@
 
 #if METHOD == VEGAS
 
-	  call vegas(ndim, NCOMP, integrand, USERDATA,
+	  call vegas(ndim, NCOMP, integrand, USERDATA, NVEC,
      &      Re(RELACCURACY), Re(ABSACCURACY),
      &      VERBOSE, SEED, MINEVAL, MAXEVAL,
      &      NSTART, NINCREASE, NBATCH,
-     &      GRIDNO, STATEFILE,
+     &      GRIDNO, STATEFILE, SPIN,
      &      neval, fail, result, error, prob)
 	  nregions = 1
 	  INFO "Vegas integration results:"
 
 #elif METHOD == SUAVE
 
-	  call suave(ndim, NCOMP, integrand, USERDATA,
+	  call suave(ndim, NCOMP, integrand, USERDATA, NVEC,
      &      Re(RELACCURACY), Re(ABSACCURACY),
      &      VERBOSE + FLAGS_LAST, SEED, MINEVAL, MAXEVAL,
-     &      NNEW, Re(FLATNESS), STATEFILE,
+     &      NNEW, NMIN, Re(FLATNESS), STATEFILE, SPIN,
      &      nregions, neval, fail, result, error, prob)
 	  INFO "Suave integration results:"
 
 #elif METHOD == DIVONNE
 
-	  call divonne(ndim, NCOMP, integrand, USERDATA,
+	  call divonne(ndim, NCOMP, integrand, USERDATA, NVEC,
      &      Re(RELACCURACY), Re(ABSACCURACY),
      &      VERBOSE, SEED, MINEVAL, MAXEVAL,
      &      KEY1, KEY2, KEY3, MAXPASS,
      &      Re(BORDER), Re(MAXCHISQ), Re(MINDEVIATION),
-     &      0, NDIM, 0, 0, 0, STATEFILE,
+     &      0, NDIM, 0, 0, 0, STATEFILE, SPIN,
      &      nregions, neval, fail, result, error, prob)
 	  INFO "Divonne integration results:"
 
 #else
 
-	  call cuhre(ndim, NCOMP, integrand, USERDATA,
+	  call cuhre(ndim, NCOMP, integrand, USERDATA, NVEC,
      &      Re(RELACCURACY), Re(ABSACCURACY),
-     &      VERBOSE + FLAGS_LAST, MINEVAL, MAXEVAL,
-     &      KEY, STATEFILE,
+     &      VERBOSE, MINEVAL, MAXEVAL,
+     &      KEY, STATEFILE, SPIN,
      &      nregions, neval, fail, result, error, prob)
 	  INFO "Cuhre integration results:"
 
@@ -695,4 +706,39 @@
 100	format(I2, G24.15, " +- ", G24.15, "    p = ", F6.3)
 	print 100, (c, result(c), error(c), prob(c), c = 1, NCOMP)
 	end
+
+
+************************************************************************
+** fcsamurai is the FormCalc wrapper for Samurai
+** it is placed here so that util.a can be built without requiring
+** the .mod files of Samurai
+
+#ifdef SAMURAI
+	subroutine fcsamurai(num, numeps, nleg, rank, kj, mj, res)
+	use msamurai
+	use options
+	implicit none
+	ComplexType num, numeps, res
+	external num, numeps
+	integer nleg, rank
+	RealType kj(nleg,4), mj(nleg)
+
+#include "decl.h"
+
+	ComplexType tot(-2:0), totr
+	integer isca_save
+	logical ok
+
+	call samurai(num, tot, totr, kj, mj, nleg, rank, 1, mudim, ok)
+	res = tot(-epsi)
+	if( epsi .eq. 0 ) then
+	  isca_save = isca
+	  isca = 5
+	  call samurai(numeps, tot, totr, kj, mj, nleg, rank,
+     &      1, mudim, ok)
+	  res = res - 2*tot(-1)
+	  isca = isca_save
+	endif
+	end
+#endif
 

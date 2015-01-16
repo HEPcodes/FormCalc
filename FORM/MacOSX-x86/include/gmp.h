@@ -2217,7 +2217,7 @@ enum
 
 /* Define CC and CFLAGS which were used to build this version of GMP */
 #define __GMP_CC "clang"
-#define __GMP_CFLAGS "-O3 -fomit-frame-pointer -mmacosx-version-min=10.6 -m32"
+#define __GMP_CFLAGS "-O3 -fomit-frame-pointer -fno-pic -mmacosx-version-min=10.6 -stdlib=libstdc++ -m32 -Wl,-read_only_relocs,suppress"
 
 /* Major version number is the value of __GNU_MP__ too, above and in mp.h. */
 #define __GNU_MP_VERSION            5

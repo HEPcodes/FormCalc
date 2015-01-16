@@ -1,7 +1,7 @@
 * CTFcut.F
 * the FormCalc wrapper for the CutTools six-point function
 * this file is part of FormCalc
-* last modified 6 Oct 12 th
+* last modified 4 Jul 14 th
 
 #include "types.h"
 
@@ -55,16 +55,51 @@
 	mj(5) = m5
 	mj(6) = m6
 
+#if CTDEBUG >= 2
+	print *, "  rank =", rank
+	print *, "  k1 =", kj(0,2)
+	print *, "      ", kj(1,2)
+	print *, "      ", kj(2,2)
+	print *, "      ", kj(3,2)
+	print *, "  k2 =", kj(0,3)
+	print *, "      ", kj(1,3)
+	print *, "      ", kj(2,3)
+	print *, "      ", kj(3,3)
+	print *, "  k3 =", kj(0,4)
+	print *, "      ", kj(1,4)
+	print *, "      ", kj(2,4)
+	print *, "      ", kj(3,4)
+	print *, "  k4 =", kj(0,5)
+	print *, "      ", kj(1,5)
+	print *, "      ", kj(2,5)
+	print *, "      ", kj(3,5)
+	print *, "  k5 =", kj(0,6)
+	print *, "      ", kj(1,6)
+	print *, "      ", kj(2,6)
+	print *, "      ", kj(3,6)
+	print *, "  m1 =", mj(1)
+	print *, "  m2 =", mj(2)
+	print *, "  m3 =", mj(3)
+	print *, "  m4 =", mj(4)
+	print *, "  m5 =", mj(5)
+	print *, "  m6 =", mj(6)
+	call flush(6)
+#endif
+
 	call ctsxcut(imode, rootsvalue, muscale, 6, num, CTmpnum,
      &    rank, kj, mj, res(0), res(1), res(2), stable)
-	CTFcut = res(epscoeff)
-	if( epscoeff .eq. 0 ) then
+	CTFcut = res(epsi)
+	if( epsi .eq. 0 ) then
 	  call setscaloop(4)
 	  call ctsxcut(imode, rootsvalue, muscale, 6, numeps, CTmpnum,
      &      rank, kj, mj, res(0), res(1), res(2), stable)
-	  CTFcut = CTFcut - 2*res(0)
+	  CTFcut = CTFcut - 2*res(1)
 	  call setscaloop(1)
 	endif
-c	PRINT *, "CTFcut=", CTFcut
+
+#if CTDEBUG
+	print *, "CTFcut =", CTFcut
+	call flush(6)
+#endif
 	end
 

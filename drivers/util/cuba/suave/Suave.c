@@ -1,8 +1,8 @@
 /*
 	Suave.c
-		Subregion-adaptive Vegas Monte-Carlo integration
+		Subregion-adaptive Vegas Monte Carlo integration
 		by Thomas Hahn
-		last modified 17 Sep 13 th
+		last modified 28 Nov 14 th
 */
 
 
@@ -15,64 +15,80 @@
 /*********************************************************************/
 
 Extern void EXPORT(Suave)(ccount ndim, ccount ncomp,
-  Integrand integrand, void *userdata,
+  Integrand integrand, void *userdata, cnumber nvec,
   creal epsrel, creal epsabs,
   cint flags, cint seed,
   cnumber mineval, cnumber maxeval,
-  cnumber nnew, creal flatness,
-  cchar *statefile,
+  cnumber nnew, cnumber nmin, creal flatness,
+  cchar *statefile, Spin **pspin,
   count *pnregions, number *pneval, int *pfail,
   real *integral, real *error, real *prob)
 {
   This t;
+
+  VerboseInit();
+
   t.ndim = ndim;
   t.ncomp = ncomp;
   t.integrand = integrand;
   t.userdata = userdata;
+  t.nvec = nvec;
   t.epsrel = epsrel;
   t.epsabs = epsabs;
-  t.flags = flags;
+  t.flags = MaxVerbose(flags);
   t.seed = seed;
   t.mineval = mineval;
   t.maxeval = maxeval;
   t.nnew = nnew;
+  t.nmin = IMax(nmin, 2);
   t.flatness = flatness;
   t.statefile = statefile;
+  FORK_ONLY(t.spin = Invalid(pspin) ? NULL : *pspin;)
 
   *pfail = Integrate(&t, integral, error, prob);
   *pnregions = t.nregions;
   *pneval = t.neval;
+
+  WaitCores(&t, pspin);
 }
 
 /*********************************************************************/
 
 Extern void EXPORT(suave)(ccount *pndim, ccount *pncomp,
-  Integrand integrand, void *userdata,
+  Integrand integrand, void *userdata, cnumber *pnvec,
   creal *pepsrel, creal *pepsabs,
   cint *pflags, cint *pseed,
   cnumber *pmineval, cnumber *pmaxeval,
-  cnumber *pnnew, creal *pflatness,
-  cchar *statefile,
+  cnumber *pnnew, cnumber *pnmin, creal *pflatness,
+  cchar *statefile, Spin **pspin,
   count *pnregions, number *pneval, int *pfail,
   real *integral, real *error, real *prob, cint statefilelen)
 {
   This t;
+
+  VerboseInit();
+
   t.ndim = *pndim;
   t.ncomp = *pncomp;
   t.integrand = integrand;
   t.userdata = userdata;
+  t.nvec = *pnvec;
   t.epsrel = *pepsrel;
   t.epsabs = *pepsabs;
-  t.flags = *pflags;
+  t.flags = MaxVerbose(*pflags);
   t.seed = *pseed;
   t.mineval = *pmineval;
   t.maxeval = *pmaxeval;
   t.nnew = *pnnew;
+  t.nmin = IMax(*pnmin, 2);
   t.flatness = *pflatness;
   CString(t.statefile, statefile, statefilelen);
+  FORK_ONLY(t.spin = Invalid(pspin) ? NULL : *pspin;)
 
   *pfail = Integrate(&t, integral, error, prob);
   *pnregions = t.nregions;
   *pneval = t.neval;
+
+  WaitCores(&t, pspin);
 }
 

@@ -3,7 +3,7 @@
 		integrate over the unit hypercube
 		this file is part of Cuhre
 		checkpointing by B. Chokoufe
-		last modified 17 Sep 13 th
+		last modified 23 May 14 th
 */
 
 
@@ -42,11 +42,13 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
   if( VERBOSE > 1 ) {
     sprintf(out, "Cuhre input parameters:\n"
       "  ndim " COUNT "\n  ncomp " COUNT "\n"
+      ML_NOT("  nvec " NUMBER "\n")
       "  epsrel " REAL "\n  epsabs " REAL "\n"
       "  flags %d\n  mineval " NUMBER "\n  maxeval " NUMBER "\n"
       "  key " COUNT "\n"
       "  statefile \"%s\"",
       t->ndim, t->ncomp,
+      ML_NOT(t->nvec,)
       t->epsrel, t->epsabs,
       t->flags, t->mineval, t->maxeval,
       t->key,
@@ -61,7 +63,7 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
 
   RuleAlloc(t);
   t->mineval = IMax(t->mineval, t->rule.n + 1);
-  FrameAlloc(t, ShmRm(t));
+  FrameAlloc(t, Master);
   ForkCores(t);
 
   if( (fail = setjmp(t->abort)) ) goto abort;
@@ -266,9 +268,7 @@ abort:
     cur = cur->next;
     free(pool);
   }
-
-  WaitCores(t);
-  FrameFree(t);
+  FrameFree(t, Master);
   RuleFree(t);
 
   StateRemove(t);

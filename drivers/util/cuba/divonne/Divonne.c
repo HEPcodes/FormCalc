@@ -4,7 +4,7 @@
 		originally by J.H. Friedman and M.H. Wright
 		(CERNLIB subroutine D151)
 		this version by Thomas Hahn
-		last modified 17 Sep 13 th
+		last modified 22 Jul 14 th
 */
 
 #define DIVONNE
@@ -16,7 +16,7 @@
 /*********************************************************************/
 
 Extern void EXPORT(Divonne)(ccount ndim, ccount ncomp,
-  Integrand integrand, void *userdata,
+  Integrand integrand, void *userdata, cnumber nvec,
   creal epsrel, creal epsabs,
   cint flags, cint seed,
   cnumber mineval, cnumber maxeval,
@@ -24,18 +24,22 @@ Extern void EXPORT(Divonne)(ccount ndim, ccount ncomp,
   creal border, creal maxchisq, creal mindeviation,
   cnumber ngiven, ccount ldxgiven, real *xgiven,
   cnumber nextra, PeakFinder peakfinder,
-  cchar *statefile,
+  cchar *statefile, Spin **pspin,
   int *pnregions, number *pneval, int *pfail,
   real *integral, real *error, real *prob)
 {
   This t;
+
+  VerboseInit();
+
   t.ndim = ndim;
   t.ncomp = ncomp;
   t.integrand = integrand;
   t.userdata = userdata;
+  t.nvec = nvec;
   t.epsrel = epsrel;
   t.epsabs = epsabs;
-  t.flags = flags;
+  t.flags = MaxVerbose(flags);
   t.seed = seed;
   t.mineval = mineval;
   t.maxeval = maxeval;
@@ -52,16 +56,19 @@ Extern void EXPORT(Divonne)(ccount ndim, ccount ncomp,
   t.nextra = nextra;
   t.peakfinder = peakfinder;
   t.statefile = statefile;
+  FORK_ONLY(t.spin = Invalid(pspin) ? NULL : *pspin;)
 
   *pfail = Integrate(&t, integral, error, prob);
   *pnregions = t.nregions;
   *pneval = t.neval;
+
+  WaitCores(&t, pspin);
 }
 
 /*********************************************************************/
 
 Extern void EXPORT(divonne)(ccount *pndim, ccount *pncomp,
-  Integrand integrand, void *userdata,
+  Integrand integrand, void *userdata, cnumber *pnvec,
   creal *pepsrel, creal *pepsabs,
   cint *pflags, cint *pseed,
   cnumber *pmineval, cnumber *pmaxeval,
@@ -69,18 +76,22 @@ Extern void EXPORT(divonne)(ccount *pndim, ccount *pncomp,
   creal *pborder, creal *pmaxchisq, creal *pmindeviation,
   cnumber *pngiven, ccount *pldxgiven, real *xgiven,
   cnumber *pnextra, PeakFinder peakfinder,
-  cchar *statefile,
+  cchar *statefile, Spin **pspin,
   int *pnregions, number *pneval, int *pfail,
   real *integral, real *error, real *prob, cint statefilelen)
 {
   This t;
+
+  VerboseInit();
+
   t.ndim = *pndim;
   t.ncomp = *pncomp;
   t.integrand = integrand;
   t.userdata = userdata;
+  t.nvec = *pnvec;
   t.epsrel = *pepsrel;
   t.epsabs = *pepsabs;
-  t.flags = *pflags;
+  t.flags = MaxVerbose(*pflags);
   t.seed = *pseed;
   t.mineval = *pmineval;
   t.maxeval = *pmaxeval;
@@ -97,9 +108,12 @@ Extern void EXPORT(divonne)(ccount *pndim, ccount *pncomp,
   t.nextra = *pnextra;
   t.peakfinder = peakfinder;
   CString(t.statefile, statefile, statefilelen);
+  FORK_ONLY(t.spin = Invalid(pspin) ? NULL : *pspin;)
 
   *pfail = Integrate(&t, integral, error, prob);
   *pnregions = t.nregions;
   *pneval = t.neval;
+
+  WaitCores(&t, pspin);
 }
 

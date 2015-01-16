@@ -3,7 +3,7 @@
 		rearranges Mma's InputForm output to yield
 		acceptable FORM input
 		this file is part of FormCalc
-		last modified 1 Jun 13 th
+		last modified 11 Mar 14 th
 */
 
 #include <stdio.h>
@@ -54,6 +54,9 @@ more:
         break;
       case '}':
         *d++ = ')';
+        break;
+      case '$':
+        *d++ = (s[-1] > '@' || (unsigned)(s[-1] - '0') < 10) ? 'S' : '$';
         break;
       case ' ':
         if( s[1] == '.' || s[-1] == '.' ) break;

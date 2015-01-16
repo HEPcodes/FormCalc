@@ -2,7 +2,7 @@
 	decl.h
 		Type declarations
 		this file is part of Divonne
-		last modified 26 Jul 13 th
+		last modified 9 Oct 14 th
 */
 
 
@@ -44,6 +44,8 @@ typedef struct {
 
 #define SetSize (sizeof(Set) + t->ndim*sizeof(real))
 
+#define NextSet(p) p = (Set *)((char *)p + setsize)
+
 typedef struct {
   Set *first, *last;
   real errcoeff[3];
@@ -71,12 +73,11 @@ typedef const Errors cErrors;
 typedef struct {
   real avg, err, spread, chisq;
   real fmin, fmax;
-  real xminmax[];
 } Result;
 
 typedef const Result cResult;
 
-#define ResultSize (sizeof(Result) + t->ndim*2*sizeof(real))
+#define MinMaxSize (t->ncomp*t->ndim*2*sizeof(real))
 
 typedef struct region {
   int depth, next;
@@ -85,29 +86,34 @@ typedef struct region {
   Bounds bounds[];
 } Region;
 
-#define RegionSize (sizeof(Region) + t->ndim*sizeof(Bounds) + t->ncomp*ResultSize)
+#define RegionSize (sizeof(Region) + t->ndim*sizeof(Bounds) + t->ncomp*sizeof(Result) + MinMaxSize)
 
 #define RegionResult(r) ((Result *)(r->bounds + t->ndim))
+
+#define RegionMinMax(r) ((real *)(RegionResult(r) + t->ncomp))
 
 #define RegionPtr(n) ((Region *)((char *)t->region + (n)*regionsize))
 
 
-typedef int (*Integrand)(ccount *, creal *, ccount *, real *, void *, cint *);
+typedef int (*Integrand)(ccount *, creal *, ccount *, real *,
+  void *, cnumber *, cint *, cint *);
 
-typedef void (*PeakFinder)(ccount *, cBounds *, number *, real *);
+typedef void (*PeakFinder)(ccount *, cBounds *, number *, real *, void *);
 
 typedef struct _this {
   count ndim, ncomp;
 #ifndef MLVERSION
   Integrand integrand;
   void *userdata;
-  PeakFinder peakfinder;
+  number nvec;
 #ifdef HAVE_FORK
-  int ncores, running, *child;
+  SHM_ONLY(int shmid;)
+  Spin *spin;
   real *frame;
   number nframe;
-  SHM_ONLY(int shmid;)
+  int running;
 #endif
+  PeakFinder peakfinder;
 #endif
   real epsrel, epsabs;
   int flags, seed;

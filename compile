@@ -1,6 +1,6 @@
 #! /bin/sh
 # compile script for the C programs used by FormCalc
-# last modified 6 Nov 13 th
+# last modified 12 Aug 14 th
 
 # If this compile script doesn't work on your system, check these things:
 #
@@ -13,7 +13,7 @@
 #    Such programs have the extension .tm.  If you have Mathematica,
 #    you should also have mcc.  If mcc is not on the path, specify it
 #    in the environment variable MCC, e.g.
-#    setenv MCC /opt/Wolfram/Mathematica/5.2/Executables/mcc
+#    setenv MCC /opt/Wolfram/Mathematica/10.0/Executables/mcc
 
 CC=${CC:-gcc}
 
@@ -65,9 +65,8 @@ I can't seem to run the Mathematica Kernel.
 Maybe you have a buggy Mathematica installation or you're
 out of licenses.
 
-Please make sure the Mathematica Kernel can be run without
-additional flags (e.g. for the location of the Mathematica
-password file) and re-run $0.
+Please make sure you can start the Mathematica Kernel without
+additional flags (such as -pwfile) and re-run $0.
 
 _EOF_
 	exit 1 ;;
@@ -86,14 +85,14 @@ test -d "$DEST" || mkdir "$DEST" || {
 
 echo "Compiling for system type $DEST"
 
-case "$CFLAGS" in
-*-static*) MCFLAGS="$MCFLAGS -st" ;;
-esac
-
 t="$SRC/drivers/tools"
+
 mcc="REALCC=\"$CC\" CC=\"$t/fcc\" \
 REALCXX=\"$CXX\" CXX=\"$t/f++\" \
-PATH=\""'$$PATH'":$t\" $MCC $MCFLAGS $CFLAGS"
+PATH=\""'$$PATH'":$t\" $MCC -st $MCFLAGS $CFLAGS"
+
+# Mma 5.1's mcc needs -lpthread for static linking
+mclibs="-lpthread"
 
 cc="$CC $CFLAGS"
 
@@ -107,7 +106,7 @@ $DEST/tform: $SRC/FORM/$DEST/bin/tform$exe
 	cp -p $SRC/FORM/$DEST/bin/tform$exe $DEST/
 
 $DEST/ReadForm$exe: $SRC/FormCalc/ReadForm.tm
-	$mcc -o $DEST/ReadForm$exe $SRC/FormCalc/ReadForm.tm
+	$mcc -o $DEST/ReadForm$exe $SRC/FormCalc/ReadForm.tm $mclibs
 	-strip $DEST/ReadForm$exe
 
 $DEST/ToForm$exe: $SRC/FormCalc/ToForm.c
@@ -123,7 +122,7 @@ $DEST/ToC$exe: $SRC/FormCalc/ToC.c
 	-strip $DEST/ToC$exe
 
 $DEST/ReadData$exe: $SRC/tools/ReadData.tm
-	$mcc -o $DEST/ReadData$exe $SRC/tools/ReadData.tm
+	$mcc -o $DEST/ReadData$exe $SRC/tools/ReadData.tm $mclibs
 	-strip $DEST/ReadData$exe
 
 $DEST/reorder$exe: $SRC/tools/reorder.c
@@ -136,7 +135,7 @@ _EOF_
 
 cd "$DEST"
 
-trap "rm -f makefile simd.h" 0 1 2 3 15
+trap "rm -f makefile" 0 1 2 3 15
 
-"../$SRC/drivers/configure" --make="util.a clean"
+"../$SRC/drivers/configure" --make="util.a build clean"
 

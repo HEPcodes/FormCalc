@@ -2,7 +2,7 @@
 	model_mssm.h
 	declarations for model_mssm.F
 	this file is part of FormCalc
-	last modified 9 Mar 13 th
+	last modified 30 Jul 14 th
 #endif
 
 
@@ -129,6 +129,22 @@ struct fvpara_ {
 #define UASfC(i,j,t) Conjugate(UASf(i,j,t))
 #define MASf(i,t) fvpara_.MASf[t-2][i-1]
 #define MASf2(i,t) fvpara_.MASf[t-2][i-1]
+
+#define deltaLLL12 deltaSf_LL(1,2,2)
+#define deltaLLL23 deltaSf_LL(2,3,2)
+#define deltaLLL13 deltaSf_LL(1,3,2)
+
+#define deltaELR12 deltaSf_LR(1,2,2)
+#define deltaELR23 deltaSf_LR(2,3,2)
+#define deltaELR13 deltaSf_LR(1,3,2)
+
+#define deltaERL12 deltaSf_RL(1,2,2)
+#define deltaERL23 deltaSf_RL(2,3,2)
+#define deltaERL13 deltaSf_RL(1,3,2)
+
+#define deltaERR12 deltaSf_RR(1,2,2)
+#define deltaERR23 deltaSf_RR(2,3,2)
+#define deltaERR13 deltaSf_RR(1,3,2)
 
 #define deltaULR12 deltaSf_LR(1,2,3)
 #define deltaULR23 deltaSf_LR(2,3,3)

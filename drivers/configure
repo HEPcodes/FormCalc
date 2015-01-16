@@ -2,7 +2,11 @@
 # configure script for FormCalc
 # note: has nothing to do with GNU autoconf
 # this file is part of FormCalc
-# last modified 6 Nov 13 th
+# last modified 11 Nov 14 th
+
+
+exec 2> ${LOGFILE:-/dev/null} 3>&1
+eval ${LOGFILE:+set -x}
 
 
 LC_ALL=C
@@ -26,14 +30,13 @@ else
 fi
 
 
-findprog()
-{
-  echo $echo_n "looking for $1... $echo_c" 1>&2
+findprog() {
+  echo $echo_n "looking for $1... $echo_c" 1>&3
   shift
   test -n "$CONF_TARGET" && for prog in "$@" ; do
     full="`which \"$CONF_TARGET-$prog\" 2> /dev/null`"
     test -x "$full" && {
-      echo $full 1>&2
+      echo $full 1>&3
       echo $CONF_TARGET-$prog
       return 0
     }
@@ -41,22 +44,32 @@ findprog()
   for prog in "$@" ; do
     full="`which \"$prog\" 2> /dev/null`"
     test -x "$full" && {
-      echo $full 1>&2
+      echo $full 1>&3
       echo $prog
       return 0
     }
   done
-  echo "no $@ in your path" 1>&2
+  echo "no $@ in your path" 1>&3
   return 1
 }
 
 
-findlib()
-{
-  echo $echo_n "looking for $1... $echo_c" 1>&2
+findlib() {
+  echo $echo_n "looking for $1... $echo_c" 1>&3
   file=$2
-  shift 2
-  for base in "$@" ; do
+  tag=$3
+  shift 3
+  for base in "$@" \
+    ../$tag* \
+    ../../$tag* \
+    ../../../$tag* \
+    ../../../../$tag* \
+    $HOME/$tag* \
+    /usr/local/$tag* \
+    /usr/$tag* \
+    /usr/local \
+    /usr
+  do
     for path in \
       "${CONF_LIBDIRSUFFIX:+$base/lib$CONF_LIBDIRSUFFIX}" \
       "${CONF_LIBDIRSUFFIX:+$base/$CONF_DEFPREFIX/lib$CONF_LIBDIRSUFFIX}" \
@@ -66,25 +79,25 @@ findlib()
       "$base/build" \
       "$base/includects" \
       "$base/libs" \
+      "$base/.libs" \
       "$base/src" \
+      "$base/src/.libs" \
       "$base"
     do
       test -f "$path/$file" && {
-        echo "$path" 1>&2
+        echo "$path" 1>&3
         echo "$path"
         return 0
       }
     done
   done
-  echo "not found" 1>&2
+  echo "not found" 1>&3
   return 1
 }
 
 
-getldflags()
-{
-  # Mma 5.1's mcc needs -lpthread for static linking
-  ldflags="$LDFLAGS -lpthread"
+getldflags() {
+  ldflags="$LDFLAGS"
 
   while read line ; do
     set -- `echo $line | tr ':,()' '    '`
@@ -95,7 +108,8 @@ getldflags()
     while test $# -gt 1 ; do
       shift
       case $1 in
-      *.o | -lc | -lgcc*)
+#      *.o | -lc | -lgcc*)
+      *.o | -lc)
         ;;
       -l* | -L* | *.a)
         ldflags="$ldflags $1" ;;
@@ -122,19 +136,20 @@ CONF_OSVER=`uname -r`
 CONF_MACH=`uname -m`
 CONF_DEFPREFIX="$CONF_MACH-$CONF_OS"
 CONF_PREFIX="$CONF_DEFPREFIX"
-test "$CONF_PREFIX" = x86_64-Linux && CONF_LIBDIRSUFFIX=64
 CONF_TARGET=
 CONF_STATIC=
 CONF_STATIC_EXT=
 CONF_QUAD=
 CONF_DEBUG=
 CONF_BITS=
+  # Mma 5.1's mcc needs -lpthread for static linking
+CONF_MCLIBS="-lpthread"
 CONF_ARCH="-march=native"
 CONF_AS=
 CONF_EXE=
 case "$CONF_OS" in
-Darwin)	CONF_AS="-Wa,-q" ;;
 CYG*)	CONF_EXE=.exe ;;
+Darwin)	CONF_AS="-Wa,-q" ;;
 esac
 
 CONF_MAKEARGS=0
@@ -170,7 +185,7 @@ for arg in "$@" ; do
   --make*)
 	CONF_MAKEARGS="`expr "$arg" : "--make=\(.*\)"`" ;;
   --help)
-	cat << _EOF_ 1>&2
+	cat << _EOF_ 1>&3
 $0 configures FormCalc-generated Fortran code, i.e. determines
 or guesses the compiler and flags and writes out a makefile.
 
@@ -197,13 +212,15 @@ $0 understands the following options:
 _EOF_
 	exit 1 ;;
   -*)
-	echo "Warning: $arg is not a valid option." 1>&2 ;;
+	echo "Warning: $arg is not a valid option." 1>&3 ;;
   *=*)
 	eval `echo $arg\" | sed 's/=/="/'` ;;
   *)
-	echo "Warning: $arg is not a valid argument." 1>&2 ;;
+	echo "Warning: $arg is not a valid argument." 1>&3 ;;
   esac
 done
+
+test "$CONF_OS" = Linux -a "$CONF_BITS" \!= 32 && CONF_LIBDIRSUFFIX=64
 
 CONF_M=${CONF_BITS:+-m$CONF_BITS}
 
@@ -214,7 +231,7 @@ CONF_MAKE=`findprog make $MAKE gmake Make make` || exit 1
 
 CONF_CC=`findprog gcc $CC clang gcc` || exit 1
 
-CONF_CXX=`findprog g++ $CXX g++` || exit 1
+CONF_CXX=`findprog g++ $CXX clang++ g++` || exit 1
 
 CONF_FC=`findprog fortran $FC ${CONF_QUAD:+ifort gfortran xlf} ifort pgf90 xlf gfortran g95 f90` || exit 1
 
@@ -230,7 +247,7 @@ CONF_DEF="-D"
 
 case "`$CONF_FC --version -c 2>&1`" in
 *G95*)
-  CONF_FFLAGS="$FFLAGS ${CONF_DEBUG:--O3 -g} -ffixed-line-length-132 -freal-loops $CONF_M $CONF_STATIC ${CONF_DEBUG:+-Wall}" ;;
+  CONF_FFLAGS="$FFLAGS -O0 -g -ffixed-line-length-132 -freal-loops $CONF_M $CONF_STATIC ${CONF_DEBUG:+-Wall}" ;;
 *GNU*)
   CONF_FFLAGS="$FFLAGS ${CONF_DEBUG:--O3 -g} -ffixed-line-length-none $CONF_M $CONF_STATIC ${CONF_DEBUG:+-Wall}"
   case "$CONF_FC" in
@@ -243,7 +260,7 @@ case "`$CONF_FC --version -c 2>&1`" in
   *pgf*)
 	CONF_FFLAGS="${CONF_DEBUG:--O3 -g} ${CONF_ARCH:+-Mvect=simd} ${CONF_DEBUG:+-Ktrap=fp} -Mextend -Minform=inform -g77libs ${CONF_STATIC:+-Bstatic} $CONF_M" ;;
   *ifort*)
-	CONF_FFLAGS="${CONF_DEBUG:--O3 -g} $CONF_ARCH -extend_source -warn nouncalled -warn truncated_source -assume bscc $CONF_STATIC ${CONF_STATIC_EXT:+-static-intel} ${CONF_QUAD:+-r16 -DDBLE=QEXT -DDIMAG=QIMAG -DDCONJG=QCONJG -DDCMPLX=QCMPLX} $CONF_M" ;;
+	CONF_FFLAGS="${CONF_DEBUG:--O3 -debug} $CONF_ARCH -extend_source -warn nouncalled -warn truncated_source -assume bscc $CONF_STATIC ${CONF_STATIC_EXT:+-static-intel} ${CONF_QUAD:+-r16 -DDBLE=QEXT -DDIMAG=QIMAG -DDCONJG=QCONJG -DDCMPLX=QCMPLX} $CONF_M" ;;
   *alpha)
 	CONF_FFLAGS="${CONF_DEBUG:--O3 -g3} ${CONF_DEBUG:+-fpe0} -extend_source -warn truncated_source ${CONF_STATIC:+-non_shared}" ;;
   *sun* | *sparc*)
@@ -261,7 +278,7 @@ esac
 
 ## find the Fortran libraries
 
-echo $echo_n "extracting the Fortran libraries... $echo_c" 1>&2
+echo $echo_n "extracting the Fortran libraries... $echo_c" 1>&3
 
 rm -fr $test*
 
@@ -270,15 +287,17 @@ cat > $test.f << _EOF_
 	print *, "Hi"
 	end
 _EOF_
+eval ${LOGFILE:+cat $test.f 1>&2}
 
 CONF_LDFLAGS=`$CONF_FC $CONF_FFLAGS -v -o $test $test.f 2>&1 | getldflags`
 
+CONF_INCPATH="$INCPATH"
 CONF_STDLIBS="$STDLIBS"
 case "$CONF_OS$CONF_OSVER" in
-Darwin10*) CONF_STDLIBS="$CONF_STDLIBS -lSystemStubs" ;;
+Darwin10*) CONF_STDLIBS="${CONF_STDLIBS:+$CONF_STDLIBS }-lSystemStubs" ;;
 esac
 
-echo $CONF_LDFLAGS 1>&2
+echo $CONF_LDFLAGS 1>&3
 
 
 test -z "$CONF_BITS" && case "$CONF_MACH" in
@@ -297,7 +316,7 @@ CONF_CXXFLAGS="$CXXFLAGS $CONF_M $CONF_STATIC ${CONF_STATIC_EXT:+-static-libstdc
 
 ## does Fortran need externals for U77 routines?
 
-echo $echo_n "does $CONF_FC need externals for U77 routines... $echo_c" 1>&2
+echo $echo_n "does $CONF_FC need externals for U77 routines... $echo_c" 1>&3
 
 rm -fr $test*
 
@@ -307,48 +326,46 @@ cat > $test.f << _EOF_
 	print *, iargc(), len_trim("Hi")
 	end
 _EOF_
+eval ${LOGFILE:+cat $test.f 1>&2}
 
-if $CONF_FC $CONF_FFLAGS -c $test.f > /dev/null 2>&1 ; then
-  echo "no" 1>&2
+if $CONF_FC $CONF_FFLAGS -c $test.f 1>&2 ; then
+  echo "no" 1>&3
   CONF_U77EXT=0
 else
-  echo "yes" 1>&2
+  echo "yes" 1>&3
   CONF_U77EXT=1
 fi
 
 
 ## does Fortran append underscores to symbols?
 
-echo $echo_n "does $CONF_FC append underscores... $echo_c" 1>&2
+echo $echo_n "does $CONF_FC append underscores... $echo_c" 1>&3
 
 rm -fr $test*
 
+echo "void uscore$$_() {}" > $test-c.c
+eval ${LOGFILE:+cat $test-c.c 1>&2}
+
 cat > $test.f << _EOF_
-	subroutine uscore
+	program test_uscore
+	call uscore$$
 	end
 _EOF_
+eval ${LOGFILE:+cat $test.f 1>&2}
 
-cat > $test-c.c << _EOF_
-int main() {
-  void uscore_();
-  uscore_();
-  return 0;
-}
-_EOF_
+$CONF_CC $CONF_CFLAGS -c $test-c.c 1>&2
 
-$CONF_FC $CONF_FFLAGS -c $test.f > /dev/null 2>&1
-
-if $CONF_CC $CONF_CFLAGS -o $test-c $test-c.c $test.o $CONF_LDFLAGS > /dev/null 2>&1 ; then
-  echo "yes" 1>&2
+if $CONF_FC $CONF_FFLAGS -o $test $test.f $test-c.o 1>&2 ; then
+  echo "yes" 1>&3
 else
-  echo "no" 1>&2
+  echo "no" 1>&3
   CONF_CFLAGS="$CONF_CFLAGS -DNOUNDERSCORE"
 fi
 
 
 ## find max SIMD vector length supported by hardware
 
-echo $echo_n "extracting SIMD properties of $CONF_FC... $echo_c" 1>&2
+echo $echo_n "extracting SIMD capabilities of $CONF_FC... $echo_c" 1>&3
 
 cat simd.h - > $test.F << _EOF_ 2> /dev/null
 #ifdef GENERIC
@@ -373,10 +390,11 @@ cat simd.h - > $test.F << _EOF_ 2> /dev/null
 #endif
 	end
 _EOF_
+eval ${LOGFILE:+cat $test.F 1>&2}
 
-$CONF_FC $CONF_FFLAGS ${CONF_ARCH:-${CONF_DEF}GENERIC} -o $test $test.F > /dev/null 2>&1
+$CONF_FC $CONF_FFLAGS ${CONF_ARCH:-${CONF_DEF}GENERIC} -o $test $test.F 1>&2
 set -- `./$test 2>&1`
-echo $1
+echo $1 1>&3
 case $2 in
 0|1|2)	cat > simd.h << _EOF_
 #if 0
@@ -393,33 +411,50 @@ esac
 
 # check for the necessary libraries
 
-CONF_CT="`findlib CutTools libcts.a \
-  $CT ../Cuttools* ../../Cuttools* ../../../Cuttools* $HOME/Cuttools* \
-  /usr/local/Cuttools* /usr/Cuttools* /usr/local /usr`" && \
-  CONF_STDLIBS="$CONF_STDLIBS -L\$(CT) -lcts"
+CONF_LIBS=
 
-CONF_SAMURAI="`findlib Samurai libsamurai.a \
-  $SAMURAI ../samurai* ../../samurai* ../../../samurai* $HOME/samurai* \
-  /usr/local/samurai* /usr/samurai* /usr/local /usr`" && \
-  CONF_STDLIBS="$CONF_STDLIBS -L\$(SAMURAI) -lsamurai -lavh_olo"
+LTLIB=libooptools${CONF_QUAD:+-quad}.a
 
-CONF_LT="`findlib LoopTools libooptools${CONF_QUAD:+-quad}.a \
-  $LT ../LoopTools* ../../LoopTools* ../../../LoopTools* $HOME/LoopTools* \
-  /usr/local/LoopTools* /usr/LoopTools* /usr/local /usr`" && \
-  CONF_STDLIBS="$CONF_STDLIBS -L\$(LT) -looptools${CONF_QUAD:+-quad}"
+CONF_LT="`findlib LoopTools $LTLIB LoopTools $LT`" && {
+  CONF_INCPATH="${CONF_INCPATH:+$CONF_INCPATH:}\$(LT)/../include:\$(LT)"
+  CONF_LIBS="\$(LT)/$LTLIB"
+}
 
-libpath="`findlib FeynHiggs libFH.a \
-  $FH ../FeynHiggs* ../../FeynHiggs* ../../../FeynHiggs* $HOME/FeynHiggs* \
-  /usr/local/FeynHiggs* /usr/FeynHiggs* /usr/local /usr`" && \
-  CONF_STDLIBS="$CONF_STDLIBS -L$libpath -lFH"
+CONF_NINJA="`findlib Ninja libninja.a ninja $NINJA`" && {
+  echo $echo_n "determining C++ library needed by Ninja... $echo_c" 1>&3
+  cat > $test.f << _EOF_
+	program test
+	call ninjaformcalc
+	end
+_EOF_
+  eval ${LOGFILE:+cat $test.f 1>&2}
+  LIBCPP=-lstdc++
+  $CONF_FC $CONF_FFLAGS -o $test $test.f $CONF_NINJA/libninja.a $CONF_LT/$LTLIB \
+    $LIBCPP $CONF_STDLIBS 1>&2 || LIBCPP=-lc++
+  echo "$LIBCPP" 1>&3
+  CONF_LIBS="\$(NINJA)/libninja.a $LIBCPP${CONF_LIBS:+ $CONF_LIBS}"
+}
 
-libpath="`findlib LHAPDF libLHAPDF.a \
-  $LHAPDF ../lhapdf* ../../lhapdf* ../../../lhapdf* $HOME/lhapdf* \
-  /usr/local/lhapdf* /usr/lhapdf* /usr/local /usr`" && \
-  CONF_STDLIBS="$CONF_STDLIBS -L$libpath -Wl,-rpath,$libpath -lLHAPDF"
+CONF_SAMURAI="`findlib Samurai libsamurai.a samurai $SAMURAI`" && {
+  CONF_INCPATH="${CONF_INCPATH:+$CONF_INCPATH:}\$(SAMURAI)/../samurai:\$(SAMURAI)"
+  CONF_LIBS="\$(SAMURAI)/libsamurai.a \$(SAMURAI)/libqcdloop.a \$(SAMURAI)/libavh_olo.a${CONF_LIBS:+ $CONF_LIBS}"
+}
+
+CONF_CT="`findlib CutTools libcts.a Cuttools $CT`" && {
+  CONF_INCPATH="${CONF_INCPATH:+$CONF_INCPATH:}\$(CT)"
+  CONF_LIBS="\$(CT)/libcts.a${CONF_LIBS:+ $CONF_LIBS}"
+}
+
+CONF_FH="`findlib FeynHiggs libFH.a FeynHiggs $FH`" && {
+  CONF_INCPATH="${CONF_INCPATH:+$CONF_INCPATH:}\$(FH)/../include:\$(FH)"
+  CONF_LIBS="\$(FH)/libFH.a${CONF_LIBS:+ $CONF_LIBS}"
+}
+
+CONF_LHAPDF="`findlib LHAPDF libLHAPDF.a lhapdf $LHAPDF`" &&
+  CONF_LIBS="\$(LHAPDF)/libLHAPDF.a${CONF_LIBS:+ $CONF_LIBS}"
 
 
-echo "creating makefile" 1>&2
+echo "creating makefile" 1>&3
 
 cat - `dirname $0`/makefile.in > makefile << _EOF_
 # --- variables defined by configure ---
@@ -432,9 +467,13 @@ EXE = $CONF_EXE
 DEF = $CONF_DEF
 
 LT = $CONF_LT
-CT = $CONF_CT
+NINJA = $CONF_NINJA
 SAMURAI = $CONF_SAMURAI
-STDLIBS = $CONF_STDLIBS
+CT = $CONF_CT
+FH = $CONF_FH
+LHAPDF = $CONF_LHAPDF
+INCPATH = $CONF_INCPATH
+STDLIBS = $CONF_LIBS $CONF_STDLIBS
 LDFLAGS = $CONF_LDFLAGS
 
 FC = $CONF_FC
@@ -447,6 +486,7 @@ CXX = $CONF_CXX
 CXXFLAGS = $CONF_CXXFLAGS
 
 MCFLAGS = ${CONF_STATIC:+-st} ${CONF_STATIC_EXT:+-st} ${CONF_BITS:+-b$CONF_BITS}
+MCLIBS = $CONF_MCLIBS
 
 # --- end defs by configure ---
 
@@ -454,11 +494,13 @@ MCFLAGS = ${CONF_STATIC:+-st} ${CONF_STATIC_EXT:+-st} ${CONF_BITS:+-b$CONF_BITS}
 _EOF_
 
 if test "$CONF_MAKEARGS" = 0 ; then
-  echo "" 1>&2
-  echo "now you must run $CONF_MAKE" 1>&2
-  echo "" 1>&2
+  cat << _EOF_ 1>&3
+
+now you must run $CONF_MAKE
+
+_EOF_
 else
-  $CONF_MAKE $CONF_MAKEARGS
+  $CONF_MAKE $CONF_MAKEARGS 1>&3 2>&3
 fi
 
 exit 0

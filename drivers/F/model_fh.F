@@ -1,7 +1,7 @@
 * model_fh.F
 * parameter initialization via FeynHiggs
 * this file is part of FormCalc
-* last modified 2 Oct 13 th
+* last modified 30 Jul 14 th
 
 
 * NO_EXCLUSION_LIMITS
@@ -124,7 +124,7 @@
      &    MHtree, SA)
 	if( fail .ne. 0 ) return
 
-	call FHGetNMFV(fail, MSS2, Kf)
+	call FHGetFV(fail, MSS2, Kf)
 	if( fail .ne. 0 ) return
 
 #ifndef NO_EXCLUSION_LIMITS
@@ -219,6 +219,10 @@
 	MHH2 = MHH**2
 	MA02 = MA0**2
 	MHp2 = MHp**2
+
+	do i = 1, 6*4
+	  MSf2_flat(i) = MSf_flat(i)**2
+	enddo
 
 	do i = 1, 6*4
 	  MASf2_flat(i) = MASf_flat(i)**2

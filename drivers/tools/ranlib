@@ -1,0 +1,22 @@
+#! /bin/sh
+# tools/ar and tools/ranlib trick GNU make into building
+# archive files correctly in parallel builds (-j)
+# last modified 15 Jun 14 th
+
+test -d build || {
+  touch libs
+  exit 0
+}
+
+cd build
+
+test $# -eq 0 && set -- `find . -name \*.a`
+
+for f in "$@" ; do
+  ar cru ../$f $f/*.o
+  rm -fr $f
+done
+
+cd ..
+rmdir build > /dev/null 2>&1 && touch libs
+

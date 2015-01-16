@@ -1,7 +1,7 @@
 * lumi_hadron.F
 * parton luminosity for a hadron collider
 * this file is part of FormCalc
-* last modified 9 Sep 13 th
+* last modified 25 Aug 13 th
 
 * This code links to the LHAPDF library.
 * The following preprocessor variables are used:
@@ -37,7 +37,7 @@
 	if( Lower(SQRTS) .eq. 2000 ) then
 	  partonsign = -1
 	else if( Lower(SQRTS) .ge. 7000 .and.
-     &           Lower(SQRTS) .lt. 14000 ) then
+     &           Lower(SQRTS) .le. 14000 ) then
 	  partonsign = 1
 	else
 	  stop "Unknown collider"

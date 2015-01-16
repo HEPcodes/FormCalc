@@ -1,7 +1,7 @@
 * model_fh.h
 * declarations for model_fh.F
 * this file is part of FormCalc
-* last modified 2 Oct 13 th
+* last modified 31 Jul 14 th
 
 
 #include "FHRecord.h"
@@ -46,14 +46,12 @@
 	equivalence (Mf(4,3), MB), (Mf2(4,3), MB2)
 
 
-	ComplexType UCha(2,2), VCha(2,2), ZNeu(4,4)
-	ComplexType XHiggs(3,3,2)
-	ComplexType deltaSf(6,6,4), USf(2,2,5,3), UASf(6,6,5)
+	ComplexType UCha(2,2), VCha(2,2), ZNeu(4,4), USf(2,2,5,3)
 	ComplexType MSS2(3,3,5), Afd(2:4,3), Kf(3,3,2:4)
+	ComplexType XHiggs(3,3,2)
 	ComplexType MUE, Mino1, Mino2, Mino3, SqrtEGl
 	RealType MCha(2), MCha2(2), MNeu(4), MNeu2(4)
 	RealType MSS(5,3), MSf(2,5,3), MSf2(2,5,3)
-	RealType MASf(6,5), MASf2(6,5)
 	RealType MHiggs(4), MHiggs2(4), MHtree(4), MHtree2(4)
 	RealType MGl, MGl2
 	RealType CB, SB, TB, CB2, SB2, TB2, C2B, S2B
@@ -61,14 +59,12 @@
 	RealType CAB, SAB, CBA, SBA, CBA2, SBA2, SAeff
 	integer fv
 
-	common /mssmpara/ UCha, VCha, ZNeu
-	common /mssmpara/ XHiggs
-	common /mssmpara/ deltaSf, USf, UASf
+	common /mssmpara/ UCha, VCha, ZNeu, USf
 	common /mssmpara/ MSS2, Afd, Kf
+	common /mssmpara/ XHiggs
 	common /mssmpara/ MUE, Mino1, Mino2, Mino3, SqrtEGl
 	common /mssmpara/ MCha, MCha2, MNeu, MNeu2
 	common /mssmpara/ MSS, MSf, MSf2
-	common /mssmpara/ MASf, MASf2
 	common /mssmpara/ MHiggs, MHiggs2, MHtree, MHtree2
 	common /mssmpara/ MGl, MGl2
 	common /mssmpara/ CB, SB, TB, CB2, SB2, TB2, C2B, S2B
@@ -78,12 +74,6 @@
 
 #ifndef USfC
 #define USfC(i,j,t,g) Conjugate(USf(i,j,t,g))
-#define UASfC(i,j,t) Conjugate(UASf(i,j,t))
-
-#define deltaSf_LL(i,j,t) deltaSf(i,j,t)
-#define deltaSf_LR(i,j,t) deltaSf(i,j+3,t)
-#define deltaSf_RL(i,j,t) deltaSf(j,i+3,t)
-#define deltaSf_RR(i,j,t) deltaSf(i+3,j+3,t)
 
 #define VChaC(i,j) Conjugate(VCha(i,j))
 #define UChaC(i,j) Conjugate(UCha(i,j))
@@ -92,7 +82,7 @@
 #define UHiggsC(i,j) Conjugate(UHiggs(i,j))
 #define ZHiggsC(i,j) Conjugate(ZHiggs(i,j))
 
-#define Af(t,g1,g2) Mf(t,g1)*Kf(g1,g2,t)
+#define Af(t,g1,g2) Kf(g1,g2,t)/Mf(t,g1)
 #define AfC(t,g1,g2) Conjugate(Af(t,g1,g2))
 #define KfC(g1,g2,t) Conjugate(Kf(g1,g2,t))
 #define Mino3C Conjugate(Mino3)
@@ -122,42 +112,6 @@
 	equivalence (Afd(3,3), At)
 	equivalence (Afd(4,3), Ab)
 
-	RealType MASf_flat(6*4), MASf2_flat(6*4)
-	equivalence (MASf, MASf_flat)
-	equivalence (MASf2, MASf2_flat)
 
-	ComplexType deltaULR12, deltaULR23, deltaULR13
-	equivalence (deltaSf_LR(1,2,3), deltaULR13)
-	equivalence (deltaSf_LR(2,3,3), deltaULR23)
-	equivalence (deltaSf_LR(1,3,3), deltaULR13)
-
-	ComplexType deltaURL12, deltaURL23, deltaURL13
-	equivalence (deltaSf_RL(1,2,3), deltaURL13)
-	equivalence (deltaSf_RL(2,3,3), deltaURL23)
-	equivalence (deltaSf_RL(1,3,3), deltaURL13)
-
-	ComplexType deltaURR12, deltaURR23, deltaURR13
-	equivalence (deltaSf_RR(1,2,3), deltaURR12)
-	equivalence (deltaSf_RR(2,3,3), deltaURR23)
-	equivalence (deltaSf_RR(1,3,3), deltaURR13)
-
-	ComplexType deltaQLL12, deltaQLL23, deltaQLL13
-	equivalence (deltaSf_LL(1,2,4), deltaQLL12)
-	equivalence (deltaSf_LL(2,3,4), deltaQLL23)
-	equivalence (deltaSf_LL(1,3,4), deltaQLL13)
-
-	ComplexType deltaDLR12, deltaDLR23, deltaDLR13
-	equivalence (deltaSf_LR(1,2,4), deltaDLR12)
-	equivalence (deltaSf_LR(2,3,4), deltaDLR23)
-	equivalence (deltaSf_LR(1,3,4), deltaDLR13)
-
-	ComplexType deltaDRL12, deltaDRL23, deltaDRL13
-	equivalence (deltaSf_RL(1,2,4), deltaDRL12)
-	equivalence (deltaSf_RL(2,3,4), deltaDRL23)
-	equivalence (deltaSf_RL(1,3,4), deltaDRL13)
-
-	ComplexType deltaDRR12, deltaDRR23, deltaDRR13
-	equivalence (deltaSf_RR(1,2,4), deltaDRR12)
-	equivalence (deltaSf_RR(2,3,4), deltaDRR23)
-	equivalence (deltaSf_RR(1,3,4), deltaDRR13)
+#include "model_fv.h"
 

@@ -2,7 +2,7 @@
 	decl.h
 	these declarations are included "everywhere"
 	this file is part of FormCalc
-	last modified 23 Apr 13 th
+	last modified 19 Nov 13 th
 #endif
 
 
@@ -29,9 +29,13 @@ typedef const integer8 cinteger8;
 #endif
 
 #include "user.h"
+#include "extra.h"
 #include "const.h"
 #include "util.h"
+
+#ifndef DRIVER
 #include "renconst.h"
+#endif
 
 #else
 

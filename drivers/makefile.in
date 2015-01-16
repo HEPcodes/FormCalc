@@ -1,41 +1,48 @@
 # makefile.in
 # makefile template used by configure
 # this file is part of FormCalc
-# last modified 6 Nov 13 th
+# last modified 15 Jul 14 th
 
 # Note: make permanent changes only in makefile.in,
 # changes in makefile will be overwritten by configure.
 
 
-.PHONY: all force clean distclean
+.PHONY: all build clean distclean
 
 MAKECMDGOALS ?= run
 
 MAKECMDGOALS := $(MAKECMDGOALS:%=%$(EXE))
 
-all: $(MAKECMDGOALS)
+LEFTOVERS := $(wildcard [b]uild)
 
+all: $(LEFTOVERS) $(MAKECMDGOALS)
 
-PREFIX :=
-
-
-DIR = $(SRC)/$(FOLDER)
-LIB = $(FOLDER).a
+AR = $(SRC)/tools/ar
+RANLIB = $(SRC)/tools/ranlib
 
 LIBS :=
+VPATH := .:$(SRC):$(INCPATH)
 
-VPATH := .:$(SRC):$(LT)/../include:$(LT):$(CT)/../include:$(CT):$(SAMURAI)
+LIB := renconst.a
+LIBS += $(LIB)
+-include $(SRC)/renconst/makefile
+VPATH := $(VPATH):$(DIR)
 
-FOLDER := squaredme
--include $(DIR)/makefile
-
-FOLDER := renconst
--include $(DIR)/makefile
+LIB := squaredme.a
+LIBS += $(LIB)
+-include $(SRC)/squaredme/makefile $(SRC)/squaredme/*/makefile
 
 CLEANLIBS := $(LIBS)
 
-FOLDER := util
--include $(DIR)/makefile
+LIB := util.a
+LIBS += $(LIB)
+-include $(SRC)/util/makefile
+
+libs: $(LIBS)
+	$(RANLIB)
+
+build:
+	$(RANLIB)
 
 
 INCLUDE := $(patsubst %,-I%,$(subst :, ,$(VPATH)))
@@ -59,10 +66,11 @@ export CFLAGS
 DEPS := $(wildcard *.d)
 
 clean:
-	$(RM) $(DEPS) $(DEPS:%.d=%.o) $(DEPS:%.d=%$(EXE)) $(CLEANLIBS)
+	$(RM) -r build
+	$(RM) $(DEPS) $(DEPS:%.d=%.o) $(DEPS:%.d=%$(EXE)) $(CLEANLIBS) libs
 
-distclean:
-	$(RM) $(DEPS) $(DEPS:%.d=%.o) $(DEPS:%.d=%$(EXE)) $(LIBS) makefile simd.h
+distclean: clean
+	$(RM) $(LIBS) makefile simd.h
 
 
 define makedeps
@@ -90,9 +98,11 @@ C%.d: $(SRC)/C/%.h renconst.h
 %.d: $(SRC)/%.F
 	{ grep "^[^c*].*Mma" $< >/dev/null 2>&1 ; \
 	  echo "MMA = $$?" ; \
-	  echo "$*$(EXE): $@ $(LIBS)" ; \
+	  echo "$*$(EXE): $@ libs" ; \
 	  $(CPP) -M $(FINCLUDE) -x c $< | sed 's|^.*:|$@:|' ; \
 	} > $@
+
+PREFIX :=
 
 ifeq ($(MMA), 0)
 %$(EXE):: $(SRC)/%.F %.d $(SRC)/tools/mktm
@@ -101,7 +111,7 @@ ifeq ($(MMA), 0)
 	CC="$(SRC)/tools/fcc" REALCC="$(CC) $(CFLAGS)" \
 	CXX="$(SRC)/tools/f++" REALCXX="$(CXX) $(CXXFLAGS)" \
 	  PATH="$(PATH):$(SRC)/tools" \
-	  mcc $(MCFLAGS) -o $@ $*.tm $*.o $(LIBS) $(STDLIBS) $(LDFLAGS)
+	  mcc $(MCFLAGS) -o $@ $*.tm $*.o $(LIBS) $(STDLIBS) $(LDFLAGS) $(MCLIBS)
 	-$(RM) $*.o $*.tm.c
 else
 %$(EXE):: $(SRC)/%.F %.d

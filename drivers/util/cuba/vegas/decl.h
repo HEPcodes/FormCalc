@@ -2,7 +2,7 @@
 	decl.h
 		Type declarations
 		this file is part of Vegas
-		last modified 21 Dec 11 th
+		last modified 21 Jul 14 th
 */
 
 
@@ -29,16 +29,17 @@ typedef struct {
 typedef const Cumulants cCumulants;
 
 typedef int (*Integrand)(ccount *, creal *, ccount *, real *,
-  void *, creal *, cint *);
+  void *, cnumber *, cint *, creal *, cint *);
 
 typedef struct _this {
   count ndim, ncomp;
 #ifndef MLVERSION
   Integrand integrand;
   void *userdata;
+  number nvec;
 #ifdef HAVE_FORK
-  int ncores, *child;
   SHM_ONLY(int shmid;)
+  Spin *spin;
 #endif
 #endif
   real *frame;

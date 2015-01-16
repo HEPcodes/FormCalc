@@ -1,8 +1,10 @@
-parent := $(DIR)/..
+DIR := $(dir $(lastword $(MAKEFILE_LIST)))
+
 system := $(DIR)/system
 kin := $(DIR)/kin
-cuttools := $(DIR)/cuttools
+ninja := $(DIR)/ninja
 samurai := $(DIR)/samurai
+cuttools := $(DIR)/cuttools
 diag := $(DIR)/diag
 univariate := $(DIR)/univariate
 compaz := $(DIR)/compaz
@@ -18,7 +20,7 @@ CFLAGS += -I$(common) -I$(@D) -DHAVE_CONFIG_H
 
 COMMON_DEPS := $(common)/stddecl.h \
   $(common)/ChiSquare.c $(common)/Erf.c \
-  $(common)/CSample.c $(common)/Fork.c
+  $(common)/CSample.c $(common)/Parallel.c $(common)/sock.h
 
 VEGAS_C := $(vegas)/Vegas.c
 VEGAS_DEPS := $(COMMON_DEPS) $(common)/Random.c \
@@ -44,7 +46,7 @@ CUHRE_DEPS := $(COMMON_DEPS) \
   $(cuhre)/Rule.c $(cuhre)/Integrate.c
 
 CUBA := $(VEGAS_C) $(SUAVE_C) $(DIVONNE_C) $(CUHRE_C) \
-  $(common)/WorkerIni.c
+  $(common)/Fork.c $(common)/Global.c $(common)/Data.c
 
 
 OBJS := \
@@ -59,6 +61,19 @@ OBJS := \
   $(kin)/VecCopy.o \
   $(kin)/Split.o \
   $(kin)/PrintVec.o \
+  $(ninja)/NJMomDecode.o \
+  $(ninja)/NJBcut.o \
+  $(ninja)/NJCcut.o \
+  $(ninja)/NJDcut.o \
+  $(ninja)/NJEcut.o \
+  $(ninja)/NJFcut.o \
+  $(ninja)/None.o \
+  $(samurai)/SAMomDecode.o \
+  $(samurai)/SABcut.o \
+  $(samurai)/SACcut.o \
+  $(samurai)/SADcut.o \
+  $(samurai)/SAEcut.o \
+  $(samurai)/SAFcut.o \
   $(cuttools)/CTMomDecode.o \
   $(cuttools)/CTmpnum.o \
   $(cuttools)/CTBcut.o \
@@ -66,12 +81,6 @@ OBJS := \
   $(cuttools)/CTDcut.o \
   $(cuttools)/CTEcut.o \
   $(cuttools)/CTFcut.o \
-  $(samurai)/SAMomDecode.o \
-  $(samurai)/SABcut.o \
-  $(samurai)/SACcut.o \
-  $(samurai)/SADcut.o \
-  $(samurai)/SAEcut.o \
-  $(samurai)/SAFcut.o \
   $(diag)/Eigen2x2.o \
   $(diag)/NoMixing.o \
   $(diag)/HEigensystem.o \
@@ -86,35 +95,35 @@ OBJS := \
 
 $(LIB): $(LIB)($(OBJS))
 
-
 $(LIB)( $(univariate)/Gauss.o $(univariate)/Patterson.o ): \
-  $(univariate)/config.h $(parent)/F/types.h
+  $(univariate)/config.h $(SRC)/F/types.h
 
 $(LIB)( $(diag)/HEigensystem.o $(diag)/SEigensystem.o \
   $(diag)/CEigensystem.o $(diag)/TakagiFactor.o $(diag)/SVD.o ): \
-  $(diag)/diag-f.h $(parent)/F/types.h
+  $(diag)/diag-f.h $(SRC)/F/types.h
 
 $(LIB)( $(samurai)/SABcut.o $(samurai)/SACcut.o $(samurai)/SADcut.o \
   $(samurai)/SAEcut.o $(samurai)/SAFcut.o ): \
-  $(samurai)/SA.h $(parent)/F/types.h
+  $(samurai)/SA.h $(SRC)/F/types.h
 
 $(LIB)( $(cuttools)/CTBcut.o $(cuttools)/CTCcut.o $(cuttools)/CTDcut.o \
   $(cuttools)/CTEcut.o $(cuttools)/CTFcut.o ): \
-  $(cuttools)/CT.h $(parent)/F/types.h
+  $(cuttools)/CT.h $(SRC)/F/types.h
 
 $(LIB)( $(samurai)/SAMomDecode.o $(cuttools)/CTMomDecode.o ): \
-  $(parent)/F/types.h $(parent)/F/util.h
+  $(SRC)/F/types.h $(SRC)/F/util.h
 
-$(LIB)( $(kin)/VecCopy.o ): \
-  $(parent)/distrib.h simd.h $(parent)/F/types.h $(parent)/F/util.h
+$(LIB)( $(kin)/VecCopy.o $(kin)/VecSet.o ): \
+  $(SRC)/distrib.h simd.h $(SRC)/F/types.h $(SRC)/F/util.h
 
-$(LIB)( $(system)/parallel.o ): $(parent)/distrib.h
+$(LIB)( $(system)/parallel.o ): $(SRC)/distrib.h
 
-$(LIB)($(VEGAS_C:.c=.o)): $(VEGAS_C) $(VEGAS_DEPS)
-$(LIB)($(SUAVE_C:.c=.o)): $(SUAVE_C) $(SUAVE_DEPS)
-$(LIB)($(DIVONNE_C:.c=.o)): $(DIVONNE_C) $(DIVONNE_DEPS)
-$(LIB)($(CUHRE_C:.c=.o)): $(CUHRE_C) $(CUHRE_DEPS)
-$(LIB)($(common)/WorkerIni.o): $(common)/stddecl.h
+$(LIB)($(VEGAS_C:.c=.o)): $(VEGAS_C) $(VEGAS_DEPS) 
+$(LIB)($(SUAVE_C:.c=.o)): $(SUAVE_C) $(SUAVE_DEPS) 
+$(LIB)($(DIVONNE_C:.c=.o)): $(DIVONNE_C) $(DIVONNE_DEPS) 
+$(LIB)($(CUHRE_C:.c=.o)): $(CUHRE_C) $(CUHRE_DEPS) 
+$(LIB)($(common)/Fork.o): $(common)/Fork.c $(common)/stddecl.h $(common)/sock.h
+$(LIB)($(common)/Global.o): $(common)/Global.c $(common)/stddecl.h
+$(LIB)($(common)/Data.o): $(common)/Data.c $(common)/stddecl.h
 
-LIBS += $(LIB)
 

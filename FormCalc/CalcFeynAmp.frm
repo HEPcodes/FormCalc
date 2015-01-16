@@ -1,7 +1,7 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 16 Jul 13 th
+* last modified 24 Sep 14 th
 
 
 #procedure Contract
@@ -110,7 +110,7 @@ ab `Vectors', `Invariants', dotM;
 .sort
 off oldFactArg;
 
-collect dotM;
+collect dotM, dotM;
 
 #call InvSimplify(dotM)
 id dotM(0) = 0;
@@ -118,8 +118,8 @@ id dotM(0) = 0;
 repeat id TAG * dotM([x]?) = TAG * [x];
 id TAG = 1;
 
-makeinteger dotM;
-id dotM(dotM(?x)) = dotM(?x);
+*makeinteger dotM;
+*id dotM(dotM(?x)) = dotM(?x);
 
 argument dotM;
 id dotM([x]?) = dotM(nterms_([x]), [x]);
@@ -150,7 +150,7 @@ id GF(?g) = GA(?g);
 #procedure ChainOrder(contr)
 label 1;
 
-#if `OnShell' == 1
+#if "`OnShell'" == "True"
 * Apply Dirac equation to right spinor
 repeat;
   id GA([om]?, ?a, [p1]?, ?b) * Spinor([p1]?, [m1]?, [s1]?, ?s1) =
@@ -215,7 +215,7 @@ id ifmatch->1 TAG = 1;
 #procedure ChainSimplify(contr)
 #call ChainOrder(`contr')
 
-#if `OnShell' == 1
+#if "`OnShell'" == "True"
 
 #do i = 1, `Legs'
 #ifdef `k`i''
@@ -697,6 +697,13 @@ id mulM(0) = 0;
 .sort
 off oldFactArg;
 
+repeat;
+  once IndexSum([x]?, [i]?, ?n) =
+    TMP([x] * replace_([i], N100_?) * SumOver(N100_?, ?n, Renumber));
+  renumber;
+  id TMP([x]?) = [x];
+endrepeat;
+
 #ifdef `Inserted'
 repeat;
   once SumOver([i]?, ?a, Renumber) =
@@ -733,7 +740,7 @@ repeat id TMP([I]?)^2 = TMP([I]);
 
 renumber 1;
 
-#do i = 1, 10
+#do i = 1, 9
 once TMP([I]?) = replace_([I], Ind`i');
 #enddo
 
@@ -782,20 +789,21 @@ hide;
 #define Fermionic "Spinor, GA, e_, `Tensors'"
 
 * variables appearing in the CalcFeynAmp input and output
-s I, Pi, D, Dminus4, `Invariants', tnin;
+s I, Pi, D, Dminus4, `Invariants';
 s Gamma5Test, Finite, MuTilde, MuTildeSq, Renumber;
+s tnj, xnj, b0nj, b1nj, b2nj;
 cf SumOver, PowerOf, Mat, Den, A0, IGram, List;
 cf MetricTensor, Eps, DiracChain, WeylChain, Evanescent;
-cf IndexDelta, IndexEps, `SUNObjs', SUNTr(c);
+cf IndexDelta, IndexEps, IndexSum, `SUNObjs', SUNTr(c);
 f Spinor, g5M, g6M, g7M;
-i Col1,...,Col`Legs', Ind1,...,Ind10;
-v nul, q1b, q1c, q1v;
+i Col1,...,Col`Legs', Ind1,...,Ind9;
+v nul, vTnj, v0nj, v1nj, v2nj, v3nj, v4nj;
 
 * variables that make it into Mma but don't appear in the output
 extrasymbols array subM;
 cf addM, mulM, powM, dotM, abbM, fermM, sunM;
 cf intM, extM, paveM, cutM, numM, qfM, qcM;
-s dm4M;
+s dm4M, njM;
 
 * patterns
 s [x], [y], [z], [w], [n], [h];
@@ -971,7 +979,7 @@ repeat id GA(?g) * g_([i]?, [mu]?) = GA(?g, [mu]);
 
 *----------------------------------------------------------------------
 
-#if `SimplifyQ2' == 1
+#if `CancelQ2' == 1
 
 b q1, intM, NN;
 .sort
@@ -1016,7 +1024,7 @@ keep brackets;
 id intM(?d) = intM(nargs_(?d), ?d);
 id intM([n]?{<`OPP'}, ?d) = intM(?d);
 also intM([n]?, ?d) = cutM(?d)
-#if `OPPMethod' == 2
+#if "`OPPMethod'" == "AnaRat"
   + CUTRAT * intM(?d)
 #endif
   ;
@@ -1117,14 +1125,11 @@ id NN([i]?) * Dminus4 = Dminus4;
 
 #do rep = 1, 1
 
-id NN([n]?) * paveM(?i) * intM([x]?) =
-  TMP(NN([n]) * paveM(?i) * intM([x]) * [x]);
-
-b TMP;
+b NN, paveM, intM;
 .sort
 keep brackets;
 
-argument TMP;
+id ifnomatch->1 NN([i]?) * intM([x]?) = NN([i]) * intM([x]) * [x];
 
 * symmetrize the coefficients for N > 4
 * hep-ph/0509141 Eq. (6.14+15)
@@ -1268,11 +1273,9 @@ id NN(1) = 1;
 id NN([i]?) * Dminus4 = Dminus4;
 id paveM() = 1;
 
-endargument;
-
-id TMP([x]?) = [x];
-
 if( count(paveM,1, NN,1) == 2 ) redefine rep "0";
+
+label 1;
 
 .sort
 
@@ -1384,7 +1387,7 @@ id D = Dminus4 + 4;
 
 #if "`Dim'" == "D"
 
-#if `OPPMethod' == 2
+#if "`OPPMethod'" == "AnaRat"
 id Dminus4 * cutM(?d) = 0;
 #else
 id Dminus4 * cutM(?d) = dm4M * cutM(?d);
@@ -1973,16 +1976,34 @@ if( count(cutM,1) );
 
 makeinteger numM;
 
-#if `OPPMethod' == 3
+#if "`OPPMethod'" == "Ninja"
 argument numM;
+repeat id qfM([x]?) * qfM([y]?) = qfM([x] * [y]);
 argument qfM;
 id WeylChain([s1]?, ?g, [s2]?) = [s1] * GA(?g) * [s2];
-id q1 = q1 + tnin*q1b + q1c/tnin + tnin*q1v;
-id MuTildeSq = MuTildeSq + tnin*q1v.q1v;
-id q1b.q1b = 0;
-id q1c.q1c = 0;
+
+id MuTildeSq = TMP(0) * MuTildeSq +
+  TMP(1) * tnj^2 * vTnj.vTnj;
+id q1 = TMP(0) * q1 +
+  TMP(1) * tnj * vTnj +
+  TMP(2) * (v0nj + tnj * v3nj + (b0nj + MuTildeSq)/tnj * v4nj) +
+  TMP(3) * (v1nj + xnj * v2nj + tnj * v3nj +
+              (b0nj + b1nj*xnj + b2nj*xnj^2 + MuTildeSq)/tnj * v4nj);
+
+id v2nj.v3nj = 0;
+id v2nj.v4nj = 0;
+id v3nj.v3nj = 0;
+id v4nj.v4nj = 0;
+id v3nj.v4nj = 1/2;
+
+repeat id TMP([i]?) * TMP([i]?) = TMP([i]);
+id TMP([i]?) * TMP([j]?) = 0;
+id TMP([i]?) = njM^[i];
+
 id Spinor(?s1) * GA(?g) * Spinor(?s2) =
   WeylChain(Spinor(?s1), ?g, Spinor(?s2));
+
+toPolynomial;
 endargument;
 endargument;
 #endif
@@ -1996,7 +2017,7 @@ argument numM,1, TMP;
 toPolynomial;
 endargument;
 
-id cutM([n]?, ?a) * numM(?x) = cutM([n], numM(?x), ?a);
+id cutM([n]?, ?a) * numM(?x) = cutM([n], numM([n], ?x), ?a);
 
 id TMP([x]?) = [x];
 id numM([x]?, ?i) = [x];

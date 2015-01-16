@@ -3,7 +3,7 @@
 		generates the Fortran code for
 		gamma gamma -> t-bar t gamma in the electroweak SM
 		this file is part of FormCalc
-		last modified 9 May 08 th
+		last modified 12 Feb 14 th
 
 Reference: W. Walter, Diploma thesis, Würzburg 1997.
 
@@ -53,10 +53,12 @@ col = ColourME[All, born]
 
 abbr = OptimizeAbbr[Abbr[]]
 
+subexpr = OptimizeAbbr[Subexpr[]]
+
 
 dir = SetupCodeDir[name <> ".fortran", Drivers -> name <> ".drivers"]
 
-WriteSquaredME[born, {}, col, abbr, dir]
+WriteSquaredME[born, {}, col, abbr, subexpr, dir]
 
 WriteRenConst[{}, dir]
 
