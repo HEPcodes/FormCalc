@@ -1,7 +1,7 @@
 * lumi_photon.F
 * parton luminosity for a photon collider
 * this file is part of FormCalc
-* last modified 9 Aug 11 th
+* last modified 30 Nov 11 th
 
 
 #define PARTON_T -1
@@ -48,14 +48,14 @@
 
 	subroutine Luminosity(fac)
 	implicit none
-	Real fac
+	RealType fac
 
 #include "xsection.h"
 
 	integer fail
-	Real tau, x, xrange, beamenergy
+	RealType tau, x, xrange, beamenergy
 
-	Real CompAZ
+	RealType CompAZ
 	external CompAZ
 
 	call SetEnergy(fail, Var(PARTON_T)*Var(SQRTS))

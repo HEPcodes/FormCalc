@@ -1,6 +1,9 @@
-	double precision function CompAZ(x, E, icase)
+#include "types.h"
+
+
+	RealType function CompAZ(x, E, icase)
 	implicit none
-	double precision x, E
+	RealType x, E
 	integer icase
 
 * Input parameters:
@@ -27,7 +30,7 @@
 *          22     maximum x value for scattering with 2 photons
 
 * Parameters of the distribution, partly fitted to the spectra from V. Telnov
-	double precision par(14)
+	RealType par(14)
 	data par /
      &    18.08800D0    ,                         ! Laser parameter
      &      .06594662D0 ,    .7060851D0 ,         ! Nonlinear corrections
@@ -37,22 +40,22 @@
      &     3.315865D0   ,    .387423D0  ,         ! Corrections
      &      .85D0       ,   1.00D0        /       ! Polarizations
 
-	double precision Ee, z0, xi, z
-	double precision Tot, Tot2, Tot3
-	double precision Br2, gpow, pole, poll, pol, pole2
+	RealType Ee, z0, xi, z
+	RealType Tot, Tot2, Tot3
+	RealType Br2, gpow, pole, poll, pol, pole2
 
-	double precision xmax, xmax2, g
-	double precision gflux1, gflux2, gflux3, gflux
-	double precision pol1, pol2, pol3, ptot
-	double precision g1, g2, dg, p1, p2, dp
-	double precision ymin, ymin2, ymax, y1, y2, dy
+	RealType xmax, xmax2, g
+	RealType gflux1, gflux2, gflux3, gflux
+	RealType pol1, pol2, pol3, ptot
+	RealType g1, g2, dg, p1, p2, dp
+	RealType ymin, ymin2, ymax, y1, y2, dy
 
 	logical DoPolar
 
 	integer iy, ny
 	parameter (ny = 100)
 
-	double precision CompAZc, CompAZp
+	RealType CompAZc, CompAZp
 	external CompAZc, CompAZp
 
 * Check input flag
@@ -140,8 +143,7 @@
 	  gflux1 = gflux1*exp( -Br2 * g*g/8D0 )
 
 	  if( DoPolar ) pol1 = CompAZp(x, poll, Pole, z)
-
-	EndIf
+	endif
 
 	if( icase .eq. 1 ) then
 	   CompAZ = Tot*gflux1
@@ -173,7 +175,7 @@
 	  else if( DoPolar ) then
 	    pol2 = CompAZp(xmax, poll, Pole, 2*z)
 	  endif
-	EndIf
+	endif
 
 	if( icase .eq. 2 ) then
 	  CompAZ = Tot2*gflux2
@@ -261,11 +263,11 @@
 ************************************************************************
 ** 'Ideal' spectrum of compton backscattered photons
 
-	double precision function CompAZc(x, z, Pol)
+	RealType function CompAZc(x, z, Pol)
 	implicit none
-	double precision x, z, Pol
+	RealType x, z, Pol
 
-	double precision xmax, l, r, y, gflux, norm
+	RealType xmax, l, r, y, gflux, norm
 
 	xmax = z/(1 + z)
 
@@ -294,18 +296,18 @@
 ************************************************************************
 ** Calculate spectrum of compton backscattered photons
 
-	double precision function CompAZp(x, Pl, Pb, z)
-	Implicit none
-	double precision x, Pl, Pb, z
+	RealType function CompAZp(x, Pl, Pb, z)
+	implicit none
+	RealType x, Pl, Pb, z
 
-	double precision xmax, r, y, gflux, gpol, Pol
+	RealType xmax, r, y, gflux, gpol, Pol
 
 	xmax = z/(1 + z)
 
 	if( x .lt. 0 .or. x .gt. xmax ) then
 	  CompAZp = 0
 	  return
-	EndIf
+	endif
 
 	Pol = Pl*Pb
 	r = x/(1 - x)

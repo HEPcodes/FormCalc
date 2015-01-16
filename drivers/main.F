@@ -2,7 +2,7 @@
 * this is the main program for the generated Fortran code,
 * it scans the command line and then invokes ParameterScan
 * this file is part of FormCalc
-* last modified 9 Aug 11 th
+* last modified 30 Nov 11 th
 
 
 #include "xsection.F"
@@ -17,7 +17,7 @@
 	external iargc, lnblnk
 #endif
 
-	Real sqrtSfrom, sqrtSto, sqrtSstep
+	RealType sqrtSfrom, sqrtSto, sqrtSstep
 	integer serialfrom, serialto, serialstep
 	integer argc, next, fail
 	character*LEGS pol

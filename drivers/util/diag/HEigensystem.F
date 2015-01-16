@@ -3,7 +3,7 @@
 * code adapted from the "Handbook" routines for complex A
 * (Wilkinson, Reinsch: Handbook for Automatic Computation, p. 202)
 * this file is part of the Diag library
-* last modified 10 Aug 11 th
+* last modified 30 Nov 11 th
 
 #include "diag-f.h"
 
@@ -18,14 +18,14 @@
 	subroutine HEigensystem(n, A,ldA, d, U,ldU, sort)
 	implicit none
 	integer n, ldA, ldU, sort
-	Complex A(ldA,*), U(ldU,*)
-	Real d(*)
+	ComplexType A(ldA,*), U(ldU,*)
+	RealType d(*)
 
 	integer p, q, j
-	Real red, off, thresh
-	Real t, delta, invc, s
-	Complex x, y, Apq
-	Real ev(2,MAXDIM)
+	RealType red, off, thresh
+	RealType t, delta, invc, s
+	ComplexType x, y, Apq
+	RealType ev(2,MAXDIM)
 
 	integer sweep
 	common /nsweeps/ sweep

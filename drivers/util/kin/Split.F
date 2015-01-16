@@ -2,7 +2,7 @@
 * splits a parent momentum into two child momenta
 * loosely based on code by T. Fritzsche
 * this file is part of FormCalc
-* last modified 9 Aug 11 th
+* last modified 30 Nov 11 th
 
 #include "types.h"
 
@@ -64,26 +64,26 @@
      &    fac, cutkey, xmrem, xcosth, xphi)
 	implicit none
 	integer i, cutkey
-	Real m, p, ex, ey, ez, minv, msum
-	Real fac, xmrem(*), xcosth(*), xphi(*)
+	RealType m, p, ex, ey, ez, minv, msum
+	RealType fac, xmrem(*), xcosth(*), xphi(*)
 
-	Real costh, sinth, cosphi, sinphi
-	Real bmrem(2), bcosth(2)
-	Real fxz, fyz, fxy
-	Real fx, fy, fz
-	Real nx, ny, nz
-	Real ref, cut, c0, c1, c2, a, b
-	Real r, r0, r0costh, rz, r1
-	Real m2, mrem, k, k10, q, qe, qn
+	RealType costh, sinth, cosphi, sinphi
+	RealType bmrem(2), bcosth(2)
+	RealType fxz, fyz, fxy
+	RealType fx, fy, fz
+	RealType nx, ny, nz
+	RealType ref, cut, c0, c1, c2, a, b
+	RealType r, r0, r0costh, rz, r1
+	RealType m2, mrem, k, k10, q, qe, qn
 	integer key
 
-	Real rpart(0:1)
+	RealType rpart(0:1)
 	equivalence (rpart(0), r0), (rpart(1), r)
 
-	Real pi
+	RealType pi
 	parameter (pi = 3.1415926535897932384626433832795029D0)
 
-	Real ksq, mremsq
+	RealType ksq, mremsq
 	ksq() = (2*c1*(sqrt(c0*(c0 + c2*m2) + (c1*m2)**2) - c1*m2) -
      &    c0*c2)/((2*c1 - c2)*(2*c1 + c2))
 	mremsq() = m2 + minv*(minv - 2*sqrt(ksq() + m2))

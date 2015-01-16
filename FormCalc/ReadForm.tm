@@ -49,7 +49,7 @@
 	ReadForm.tm
 		reads FORM output back into Mathematica
 		this file is part of FormCalc
-		last modified 20 Jul 11 th
+		last modified 23 Dec 11 th
 
 Note: FORM code must have
 	1. #- (no listing),
@@ -84,10 +84,11 @@ Debug:
 #define WITHEXTERNALCHANNEL 1
 #endif
 
-#define Die(p) if( (p) == NULL ) { \
-  fprintf(stderr, "Out of memory in " __FILE__ " line %d.\n", __LINE__); \
-  exit(1); \
-}
+#define Abort(s) abort1(s, __LINE__)
+#define abort1(s, line) abort2(s, line)
+#define abort2(s, line) { perror(s " " __FILE__ "(" #line ")"); exit(1); }
+
+#define Die(p) if( (p) == NULL ) Abort("malloc")
 
 #define DEBUG "\e[31m"
 #define RESET "\e[0m\n"
@@ -201,6 +202,16 @@ static inline long Strtol(cstring s, string *e, int base) {
 
 static void PrintPointer(TERM *tp)
 {
+#if 1
+	/* for tough cases w/segfault on access */
+  fprintf(stddeb, "address: %p\n", tp);
+  fprintf(stddeb, "PAVE:    %s\n", tp->f[LEVEL_PAVE]);
+  fprintf(stddeb, "COEFF:   %s\n", tp->f[LEVEL_COEFF]);
+  fprintf(stddeb, "DEN:     %s\n", tp->f[LEVEL_DEN]);
+  fprintf(stddeb, "MAT:     %s\n", tp->f[LEVEL_MAT]);
+  fprintf(stddeb, "SUMOVER: %s\n", tp->f[LEVEL_SUMOVER]);
+  fprintf(stddeb, "coll:    %d\n\n", tp->coll);
+#else
   fprintf(stddeb,
     "address: %p\n"
     "PAVE:    %s\n"
@@ -216,9 +227,10 @@ static void PrintPointer(TERM *tp)
     tp->f[LEVEL_MAT],
     tp->f[LEVEL_SUMOVER],
     tp->coll);
+#endif
 }
 
-static void PrintChain(TERM *tp, cstring info)
+static void PrintChain(TERM *tp, const char *info)
 {
   int n = 0;
   while( tp ) {
@@ -337,12 +349,13 @@ static string GetAbbr(string expr)
 
 /******************************************************************/
 
-static inline void Shift(TERM *tp, cstring begin, cint len, cint n)
+static inline void Shift(TERM *tp, cstring begin, cstring end, cstring new)
 {
-  if( n ) {
+  if( new != begin ) {
     string *f;
     for( f = tp->f; f < &tp->f[NLEVELS]; ++f )
-      if( (size_t)(*f - begin) <= (size_t)len ) *f -= n;
+      if( (unsigned)(*f - begin) < (unsigned)(end - begin) )
+        *f += new - begin;
   }
 }
 
@@ -352,7 +365,7 @@ static TERM *Resize(TERM *tp, cstring end, cint newsize)
 {
   TERM *new;
   Die(new = realloc(tp, newsize));
-  Shift(new, tp->expr, end - tp->expr, (cstring)tp - (cstring)new);
+  Shift(new, tp->expr, end, new->expr);
   return new;
 }
 
@@ -374,7 +387,7 @@ static inline void MoveToEnd(TERM *tp, cint lev, cstring end)
   memcpy(s, tmp, len);
   free(tmp);
 
-  Shift(tp, begin, rest, len + 1);
+  Shift(tp, begin, end, tp->f[lev]);
   tp->f[lev] = s;
 }
 
@@ -582,7 +595,7 @@ nextline:
           goto abort;
         }
 
-        nexpr = (int)(exprp - expressions);
+        nexpr = exprp - expressions;
         if( nexpr == 0 ) {
           MLEmitMessage(stdlink, (cstring)"nooutput", NULL);
           goto abort;
@@ -591,9 +604,9 @@ nextline:
         /* successful exit */
         MLPutFunction(stdlink, "FormExpr", nexpr);
         for( ep = expressions; ep < exprp; ++ep ) {
-          if( debug & 64 ) PrintChain(*ep, (cstring)"unordered");
+          if( debug & 64 ) PrintChain(*ep, "unordered");
           OrderChain(*ep, NLEVELS - 1);
-          if( debug & 128 ) PrintChain(*ep, (cstring)"ordered");
+          if( debug & 128 ) PrintChain(*ep, "ordered");
           Transmit(*ep, NLEVELS - 1);
         }
         goto quit;

@@ -1,7 +1,7 @@
 * 1to2.F
 * the kinematics for a 1 -> 2 process
 * this file is part of FormCalc
-* last modified 9 Aug 11 th
+* last modified 30 Nov 11 th
 
 
 * some definitions for xsection.F
@@ -46,7 +46,7 @@
 
 #include "xsection.h"
 
-	Real p
+	RealType p
 
 #ifdef FORCE_ONSHELL
 	p = 0
@@ -68,11 +68,11 @@
 
 	subroutine FinalState(fac)
 	implicit none
-	Real fac
+	RealType fac
 
 #include "xsection.h"
 
-	Real p, ex,ey,ez, msum, minv
+	RealType p, ex,ey,ez, msum, minv
 	integer key
 
 	p = 0

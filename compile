@@ -1,6 +1,6 @@
 #! /bin/sh
 # compile script for the C programs used by FormCalc
-# last modified 30 Mar 11 th
+# last modified 17 Nov 11 th
 
 # If this compile script doesn't work on your system, check these things:
 #
@@ -41,7 +41,7 @@ CYG*)
                "$PROGRAMFILES/Wolfram Research/Mathematica"/* ;;
 esac
 
-if [ -z "$DEST" ] ; then
+test -z "$DEST" && {
   for dir in "$@" ; do
     path=`cd "$dir"; pwd`:"$path"
   done
@@ -49,13 +49,13 @@ if [ -z "$DEST" ] ; then
 
   set -- `"$mathcmd" -run 'Print[$SystemID]; Exit[]' < /dev/null | tr '\r' ' ' | tail -1`
 
-  [ $? -ne 1 ] || {
+  test $? -ne 1 || {
     echo "Cannot determine Mathematica's system ID using $mathcmd" 1>&2
     exit 1
   }
 
   DEST="$1"
-fi
+}
 
 case "$DEST" in
 Please)
@@ -74,7 +74,7 @@ Linux-x86-64 | MacOSX-x86-64)
 	MCFLAGS="$MCFLAGS -b64" ;;
 esac
 
-[ -d "$DEST" ] || mkdir "$DEST" || {
+test -d "$DEST" || mkdir "$DEST" || {
   echo "Cannot create directory $DEST"
   exit 1
 }

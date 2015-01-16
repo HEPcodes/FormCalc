@@ -1,8 +1,8 @@
 (*
 
-This is FormCalc, Version 7.2
-Copyright by Thomas Hahn 1996-2011
-last modified 25 Aug 11 by Thomas Hahn
+This is FormCalc, Version 7.3
+Copyright by Thomas Hahn 1996-2012
+last modified 12 Jan 12 by Thomas Hahn
 
 Release notes:
 
@@ -43,9 +43,9 @@ Have fun!
 *)
 
 Print[""];
-Print["FormCalc 7.2"];
+Print["FormCalc 7.3"];
 Print["by Thomas Hahn"];
-Print["last revised 25 Aug 11"]
+Print["last revised 12 Jan 12"]
 
 
 (* symbols from FeynArts *)
@@ -1545,7 +1545,7 @@ the file is split into several pieces."
 
 Begin["`Private`"]
 
-$FormCalc = 7.2
+$FormCalc = 7.3
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -1728,9 +1728,10 @@ ToForm[x_String] = x
 ToForm[x_] := ToString[x, InputForm]
 
 
-ToSeq[li_List] := StringTake[ToString[li, InputForm], {2, -2}]
+ToSeq[li_List, opt___] :=
+  StringTake[ToString[li, InputForm, opt], {2, -2}]
 
-ToSeq[x_] := ToForm[x]
+ToSeq[x_, ___] := ToForm[x]
 
 
 ToBool[True] = "1"
@@ -2172,7 +2173,7 @@ neglect, square, invproc = {}, invs = {},
 kikj = {}, eiki = {}, eiei = {}},
   CurrentProcess = proc;
   CurrentOptions = opt;
-  CurrentScale = scale;
+  CurrentScale = sc[scale];
   MomSum = InvSum = 0;
   FormProcs = {};
   FormSymbols = {scale,
@@ -2576,7 +2577,7 @@ hh, amps, res, traces = 0},
     forder = Head[forder] ];
 
   vars = DeclareVars[ If[dim === 4, 4, D],
-    {amps, SUNN, CurrentScale, dirM[]}, indices, ranges ];
+    {amps, SUNN, dirM[]}, indices, ranges ];
 
   hh = OpenForm[];
   WriteString[hh, "\
@@ -2815,6 +2816,8 @@ B0i[id:bb0 | dbb0, p_, m1_, m2_] :=
 
 (* abbreviationing business *)
 
+sc[1] = Sequence[]
+
 Mat[0] = 0
 
 fmeM[x_] := ferm[x, CurrentScale]
@@ -2851,11 +2854,16 @@ abbsum[x_] := abbsum[x] = NewSymbol["AbbSum"]
 sunM[x_] := sunM[x] = NewSymbol["SUN"]
 
 
-numM[x_] := num2@@ CoefficientList[x, MuTildeSq]
+numM[x_, i___] := num2[i]@@ CoefficientList[x, MuTildeSq]
 
-num2[x_, y_:0, ___] := Sequence[qcount[x], num[Num[x]], num[Num[y]]]
+num2[i___][x_, y_:0, ___] :=
+  Sequence[qcount[x], num[Num[x], i], num[Num[y], i]]
 
 num[x_] := num[x] = NewSymbol["Num"]
+
+num[x_, i_List] := Level[{{x}, Select[i, !FreeQ[x, #]&]}, {2}, num]
+
+num[x_, i__] := num[x, i] = NewSymbol["Num"][i]
 
 
 qcount[p_Plus] := Max[qcount/@ List@@ p]
@@ -2863,22 +2871,25 @@ qcount[p_Plus] := Max[qcount/@ List@@ p]
 qcount[x_] := Count[x, q1, {-1}]
 
 
-qcM[n_?NumberQ x_] := n qcM[x]
+qcM[n_?NumberQ x_, i___] := n qcM[x, i]
 
-qcM[p_Plus] := -qcM[-p] /; MatchQ[p[[1]], _?Negative _.]
+qcM[p_Plus, i___] := -qcM[-p, i] /; MatchQ[p[[1]], _?Negative _.]
 
 qcM[x_] := qcM[x] = NewSymbol["QC"]
+
+qcM[x_, i_List] := Level[{{x}, Select[i, !FreeQ[x, #]&]}, {2}, qcM]
+
+qcM[x_, i__] := qcM[x, i] = NewSymbol["QC"][i]
 
 
 Attributes[dv] = {HoldAll}
 
 dv[x_, _] := {} /; !FreeQ[x, Pattern]
 
-dv[_[_[x_]], s_Symbol] := s -> x
+dv[_[_[x_, sc[scale_]]], s_] :=
+  s -> x/scale^(Count[4711 x, _k, {2}]/2)
 
-dv[_[_[x_, 1]], s_Symbol] := s -> x
-
-dv[_[_[x_, scale_]], s_Symbol] := s -> x/scale^(Count[4711 x, _k, {2}]/2)
+dv[_[_[x_, ___]], s_] := s -> x
 
 
 Abbr[] := Flatten @ Apply[dv,
@@ -2913,7 +2924,7 @@ MomEncode[p_Plus] := MomEncode/@ p
 MomEncode[f_. k[i_]] := MomEncoding[f, i]
 
 
-(* intabb introduces abbreviations for the loop integrals.
+(* AbbrevInt introduces abbreviations for the loop integrals.
    They fall into two categories:
    1. A0, A00 (cint..),
    2. B0i, C0i, D0i, E0i, F0i (iint..).
@@ -2924,7 +2935,7 @@ MomEncode[f_. k[i_]] := MomEncoding[f, i]
    conventions of LoopTools 2, the actual tensor coefficients are
    retrieved from the arrays [BCDEF]val. *)
 
-( intabb[#1[i_, args__]] :=
+( AbbrevInt[#1[i_, args__]] :=
   Block[ {abb = IndexHeader[ToSymbol["iint", ++ic], {args}]},
     iint = {iint, abb -> #2[args]};
     abbint[#1[id_, args]] = #3[id, abb];
@@ -2936,7 +2947,7 @@ MomEncode[f_. k[i_]] := MomEncoding[f, i]
   {E0i, Eget, Eval},
   {F0i, Fget, Fval} }
 
-intabb[func_] :=
+AbbrevInt[func_] :=
 Block[ {abb = IndexHeader[ToSymbol["cint", ++cc], func]},
   cint = {cint, abb -> MomEncode/@ func};
   abbint[func] = abb
@@ -2945,7 +2956,7 @@ Block[ {abb = IndexHeader[ToSymbol["cint", ++cc], func]},
 
 ExtractInt[expr_] :=
 Block[ {abbint, new, cint = {}, cc = 0, iint = {}, ic = 0},
-  abbint[f_] := intabb[f];
+  abbint[f_] := AbbrevInt[f];
   new = expr /. int:LoopIntegral[__] :> abbint[int];
   {Flatten[cint], Flatten[iint], new}
 ]
@@ -4019,8 +4030,8 @@ Block[ {ind, ff, mods},
   ff = FFList[amp /. unused[array] -> 0 /. fcs /. xrules /. {
     _SumOver -> 1,
     int:LoopIntegral[__] :> abbint[int] }, array];
-  mods = FileSplit[ff, FortranNames[file, ind], FFMod];
-  (Indices[#] = ind)&/@ mods;
+  mods = FileSplit[ff, FortranNames[file, ind], Delayed[FFMod]];
+  (Indices[#] = ind)&/@ (#[[2, 2]]&)/@ mods;
   mods
 ]
 
@@ -4184,19 +4195,24 @@ Block[ {hh},
 ]
 
 
+NumName[h_[___], ___] := _h -> $SymbolPrefix <> ToCode[h]
+
+NumName[h_, ___] := h -> $SymbolPrefix <> ToCode[h]
+
+
 WriteNum[hh_, var_ -> Num[expr_]] :=
-Block[ {ex, $SubPrefix = "sp"},
+Block[ {ex, name = NumName[var][[2]], $SubPrefix = "sp"},
   ex = Subexpr[expr /. WeylChain -> SplitChain,
     MatchQ[#, _SxS | _SeS]&, Deny -> {}, Fuse -> False];
   WriteString[hh, "\n\n\
-\tNumeratorFunction(" <> $SymbolPrefix <> ToCode[var] <> ")\n\
+\tNumeratorFunction(" <> name <> ")\n\
 \timplicit none\n"];
   WriteExpr[hh, {"\
 #include \"" <> prefix <> "vars.h\"\n\
 #include \"num.h\"\n",
       ex[[1]],
-      "Result(" <> $SymbolPrefix <> ToCode[var] <> ")" -> ex[[2]]},
-    Type -> "Complex",
+      "Result(" <> name <> ")" -> ex[[2]]},
+    Type -> "ComplexType",
     FinalTouch -> Simplify,
     FinalCollect -> True];
   WriteString[hh, "\tend\n"];
@@ -4215,14 +4231,40 @@ VarDecl[vars_, type_] := StringJoin @ varDecl[
   DeleteCases[
     Replace[vars /. (x_ -> _) -> x, i_Symbol :> Dim[i], {2, Infinity}],
     _[0] | _[] ],
-  type ]
+  type, $Code ]
 
-varDecl[vars_, {type_String, common_String}] := {
+varDecl[vars_, {type_String, common_String}, "C"] :=
+Block[ {com = $SymbolPrefix <> common},
+  { "\nstruct {",
+    varDecl[vars, type, "C"],
+    "\n} ", com, ";\n",
+    {"\n#define ", #, " ", com, ".", #}&[ ToCode[kind[#]] ]&/@ vars,
+    "\n" }
+]
+
+varDecl[vars_, {type_String, common_String}, ___] := {
   varDecl[vars, type],
   varDecl[kind/@ vars, "common /" <> $SymbolPrefix <> common <> "/"],
-  "\n" }
+  "\n"
+}
 
-varDecl[vars_, type_String] :=
+(*
+varDecl[vars_, type_String, "C"] :=
+Block[ {lmax = 63 - StringLength[type], llen = Infinity, vlen},
+  StringReplace[
+    ( llen += (vlen = StringLength[#] + 2);
+      {If[llen > lmax, llen = vlen; {"\n  ", type}, ","], " ", #} )&/@
+      ToCode/@ vars <> ";",
+    {"(" -> "[", ")" -> "]"}]
+]
+*)
+
+varDecl[vars_, type_String, "C"] :=
+  "\n  " <> type <> " " <> StringReplace[
+    ToSeq[vars, PageWidth -> 63 - StringLength[type]],
+    ", \n" -> ";\n  " <> type ] <> ";"
+
+varDecl[vars_, type_String, ___] :=
 Block[ {lmax = 63 - StringLength[type], llen = Infinity, vlen},
   ( llen += (vlen = StringLength[#] + 2);
     {If[llen > lmax, llen = vlen; {"\n\t", type}, ","], " ", #} )&/@
@@ -4369,6 +4411,9 @@ Cond[True, args__] := {args}
 Cond[False, __] = {}
 
 
+IsIn[args___] := Intersection[args, SameTest -> (#[[1]] === #2[[1]] &)]
+
+
 Attributes[WriteSquaredME] = {HoldAll}
 
 Options[WriteSquaredME] = {
@@ -4412,9 +4457,10 @@ ffmods, nummods, abbrmods, abbrmap},
 
   DefModName[MkDir[dir, folder]];
 
-  abbint[f_] := intabb[f];
+  abbint[f_] := AbbrevInt[f];
 
   {mat, fcs, nums, abrs} = ToCat[4, Assort/@ Flatten[{abbr}]];
+
   mats = First/@ DeleteCases[mat, _ -> 0];
   unused[Ctree] = Alt@@
     Select[Union[#[[1, 2]]&/@ mat], FreeQ[mats, Mat[_, #]]&];
@@ -4423,7 +4469,7 @@ ffmods, nummods, abbrmods, abbrmap},
 
 (* Part 1: the form factors *)
 
-  maxmat[_] = {};
+  _maxmat = {};
   ffmods = Flatten/@ {
     Block[{modnum = 0}, WriteFF[tree, Ctree]],
     Block[{modnum = 0}, WriteFF[loop, Cloop]] };
@@ -4472,8 +4518,8 @@ ffmods, nummods, abbrmods, abbrmap},
   defs = ToCat[2, #]&/@ Replace[ Delete[defs, pos],
     {Tag[r_] -> {{}, r}, r_ -> {r, {}}}, {2} ];
 
-  nummods = FileSplit[nums, "num", NumMod];
-  nums = (#1 -> $SymbolPrefix <> ToCode[#1] &)@@@ nums;
+  nummods = FileSplit[nums, "num", Delayed[NumMod]];
+  nums = NumName@@@ nums;
   defs = defs /. nums;
 
   abbrmap[foo_] := MapThread[foo,
@@ -4481,17 +4527,16 @@ ffmods, nummods, abbrmods, abbrmap},
              {"0angle", "1angle"},
              {"0hel",   "1hel"}} }, 2];
 
-  abbrmods = abbrmap[
-    FileSplit[ToDoLoops[OnePassOrder[#1]], "abbr" <> #2, AbbrMod]& ];
+  abbrmods = abbrmap[FileSplit[
+    ToDoLoops[OnePassOrder[#1]],
+    "abbr" <> #2,
+    Delayed[AbbrMod] ]&];
 
-  com = VarDecl[invs, {"Real", "kinvars"}] <>
+  com = VarDecl[invs, {"RealType", "kinvars"}] <>
     VarDecl[{Hel[legs]}, {"integer", "kinvars"}] <>
-    abbrmap[VarDecl[Intersection[abrs, #1],
-      {"Complex", "abbrev" <> #2}]&] <>
-    abbrmap[VarDecl[Intersection[cint, #1],
-      {"Complex", "loopint" <> #2}]&] <>
-    abbrmap[VarDecl[Intersection[iint, #1],
-      {"memindex", "loopint" <> #2}]&] <>
+    abbrmap[VarDecl[IsIn[abrs, #1], {"ComplexType", "abbrev" <> #2}]&] <>
+    abbrmap[VarDecl[IsIn[cint, #1], {"ComplexType", "loopint" <> #2}]&] <>
+    abbrmap[VarDecl[IsIn[iint, #1], {"memindex", "loopint" <> #2}]&] <>
     VarDecl[
       #[[1, 1, 1]]&/@ DownValues[Dim],
       {"integer", "indices"} ] <>
@@ -4499,7 +4544,10 @@ ffmods, nummods, abbrmods, abbrmap},
       Flatten[{
         Level[maxmat[Ctree], {2}, Ctree],
         Level[maxmat[Cloop], {2}, Cloop], mats }],
-      {"Complex", "formfactors"} ];
+      {"ComplexType", "formfactors"} ];
+
+  {ffmods, abbrmods, nummods} = {ffmods, abbrmods, nummods} /.
+    Delayed -> Identity;
 
 (* Part 3: the variable declarations *)
 
@@ -4544,12 +4592,12 @@ LIBS += $(LIB)\n\n"];
     fincl <> "\n\
 \tsubroutine " <> $SymbolPrefix <> "SquaredME(result, helicities, flags)\n\
 \timplicit none\n\
-\tReal result(*)\n\
+\tRealType result(*)\n\
 \tinteger*8 helicities\n\
 \tinteger flags\n\n\
 #include \"" <> prefix <> "vars.h\"\n\n\
 * " <> prefix <> "BEGIN VARDECL\n\
-\tReal " <> $SymbolPrefix <> "sumup\n\
+\tRealType " <> $SymbolPrefix <> "sumup\n\
 \texternal " <> $SymbolPrefix <> "sumup\n" <>
     VarDecl[hels, "integer"] <>
     ({"\n\tequivalence (Hel(", #2, "), ", #1, ")"}&)@@@ hels <>
@@ -4640,15 +4688,15 @@ LIBS += $(LIB)\n\n"];
   (* f) the sumup function *)
   WriteString[hh, "\n\
 ************************************************************************\n\n\
-\tReal function " <> $SymbolPrefix <> "sumup(C" <>
+\tRealType function " <> $SymbolPrefix <> "sumup(C" <>
       nloop[[3]] <> ", C" <> ntree[[3]] <> ")\n\
 \timplicit none\n\n\
 #include \"" <> prefix <> "vars.h\"\n" <>
     nloop[[4]] <>
     ntree[[4]] <> "\n\
-\tComplex C" <>
+\tComplexType C" <>
     StringReplace[nloop[[2]] <> ", C" <> ntree[[2]], "j" -> "n"] <> "\n\
-\tComplex m\n\n\
+\tComplexType m\n\n\
 \t" <> $SymbolPrefix <> "sumup = 0\n" <>
     ntree[[6]] <> "\n\
 \tm = 0" <>
@@ -4983,7 +5031,7 @@ ModName, Hdr, rcmods, file, hh},
   WriteString[hh,
     Hdr["RC declarations"] <>
     VarDecl[MaxDims[Map[Dim, First/@ rcs, {2}]],
-      {"Complex", "renconst"}] <> "\n"];
+      {"ComplexType", "renconst"}] <> "\n"];
 
   Close[hh];
 
@@ -5024,7 +5072,6 @@ SetLanguage[lang_] := (
   Message[CodeLanguage::badlang, lang];
   OpenCode = Abort;
   $Failed )
-
 
 OpenC[file_, opt___] := (
   $Code = "C";
@@ -5337,7 +5384,7 @@ Options[WriteExpr] = {
   HornerStyle -> True,
   FinalCollect -> False,
   Type -> False,
-  TmpType -> (*Type*) "Complex",
+  TmpType -> (*Type*) "ComplexType",
   IndexType -> False,
   RealArgs -> Level[{LoopIntegral,
     Bget, Cget, Dget, Eget, Fget, Log, Sqrt}, {-1}],
@@ -5477,11 +5524,10 @@ NClear[patt_String:"Global`*"] := Flatten[
 
 Unprotect[Rule, Rational, Power]
 
-Format[a_ -> b_, FortranForm] := SequenceForm[a, " = ", b]
-
-Format[Rational[a_, b_], FortranForm] := HoldForm[a]/b
-
-Format[a_^n_Integer /; n < -1, FortranForm] := (1/HoldForm[#] &)[ a^-n ]
+( Format[a_ -> b_, #] := SequenceForm[a, " = ", b];
+  Format[Rational[a_, b_], #] := HoldForm[a]/b;
+  Format[a_^n_Integer /; n < -1, #] := (1/HoldForm[#] &)[ a^-n ];
+)&/@ {FortranForm, CForm}
 
 Protect[Rule, Rational, Power]
 

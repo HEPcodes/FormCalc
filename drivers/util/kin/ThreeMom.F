@@ -1,6 +1,6 @@
 * ThreeMom.F
 * this file is part of FormCalc
-* last modified 9 Aug 11 th
+* last modified 30 Nov 11 th
 
 #include "types.h"
 
@@ -13,11 +13,11 @@
 * where lambda is the Kallen function.
 
 
-	Real function ThreeMom(sqrtS, ma, mb)
+	RealType function ThreeMom(sqrtS, ma, mb)
 	implicit none
-	Real sqrtS, ma, mb
+	RealType sqrtS, ma, mb
 
-	Real kb0
+	RealType kb0
 
 c	kb0 = ((sqrtS - ma)*(sqrtS + ma) + m2)/(2*sqrtS)
 	kb0 = .5D0*(sqrtS - (ma - mb)*(ma + mb)/sqrtS)

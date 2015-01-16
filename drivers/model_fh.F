@@ -1,7 +1,7 @@
 * model_fh.F
 * parameter initialization via FeynHiggs
 * this file is part of FormCalc
-* last modified 9 Aug 11 th
+* last modified 30 Nov 11 th
 
 
 * NO_EXCLUSION_LIMITS
@@ -53,7 +53,7 @@
 #include "decl.h"
 #include "SLHA.h"
 
-	Complex slhadata(nslhadata)
+	ComplexType slhadata(nslhadata)
 	integer error
 
 	character*16 flags
@@ -83,12 +83,12 @@
 
 #include "decl.h"
 
-	Real invAlfaMZ, scalefactor, asMB
+	RealType invAlfaMZ, scalefactor, asMB
 	integer i, nf
 #ifndef NO_EXCLUSION_LIMITS
-	Real gm2, DeltaRho
-	Real MWMSSM, MWSM, SW2MSSM, SW2SM
-	Real edmeTh, edmn, edmHg
+	RealType gm2, DeltaRho
+	RealType MWMSSM, MWSM, SW2MSSM, SW2SM
+	RealType edmeTh, edmn, edmHg
 #endif
 
 	call FHLoopRecord(fail, record)
@@ -264,7 +264,7 @@
 	subroutine ModelVarIni(fail, scale)
 	implicit none
 	integer fail
-	Real scale
+	RealType scale
 
 #include "decl.h"
 

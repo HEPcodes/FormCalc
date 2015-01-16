@@ -1,3 +1,26 @@
+12 Jan 12:
+
+- Speeded up analytic tensor reduction (PaVeReduce -> True).
+
+
+23 Dec 11:
+
+- Fixed problems with index-dependent numerators.
+
+- Fixed 64-bit issue (ptrdiff_t casted to int) in ReadForm.tm.
+
+
+2 Dec 11:
+
+- Added Cuba 3 (with parallelization).
+
+- Moved from Real|Complex to RealType|ComplexType since the former
+  is understood by the compiler and does not lead to warnings.
+
+- Fixed bug in index dependence of numerator subroutines and
+  derived abbreviations.
+
+
 25 Aug 11:
 
 - Introduced types 'Real' and 'Complex' (defined in types.h) for

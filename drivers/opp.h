@@ -1,7 +1,7 @@
 * opp.h
 * declarations for the OPP routines
 * this file is part of FormCalc
-* last modified 9 Aug 11 th
+* last modified 30 Nov 11 th
 
 
 #ifndef Acut
@@ -24,6 +24,6 @@
 #endif
 #endif
 
-	Complex Acut, Bcut, Ccut, Dcut, Ecut, Fcut
+	ComplexType Acut, Bcut, Ccut, Dcut, Ecut, Fcut
 	external Acut, Bcut, Ccut, Dcut, Ecut, Fcut
 

@@ -2,11 +2,11 @@
 	common.c
 		includes most of the modules
 		this file is part of Suave
-		last modified 2 Jun 10 th
+		last modified 25 Nov 11 th
 */
 
 
-#define RegionAlloc(p, n, nnew) MemAlloc(p, \
+#define RegionAlloc(t, p, n, nnew) MemAlloc(p, \
   sizeof(Region) + \
   (n)*(t->ndim + t->ncomp + 1)*sizeof(real) + \
   (nnew)*t->ndim*sizeof(bin_t))

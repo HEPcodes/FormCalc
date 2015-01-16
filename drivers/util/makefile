@@ -15,7 +15,8 @@ cuhre := $(cuba)/cuhre
 
 CFLAGS += -I$(common)
 
-COMMON_DEPS = $(common)/stddecl.h $(common)/ChiSquare.c $(common)/Erf.c
+COMMON_DEPS = $(common)/stddecl.h $(common)/DoSample.c \
+  $(common)/ChiSquare.c $(common)/Erf.c
 
 VEGAS_C := $(vegas)/Vegas.c
 VEGAS_DEPS := $(COMMON_DEPS) $(common)/Random.c \
@@ -32,8 +33,8 @@ DIVONNE_C := $(divonne)/Divonne.c
 DIVONNE_DEPS = $(COMMON_DEPS) $(common)/Random.c \
   $(divonne)/decl.h $(divonne)/common.c \
   $(divonne)/KorobovCoeff.c $(divonne)/Rule.c $(divonne)/Sample.c \
-  $(divonne)/FindMinimum.c $(divonne)/Explore.c $(divonne)/Split.c \
-  $(divonne)/Integrate.c
+  $(divonne)/FindMinimum.c $(divonne)/Iterate.c $(divonne)/Explore.c \
+  $(divonne)/Split.c $(divonne)/Integrate.c
 
 CUHRE_C := $(cuhre)/Cuhre.c
 CUHRE_DEPS = $(COMMON_DEPS) \

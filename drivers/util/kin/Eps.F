@@ -2,7 +2,7 @@
 * calculates -I times the Levi-Civita tensor contracted with
 * four four-vectors
 * this file is part of FormCalc
-* last modified 9 Aug 11 th
+* last modified 30 Nov 11 th
 
 #include "types.h"
 
@@ -11,11 +11,11 @@
 * the array vec, NOT the vector itself.  The macros k, e, ec, s
 * (defined in util.h) convert from 1...LEGS to a, b, c, d.
 
-	Complex function Eps(a, b, c, d)
+	ComplexType function Eps(a, b, c, d)
 	implicit none
 	integer a, b, c, d
 
-	Complex vec(2,2, 1)
+	ComplexType vec(2,2, 1)
 	common /vectors/ vec
 
 #define A(x,y) vec(x,y, a)

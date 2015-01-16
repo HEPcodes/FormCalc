@@ -1,7 +1,7 @@
 * softphoton.F
 * routines for the treatment of soft-photon radiation
 * this file is part of FormCalc
-* last modified 9 Aug 11 th
+* last modified 30 Nov 11 th
 
 
 ************************************************************************
@@ -9,39 +9,39 @@
 ** off the different legs.  The result then has to be multiplied with
 ** the Born cross-section.
 
-	Real function SoftPhotonFactor()
+	RealType function SoftPhotonFactor()
 	implicit none
 
 #include "xsection.h"
 
-	Real PhaseSpaceIntegral
+	RealType PhaseSpaceIntegral
 	external PhaseSpaceIntegral
 
 	integer i, j
 
-	Real loglambda
+	RealType loglambda
 	common /infrared/ loglambda
 
-	Real charge(LEGS), r
+	RealType charge(LEGS), r
 
 * not a very nice solution, the following, but necessary
 * because there may be no "/" in a constant in the data
 * statement (such as in 2/3D0)
 #if LEGS == 3
-	Real ch1, ch2, ch3
+	RealType ch1, ch2, ch3
 	parameter (ch1 = CHARGE1)
 	parameter (ch2 = CHARGE2)
 	parameter (ch3 = CHARGE3)
 	data charge / ch1, ch2, ch3 /
 #elif LEGS == 4
-	Real ch1, ch2, ch3, ch4
+	RealType ch1, ch2, ch3, ch4
 	parameter (ch1 = CHARGE1)
 	parameter (ch2 = CHARGE2)
 	parameter (ch3 = CHARGE3)
 	parameter (ch4 = CHARGE4)
 	data charge / ch1, ch2, ch3, ch4 /
 #elif LEGS == 5
-	Real ch1, ch2, ch3, ch4, ch5
+	RealType ch1, ch2, ch3, ch4, ch5
 	parameter (ch1 = CHARGE1)
 	parameter (ch2 = CHARGE2)
 	parameter (ch3 = CHARGE3)
@@ -71,17 +71,17 @@
 ** PhaseSpaceIntegral calculates the integral over the soft photon's
 ** phase space.  See A. Denner, Fortschr. d. Physik, 41 (1993) 4.
 
-	Real function PhaseSpaceIntegral(i, j)
+	RealType function PhaseSpaceIntegral(i, j)
 	implicit none
 	integer i, j
 
 #include "xsection.h"
 
-	Real mi, ki0, ki, kidelta, kilog
-	Real mj, kj0, kj, kjdelta, kjlog
-	Real kikj, alpha, d, vi
+	RealType mi, ki0, ki, kidelta, kilog
+	RealType mj, kj0, kj, kjdelta, kjlog
+	RealType kikj, alpha, d, vi
 
-	Real loglambda
+	RealType loglambda
 	common /infrared/ loglambda
 
 	mi = momspec(SPEC_M, i)

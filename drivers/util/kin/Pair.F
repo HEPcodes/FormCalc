@@ -1,7 +1,7 @@
 * Pair.F
 * calculates the scalar product of two four-vectors
 * this file is part of FormCalc
-* last modified 9 Aug 11 th
+* last modified 30 Nov 11 th
 
 #include "types.h"
 
@@ -10,11 +10,11 @@
 * the array vec, NOT the vector itself.  The macros k, e, ec, s
 * (defined in util.h) convert from 1...LEGS to a, b.
 
-	Complex function Pair(a, b)
+	ComplexType function Pair(a, b)
 	implicit none
 	integer a, b
 
-	Complex vec(2,2, 1)
+	ComplexType vec(2,2, 1)
 	common /vectors/ vec
 
 #define A(x,y) vec(x,y, a)

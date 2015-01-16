@@ -3,7 +3,7 @@
 * code adapted from the "Handbook" routines
 * (Wilkinson, Reinsch: Handbook for Automatic Computation, p. 202)
 * this file is part of the Diag library
-* last modified 10 Aug 11 th
+* last modified 30 Nov 11 th
 
 #include "diag-f.h"
 
@@ -18,14 +18,14 @@
 	subroutine TakagiFactor(n, A,ldA, d, U,ldU, sort)
 	implicit none
 	integer n, ldA, ldU, sort
-	Complex A(ldA,*), U(ldU,*)
-	Real d(*)
+	ComplexType A(ldA,*), U(ldU,*)
+	RealType d(*)
 
 	integer p, q, j
-	Real red, off, thresh
-	Real sqp, sqq, t, invc
-	Complex f, x, y
-	Complex ev(2,MAXDIM)
+	RealType red, off, thresh
+	RealType sqp, sqq, t, invc
+	ComplexType f, x, y
+	ComplexType ev(2,MAXDIM)
 
 	integer sweep
 	common /nsweeps/ sweep

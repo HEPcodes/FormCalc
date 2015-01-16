@@ -1,7 +1,7 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 19 Aug 11 th
+* last modified 12 Jan 12 th
 
 
 ***********************************************************************
@@ -570,7 +570,7 @@ id `foo'([x]?symbol_) = [x];
 * variables appearing in the CalcFeynAmp input and output
 s I, D, Dminus4, Finite, MuTildeSq, Renumber;
 cf Mat, Den, Pair, Eps, DiracChain, WeylChain, FormSimplify;
-cf SumOver, IGram, JGram, IndexDelta, IndexEps, `SUNObjs';
+cf SumOver, IGram, JGram, IndexDelta, IndexEps, `SUNObjs', List;
 cf `LoopInt';
 cf `CutInt';
 f Spinor, DottedSpinor;
@@ -578,7 +578,7 @@ i Col1,...,Col`Legs', Ind1,...,Ind10;
 
 * variables that make it into Mma but don't appear in the output
 cf addM, mulM, powM, intM, paveM, abbM, fmeM, sunM;
-cf cutM, numM, qfM, qcM;
+cf cutM, numM, qfM, qcM, indM;
 
 * patterns
 s [x], [y], [z], [w], [n], [h];
@@ -753,6 +753,12 @@ id intM(Den([p1]?, 0)) = 0;
 
 *----------------------------------------------------------------------
 
+.sort
+
+id Den([p1]?, [m1]?) * [p1]?.[p1]? = 1 + [m1]*Den([p1], [m1]);
+
+*----------------------------------------------------------------------
+
 b q1, intM;
 .sort
 keep brackets;
@@ -780,12 +786,12 @@ once intM(Den([m0]?)*MOM([p0]?)) = ORD(0) *
 #do n = 1, 5
 also once intM(<Den([m0]?)*MOM([p0]?)>,...,<Den([m`n']?)*MOM([p`n']?)>) =
   replace_(q1, 2*q1 - [p0]) * (
-#if `n' <= `MaxPaVe'
+#if `n' < `MaxPaVe'
     NN({`n'+1}) *
     ORD(<paveM(1)*([p1]-[p0])>+...+<paveM(`n')*([p`n']-[p0])>) *
     intM(<Den(0, [p0], [m0])>*...*<Den(`n', [p`n'], [m`n'])>)
 #endif
-#if `n' > `MinOPP'
+#if `n' >= `MinOPP'
     `RationalTag'
   + cutM(CUTINT[{`n'+1}],
       <[p1]-[p0]>,...,<[p`n']-[p0]>,
@@ -961,6 +967,32 @@ id IGram(?i, <Den([i0]?, [p0]?, [m0]?)>*...*<Den([i`n']?, [p`n']?, [m`n']?)>) =
 id IGram(1, ?n1) * IGram(1, ?n2) * IGram(2, ?d) =
   IGram(MOM(?n1) * MOM(?n2), MOM(?d)^2)/2;
 
+#call MomSquare
+
+argument IGram;
+id MOM() = 1;
+#do n = 1, 5
+id MOM(<[p1]?>,...,<[p`n']?>) = e_(<[p1]>,...,<[p`n']>);
+#enddo
+contract;
+endargument;
+
+id IGram([x]?, [p1]?.[p1]?) * [p1]?.[p1]? = [x];
+
+#if "`PaVeReduce'" == "True"
+argument IGram;
+#call kikj
+#call InvSimplify(FormSimplify)
+endargument;
+#endif
+
+id IGram([x]?, [y]?) = [x] * IGram([y]);
+factarg IGram;
+chainout IGram;
+id IGram(0) = IGram(0);
+also IGram([x]?number_) = 1/[x];
+also IGram([x]?symbol_) = 1/[x];
+
 id NN([n]?) * DROP([k]?, ?i) = NN([n] - 1) * paveM() *
   (deltap_([k], 0) * DROP([k], ?i) - DROP(0, ?i));
 
@@ -997,28 +1029,6 @@ if( count(paveM, 1, NN, 1) == 2 ) redefine rep "0";
 .sort
 
 #enddo
-
-#call MomSquare
-
-argument IGram;
-id MOM() = 1;
-#do n = 1, 5
-id MOM(<[p1]?>,...,<[p`n']?>) = e_(<[p1]>,...,<[p`n']>);
-#enddo
-contract;
-endargument;
-
-id IGram([x]?, [p1]?.[p1]?) * [p1]?.[p1]? = [x];
-
-#if "`PaVeReduce'" == "True"
-argument IGram;
-#call kikj
-#call InvSimplify(FormSimplify)
-endargument;
-#endif
-
-id IGram([x]?, [y]?) = [x] * IGram([y]);
-id IGram([x]?symbol_) = 1/[x];
 
 #endif
 
@@ -1544,19 +1554,26 @@ b cutM, intM, qfM, Dminus4, MuTildeSq, SumOver, Mat;
 collect qcM;
 normalize qcM;
 
+id SumOver([i]?, ?a) = SumOver([i], ?a) * ORD([i]);
+chainin ORD;
+id qcM([x]?) * ORD(?i) = qcM([x], List(?i)) * ORD(?i);
+
 id qfM([x]?) = [x];
 
-b cutM, intM, SumOver, Mat;
+b cutM, intM, SumOver, Mat, ORD;
 .sort
 
 collect numM, numM;
 normalize numM;
 
 id numM(qcM(?a)) = qcM(?a) * numM(1);
+also numM([x]?) * ORD(?i) = numM([x], List(?i));
 
-id cutM([f]?, ?a) * numM([x]?) = [f](numM([x]), ?a);
+id ORD(?i) = 1;
 
-id numM([x]?) = [x];
+id cutM([f]?, ?a) * numM(?x) = [f](numM(?x), ?a);
+
+id numM([x]?, ?i) = [x];
 
 #endif
 

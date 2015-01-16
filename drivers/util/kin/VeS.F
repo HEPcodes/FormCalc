@@ -1,7 +1,7 @@
 * VeS.F
 * computes Vector.eps.Spinor
 * this file is part of FormCalc
-* last modified 9 Aug 11 th
+* last modified 30 Nov 11 th
 
 #include "types.h"
 
@@ -10,10 +10,10 @@
 	implicit none
 	integer a, b
 
-	Complex vec(2,2, 1)
+	ComplexType vec(2,2, 1)
 	common /vectors/ vec
 
-	Complex spi(2, 2)
+	ComplexType spi(2, 2)
 	equivalence (spi, vec)
 
 #define A(x,y) vec(x,y, a)

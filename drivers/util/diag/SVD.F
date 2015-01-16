@@ -1,7 +1,7 @@
 * SVD.F
 * singular value decomposition of an m-by-n matrix
 * this file is part of the Diag library
-* last modified 10 Aug 11 th
+* last modified 30 Nov 11 th
 
 #include "diag-f.h"
 
@@ -17,21 +17,21 @@
 	subroutine SVD(m, n, Ao,ldA, d, Vo,ldV, Wo,ldW, sort)
 	implicit none
 	integer m, n, ldA, ldV, ldW, sort
-	Complex Ao(ldA,*), Vo(ldV,*), Wo(ldW,*)
-	Real d(*)
+	ComplexType Ao(ldA,*), Vo(ldV,*), Wo(ldW,*)
+	RealType d(*)
 
 	integer nx, nm, p, q, px, qx, j, rev, pi(MAXDIM)
-	Real red, off, thresh
-	Real t, dv, dw, xv, xw, invc
-	Complex App, Apq, Aqp, Aqq
-	Complex x, y, sv, sw, tv, tw, f
-	Complex VW(MAXDIM,MAXDIM,0:2)
+	RealType red, off, thresh
+	RealType t, dv, dw, xv, xw, invc
+	ComplexType App, Apq, Aqp, Aqq
+	ComplexType x, y, sv, sw, tv, tw, f
+	ComplexType VW(MAXDIM,MAXDIM,0:2)
 
 * note: for better cache efficiency, the Vx, Wx arrays
 * contain the *transpose* of the transformation matrices
-	Complex V(MAXDIM,MAXDIM)
-	Complex W(MAXDIM,MAXDIM)
-	Complex A(MAXDIM,MAXDIM)
+	ComplexType V(MAXDIM,MAXDIM)
+	ComplexType W(MAXDIM,MAXDIM)
+	ComplexType A(MAXDIM,MAXDIM)
 	equivalence (VW(1,1,0), V)
 	equivalence (VW(1,1,1), W)
 	equivalence (VW(1,1,2), A)

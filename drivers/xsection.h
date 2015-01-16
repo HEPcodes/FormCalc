@@ -1,7 +1,7 @@
 * xsection.h
 * common blocks for xsection.F
 * this file is part of FormCalc
-* last modified 9 Aug 11 th
+* last modified 30 Nov 11 th
 
 
 #include "decl.h"
@@ -22,9 +22,9 @@
 #define BIT_LOOP 1
 #endif
 
-	Real var(8, MINVAR:TRIVIAL)
-	Real avgfac, sqrtS
-	Real mass_in, mass_out, threshold, scale
+	RealType var(8, MINVAR:TRIVIAL)
+	RealType avgfac, sqrtS
+	RealType mass_in, mass_out, threshold, scale
 	integer*8 helicities
 	integer sqrtSinvalid, flags
 

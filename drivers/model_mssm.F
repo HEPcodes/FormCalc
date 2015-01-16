@@ -2,7 +2,7 @@
 * all parameters for the MSSM are initialized here
 * this file is part of FormCalc
 * Christian Schappacher, 17 Feb 99
-* last modified 9 Aug 11 th
+* last modified 30 Nov 11 th
 
 
 * The input parameters for model_mssm are:
@@ -215,7 +215,7 @@
 	subroutine ModelVarIni(fail, scale)
 	implicit none
 	integer fail
-	Real scale
+	RealType scale
 
 #include "decl.h"
 
@@ -333,26 +333,26 @@
 #include "decl.h"
 
 	integer t, g
-	Real i3part, qpart
+	RealType i3part, qpart
 
-	Real Qe, Qu, Qd
+	RealType Qe, Qu, Qd
 	parameter (Qe = -1, Qu = 2/3D0, Qd = -1/3D0)
 
 #ifndef NO_EXCLUSION_LIMITS
-	Real DeltaRho, f1f2
+	RealType DeltaRho, f1f2
 	external f1f2
 #endif
 
 #ifdef NMFV
 	integer as, g2
-	Complex MX2(6,6), m1, m2, m3
+	ComplexType MX2(6,6), m1, m2, m3
 
 #define MX2_LL(i,j) MX2(i,j)
 #define MX2_LR(i,j) MX2(i,j+3)
 #define MX2_RL(i,j) Conjugate(MX2(j,i+3))
 #define MX2_RR(i,j) MX2(i+3,j+3)
 
-	Complex MX2_flat(6*6)
+	ComplexType MX2_flat(6*6)
 	equivalence (MX2, MX2_flat)
 #endif
 
@@ -547,13 +547,13 @@
 *-----------------------------------------------------------------------
 * this function is needed for the calculation of Delta rho
 
-	Real function f1f2(m1, m2)
+	RealType function f1f2(m1, m2)
 	implicit none
-	Real m1, m2
+	RealType m1, m2
 
 #include "decl.h"
 
-	Real f1, f2, logm1m2, c1
+	RealType f1, f2, logm1m2, c1
 
 	logm1m2 = log(m1/m2)
 	c1 = 2*m1*m2/(m1 - m2)*logm1m2
@@ -575,7 +575,7 @@
 
 #include "decl.h"
 
-	Complex X(2,2)
+	ComplexType X(2,2)
 
 	X(1,1) = Mino2
 	X(2,1) = sqrt2*MW*CB
@@ -605,7 +605,7 @@
 
 #include "decl.h"
 
-	Complex Y(4,4)
+	ComplexType Y(4,4)
 
 #ifndef NO_GUT_RELATION
 * GUT relation (Higgs Hunters Guide p. 287)
@@ -654,7 +654,7 @@
 
 #include "decl.h"
 
-	Real avgMH2, deltaMH2
+	RealType avgMH2, deltaMH2
 	integer inputmass
 	data inputmass /0/
 
@@ -791,19 +791,19 @@
 
 #include "decl.h"
 
-	Real MTr2, Qsusy, Lam
-	Real Xt, topstop, toplog, mix
-	Real Pb, Pf, Pg, Pg_, P1h, P2h, P2h_
-	Real pref, pref2, tmp, tmplog
-	Real sig11, sig12, sig22
-	Real avgMH2, deltaMH2
+	RealType MTr2, Qsusy, Lam
+	RealType Xt, topstop, toplog, mix
+	RealType Pb, Pf, Pg, Pg_, P1h, P2h, P2h_
+	RealType pref, pref2, tmp, tmplog
+	RealType sig11, sig12, sig22
+	RealType avgMH2, deltaMH2
 
-	Real MtLR, MbLR
+	RealType MtLR, MbLR
 	equivalence (Xf(3,3), MtLR)
 	equivalence (Xf(4,3), MbLR)
 
 	integer Nc, Ng
-	Real Qt, Qb
+	RealType Qt, Qb
 	parameter (Nc = 3, Ng = 3, Qt = 2/3D0, Qb = -1/3D0)
 
 * this is the running top mass:
@@ -949,14 +949,14 @@
 	parameter (botResum = 1)
 	parameter (tlCplxApprox = 3)
 
-	Real scalefactor
-	Real Qtau, Qt, Qb
+	RealType scalefactor
+	RealType Qtau, Qt, Qb
 	parameter (scalefactor = 1)
 	parameter (Qtau = 0)
 	parameter (Qt = 0)
 	parameter (Qb = 0)
 
-	Complex SAeff
+	ComplexType SAeff
 
 	call FHSetFlags(fail, mssmpart, fieldren, tanbren, higgsmix,
      &    p2approx, looplevel, runningMT, botResum, tlCplxApprox)

@@ -1,13 +1,13 @@
 * util.h
 * prototypes for the functions in util.a
 * this file is part of FormCalc
-* last modified 25 Aug 11 th
+* last modified 30 Nov 11 th
 
 
-	Real ThreeMom
-	Real SInvariant, TInvariant
-	Complex Pair, Eps
-	Complex SxS, SeS
+	RealType ThreeMom
+	RealType SInvariant, TInvariant
+	ComplexType Pair, Eps
+	ComplexType SxS, SeS
 	integer VxS, VeS, BxS, BeS
 
 	external ThreeMom
@@ -20,16 +20,16 @@
 #define LEGS 1
 #endif
 
-	Complex vec(2,2,8,0:LEGS)
+	ComplexType vec(2,2,8,0:LEGS)
 	common /vectors/ vec
 
-	Complex kcomp(32,0:LEGS)
+	ComplexType kcomp(32,0:LEGS)
 	equivalence (vec, kcomp)
 
-	Real momspec(16,LEGS)
+	RealType momspec(16,LEGS)
 	common /momenta/ momspec
 
-	Real rootsvalue, muscale
+	RealType rootsvalue, muscale
 	common /cuttools_para/ rootsvalue, muscale
 
 	integer*8 by

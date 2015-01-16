@@ -2,7 +2,7 @@
 * construct the CMS representation of a momentum and the
 * three corresponding polarization vectors
 * this file is part of FormCalc
-* last modified 9 Aug 11 th
+* last modified 30 Nov 11 th
 
 #include "types.h"
 
@@ -14,9 +14,9 @@
 	subroutine VecSet(i, m, p, ex,ey,ez)
 	implicit none
 	integer i
-	Real m, p, ex,ey,ez
+	RealType m, p, ex,ey,ez
 
-	Complex vec(2,2, 8, 0:1)
+	ComplexType vec(2,2, 8, 0:1)
 	common /vectors/ vec
 
 #define K(x,y)     vec(x,y, 1, i)
@@ -24,7 +24,7 @@
 #define EpsL(x,y)  vec(x,y, 3, i)
 #define EpsTL(x,y) vec(x,y, 4, i)
 
-	Complex spi(2, 16, 0:1)
+	ComplexType spi(2, 16, 0:1)
 	equivalence (spi, vec)
 
 #define Spinor(hel,om,x) spi(x, hel*2+om+5, i)
@@ -39,7 +39,7 @@
 *       spi(x, 15, i) = right-handed, dotted,   upper
 *       spi(x, 16, i) = right-handed, dotted,   lower
 
-	Real momspec(16,1)
+	RealType momspec(16,1)
 	common /momenta/ momspec
 
 * the following must match the definitions in util.h:
@@ -56,11 +56,11 @@
 #define SPEC_EY 11
 #define SPEC_EZ 12
 
-	Real m2, p2, p0, deltap, sump
-	Real sinth, onePez, oneMez
-	Complex expIphi
+	RealType m2, p2, p0, deltap, sump
+	RealType sinth, onePez, oneMez
+	ComplexType expIphi
 
-	Real sqrt2
+	RealType sqrt2
 	parameter (sqrt2 = 1.4142135623730950488016887242096981D0)
 
 	momspec(SPEC_M,i) = m
@@ -94,19 +94,19 @@
 	  momspec(SPEC_PHI,i) = 0
 	else
 	  sinth = sqrt(sinth)
-	  expIphi = Cmplx(ex, ey)/sinth
+	  expIphi = ToComplex(ex, ey)/sinth
 	  momspec(SPEC_PHI,i) = atan2(ey, ex)
 	endif
 
 	K(1,1) = p0*onePez - deltap*ez
 	K(2,2) = p0*oneMez + deltap*ez
-	K(2,1) = p*Cmplx(ex, ey)
+	K(2,1) = p*ToComplex(ex, ey)
 	K(1,2) = Conjugate(K(2,1))
 
 	if( m .ne. 0 ) then
 	  EpsL(1,1) = (p*onePez + deltap*ez)/m
 	  EpsL(2,2) = (p*oneMez - deltap*ez)/m
-	  EpsL(2,1) = p0/m*Cmplx(ex, ey)
+	  EpsL(2,1) = p0/m*ToComplex(ex, ey)
 	  EpsL(1,2) = Conjugate(EpsL(2,1))
 	endif
 

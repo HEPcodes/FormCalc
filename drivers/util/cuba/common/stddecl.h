@@ -1,7 +1,7 @@
 /*
 	stddecl.h
 		Type declarations common to all Cuba routines
-		last modified 20 Jul 11 th
+		last modified 28 Sep 11 th
 */
 
 
@@ -19,9 +19,13 @@
 #include <float.h>
 #include <limits.h>
 #include <unistd.h>
+#include <assert.h>
 #include <fcntl.h>
 #include <setjmp.h>
+#include <sys/wait.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 
 #ifndef NDIM

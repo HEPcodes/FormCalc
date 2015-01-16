@@ -2,7 +2,7 @@
 	common.c
 		Code common to Vegas.c and Vegas.tm
 		this file is part of Vegas
-		last modified 6 Jun 10 th
+		last modified 25 Nov 11 th
 */
 
 
@@ -10,7 +10,7 @@
 #include "ChiSquare.c"
 #include "Grid.c"
 
-#define SamplesAlloc(p) MemAlloc(p, \
+#define SamplesAlloc(t, p) MemAlloc(p, \
   t->nbatch*((t->ndim + t->ncomp + 1)*sizeof(real) + \
              t->ndim*sizeof(bin_t)))
 

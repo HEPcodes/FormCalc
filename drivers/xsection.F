@@ -1,7 +1,7 @@
 * xsection.F
 * routines to compute the cross-section
 * this file is part of FormCalc
-* last modified 9 Aug 11 th
+* last modified 30 Nov 11 th
 
 #include "decl.h"
 
@@ -25,7 +25,7 @@
 	integer fail, argc
 	character*(*) pol
 	character*128 argv(*)
-	Real sqrtSfrom, sqrtSto, sqrtSstep
+	RealType sqrtSfrom, sqrtSto, sqrtSstep
 
 #include "xsection.h"
 
@@ -161,11 +161,11 @@
 	subroutine SetEnergy(fail, newsqrtS)
 	implicit none
 	integer fail
-	Real newsqrtS
+	RealType newsqrtS
 
 #include "xsection.h"
 
-	Real oldscale, oldmass_in, oldmass_out
+	RealType oldscale, oldmass_in, oldmass_out
 	logical reset
 	integer i
 
@@ -324,7 +324,7 @@
 
 	external DifferentialCS
 
-	Real result(NCOMP), error(NCOMP), show(nvars)
+	RealType result(NCOMP), error(NCOMP), show(nvars)
 	integer fail, f, v, nfix, ndim, fix(nvars)
 
 	call ModelConstIni(fail)
@@ -493,16 +493,16 @@
 	subroutine DifferentialCS(ndim, x, ncomp, result)
 	implicit none
 	integer ndim, ncomp
-	Real x(ndim), result(ncomp)
+	RealType x(ndim), result(ncomp)
 
 #include "xsection.h"
 
 #ifdef BREMSSTRAHLUNG
-	Real SoftPhotonFactor
+	RealType SoftPhotonFactor
 	external SoftPhotonFactor
 #endif
 
-	Real fac, range, flux
+	RealType fac, range, flux
 	integer v, d, c
 
 	fac = avgfac
@@ -574,10 +574,10 @@
 	implicit none
 	integer ndim
 	external integrand
-	Real result(NCOMP), error(NCOMP)
+	RealType result(NCOMP), error(NCOMP)
 
 	integer nregions, neval, fail, c
-	Real prob(NCOMP)
+	RealType prob(NCOMP)
 
 #include "xsection.h"
 

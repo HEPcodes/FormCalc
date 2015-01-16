@@ -2,7 +2,7 @@
 	Integrate.c
 		integrate over the unit hypercube
 		this file is part of Vegas
-		last modified 13 Sep 10 th
+		last modified 25 Nov 11 th
 */
 
 
@@ -10,7 +10,7 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
 {
   real *sample;
   count dim, comp;
-  int fail = -99;
+  int fail;
   struct {
     count niter;
     number nsamples, neval;
@@ -29,7 +29,7 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
       "  mineval " NUMBER "\n  maxeval " NUMBER "\n"
       "  nstart " NUMBER "\n  nincrease " NUMBER "\n"
       "  nbatch " NUMBER "\n  gridno %d\n"
-      "  statefile \"%s\"\n",
+      "  statefile \"%s\"",
       t->ndim, t->ncomp,
       t->epsrel, t->epsabs,
       t->flags, t->seed,
@@ -42,13 +42,15 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
   if( BadComponent(t) ) return -2;
   if( BadDimension(t) ) return -1;
 
-  SamplesAlloc(sample);
+  SamplesAlloc(t, sample);
 
-  if( setjmp(t->abort) ) goto abort;
+  if( (fail = setjmp(t->abort)) ) goto abort;
 
   IniRandom(t);
 
-  if( t->statefile && *t->statefile &&
+  if( t->statefile && *t->statefile == 0 ) t->statefile = NULL;
+
+  if( t->statefile &&
       stat(t->statefile, &st) == 0 &&
       st.st_size == sizeof state && (st.st_mode & 0400) ) {
     cint h = open(t->statefile, O_RDONLY);
@@ -63,7 +65,6 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
     }
   }
   else {
-    t->statefile = NULL;
     state.niter = 0;
     state.nsamples = t->nstart;
     Zap(state.cumul);
@@ -105,7 +106,7 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
         *w++ = weight;
       }
 
-      DoSample(t, n, sample, w, f, state.niter + 1);
+      DoSample(t, n, w, f, sample, state.niter + 1);
 
       w = sample;
       bin = (bin_t *)lastf;
