@@ -1,7 +1,7 @@
 * PrintVec.F
 * print out the Minkowskian representation of a vector
 * this file is part of FormCalc
-* last modified 30 Nov 11 th
+* last modified 17 Jul 12 th
 
 #include "types.h"
 
@@ -15,7 +15,7 @@
 	integer a
 	character*(*) s
 
-	ComplexType vec(2,2, 1)
+	ComplexType vec(2,2, 0:1)
 	common /vectors/ vec
 
 #define A(i,j) vec(i,j,a)

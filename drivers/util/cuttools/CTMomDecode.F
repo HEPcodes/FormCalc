@@ -4,7 +4,7 @@
 * the momenta's (integer*1) prefactors are encoded as the
 * bytes of an integer*8
 * this file is part of FormCalc
-* last modified 14 Feb 12 th
+* last modified 20 Jul 12 th
 
 #include "types.h"
 
@@ -14,14 +14,13 @@
 	integer*8 code
 	RealType p(0:3)
 
+#include "util.h"
+
 	integer i
 	ComplexType a(2,2)
 
 	integer*8 c
 	integer*1 f
-
-	ComplexType vec(2,2, 1)
-	common /vectors/ vec
 
 	a(1,1) = 0
 	a(2,1) = 0
@@ -29,15 +28,15 @@
 	a(2,2) = 0
 
 	c = code
-	i = 1
+	i = 0
 
 	do while( c .ne. 0 )
-	  i = i + 8
+	  i = i + 1
 	  f = iand(c, 255)
-	  a(1,1) = a(1,1) + f*vec(1,1,i)
-	  a(2,1) = a(2,1) + f*vec(2,1,i)
-	  a(1,2) = a(1,2) + f*vec(1,2,i)
-	  a(2,2) = a(2,2) + f*vec(2,2,i)
+	  a(1,1) = a(1,1) + f*vec(1,1,k(i))
+	  a(2,1) = a(2,1) + f*vec(2,1,k(i))
+	  a(1,2) = a(1,2) + f*vec(1,2,k(i))
+	  a(2,2) = a(2,2) + f*vec(2,2,k(i))
 	  c = ishft(c, -8)
 	enddo
 

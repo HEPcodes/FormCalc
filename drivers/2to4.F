@@ -1,7 +1,7 @@
 * 2to4.F
 * the kinematics for a 2 -> 4 process
 * this file is part of FormCalc
-* last modified 30 Nov 11 th
+* last modified 20 Jul 12 th
 
 
 * some definitions for xsection.F
@@ -73,6 +73,8 @@
 #include "xsection.h"
 
 	RealType p
+
+#include "inline.h"
 
 	p = ThreeMom(sqrtS, Re(MASS1), Re(MASS2))
 

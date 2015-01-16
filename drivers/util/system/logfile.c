@@ -2,7 +2,7 @@
 	logfile.c
 		I/O redirection for logfiles
 		this file is part of FormCalc
-		last modified 20 Jul 11 th
+		last modified 5 Sep 12 th
 */
 
 
@@ -23,17 +23,16 @@ static int prevstdout;
 
 int openlog_(const char *dir, const int *serial, const int len)
 {
-  int logfile;
   struct stat filestat;
   char filename[512];
+  int logfile, l = len;
 
-  prevstdout = len;
   do
-    if( prevstdout == 0 ) return 0;
-  while( dir[--prevstdout] == ' ' );
+    if( l == 0 ) return 0;
+  while( dir[--l] == ' ' );
 
-  memcpy(filename, dir, ++prevstdout);
-  filename[prevstdout] = 0;
+  memcpy(filename, dir, ++l);
+  filename[l] = 0;
 
   if( stat(filename, &filestat) == 0 ) {
     if( !S_ISDIR(filestat.st_mode) ) {
@@ -46,7 +45,7 @@ int openlog_(const char *dir, const int *serial, const int len)
     exit(1);
   }
 
-  sprintf(filename + prevstdout, "/%07d", *serial);
+  sprintf(filename + l, "/%07d", *serial);
   if( stat(filename, &filestat) == 0 && (filestat.st_mode & 0100) == 0 ) {
     printf("%s already complete\n", filename);
     return 1;

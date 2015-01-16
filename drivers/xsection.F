@@ -1,7 +1,7 @@
 * xsection.F
 * routines to compute the cross-section
 * this file is part of FormCalc
-* last modified 13 Feb 12 th
+* last modified 6 Sep 12 th
 
 #include "decl.h"
 
@@ -60,7 +60,7 @@
 	  bits = iand(type(i), 255)
 	  c = ior(ichar(pol(i:i)), 32)
 	  if( c .eq. ichar('t') ) then
-	    c = ior(c, ibits(bits, 3, 1))
+	    c = ior(c, 1 - ibits(bits, 3, 1))
 	    bits = iand(bits, 16+8+2+1)
 	  else if( c .eq. ichar('p') ) then
 	    bits = iand(bits, 16)
@@ -340,11 +340,11 @@
 	mudim = getmudim()
 	muscale = mudim
 	lambda = getlambda()
-	if( lambda .eq. -1 ) then
-	  epscoeff = -1
-	  Finite = 0
-	else if( lambda .eq. -2 ) then
+	if( lambda .eq. -2 ) then
 	  epscoeff = -2
+	  Finite = 0
+	else if( lambda .eq. -1 ) then
+	  epscoeff = -1
 	  Finite = 0
 	else
 	  epscoeff = 0
@@ -475,6 +475,10 @@
 #else
 103	format("|"/"|"/)
 	print 103
+#endif
+
+#ifdef PARALLEL
+	call cubarunexit
 #endif
 
 999	continue

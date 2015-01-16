@@ -4,7 +4,7 @@
 		has approximately equal spread = 1/2 vol (max - min),
 		then do a main integration over all regions
 		this file is part of Divonne
-		last modified 22 Dec 11 th
+		last modified 3 Jul 12 th
 */
 
 
@@ -21,7 +21,8 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
   Totals totals[NCOMP];
   real nneed;
   count dim, comp, iter, pass = 0, err, iregion;
-  number nwant, nmin = INT_MAX, neff;
+  number nwant, nmin = INT_MAX;
+  ML_ONLY(number neff;)
   int fail;
 
   if( VERBOSE > 1 ) {
@@ -190,7 +191,7 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
     if( VERBOSE ) Print("\nNot enough samples left for main integration.");
     for( comp = 0; comp < t->ncomp; ++comp )
       prob[comp] = -999;
-    neff = t->samples[0].neff;
+    ML_ONLY(neff = t->samples[0].neff;)
   }
   else {
     bool can_adjust = (t->key3 == 1 && t->samples[1].sampler != SampleRule &&
@@ -407,7 +408,7 @@ refine:
     for( comp = 0; comp < t->ncomp; ++comp )
       prob[comp] = ChiSquare(prob[comp], df);
 
-    neff = 1;
+    ML_ONLY(neff = 1;)
   }
 
 #ifdef MLVERSION

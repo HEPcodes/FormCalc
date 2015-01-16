@@ -1,7 +1,7 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 4 Jun 12 th
+* last modified 10 Oct 12 th
 
 
 ***********************************************************************
@@ -606,14 +606,12 @@ id `foo'([x]?symbol_) = [x];
 #call Neglect
 #endif
 
+#call eiki
+
 #call Const
 .sort
 
 *----------------------------------------------------------------------
-
-#define LoopInt "A0i, B0i, C0i, D0i, E0i, F0i"
-
-#define CutInt "Acut, Bcut, Ccut, Dcut, Ecut, Fcut"
 
 #define SUNObjs "SUNSum, SUNT, SUNTSum, SUNF, SUNEps"
 
@@ -624,16 +622,14 @@ id `foo'([x]?symbol_) = [x];
 * variables appearing in the CalcFeynAmp input and output
 s I, D, Dminus4, Gamma5Test, Finite, MuTilde, MuTildeSq, Renumber;
 cf Mat, Den, Pair, Eps, DiracChain, WeylChain, Evanescent, FormSimplify;
-cf SumOver, PowerOf, IGram, JGram, List;
+cf SumOver, PowerOf, IGram, List;
 cf HelDelta, IndexDelta, IndexEps, `SUNObjs', SUNTr;
-cf `LoopInt';
-cf `CutInt';
 f Spinor, g5M, g6M, g7M;
 i Col1,...,Col`Legs', Ind1,...,Ind10;
 
 * variables that make it into Mma but don't appear in the output
-cf addM, mulM, powM, intM, paveM, abbM, fmeM, sunM;
-cf cutM, numM, qfM, qcM, indM;
+cf addM, mulM, powM, abbM, fmeM, sunM;
+cf intM, paveM, cutM, numM, qfM, qcM;
 s dm4M;
 
 * patterns
@@ -653,13 +649,12 @@ t [t];
 * variables internal to FORM
 s TAG, CUTRAT, SCALE, JJ, KK;
 cf TMP, MOM, ABB, ORD, NOW, CH, SIGN(antisymm);
-cf NEQ, NN, FF, DROP, D1, D2, E1, E2;
+cf NEQ, NN, FF, DROP, JGRAM, D1, D2, E1, E2;
+cf JOIN0, JOIN1(symm);
 t NUM, EQ, DD, EPS(antisymm);
 nt GA, GB, GC, GD;
 f CC, WC;
 auto s ARG;
-set LOOPINT: `LoopInt';
-set CUTINT: `CutInt';
 set MOMS: k1,...,k`Legs';
 set COLS: Col1,...,Col`Legs';
 
@@ -811,7 +806,48 @@ repeat id GA(?g) * g_([i]?, [mu]?) = GA(?g, [mu]);
 
 *----------------------------------------------------------------------
 
-#if `CancelQ2' == 1
+#if `SimplifyQ2' == 1
+
+#if `OPP' < 100
+* join denominators, as in:
+* N2/(D0 D1) + N3/(D0 D1 D2) -> (N2 D2 + N3)/(D0 D1 D2)
+
+b intM;
+.sort
+collect TMP;
+
+id intM(<[s1]?>,...,<[s`OPP']?>) =
+  TAG * JOIN0(<[s1]>,...,<[s`OPP']>);
+
+#do n = {`OPP'+1}, `NPointMax'
+id intM(<[s1]?>,...,<[s`n']?>) = TAG * JOIN1(<[s1]>,...,<[s`n']>);
+b TAG;
+.sort
+
+collect ORD;
+splitarg ORD;
+
+repeat id ORD(?a, TMP([x]?) * JOIN0(<[s2]?>,...,<[s`n']?>), ?b,
+    TMP([y]?) * JOIN1(Den([p1]?, [m1]?), <[s2]?>,...,<[s`n']?>), ?c) =
+  ORD(?a, ?b, TMP([x]*(MOM([p1]) - [m1]) + [y])*
+    JOIN1(Den([p1], [m1]), <[s2]>,...,<[s`n']>), ?c);
+
+repeat id ORD([x]?, ?r) = [x] + ORD(?r);
+id ORD() = 0;
+
+id TAG * JOIN0(?a) = JOIN0(?a);
+mul replace_(JOIN1, JOIN0);
+
+.sort
+#enddo
+
+id TAG = 1;
+argument TMP;
+#call MomSquare
+endargument;
+id TMP([x]?) = [x];
+
+#endif
 
 b q1, intM;
 .sort
@@ -830,13 +866,16 @@ repeat;
 endrepeat;
 
 id intM() = 0;
-id intM(Den([p1]?, 0)) = 0;
 
 #endif
 
 *----------------------------------------------------------------------
 
 .sort
+
+mul replace_(JOIN0, intM);
+
+id intM(Den([p1]?, 0)) = 0;
 
 id Den([p1]?, [m1]?) * [p1]?.[p1]? = 1 + [m1]*Den([p1], [m1]);
 
@@ -855,41 +894,37 @@ endargument;
 symm intM;
 #endif
 
-#define MinOPP "`OPP'"
 #define MaxPaVe "`OPP'"
-#define RationalTag ""
-#if `OPP' < 0
-#redefine MinOPP "{-`OPP'}"
+#define RatTag ""
+#if `OPPRat' == 1
 #redefine MaxPaVe "100"
-#redefine RationalTag "* CUTRAT"
+#redefine RatTag "* CUTRAT"
 #endif
 
-once intM(Den([m0]?)*MOM([p0]?)) = ORD(0) *
-  replace_(q1, 2*q1 - [p0]) * intM(Den(0, [p0], [m0]));
-#do n = 1, 5
-also once intM(<Den([m0]?)*MOM([p0]?)>,...,<Den([m`n']?)*MOM([p`n']?)>) =
-  replace_(q1, 2*q1 - [p0]) * (
+once intM(Den([m1]?)*MOM([p1]?)) = ORD(0) *
+  replace_(q1, 2*q1 - [p1]) * intM(Den(0,[p1],[m1]));
+#do n = 2, `NPointMax'
+also once intM(<Den([m1]?)*MOM([p1]?)>,...,<Den([m`n']?)*MOM([p`n']?)>) =
+  replace_(q1, 2*q1 - [p1]) * 
+  intM(<Den(0,[p1],[m1])>*...*<Den({`n'-1},[p`n'],[m`n'])>) * (
 #if `n' < `MaxPaVe'
-    NN({`n'+1}) *
-    ORD(<paveM(1)*([p1]-[p0])>+...+<paveM(`n')*([p`n']-[p0])>) *
-    intM(<Den(0, [p0], [m0])>*...*<Den(`n', [p`n'], [m`n'])>)
+    NN(`n') *
+    ORD(<paveM(1)*([p2]-[p1])>+...+<paveM({`n'-1})*([p`n']-[p1])>)
 #endif
-#if `n' >= `MinOPP'
-    `RationalTag'
-  + cutM({`n'+1},
-      <[p1]-[p0]>,...,<[p`n']-[p0]>,
-      <[m0]>,...,<[m`n']>)
+#if `n' >= `OPP'
+    `RatTag'
+  + cutM(<[p2]-[p1]>,...,<[p`n']-[p1]>, <[m1]>,...,<[m`n']>)
 #endif
   );
 #enddo
 
 *----------------------------------------------------------------------
 
-b q1, NUM, ORD, NN, Den, intM, `Tensors', D, Dminus4, CUTRAT;
+b q1, NUM, ORD, NN, Den, intM, cutM, `Tensors', D, Dminus4, CUTRAT;
 .sort
 keep brackets;
 
-if( count(intM, 1) );
+if( count(ORD, 1) );
   totensor q1, NUM;
 elseif( count(cutM, 1) );
   id q1.q1 = q1.q1 - qfM(MuTildeSq);
@@ -914,9 +949,9 @@ id NUM([mu]?, [nu]?, [ro]?, [si]?) * NN(4) * intM([x]?) =
 
 #if 0
 also NUM([mu]?, [nu]?, [ro]?) * NN(3) *
-       intM(<Den(0, [p0]?, [m0]?)>*...*<Den(2, [p2]?, [m2]?)>) =
+       intM(<Den(0,[p0]?,[m0]?)>*...*<Den(2,[p2]?,[m2]?)>) =
   NUM([mu], [nu], [ro]) * NN(3) *
-    intM(<Den(0, [p0], [m0])>*...*<Den(2, [p2], [m2])>) +
+    intM(<Den(0,[p0],[m0])>*...*<Den(2,[p2],[m2])>) +
   1/36 * NEQ([mu], [nu], [ro], [p2] - [p0]) * Finite;
 #endif
 
@@ -935,7 +970,6 @@ id NEQ(?a) = dd_(?a);
 
 id CUTRAT * intM(?a) = 0;
 id CUTRAT = 1;
-
 #endif
 
 
@@ -993,12 +1027,12 @@ id NN(6) * paveM([i1]?,?i) = NN(6) *
 * hep-ph/0509141 Eq. (6.13)
 also NN(5) * paveM(0,0,?i) = NN(5) * (
   Dminus4 * paveM(0,0,?i) +
-  sum_(KK, 1, 4, JGram(KK,0) * DROP(KK, 0,0,?i)) );
+  sum_(KK, 1, 4, JGRAM(KK,0) * DROP(KK, 0,0,?i)) );
 
 * hep-ph/0509141 Eq. (6.12)
 also NN(5) * paveM([i1]?,?i) = NN(5) * (
   Dminus4 * paveM([i1],?i) +
-  sum_(KK, 0, 4, JGram([i1],KK) * DROP(KK, ?i)) -
+  sum_(KK, 0, 4, JGRAM([i1],KK) * DROP(KK, ?i)) -
   2*sum_(KK, 1, 4, E1([i1], KK) * distrib_(1, 1, E2, paveM, ?i)) );
 
 * hep-ph/0509141 Eq. (5.10)
@@ -1018,17 +1052,17 @@ also NN([n]?) * paveM([i1]?,?i) = NN([n]) *
 id D1([k]?) * D2([i2]?) * paveM(?i) =
   delta_([k], [i2]) * paveM(0,0,?i);
 id E1([i1]?, [k]?) * E2([i2]?) * paveM(?i) =
-  JGram([i1],[k], 0,[i2]) * DROP([k], 0,0,?i);
+  JGRAM([i1],[k], 0,[i2]) * DROP([k], 0,0,?i);
 
 * hep-ph/0509141 Eq. (2.28)
-id NN([n]?) * JGram([s1]?,0) = -NN([n]) *
+id NN([n]?) * JGRAM([s1]?,0) = -NN([n]) *
   sum_(KK, 1, [n], IGram([s1],KK) * FF(KK));
-id NN([n]?) * JGram([s1]?,[s2]?) = NN([n]) * (
+id NN([n]?) * JGRAM([s1]?,[s2]?) = NN([n]) * (
   2*FF(0) * IGram([s1],[s2]) +
   sum_(JJ, 1, [n], sum_(KK, 1, [n],
     IGram([s1],KK, [s2],JJ) * FF(KK) * FF(JJ))) );
 * hep-ph/0509141 Eq. (2.29)
-id NN([n]?) * JGram([s1]?,[s2]?, 0,[s4]?) =
+id NN([n]?) * JGRAM([s1]?,[s2]?, 0,[s4]?) =
   -NN([n]) * sum_(KK, 1, [n], IGram([s1],[s2], KK,[s4]));
 
 id FF(0) * Den(0, [p0]?, [m0]?) = [m0] * Den(0, [p0], [m0]);
@@ -1053,9 +1087,9 @@ id DROP([k]?) * Den([k]?, ?p) = 1;
 endargument;
 
 id IGram(?i, Den(?p)) = IGram(?i);
-#do n = 1, 5
-id IGram(?i, <Den([i0]?, [p0]?, [m0]?)>*...*<Den([i`n']?, [p`n']?, [m`n']?)>) =
-  IGram(?i, <[p1]-[p0]>,...,<[p`n']-[p0]>);
+#do n = 2, `NPointMax'
+id IGram(?i, <Den([i1]?,[p1]?,[m1]?)>*...*<Den([i`n']?,[p`n']?,[m`n']?)>) =
+  IGram(?i, <[p2]-[p1]>,...,<[p`n']-[p1]>);
 #enddo
 id IGram(1, ?n1) * IGram(1, ?n2) * IGram(2, ?d) =
   IGram(MOM(?n1) * MOM(?n2), MOM(?d)^2)/2;
@@ -1064,8 +1098,8 @@ id IGram(1, ?n1) * IGram(1, ?n2) * IGram(2, ?d) =
 
 argument IGram;
 id MOM() = 1;
-#do n = 1, 5
-id MOM(<[p1]?>,...,<[p`n']?>) = e_(<[p1]>,...,<[p`n']>);
+#do n = 2, `NPointMax'
+id MOM(<[p2]?>,...,<[p`n']?>) = e_(<[p2]>,...,<[p`n']>);
 #enddo
 contract;
 endargument;
@@ -1104,9 +1138,9 @@ repeat id paveM(?n) * DROP([n]?, [h]?,?i) =
 
 id DROP([k]?) * Den([k]?, ?q) = 1;
 
-#do n = 1, 6
-id NN(`n') * <Den([i1]?, ?p1)>*...*<Den([i`n']?, ?p`n')> =
-  NN(`n') * intM(<Den(0, ?p1)>*...*<Den({`n'-1}, ?p`n')>);
+#do n = 1, `NPointMax'
+id NN(`n') * <Den([i1]?,?p1)>*...*<Den([i`n']?,?p`n')> =
+  NN(`n') * intM(<Den(0,?p1)>*...*<Den({`n'-1},?p`n')>);
 #enddo
 
 id NN(1) = 1;
@@ -1127,27 +1161,27 @@ if( count(paveM, 1, NN, 1) == 2 ) redefine rep "0";
 
 *----------------------------------------------------------------------
 
-b paveM, intM, NN, Den;
+b paveM, intM, cutM, NN, Den;
 .sort
 keep brackets;
 
 id NN(?i) = 1;
 
-id paveM(?i) * intM(Den(0, [p0]?, [m0]?)) =
+id paveM(?i) * intM(Den(0, [p1]?, [m1]?)) =
   theta_(sign_(nargs_(?i))) *
-    ([m0]/2)^(nargs_(?i)/2)/fac_(nargs_(?i)/2 + 1) *
-    (intM(A0i(0), [m0]) + [m0]*sum_(KK, 2, nargs_(?i)/2 + 1, 1/KK));
-also intM(Den(0, [p0]?, [m0]?)) = intM(A0i(0), [m0]);
-#do n = 1, 5
-also intM(<Den(0, [p0]?, [m0]?)>*...*<Den(`n', [p`n']?, [m`n']?)>) =
-  intM(LOOPINT[{`n'+1}](0),
-#do i = 1, {(`n'+1)/2}
-    <MOM([p`i']-[p0])>,...,<MOM([p`n']-[p{`n'-`i'}])>,
-#if {2*`i'} <= `n'
-    <MOM([p0]-[p{`n'-`i'+1}])>,...,<MOM([p{`i'-1}]-[p`n'])>,
+    ([m1]/2)^(nargs_(?i)/2)/fac_(nargs_(?i)/2 + 1) *
+    (paveM(1, List(0), [m1]) + [m1]*sum_(KK, 2, nargs_(?i)/2 + 1, 1/KK));
+also intM(Den(0, [p1]?, [m1]?)) = paveM(1, List(0), [m1]);
+#do n = 2, `NPointMax'
+also intM(<Den(0,[p1]?,[m1]?)>*...*<Den({`n'-1},[p`n']?,[m`n']?)>) =
+  intM(`n',
+#do i = 1, {`n'/2}
+    <MOM([p{`i'+1}]-[p1])>,...,<MOM([p`n']-[p{`n'-`i'}])>,
+#if {2*`i'} < `n'
+    <MOM([p1]-[p{`n'-`i'+1}])>,...,<MOM([p`i']-[p`n'])>,
 #endif
 #enddo
-    <[m0]>,...,<[m`n']>);
+    <[m1]>,...,<[m`n']>);
 #enddo
 
 id Den([p1]?, ?m) = Den(MOM([p1]), ?m);
@@ -1156,12 +1190,10 @@ argument intM, Den;
 #call MomSquare
 endargument;
 
-if( count(paveM, 1) );
-  chainin paveM;
-  id paveM(?i) * intM([f]?(0), ?r) = intM([f](?i), ?r);
-else;
-  symm intM:4 3, 4;
-endif;
+id intM([n]?, ?r) * cutM(?k) = cutM([n], List(?r), ?k);
+also intM([n]?, ?r) * paveM(?i) = paveM([n], List(?i), ?r);
+symm intM:4 3, 4;
+id intM([n]?, ?r) = paveM([n], List(0), ?r);
 
 *----------------------------------------------------------------------
 
@@ -1221,7 +1253,7 @@ keep brackets;
 *----------------------------------------------------------------------
 
 #if "`Dim'" != 4
-b D, Dminus4, intM, cutM, CUTRAT;
+b D, Dminus4, paveM, cutM, CUTRAT;
 .sort
 
 keep brackets;
@@ -1230,31 +1262,31 @@ id D = Dminus4 + 4;
 
 #if "`Dim'" == "D"
 
-#if `OPP' > 0
+#if `OPPRat' == 0
 id Dminus4 * cutM(?a) = dm4M * cutM(?a);
 #else
 id Dminus4 * cutM(?a) = 0;
 #endif
 
 * add local terms for dimreg
-also Dminus4 * intM(A0i(0), [m1]?) = -2*[m1]*Finite;
-also Dminus4 * intM(A0i(0,0), [m1]?) = -[m1]^2/2*Finite;
-also Dminus4 * intM(B0i(0), ?a) = -2*Finite;
-also Dminus4 * intM(B0i(1), ?a) = 1*Finite;
-also Dminus4 * intM(B0i(0,0), [k1]?, [m1]?, [m2]?) =
+also Dminus4 * paveM(1, List(0), [m1]?) = -2*[m1]*Finite;
+also Dminus4 * paveM(1, List(0,0), [m1]?) = -[m1]^2/2*Finite;
+also Dminus4 * paveM(2, List(0), ?a) = -2*Finite;
+also Dminus4 * paveM(2, List(1), ?a) = Finite;
+also Dminus4 * paveM(2, List(0,0), [k1]?, [m1]?, [m2]?) =
   1/6*([k1] - 3*[m1] - 3*[m2])*Finite;
-also Dminus4 * intM(B0i(1,1), ?a) = -2/3*Finite;
-also Dminus4 * intM(B0i(0,0,1), [k1]?, [m1]?, [m2]?) =
+also Dminus4 * paveM(2, List(1,1), ?a) = -2/3*Finite;
+also Dminus4 * paveM(2, List(0,0,1), [k1]?, [m1]?, [m2]?) =
   -1/12*([k1] - 2*[m1] - 4*[m2])*Finite;
-also Dminus4 * intM(B0i(1,1,1), ?a) = 1/2*Finite;
-also Dminus4 * intM(C0i(0,0), ?a) = -1/2*Finite;
-also Dminus4 * intM(C0i(0,0,[i]?), ?a) = 1/6*Finite;
-also Dminus4 * intM(C0i(0,0,0,0), [k1]?, [k2]?, [k1k2]?, [m1]?, [m2]?, [m3]?) =
+also Dminus4 * paveM(2, List(1,1,1), ?a) = 1/2*Finite;
+also Dminus4 * paveM(3, List(0,0), ?a) = -1/2*Finite;
+also Dminus4 * paveM(3, List(0,0,[i]?), ?a) = 1/6*Finite;
+also Dminus4 * paveM(3, List(0,0,0,0), [k1]?, [k2]?, [k1k2]?, [m1]?, [m2]?, [m3]?) =
   1/48*([k1] + [k2] + [k1k2] - 4*([m1] + [m2] + [m3]))*Finite;
-also Dminus4 * intM(C0i(0,0,[i]?,[i]?), ?a) = -1/12*Finite;
-also Dminus4 * intM(C0i(0,0,[i]?,[j]?), ?a) = -1/24*Finite;
-also Dminus4 * intM(D0i(0,0,0,0), ?a) = -1/12*Finite;
-also Dminus4 * intM(D0i(0,0,0,0,[i]?), ?a) = 1/48*Finite;
+also Dminus4 * paveM(3, List(0,0,[i]?,[i]?), ?a) = -1/12*Finite;
+also Dminus4 * paveM(3, List(0,0,[i]?,[j]?), ?a) = -1/24*Finite;
+also Dminus4 * paveM(4, List(0,0,0,0), ?a) = -1/12*Finite;
+also Dminus4 * paveM(4, List(0,0,0,0,[i]?), ?a) = 1/48*Finite;
 
 also Dminus4 = 0;
 
@@ -1262,7 +1294,7 @@ also Dminus4 = 0;
 
 #endif
 
-id CUTRAT * intM(?a) = 0;
+id CUTRAT * paveM(?a) = 0;
 id CUTRAT = 1;
 
 #endif
@@ -1328,19 +1360,6 @@ id CH([s1]?, ?g, [s2]?) = [s1] * GA(?g) * [s2];
 
 #call ChainSimplify(0)
 *id CH(?a, [p1]?, [p1]?, ?b) = [p1].[p1] * CH(?a, ?b);
-
-#if `OPP' < 100 && `CancelQ2' == 1
-repeat;
-  once q1.q1 * cutM(2, [p2]?, [m1]?, ?m) =
-    replace_(q1, q1 - [p2]) * cutM(1, ?m) +
-    [m1] * cutM(2, [p2], [m1], ?m);
-#do n = 3, 6
-  also once q1.q1 * cutM(`n', <[p2]?>,...,<[p`n']?>, [m1]?, ?m) =
-    replace_(q1, q1 - [p2]) * cutM({`n'-1}, <[p3]-[p2]>,...,<[p`n']-[p2]>, ?m) +
-    [m1] * cutM(`n', <[p2]>,...,<[p`n']>, [m1], ?m);
-#enddo
-endrepeat;
-#endif
 
 #call kikj
 #call eiki
@@ -1410,7 +1429,7 @@ mul ORD(`order');
 #define Inserted
 #endif
 
-id intM(A0i(?a), 0) = 0;
+id paveM(1, [x]?, 0) = 0;
 
 id Den(0, [x]?) = -Den([x], 0);
 id Den([x]?, 0) * [x]? = 1;
@@ -1639,7 +1658,7 @@ id abbM(1) = 1;
 *----------------------------------------------------------------------
 
 b SumOver, PowerOf, Mat, Den, IGram,
-  abbM, mulM, intM, cutM, qfM, Dminus4, dm4M;
+  abbM, mulM, paveM, cutM, qfM, Dminus4, dm4M;
 .sort
 
 collect FormSimplify;
@@ -1677,13 +1696,13 @@ normalize mulM;
 
 #if `OPP' < 100
 
-b cutM, intM, qfM, Dminus4, dm4M, SumOver, PowerOf, Mat, Den;
+b cutM, paveM, qfM, Dminus4, dm4M, SumOver, PowerOf, Mat, Den;
 .sort
 
 collect FormSimplify;
 normalize FormSimplify;
 
-b cutM, intM, qfM, Dminus4, dm4M, SumOver, PowerOf, Mat;
+b cutM, paveM, qfM, Dminus4, dm4M, SumOver, PowerOf, Mat;
 .sort
 
 collect qcM;
@@ -1695,7 +1714,7 @@ id qcM([x]?) * ORD(?i) = qcM([x], List(?i)) * ORD(?i);
 
 id qfM([x]?) = [x];
 
-b cutM, intM, SumOver, PowerOf, Mat, ORD;
+b cutM, paveM, SumOver, PowerOf, Mat, ORD;
 .sort
 
 collect numM, numM;
@@ -1706,7 +1725,7 @@ also numM([x]?) * ORD(?i) = numM([x], List(?i));
 
 id ORD(?i) = 1;
 
-id cutM([n]?, ?a) * numM(?x) = CUTINT[[n]](numM(?x), ?a);
+id cutM([n]?, ?a) * numM(?x) = cutM([n], numM(?x), ?a);
 
 id numM([x]?, ?i) = [x];
 
@@ -1714,9 +1733,7 @@ id numM([x]?, ?i) = [x];
 
 *----------------------------------------------------------------------
 
-mul replace_(intM, paveM);
-
-b SumOver, PowerOf, Mat, Den, IGram, paveM;
+b SumOver, PowerOf, Mat, Den, IGram, paveM, cutM;
 print;
 
 .end

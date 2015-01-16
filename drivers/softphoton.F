@@ -1,7 +1,7 @@
 * softphoton.F
 * routines for the treatment of soft-photon radiation
 * this file is part of FormCalc
-* last modified 30 Nov 11 th
+* last modified 13 Sep 12 th
 
 
 ************************************************************************
@@ -28,29 +28,30 @@
 * because there may be no "/" in a constant in the data
 * statement (such as in 2/3D0)
 #if LEGS == 3
-	RealType ch1, ch2, ch3
+#define CHARGES ch1, ch2, ch3
+	RealType CHARGES
 	parameter (ch1 = CHARGE1)
 	parameter (ch2 = CHARGE2)
 	parameter (ch3 = CHARGE3)
-	data charge / ch1, ch2, ch3 /
 #elif LEGS == 4
-	RealType ch1, ch2, ch3, ch4
+#define CHARGES ch1, ch2, ch3, ch4
+	RealType CHARGES
 	parameter (ch1 = CHARGE1)
 	parameter (ch2 = CHARGE2)
 	parameter (ch3 = CHARGE3)
 	parameter (ch4 = CHARGE4)
-	data charge / ch1, ch2, ch3, ch4 /
 #elif LEGS == 5
-	RealType ch1, ch2, ch3, ch4, ch5
+#define CHARGES ch1, ch2, ch3, ch4, ch5
+	RealType CHARGES
 	parameter (ch1 = CHARGE1)
 	parameter (ch2 = CHARGE2)
 	parameter (ch3 = CHARGE3)
 	parameter (ch4 = CHARGE4)
 	parameter (ch5 = CHARGE5)
-	data charge / ch1, ch2, ch3, ch4, ch5 /
 #else
 #error No definition for LEGS external legs
 #endif
+	data charge /CHARGES/
 
 	loglambda = log(4*(ESOFTMAX)**2/getlambda())
 
@@ -83,6 +84,8 @@
 
 	RealType loglambda
 	common /infrared/ loglambda
+
+#include "inline.h"
 
 	mi = momspec(SPEC_M, i)
 	ki0 = momspec(SPEC_E, i)

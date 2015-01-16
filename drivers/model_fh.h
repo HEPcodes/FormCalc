@@ -1,7 +1,7 @@
 * model_fh.h
 * declarations for model_fh.F
 * this file is part of FormCalc
-* last modified 30 Nov 11 th
+* last modified 13 Jul 12 th
 
 
 #include "FHRecord.h"
@@ -20,13 +20,13 @@
 	RealType EL, Alfa, Alfa2, GS, Alfas, Alfas2
 	RealType CKMlambda, CKMA, CKMrhobar, CKMetabar
 
-	common /sm_para/ CKM
-	common /sm_para/ Mf, Mf2
-	common /sm_para/ MZ, MZ2, MW, MW2, MH, MH2, MBatMB
-	common /sm_para/ CW, CW2, SW, SW2
-	common /sm_para/ ELMZ, AlfaMZ, GF, AlfaGF, AlfasMZ
-	common /sm_para/ EL, Alfa, Alfa2, GS, Alfas, Alfas2
-	common /sm_para/ CKMlambda, CKMA, CKMrhobar, CKMetabar
+	common /modelpara/ CKM
+	common /modelpara/ Mf, Mf2
+	common /modelpara/ MZ, MZ2, MW, MW2, MH, MH2, MBatMB
+	common /modelpara/ CW, CW2, SW, SW2
+	common /modelpara/ ELMZ, AlfaMZ, GF, AlfaGF, AlfasMZ
+	common /modelpara/ EL, Alfa, Alfa2, GS, Alfas, Alfas2
+	common /modelpara/ CKMlambda, CKMA, CKMrhobar, CKMetabar
 
 #ifndef CKMC
 #define CKMC(i,j) Conjugate(CKM(i,j))
@@ -60,19 +60,19 @@
 	RealType CAB, SAB, CBA, SBA, CBA2, SBA2, SAeff
 	integer nmfv
 
-	common /mssm_para/ UCha, VCha, ZNeu
-	common /mssm_para/ XHiggs
-	common /mssm_para/ deltaSf, UASf
-	common /mssm_para/ MSS2, Afd, Kf
-	common /mssm_para/ MUE, Mino1, Mino2, Mino3, SqrtEGl, Deltab
-	common /mssm_para/ MCha, MCha2, MNeu, MNeu2
-	common /mssm_para/ MSS, MASf, MASf2
-	common /mssm_para/ MHiggs, MHiggs2, MHtree, MHtree2
-	common /mssm_para/ MGl, MGl2
-	common /mssm_para/ CB, SB, TB, CB2, SB2, TB2, C2B, S2B
-	common /mssm_para/ CA, SA, CA2, SA2, C2A, S2A
-	common /mssm_para/ CAB, SAB, CBA, SBA, CBA2, SBA2, SAeff
-	common /mssm_para/ nmfv
+	common /modelpara/ UCha, VCha, ZNeu
+	common /modelpara/ XHiggs
+	common /modelpara/ deltaSf, UASf
+	common /modelpara/ MSS2, Afd, Kf
+	common /modelpara/ MUE, Mino1, Mino2, Mino3, SqrtEGl, Deltab
+	common /modelpara/ MCha, MCha2, MNeu, MNeu2
+	common /modelpara/ MSS, MASf, MASf2
+	common /modelpara/ MHiggs, MHiggs2, MHtree, MHtree2
+	common /modelpara/ MGl, MGl2
+	common /modelpara/ CB, SB, TB, CB2, SB2, TB2, C2B, S2B
+	common /modelpara/ CA, SA, CA2, SA2, C2A, S2A
+	common /modelpara/ CAB, SAB, CBA, SBA, CBA2, SBA2, SAeff
+	common /modelpara/ nmfv
 
 #ifndef USfC
 #define MSf(s,t,g) MASf(g+3*(s-1),t)
@@ -127,37 +127,38 @@
 	equivalence (MASf, MASf_flat)
 	equivalence (MASf2, MASf2_flat)
 
-	ComplexType deltaLRuc, deltaLRct, deltaLRut
-	equivalence (deltaSf_LR(1,2,3), deltaLRuc)
-	equivalence (deltaSf_LR(2,3,3), deltaLRct)
-	equivalence (deltaSf_LR(1,3,3), deltaLRut)
+	ComplexType deltaULR12, deltaULR23, deltaULR13
+	equivalence (deltaSf_LR(1,2,3), deltaULR13)
+	equivalence (deltaSf_LR(2,3,3), deltaULR23)
+	equivalence (deltaSf_LR(1,3,3), deltaULR13)
 
-	ComplexType deltaRLuc, deltaRLct, deltaRLut
-	equivalence (deltaSf_RL(1,2,3), deltaRLuc)
-	equivalence (deltaSf_RL(2,3,3), deltaRLct)
-	equivalence (deltaSf_RL(1,3,3), deltaRLut)
+	ComplexType deltaURL12, deltaURL23, deltaURL13
+	equivalence (deltaSf_RL(1,2,3), deltaURL13)
+	equivalence (deltaSf_RL(2,3,3), deltaURL23)
+	equivalence (deltaSf_RL(1,3,3), deltaURL13)
 
-	ComplexType deltaRRuc, deltaRRct, deltaRRut
-	equivalence (deltaSf_RR(1,2,3), deltaRRuc)
-	equivalence (deltaSf_RR(2,3,3), deltaRRct)
-	equivalence (deltaSf_RR(1,3,3), deltaRRut)
+	ComplexType deltaURR12, deltaURR23, deltaURR13
+	equivalence (deltaSf_RR(1,2,3), deltaURR12)
+	equivalence (deltaSf_RR(2,3,3), deltaURR23)
+	equivalence (deltaSf_RR(1,3,3), deltaURR13)
 
-	ComplexType deltaLL12, deltaLL23, deltaLL13
-	equivalence (deltaSf_LL(1,2,4), deltaLL12)
-	equivalence (deltaSf_LL(2,3,4), deltaLL23)
-	equivalence (deltaSf_LL(1,3,4), deltaLL13)
+	ComplexType deltaQLL12, deltaQLL23, deltaQLL13
+	equivalence (deltaSf_LL(1,2,4), deltaQLL12)
+	equivalence (deltaSf_LL(2,3,4), deltaQLL23)
+	equivalence (deltaSf_LL(1,3,4), deltaQLL13)
 
-	ComplexType deltaLRds, deltaLRsb, deltaLRdb
-	equivalence (deltaSf_LR(1,2,4), deltaLRds)
-	equivalence (deltaSf_LR(2,3,4), deltaLRsb)
-	equivalence (deltaSf_LR(1,3,4), deltaLRdb)
+	ComplexType deltaDLR12, deltaDLR23, deltaDLR13
+	equivalence (deltaSf_LR(1,2,4), deltaDLR12)
+	equivalence (deltaSf_LR(2,3,4), deltaDLR23)
+	equivalence (deltaSf_LR(1,3,4), deltaDLR13)
 
-	ComplexType deltaRLds, deltaRLsb, deltaRLdb
-	equivalence (deltaSf_RL(1,2,4), deltaRLds)
-	equivalence (deltaSf_RL(2,3,4), deltaRLsb)
-	equivalence (deltaSf_RL(1,3,4), deltaRLdb)
+	ComplexType deltaDRL12, deltaDRL23, deltaDRL13
+	equivalence (deltaSf_RL(1,2,4), deltaDRL12)
+	equivalence (deltaSf_RL(2,3,4), deltaDRL23)
+	equivalence (deltaSf_RL(1,3,4), deltaDRL13)
 
-	ComplexType deltaRRds, deltaRRsb, deltaRRdb
-	equivalence (deltaSf_RR(1,2,4), deltaRRds)
-	equivalence (deltaSf_RR(2,3,4), deltaRRsb)
-	equivalence (deltaSf_RR(1,3,4), deltaRRdb)
+	ComplexType deltaDRR12, deltaDRR23, deltaDRR13
+	equivalence (deltaSf_RR(1,2,4), deltaDRR12)
+	equivalence (deltaSf_RR(2,3,4), deltaDRR23)
+	equivalence (deltaSf_RR(1,3,4), deltaDRR13)
+

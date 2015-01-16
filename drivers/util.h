@@ -1,59 +1,48 @@
 * util.h
-* prototypes for the functions in util.a
+* prototypes for the util functions
 * this file is part of FormCalc
-* last modified 16 Mar 12 th
+* last modified 21 Sep 12 th
 
-
-	RealType ThreeMom
-	RealType SInvariant, TInvariant
-	ComplexType Pair, Eps, Chain
-
-	external ThreeMom
-	external SInvariant, TInvariant
-	external Pair, Eps, Chain
 
 #ifndef LEGS
 #define LEGS 1
 #endif
 
-	ComplexType vec(2,2,8,0:LEGS)
-	common /vectors/ vec
+	integer nvec
+	parameter (nvec = 10)
 
-	ComplexType kcomp(32,0:LEGS)
-	equivalence (vec, kcomp)
+* vec(*,*,0) is q1 in num.h
+	ComplexType vec(2,2,0:nvec*LEGS), vec_end
+	common /vectors/ vec, vec_end
 
-	RealType momspec(16,LEGS)
-	common /momenta/ momspec
+	RealType momspec(8*nvec,LEGS)
+	equivalence (vec(1,1,1), momspec)
 
-* encoding base for spinor chains (JC) and momenta (JK)
-	integer*8 JC, JK
-	parameter (JC = 256)
+* encoding base for momenta
+	integer*8 JK
 	parameter (JK = 256)
 
 
 #ifndef SPEC_M
 
-#define SPEC_M 1
-#define SPEC_K 2
-#define SPEC_E 3
-#define SPEC_KT 4
-#define SPEC_ET 5
-#define SPEC_PRAP 6
-#define SPEC_RAP 7
-#define SPEC_DELTAK 8
-#define SPEC_PHI 9
-#define SPEC_EX 10
-#define SPEC_EY 11
-#define SPEC_EZ 12
+#define SPEC_M 65
+#define SPEC_K 66
+#define SPEC_E 67
+#define SPEC_KT 68
+#define SPEC_ET 69
+#define SPEC_PRAP 70
+#define SPEC_RAP 71
+#define SPEC_DELTAK 72
+#define SPEC_PHI 73
+#define SPEC_EX 74
+#define SPEC_EY 75
+#define SPEC_EZ 76
 
-#define k(i) (8*i+1)
-#define s(i) (8*i+3)
-#define e(i) (8*i+3+Hel(i))
-#define ec(i) (8*i+3-Hel(i))
-#define Spinor(i,s,d) (s*Hel(i)+8*i+d+5)
-
-#define EpsL 8
-#define EpsR 16
+#define k(i) (nvec*(i-1)+1)
+#define s(i) (nvec*(i-1)+3)
+#define e(i) (nvec*(i-1)+3+Hel(i))
+#define ec(i) (nvec*(i-1)+3-Hel(i))
+#define Spinor(i,s,d) (s*Hel(i)+nvec*(i-1)+d+5)
 
 #define MomEncoding(f,i) iand(f,JK-1)*JK**(i-1)
 
@@ -76,6 +65,20 @@
 #define BIT_HEL(i) (5*(LEGS-i)+Hel(i)+2)
 #define LOOP_HEL(h) do h = -2, 2
 #define ENDLOOP_HEL(h) enddo
+
+#define INI_S(seq) call clearcache
+#define INI_ANGLE(seq) call markcache
+#define DEINI(seq) call restorecache
+
+#ifdef PARALLEL
+#define PREP(h,he, v,ve, a,ae, s,se) call sqmeprep(h,he, v,ve, a,ae, s,se)
+#define EXEC(f, res, flags) call sqmeexec(f, res, flags)
+#define SYNC(res) call sqmesync(res)
+#else
+#define PREP(h,he, v,ve, a,ae, s,se)
+#define EXEC(f, res, flags) call f(res, flags)
+#define SYNC(res)
+#endif
 
 #define Cut(c,m) (m)*(c)
 

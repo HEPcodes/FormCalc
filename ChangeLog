@@ -1,3 +1,61 @@
+6 Oct 12:
+
+- Rearranged internal handling of loop integrals, FORM gives back
+  paveM and cutM, N-specific renamings happen in Mathematica.
+
+- The cut integrals now carry a set of 'traditional' parameters
+  (with invariants), as in: Ccut[c0para][ccutpara], for the
+  purpose of separating off calculation of the master integrals
+  in the generated code (to be hoisted out of the helicity loop).
+
+- Fixed problems with 'if' and 'call' syntax in C.
+
+
+20 Sep 12:
+
+- Fixed dependence problem in *put abbreviations.
+
+- Added latest FORM executables.
+
+
+18 Sep 12:
+
+- Changed CancelQ2 to SimplifyQ2 which includes merging lower-N
+  with higher-N OPP integrals, as in:
+  N2/(D0 D1) + N3/(D0 D1 D2) -> (N2 D2 + N3)/(D0 D1 D2)
+
+
+12 Sep 12:
+
+- CalcFeynAmp hands down full process info now, not just masses.
+
+- Fixed problem with DiagramType for Propagators appearing in
+  higher powers.
+
+
+8 Sep 12:
+
+- Helicity loop runs parallel now if PARALLEL is defined,
+  e.g. in user.h.  Currently takes all free cores (all cores 
+  minus system load), this can be changed by setting the
+  environment variable FCCORES.  The number of cores Cuba takes
+  is not (yet) taken into account.
+
+
+22 Jul 12:
+
+- Improved C output.  Using C99 declarations for initializing
+  the Mat... with NaNs.
+
+- Split helicity loop of SquaredME into own routine SquaredMEHel.
+
+- Made all 'util' functions inline (inline.h), for better performance.
+
+- Improved VarDecl function, now accepts strings which are passed
+  verbatim (such as "#ifdef ...", "#endif").  Conventions for
+  common blocks have changed: used Common[name][vars].
+
+
 25 May 12:
 
 - Added Cuba 3.

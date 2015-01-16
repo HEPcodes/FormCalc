@@ -1,7 +1,7 @@
 * model_mssm.h
 * declarations for model_mssm.F
 * this file is part of FormCalc
-* last modified 30 Nov 11 th
+* last modified 13 Jul 12 th
 
 
 #include "model_sm.h"
@@ -21,20 +21,20 @@
 	RealType CAB, SAB, CBA, SBA, CBA2, SBA2
 	RealType AlfasMT
 
-	common /mssm_para/ UCha, VCha, ZNeu
-	common /mssm_para/ USf, UCSf, UUSf
-	common /mssm_para/ XHiggs
-	common /mssm_para/ Af, Xf
-	common /mssm_para/ Atau, At, Ab, MUE, MUETB
-	common /mssm_para/ Mino1, Mino2, Mino3, SqrtEGl
-	common /mssm_para/ MCha, MCha2, MNeu, MNeu2
-	common /mssm_para/ MSS, MSS2, DSf
-	common /mssm_para/ MSf, MSf2, MSusy, MGl, MGl2
-	common /mssm_para/ MHiggs, MHiggs2, MHiggstree2
-	common /mssm_para/ CB, SB, TB, CB2, SB2, TB2, C2B, S2B
-	common /mssm_para/ CA, SA, CA2, SA2, C2A, S2A
-	common /mssm_para/ CAB, SAB, CBA, SBA, CBA2, SBA2
-	common /mssm_para/ AlfasMT
+	common /modelpara/ UCha, VCha, ZNeu
+	common /modelpara/ USf, UCSf, UUSf
+	common /modelpara/ XHiggs
+	common /modelpara/ Af, Xf
+	common /modelpara/ Atau, At, Ab, MUE, MUETB
+	common /modelpara/ Mino1, Mino2, Mino3, SqrtEGl
+	common /modelpara/ MCha, MCha2, MNeu, MNeu2
+	common /modelpara/ MSS, MSS2, DSf
+	common /modelpara/ MSf, MSf2, MSusy, MGl, MGl2
+	common /modelpara/ MHiggs, MHiggs2, MHiggstree2
+	common /modelpara/ CB, SB, TB, CB2, SB2, TB2, C2B, S2B
+	common /modelpara/ CA, SA, CA2, SA2, C2A, S2A
+	common /modelpara/ CAB, SAB, CBA, SBA, CBA2, SBA2
+	common /modelpara/ AlfasMT
 
 #ifndef USfC
 #define USfC(i,j,t,g) Conjugate(USf(i,j,t,g))
@@ -113,7 +113,7 @@
 	ComplexType UASf(6,6,3:4)
 	RealType MASf(6,3:4), MASf2(6,3:4)
 
-	common /fv_para/ UASf, MASf, MASf2, deltaSf
+	common /modelpara/ UASf, MASf, MASf2, deltaSf
 
 #ifndef UASfC
 #define UASfC(i,j,t) Conjugate(UASf(i,j,t))

@@ -49,7 +49,7 @@
 	ReadForm.tm
 		reads FORM output back into Mathematica
 		this file is part of FormCalc
-		last modified 16 Mar 12 th
+		last modified 4 Oct 12 th
 
 Note: FORM code must have
 	1. #- (no listing),
@@ -108,11 +108,11 @@ Hierarchy of collecting:
 3. Mat
 2. Den
 1. [coefficient]
-0. paveM
+0. paveM, cutM
 
 */
 
-#define LEVEL_PAVE 0
+#define LEVEL_INT 0
 #define LEVEL_COEFF 1
 #define LEVEL_DEN 2
 #define LEVEL_MAT 3
@@ -134,34 +134,35 @@ static const FUN funtab[] = {
   {(cstring)"PowerOf", LEVEL_SUMOVER},
   {(cstring)"Mat",     LEVEL_MAT},
   {(cstring)"Den",     LEVEL_DEN},
-  {(cstring)"paveM",   LEVEL_PAVE},
-  {(cstring)"A0i",     LEVEL_PAVE},
-  {(cstring)"B0i",     LEVEL_PAVE},
-  {(cstring)"C0i",     LEVEL_PAVE},
-  {(cstring)"D0i",     LEVEL_PAVE},
-  {(cstring)"E0i",     LEVEL_PAVE},
-  {(cstring)"F0i",     LEVEL_PAVE},
-  {(cstring)"Acut",    LEVEL_PAVE},
-  {(cstring)"Bcut",    LEVEL_PAVE},
-  {(cstring)"Ccut",    LEVEL_PAVE},
-  {(cstring)"Dcut",    LEVEL_PAVE},
-  {(cstring)"Ecut",    LEVEL_PAVE},
-  {(cstring)"Fcut",    LEVEL_PAVE},
-  {(cstring)"A0",      LEVEL_PAVE},
-  {(cstring)"A00",     LEVEL_PAVE},
-  {(cstring)"B0",      LEVEL_PAVE},
-  {(cstring)"B1",      LEVEL_PAVE},
-  {(cstring)"B00",     LEVEL_PAVE},
-  {(cstring)"B11",     LEVEL_PAVE},
-  {(cstring)"B001",    LEVEL_PAVE},
-  {(cstring)"B111",    LEVEL_PAVE},
-  {(cstring)"DB0",     LEVEL_PAVE},
-  {(cstring)"DB1",     LEVEL_PAVE},
-  {(cstring)"DB00",    LEVEL_PAVE},
-  {(cstring)"C0",      LEVEL_PAVE},
-  {(cstring)"D0",      LEVEL_PAVE},
-  {(cstring)"E0",      LEVEL_PAVE},
-  {(cstring)"F0",      LEVEL_PAVE}
+  {(cstring)"paveM",   LEVEL_INT},
+  {(cstring)"cutM",    LEVEL_INT},
+  {(cstring)"A0i",     LEVEL_INT},
+  {(cstring)"B0i",     LEVEL_INT},
+  {(cstring)"C0i",     LEVEL_INT},
+  {(cstring)"D0i",     LEVEL_INT},
+  {(cstring)"E0i",     LEVEL_INT},
+  {(cstring)"F0i",     LEVEL_INT},
+  {(cstring)"Acut",    LEVEL_INT},
+  {(cstring)"Bcut",    LEVEL_INT},
+  {(cstring)"Ccut",    LEVEL_INT},
+  {(cstring)"Dcut",    LEVEL_INT},
+  {(cstring)"Ecut",    LEVEL_INT},
+  {(cstring)"Fcut",    LEVEL_INT},
+  {(cstring)"A0",      LEVEL_INT},
+  {(cstring)"A00",     LEVEL_INT},
+  {(cstring)"B0",      LEVEL_INT},
+  {(cstring)"B1",      LEVEL_INT},
+  {(cstring)"B00",     LEVEL_INT},
+  {(cstring)"B11",     LEVEL_INT},
+  {(cstring)"B001",    LEVEL_INT},
+  {(cstring)"B111",    LEVEL_INT},
+  {(cstring)"DB0",     LEVEL_INT},
+  {(cstring)"DB1",     LEVEL_INT},
+  {(cstring)"DB00",    LEVEL_INT},
+  {(cstring)"C0",      LEVEL_INT},
+  {(cstring)"D0",      LEVEL_INT},
+  {(cstring)"E0",      LEVEL_INT},
+  {(cstring)"F0",      LEVEL_INT}
 };
 
 typedef struct term {
@@ -206,7 +207,7 @@ static void PrintPointer(TERM *tp)
 #if 1
 	/* for tough cases w/segfault on access */
   fprintf(stddeb, "address: %p\n", tp);
-  fprintf(stddeb, "PAVE:    %s\n", tp->f[LEVEL_PAVE]);
+  fprintf(stddeb, "PAVE:    %s\n", tp->f[LEVEL_INT]);
   fprintf(stddeb, "COEFF:   %s\n", tp->f[LEVEL_COEFF]);
   fprintf(stddeb, "DEN:     %s\n", tp->f[LEVEL_DEN]);
   fprintf(stddeb, "MAT:     %s\n", tp->f[LEVEL_MAT]);
@@ -222,7 +223,7 @@ static void PrintPointer(TERM *tp)
     "SUMOVER: %s\n"
     "coll:    %d\n\n",
     tp,
-    tp->f[LEVEL_PAVE],
+    tp->f[LEVEL_INT],
     tp->f[LEVEL_COEFF],
     tp->f[LEVEL_DEN],
     tp->f[LEVEL_MAT],
@@ -399,8 +400,8 @@ static inline TERM *FinalizeTerm(TERM *tp, string di, int *maxpavesize)
   *di++ = 0;
   if( *tp->f[LEVEL_MAT] )
     tp->f[LEVEL_MAT] = GetAbbr(tp->f[LEVEL_MAT]);
-  if( *tp->f[LEVEL_PAVE] )
-    *maxpavesize += Strlen(tp->f[LEVEL_PAVE]) + 2;
+  if( *tp->f[LEVEL_INT] )
+    *maxpavesize += Strlen(tp->f[LEVEL_INT]) + 2;
   return Resize(tp, di, di - (cstring)tp);
 }
 
@@ -424,29 +425,29 @@ static void CollectPaVe(TERM *termp, cint maxpavesize)
 {
   do {
     TERM *old = termp, *tp;
-    string s = termp->f[LEVEL_PAVE];
+    string s = termp->f[LEVEL_INT];
 
     while( (tp = old->last) ) {
       int lev;
-      for( lev = LEVEL_PAVE + 1; lev < NLEVELS; ++lev )
+      for( lev = LEVEL_INT + 1; lev < NLEVELS; ++lev )
         if( Strcmp(termp->f[lev], tp->f[lev]) != 0 ) {
           old = tp;
           goto loop;
         }
       if( termp->coll == 0 ) {
-        Die(termp->f[LEVEL_PAVE] = malloc(maxpavesize));
-        s = PutFactor(termp->f[LEVEL_PAVE], s);
+        Die(termp->f[LEVEL_INT] = malloc(maxpavesize));
+        s = PutFactor(termp->f[LEVEL_INT], s);
         termp->coll = 1;
       }
       s[-1] = '+';
-      s = PutFactor(s, tp->f[LEVEL_PAVE]);
+      s = PutFactor(s, tp->f[LEVEL_INT]);
       old->last = tp->last;
       free(tp);
 loop: ;
     }
 
-    if( termp->coll ) termp->f[LEVEL_PAVE] =
-      realloc(termp->f[LEVEL_PAVE], s - termp->f[LEVEL_PAVE]);
+    if( termp->coll ) termp->f[LEVEL_INT] =
+      realloc(termp->f[LEVEL_INT], s - termp->f[LEVEL_INT]);
   } while( (termp = termp->last) );
 }
 
@@ -514,13 +515,13 @@ static TERM *Transmit(TERM *tp, int level)
       fprintf(stddeb, DEBUG "sending %d of %d terms" RESET,
         term, nterms);
 
-    for( lev = level - 1; lev > LEVEL_PAVE; --lev ) {
+    for( lev = level - 1; lev > LEVEL_INT; --lev ) {
       ++ntimes;
       if( tp->nterms[lev] > 1 ) goto sendit;
       if( *tp->f[lev] == 0 ) --ntimes;
     }
 	/* OrderChain goes down only to LEVEL_COEFF, hence: */
-    if( *tp->f[LEVEL_PAVE] ) ++ntimes;
+    if( *tp->f[LEVEL_INT] ) ++ntimes;
 
 sendit:
     switch( ntimes ) {
@@ -532,14 +533,14 @@ sendit:
       MLPutFunction(stdlink, "Times", ntimes);
     case 1:
       if( *tp->f[level] ) MLPutExpr(stdlink, tp, level);
-      for( lev = level - 1; lev > LEVEL_PAVE; --lev ) {
+      for( lev = level - 1; lev > LEVEL_INT; --lev ) {
         if( tp->nterms[lev] > 1 ) {
           tp = Transmit(tp, lev);
           goto loop;
         }
         if( *tp->f[lev] ) MLPutExpr(stdlink, tp, lev);
       }
-      if( *tp->f[LEVEL_PAVE] ) MLPutExpr(stdlink, tp, LEVEL_PAVE);
+      if( *tp->f[LEVEL_INT] ) MLPutExpr(stdlink, tp, LEVEL_INT);
       break;
     }
     tp = tp->last;
@@ -727,7 +728,7 @@ quit:
   while( exprp > expressions ) {
     TERM *last;
     for( tp = *--exprp; tp; tp = last ) {
-      if( tp->coll ) free(tp->f[LEVEL_PAVE]);
+      if( tp->coll ) free(tp->f[LEVEL_INT]);
       last = tp->last;
       free(tp);
     }

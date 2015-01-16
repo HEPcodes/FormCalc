@@ -2,7 +2,7 @@
 # configure script for FormCalc
 # note: has nothing to do with GNU autoconf
 # this file is part of FormCalc
-# last modified 20 Jan 12 th
+# last modified 4 Oct 12 th
 
 
 LC_ALL=C
@@ -176,7 +176,7 @@ $0 understands the following options:
 
 --static            link the executables statically,
 
---quad              compile with quadruple precision (ifort and xlf only),
+--quad              compile with quadruple precision (gfortran 4.6+, ifort and xlf only),
 
 --debug             compile without optimization,
 
@@ -208,7 +208,7 @@ CONF_CC=`findprog gcc $CC gcc` || exit 1
 
 CONF_CXX=`findprog g++ $CXX g++` || exit 1
 
-CONF_FC=`findprog f77 $FC ${CONF_QUAD:+ifort} pgf77 ifort xlf gfortran g77 g95 f77 f90 fort77` || exit 1
+CONF_FC=`findprog f77 $FC ${CONF_QUAD:+ifort gfortran xlf} pgf77 ifort xlf gfortran g77 g95 f77 f90 fort77` || exit 1
 
 CONF_AR=`findprog ar $AR ar`
 
@@ -222,12 +222,12 @@ CONF_DEF="-D"
 
 case "`$CONF_FC --version -c 2>&1`" in
 *G95*)
-  CONF_FFLAGS="$FFLAGS -O0 -g -ffixed-line-length-132 -freal-loops $CONF_M $CONF_STATIC ${CONF_DEBUG:+-Wall}" ;;
+  CONF_FFLAGS="$FFLAGS -O3 -g -ffixed-line-length-132 -freal-loops $CONF_M $CONF_STATIC ${CONF_DEBUG:+-Wall}" ;;
 *GNU*)
-  CONF_FFLAGS="$FFLAGS -O0 -g -ffixed-line-length-none $CONF_M $CONF_STATIC ${CONF_DEBUG:+-Wall}"
+  CONF_FFLAGS="$FFLAGS -O3 -g -ffixed-line-length-none $CONF_M $CONF_STATIC ${CONF_DEBUG:+-Wall}"
   case "$CONF_FC" in
   *gfortran*)
-	CONF_FFLAGS="$CONF_FFLAGS ${CONF_DEBUG:+-Wtabs -ffpe-trap=invalid,overflow,zero} -ff2c ${CONF_STATIC_EXT:+-static-libgfortran -static-libgcc}" ;;
+	CONF_FFLAGS="$CONF_FFLAGS ${CONF_DEBUG:+-Wtabs -ffpe-trap=invalid,overflow,zero} -ff2c ${CONF_STATIC_EXT:+-static-libgfortran -static-libgcc} ${CONF_QUAD:+-fdefault-real-8}" ;;
   esac ;;
 *)
   CONF_FFLAGS="${FFLAGS-default}"
@@ -235,7 +235,7 @@ case "`$CONF_FC --version -c 2>&1`" in
   *pgf*)
 	CONF_FFLAGS="${CONF_DEBUG:--O3 -g} ${CONF_DEBUG:+-Ktrap=fp} -Mextend -Minform=inform -g77libs ${CONF_STATIC:+-Bstatic} $CONF_M" ;;
   *ifort*)
-	CONF_FFLAGS="${CONF_DEBUG:--O3 -g} -extend_source -warn truncated_source -assume bscc $CONF_STATIC ${CONF_STATIC_EXT:+-static-intel} ${CONF_QUAD:+-r16 -DDBLE=QEXT -DDIMAG=QIMAG -DDCONJG=QCONJG -DDCMPLX=QCMPLX} $CONF_M" ;;
+	CONF_FFLAGS="${CONF_DEBUG:--O3 -g} -extend_source -warn nouncalled -warn truncated_source -assume bscc $CONF_STATIC ${CONF_STATIC_EXT:+-static-intel} ${CONF_QUAD:+-r16 -DDBLE=QEXT -DDIMAG=QIMAG -DDCONJG=QCONJG -DDCMPLX=QCMPLX} $CONF_M" ;;
   *alpha)
 	CONF_FFLAGS="-old_f77 ${CONF_DEBUG:--O3 -g3} ${CONF_DEBUG:+-fpe0} -extend_source -warn truncated_source ${CONF_STATIC:+-non_shared}" ;;
   *sun* | *sparc*)

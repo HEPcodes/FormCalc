@@ -1,15 +1,15 @@
 Linux 64-bit:
 
 ./configure --build=x86_64-unknown-linux-gnu \
-  CC="llvm-gcc" CFLAGS="-static -O3 -fomit-frame-pointer" \
-  CXX="llvm-c++" CXXFLAGS="-static -O3 -fomit-frame-pointer" \
+  CC="llvm-gcc" CFLAGS="-static-libgcc -O3 -fomit-frame-pointer" \
+  CXX="llvm-c++" CXXFLAGS="-static-libgcc -O3 -fomit-frame-pointer" \
   --disable-threaded
 
 Linux 32-bit:
 
 ./configure --build=i686-unknown-linux-gnu \
-  CFLAGS="-static -O3 -fomit-frame-pointer -m32" \
-  CXXFLAGS="-static -O3 -fomit-frame-pointer -m32" \
+  CFLAGS="-static-libgcc -O3 -fomit-frame-pointer -m32" \
+  CXXFLAGS="-static-libgcc -O3 -fomit-frame-pointer -m32" \
   --disable-threaded
 
 Mac 64-bit:

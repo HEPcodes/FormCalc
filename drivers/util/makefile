@@ -1,3 +1,4 @@
+parent := $(DIR)/..
 system := $(DIR)/system
 kin := $(DIR)/kin
 cuttools := $(DIR)/cuttools
@@ -15,7 +16,7 @@ cuhre := $(cuba)/cuhre
 
 CFLAGS += -I$(common) -I$(@D) -DHAVE_CONFIG_H
 
-COMMON_DEPS = $(common)/stddecl.h \
+COMMON_DEPS := $(common)/stddecl.h \
   $(common)/ChiSquare.c $(common)/Erf.c \
   $(common)/CSample.c $(common)/Fork.c
 
@@ -31,18 +32,19 @@ SUAVE_DEPS := $(COMMON_DEPS) $(common)/Random.c \
   $(suave)/Integrate.c
 
 DIVONNE_C := $(divonne)/Divonne.c
-DIVONNE_DEPS = $(COMMON_DEPS) $(common)/Random.c \
+DIVONNE_DEPS := $(COMMON_DEPS) $(common)/Random.c \
   $(divonne)/decl.h $(divonne)/common.c \
   $(divonne)/KorobovCoeff.c $(divonne)/Rule.c $(divonne)/Sample.c \
   $(divonne)/FindMinimum.c $(divonne)/Iterate.c $(divonne)/Explore.c \
   $(divonne)/Split.c $(divonne)/Integrate.c
 
 CUHRE_C := $(cuhre)/Cuhre.c
-CUHRE_DEPS = $(COMMON_DEPS) \
+CUHRE_DEPS := $(COMMON_DEPS) \
   $(cuhre)/decl.h $(cuhre)/common.c \
   $(cuhre)/Rule.c $(cuhre)/Integrate.c
 
-CUBA := $(VEGAS_C) $(SUAVE_C) $(DIVONNE_C) $(CUHRE_C)
+CUBA := $(VEGAS_C) $(SUAVE_C) $(DIVONNE_C) $(CUHRE_C) \
+  $(common)/WorkerIni.c
 
 
 OBJS := \
@@ -50,15 +52,9 @@ OBJS := \
   $(system)/setfpu.o \
   $(system)/Error.o \
   $(system)/fortranflush.o \
-  $(kin)/ThreeMom.o \
+  $(system)/parallel.o \
   $(kin)/VecSet.o \
   $(kin)/Split.o \
-  $(kin)/SInvariant.o \
-  $(kin)/TInvariant.o \
-  $(kin)/Pair.o \
-  $(kin)/Eps.o \
-  $(kin)/Chain.o \
-  $(kin)/IndexEps.o \
   $(kin)/PrintVec.o \
   $(cuttools)/CTMomDecode.o \
   $(cuttools)/CTmpnum.o \
@@ -100,10 +96,14 @@ $(LIB)($(samurai)/SABcut.o $(samurai)/SACcut.o $(samurai)/SADcut.o \
 $(LIB)($(cuttools)/CTBcut.o $(cuttools)/CTCcut.o $(cuttools)/CTDcut.o \
   $(cuttools)/CTEcut.o $(cuttools)/CTFcut.o): $(cuttools)/CT.h
 
+$(LIB)($(kin)/VecSet.o $(samurai)/SAMomDecode.o $(cuttools)/CTMomDecode.o): \
+  $(parent)/util.h
+
 $(LIB)($(VEGAS_C:.c=.o)): $(VEGAS_C) $(VEGAS_DEPS)
 $(LIB)($(SUAVE_C:.c=.o)): $(SUAVE_C) $(SUAVE_DEPS)
 $(LIB)($(DIVONNE_C:.c=.o)): $(DIVONNE_C) $(DIVONNE_DEPS)
 $(LIB)($(CUHRE_C:.c=.o)): $(CUHRE_C) $(CUHRE_DEPS)
+$(LIB)($(cuba)/WorkerIni.o): $(cuba)/stddecl.h
 
 LIBS += $(LIB)
 

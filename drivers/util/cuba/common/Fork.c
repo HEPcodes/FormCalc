@@ -3,7 +3,7 @@
 		the parallel sampling routine
 		for the C versions of the Cuba routines
 		by Thomas Hahn
-		last modified 23 Dec 11 th
+		last modified 6 Sep 12 th
 */
 
 #define MINSLICE 10
@@ -16,8 +16,23 @@ typedef struct {
   DIV_ONLY(int phase SHM_ONLY(, shmid);)
 } Slice;
 
+workerini cubaini;
+
 #if defined(HAVE_SHMGET) && (defined(SUAVE) || defined(DIVONNE))
 #define FRAMECOPY
+#endif
+
+#ifdef DEBUG
+#define TERM_RED "\e[31m"
+#define TERM_BLUE "\e[34m"
+#define TERM_RESET "\e[0m\n"
+#define MASTER(s, ...) \
+fprintf(stderr, TERM_RED ROUTINE " master: " s TERM_RESET, __VA_ARGS__)
+#define WORKER(s, ...) \
+fprintf(stderr, TERM_BLUE ROUTINE " worker: " s TERM_RESET, __VA_ARGS__)
+#else
+#define MASTER(s, ...)
+#define WORKER(s, ...)
 #endif
 
 /*********************************************************************/
@@ -90,6 +105,8 @@ static void DoSample(This *t, number n, creal *x, real *f
 
     for( core = 0; core < ncores; ++core ) {
       cint fd = t->child[core];
+      MASTER("sending " NUMBER " samples to core %d fd %d",
+        slice.n, core, fd);
       writesock(fd, &slice, sizeof slice);
       SHM_ONLY(if( t->shmid == -1 )) {
         VES_ONLY(writesock(fd, w, slice.n*sizeof *w);
@@ -105,7 +122,10 @@ static void DoSample(This *t, number n, creal *x, real *f
     abort = 0;
     for( core = ncores; --core >= 0; ) {
       cint fd = t->child[core];
+      MASTER("reading from core %d fd %d", core, fd);
       readsock(fd, &slice, sizeof slice);
+      MASTER("reading " NUMBER " samples from core %d fd %d",
+        slice.n, core, fd);
       if( slice.n == -1 ) abort = 1;
       else SHM_ONLY(if( t->shmid == -1 )) readsock(fd,
         f + slice.i*t->ncomp, slice.n*t->ncomp*sizeof *f);
@@ -230,11 +250,14 @@ static void DoChild(This *t, cint fd)
     MemAlloc(t->frame, t->nframe*SAMPLESIZE);
 #endif
 
+  if( cubaini.initfun ) cubaini.initfun(cubaini.initarg);
+
   while( readsock(fd, &slice, sizeof slice) ) {
     number n = slice.n;
     DIV_ONLY(t->phase = slice.phase;)
     if( n > 0 ) {
       real VES_ONLY(*w,) *x, *f;
+      WORKER("read " NUMBER " samples from fd %d", n, fd);
 
 #ifdef DIVONNE
       if( n > t->nframe ) {
@@ -260,6 +283,7 @@ static void DoChild(This *t, cint fd)
       }
 
       slice.n |= SampleRaw(t, n, x, f VES_ONLY(, w, slice.iter));
+      WORKER("writing " NUMBER " samples to fd %d", n, fd);
       writesock(fd, &slice, sizeof slice);
       if( SHM_ONLY(t->shmid == -1 &&) slice.n != -1 )
         writesock(fd, f, slice.n*t->ncomp*sizeof *f);
@@ -274,6 +298,8 @@ static void DoChild(This *t, cint fd)
       t->nregions = 1;
       t->neval = t->neval_opt = t->neval_cut = 0;
 
+      WORKER("read 1 region from fd %d", fd);
+
       samples = &t->samples[RegionPtr(0)->isamples];
       if( psamples.n != samples->n ) {
         SamplesFree(samples);
@@ -287,12 +313,15 @@ static void DoChild(This *t, cint fd)
       res.neval_cut = t->neval_cut;
       res.nregions = t->nregions;
       res.iregion = slice.i;
+      WORKER("writing %d regions to fd %d", res.nregions, fd);
       writesock(fd, &res, sizeof res);
       writesock(fd, RegionPtr(0), t->nregions*sizeof(Region));
       writesock(fd, totals, sizeof totals);
     }
 #endif
   }
+
+  if( cubaini.exitfun ) cubaini.exitfun(cubaini.exitarg);
 
   exit(0);
 }
@@ -331,6 +360,10 @@ static inline void ForkCores(This *t)
     Print(s);
   }
 
+  fflush(NULL);		/* make sure all buffers are flushed,
+			   or else buffered content will be written
+			   out multiply, at each child's exit(0) */
+
   Alloc(t->child, t->ncores);
   for( core = 0; core < t->ncores; ++core ) {
     int fd[2];
@@ -342,6 +375,8 @@ static inline void ForkCores(This *t)
       close(fd[0]);
       DoChild(t, fd[1]);
     }
+    MASTER("forked core %d pid %d pipe %d(master) -> %d(worker)",
+      core, pid, fd[0], fd[1]);
     close(fd[1]);
     t->child[core] = fd[0];
     DIV_ONLY(FD_SET(fd[0], &t->children);
@@ -356,11 +391,16 @@ static inline void WaitCores(cThis *t)
   if( t->ncores >= MINCORES ) {
     int core;
     pid_t pid;
-    for( core = 0; core < t->ncores; ++core )
+    for( core = 0; core < t->ncores; ++core ) {
+      MASTER("closing core %d fd %d", core, t->child[core]);
       close(t->child[core]);
+    }
     free(t->child);
-    for( core = 0; core < t->ncores; ++core )
+    for( core = 0; core < t->ncores; ++core ) {
+      MASTER("waiting for core %d", core);
       wait(&pid);
+      MASTER("core %d pid %d terminated", core, pid);
+    }
   }
 }
 

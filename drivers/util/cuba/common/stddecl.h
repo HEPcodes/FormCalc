@@ -1,7 +1,7 @@
 /*
 	stddecl.h
 		declarations common to all Cuba routines
-		last modified 17 Apr 12 th
+		last modified 6 Sep 12 th
 */
 
 
@@ -25,13 +25,16 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <setjmp.h>
-#include <sys/wait.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#ifdef HAVE_FORK
+#include <sys/wait.h>
 #include <sys/socket.h>
+#ifdef HAVE_SHMGET
 #include <sys/ipc.h>
 #include <sys/shm.h>
-
+#endif
+#endif
 
 #ifndef NDIM
 #define NDIM t->ndim
@@ -108,14 +111,22 @@
 #define Alloc(p, n) MemAlloc(p, (n)*sizeof(*p))
 
 
-#if !defined(MLVERSION) && defined(HAVE_FORK)
-#define FORK_ONLY(...) __VA_ARGS__
-#else
 #define FORK_ONLY(...)
-#endif
+#define SHM_ONLY(...)
+#define ShmAlloc(...)
+#define ShmFree(...)
 
-#if !defined(MLVERSION) && defined(HAVE_FORK) && defined(HAVE_SHMGET)
+#ifdef MLVERSION
+#define ML_ONLY(...) __VA_ARGS__
+#else
+#define ML_ONLY(...)
 
+#ifdef HAVE_FORK
+#undef FORK_ONLY
+#define FORK_ONLY(...) __VA_ARGS__
+
+#ifdef HAVE_SHMGET
+#undef SHM_ONLY
 #define SHM_ONLY(...) __VA_ARGS__
 
 #define ShmMap(t, ...) if( t->shmid != -1 ) { \
@@ -126,21 +137,19 @@
 
 #define ShmRm(t) shmctl(t->shmid, IPC_RMID, NULL);
 
+#undef ShmAlloc
 #define ShmAlloc(t, ...) \
   t->shmid = shmget(IPC_PRIVATE, t->nframe*SAMPLESIZE, IPC_CREAT | 0600); \
   ShmMap(t, __VA_ARGS__)
 
+#undef ShmFree
 #define ShmFree(t, ...) if( t->shmid != -1 ) { \
   shmdt(t->frame); \
   __VA_ARGS__ \
 }
 
-#else
-
-#define SHM_ONLY(...)
-#define ShmAlloc(...)
-#define ShmFree(...)
-
+#endif
+#endif
 #endif
   
 #define FrameAlloc(t, ...) \
@@ -196,6 +205,15 @@ typedef /*long*/ double real;
 	   quite another matter, too. */
 
 typedef const real creal;
+
+typedef void (*subroutine)();
+
+typedef struct {
+  subroutine initfun;
+  void *initarg;
+  subroutine exitfun;
+  void *exitarg;
+} workerini;
 
 
 struct _this;

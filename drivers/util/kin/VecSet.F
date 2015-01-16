@@ -2,7 +2,7 @@
 * construct the CMS representation of a momentum and the
 * three corresponding polarization vectors
 * this file is part of FormCalc
-* last modified 30 Nov 11 th
+* last modified 21 Sep 12 th
 
 #include "types.h"
 
@@ -16,45 +16,30 @@
 	integer i
 	RealType m, p, ex,ey,ez
 
-	ComplexType vec(2,2, 8, 0:1)
-	common /vectors/ vec
+#include "util.h"
 
-#define K(x,y)     vec(x,y, 1, i)
-#define EpsTR(x,y) vec(x,y, 2, i)
-#define EpsL(x,y)  vec(x,y, 3, i)
-#define EpsTL(x,y) vec(x,y, 4, i)
+	ComplexType vec_(2,2, nvec, 1)
 
-	ComplexType spi(2, 16, 0:1)
-	equivalence (spi, vec)
+#define K(x,y)     vec_(x,y, 1, i)
+#define EpsTR(x,y) vec_(x,y, 2, i)
+#define EpsL(x,y)  vec_(x,y, 3, i)
+#define EpsTL(x,y) vec_(x,y, 4, i)
 
-#define Spinor(hel,om,x) spi(x, hel*2+om+5, i)
-#define DottedSpinor(hel,om,x) spi(x, hel*2+om+7, i)
+	ComplexType spi_(2, 6:7, nvec, 1)
 
-* i.e., spi(x,  9, i) = left-handed,  undotted, upper
-*       spi(x, 10, i) = left-handed,  undotted, lower
-*       spi(x, 11, i) = left-handed,  dotted,   upper
-*       spi(x, 12, i) = left-handed,  dotted,   lower
-*       spi(x, 13, i) = right-handed, undotted, upper
-*       spi(x, 14, i) = right-handed, undotted, lower
-*       spi(x, 15, i) = right-handed, dotted,   upper
-*       spi(x, 16, i) = right-handed, dotted,   lower
+#define Spi(hel,om,x) spi_(x, om, hel+6, i)
+#define DotSpi(hel,om,x) spi_(x, om, hel+7, i)
 
-	RealType momspec(16,1)
-	common /momenta/ momspec
+* i.e., spi(x, 6, 5, i) = left-handed,  undotted, upper
+*       spi(x, 7, 5, i) = left-handed,  undotted, lower
+*       spi(x, 6, 6, i) = left-handed,  dotted,   upper
+*       spi(x, 7, 6, i) = left-handed,  dotted,   lower
+*       spi(x, 6, 7, i) = right-handed, undotted, upper
+*       spi(x, 7, 7, i) = right-handed, undotted, lower
+*       spi(x, 6, 8, i) = right-handed, dotted,   upper
+*       spi(x, 7, 8, i) = right-handed, dotted,   lower
 
-* the following must match the definitions in util.h:
-#define SPEC_M 1
-#define SPEC_K 2
-#define SPEC_E 3
-#define SPEC_KT 4
-#define SPEC_ET 5
-#define SPEC_PRAP 6
-#define SPEC_RAP 7
-#define SPEC_DELTAK 8
-#define SPEC_PHI 9
-#define SPEC_EX 10
-#define SPEC_EY 11
-#define SPEC_EZ 12
+	equivalence (momspec, vec_, spi_)
 
 	RealType m2, p2, p0, deltap, sump
 	RealType sinth, onePez, oneMez
@@ -135,24 +120,24 @@
 	sump = sqrt(p0 + p)
 	deltap = sqrt(deltap)
 
-	Spinor(-1, 6, 1) = deltap*sinth
-	DottedSpinor(-1, 6, 1) = Spinor(-1, 6, 1)
-	Spinor(-1, 6, 2) = -deltap*expIphi
-	DottedSpinor(-1, 6, 2) = Conjugate(Spinor(-1, 6, 2))
+	Spi(-1, 6, 1) = deltap*sinth
+	DotSpi(-1, 6, 1) = Spi(-1, 6, 1)
+	Spi(-1, 6, 2) = -deltap*expIphi
+	DotSpi(-1, 6, 2) = Conjugate(Spi(-1, 6, 2))
 
-	Spinor(-1, 7, 1) = sump*sinth
-	DottedSpinor(-1, 7, 1) = Spinor(-1, 7, 1)
-	Spinor(-1, 7, 2) = -sump*expIphi
-	DottedSpinor(-1, 7, 2) = Conjugate(Spinor(-1, 7, 2))
+	Spi(-1, 7, 1) = sump*sinth
+	DotSpi(-1, 7, 1) = Spi(-1, 7, 1)
+	Spi(-1, 7, 2) = -sump*expIphi
+	DotSpi(-1, 7, 2) = Conjugate(Spi(-1, 7, 2))
 
-	DottedSpinor(1, 6, 1) = sump*expIphi
-	Spinor(1, 6, 1) = Conjugate(DottedSpinor(1, 6, 1))
-	DottedSpinor(1, 6, 2) = sump*sinth
-	Spinor(1, 6, 2) = DottedSpinor(1, 6, 2)
+	DotSpi(1, 6, 1) = sump*expIphi
+	Spi(1, 6, 1) = Conjugate(DotSpi(1, 6, 1))
+	DotSpi(1, 6, 2) = sump*sinth
+	Spi(1, 6, 2) = DotSpi(1, 6, 2)
 
-	DottedSpinor(1, 7, 1) = deltap*expIphi
-	Spinor(1, 7, 1) = Conjugate(DottedSpinor(1, 7, 1))
-	DottedSpinor(1, 7, 2) = deltap*sinth
-	Spinor(1, 7, 2) = DottedSpinor(1, 7, 2)
+	DotSpi(1, 7, 1) = deltap*expIphi
+	Spi(1, 7, 1) = Conjugate(DotSpi(1, 7, 1))
+	DotSpi(1, 7, 2) = deltap*sinth
+	Spi(1, 7, 2) = DotSpi(1, 7, 2)
 	end
 

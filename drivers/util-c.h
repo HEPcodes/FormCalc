@@ -2,30 +2,22 @@
 	util-c.h
 	C prototypes for the functions in util.a
 	this file is part of FormCalc
-	last modified 21 May 12 th
+	last modified 20 Jul 12 th
 */
 
-
-RealType ThreeMom(RealType, RealType, RealType);
-RealType SInvariant(int, int);
-RealType TInvariant(int, int);
-ComplexType Pair(int, int);
-ComplexType Eps(int, int, int, int);
-ComplexType Chain(int, long long int);
 
 #ifndef LEGS
 #define LEGS 1
 #endif
 
+enum { nvec = 10 };
+
 struct {
-  vec[LEGS][8][2][2];
+  ComplexType vec[LEGS][nvec][2][2];
 } vectors_;
 
 /* encoding base for spinor chains (JC) and momenta (JK) */
 enum {JC = 256LL, JK = 256LL};
-
-	ComplexType kcomp(32,0:LEGS)
-	equivalence (vec, kcomp)
 
 	RealType momspec(16,LEGS)
 	common /momenta/ momspec
@@ -68,7 +60,7 @@ enum {JC = 256LL, JK = 256LL};
 #define DEB(a,x) print *, a, x
 #define LOOP(var,from,to,step) for( var = from; var <= to; var += step ) {
 #define ENDLOOP(var) }
-#define TEST(i,b) if( (i) & (1 << (b)) ) {
+#define TEST(i,b) if( *(i) & (1 << (b)) ) {
 #define ENDTEST(i,b) }
 
 #define Power(x, n) \

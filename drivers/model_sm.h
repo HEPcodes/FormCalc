@@ -1,7 +1,7 @@
 * model_sm.h
 * declarations for model_sm.F
 * this file is part of FormCalc
-* last modified 30 Nov 11 th
+* last modified 13 Jul 12 th
 
 
 	RealType CKMlambda, CKMA, CKMrhobar, CKMetabar
@@ -44,10 +44,10 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 	RealType MH, MH2
 	RealType EL, GS, Alfas, Alfas2, SW
 
-	common /sm_para/ CKM
-	common /sm_para/ Mf, Mf2
-	common /sm_para/ MH, MH2
-	common /sm_para/ EL, GS, Alfas, Alfas2, SW
+	common /modelpara/ CKM
+	common /modelpara/ Mf, Mf2
+	common /modelpara/ MH, MH2
+	common /modelpara/ EL, GS, Alfas, Alfas2, SW
 
 #ifndef CKMC
 #define CKMC(i,j) Conjugate(CKM(i,j))
