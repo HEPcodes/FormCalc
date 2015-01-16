@@ -1,26 +1,38 @@
 :Begin:
 :Function: readform_file
-:Pattern: ReadForm[filename_String, debug_Integer]
-:Arguments: {filename, debug}
-:ArgumentTypes: {String, Integer}
+:Pattern: ReadForm[filename_String]
+:Arguments: {filename}
+:ArgumentTypes: {String}
 :ReturnType: Manual
 :End:
 
 :Begin:
 :Function: readform_exec
-:Pattern: ReadForm[formcmd_String, filename_String, debug_Integer]
-:Arguments: {formcmd, filename, debug}
-:ArgumentTypes: {String, String, Integer}
+:Pattern: ReadForm[formcmd_String, incpath_String, filename_String]
+:Arguments: {formcmd, incpath, filename}
+:ArgumentTypes: {String, String, String}
 :ReturnType: Manual
 :End:
 
+:Evaluate: _ReadForm := (Message[ReadForm::syntax]; Abort[])
+
 :Begin:
-:Function: clearabbr
-:Pattern: ClearAbbr[]
+:Function: readformclear
+:Pattern: ReadFormClear[]
 :Arguments: {}
 :ArgumentTypes: {}
 :ReturnType: Manual
 :End:
+
+:Begin:
+:Function: readformdebug
+:Pattern: ReadFormDebug[debug_Integer, filename_:""]
+:Arguments: {debug, filename}
+:ArgumentTypes: {Integer, String}
+:ReturnType: Manual
+:End:
+
+:Evaluate: ReadForm::syntax = "Bad syntax."
 
 :Evaluate: ReadForm::noopen = "Cannot open `1`."
 
@@ -37,12 +49,19 @@
 	ReadForm.tm
 		reads FORM output back into Mathematica
 		this file is part of FormCalc
-		last modified 9 Jun 09 th
+		last modified 14 Jul 10 th
 
 Note: FORM code must have
 	1. #- (no listing),
 	2. off stats,
 	3. should produce output with print (not print +s).
+
+Debug:
+	bit 0   = stderr listing of file output
+	bit 1   = oob communication
+	bit 1+2 = + FORM -> Mma verbose
+	bit 1+3 = + Mma -> FORM raw verbose
+	bit 1+4 = + Mma -> FORM verbose
 */
 
 #include "mathlink.h"
@@ -129,6 +148,8 @@ typedef struct btree {
 
 static char zero[] = "";
 static BTREE *root = NULL;
+static int debug = 0;
+static FILE *stddeb;
 
 /******************************************************************/
 
@@ -186,10 +207,11 @@ static string GetAbbr(string expr)
 
   exprlen = strlen(expr);
   abbrlen = strlen(abbr);
-  Allocate(lp, exprlen + abbrlen + 2 + sizeof(BTREE));
-  lp->lt = lp->gt = NULL;
+  Allocate(lp, exprlen + abbrlen + 2 + sizeof *lp);
   *node = lp;
+  lp->lt = lp->gt = NULL;
   memcpy(lp->expr, expr, exprlen);
+  lp->expr[exprlen] = 0;
   lp->abbr = lp->expr + exprlen + 1;
   memcpy(lp->abbr, abbr, abbrlen);
   lp->abbr[abbrlen] = 0;
@@ -220,7 +242,11 @@ static TERM *Downsize(TERM *tp, cstring end)
 
 static string PutFactor(string to, cstring from)
 {
-  if( *from ) return memccpy(to, from, 0, STRINGSIZE);
+  if( *from ) {
+    cint len = strlen(from) + 1;
+    memcpy(to, from, len);
+    return to + len;
+  }
   *to++ = '1';
   *to++ = 0;
   return to;
@@ -365,13 +391,13 @@ loop: ;
 
 /******************************************************************/
 
-static void ReadForm(FILE *file, cint debug)
+static void ReadForm(FILE *file)
 {
   TERM *expressions[MAXEXPR], **exprp = expressions;
   TERM *termp = NULL, *tp;
   char br[64];
   int inexpr = 0, maxpavesize = 0, b = 0, thislev;
-  enum { nfun = sizeof(funtab)/sizeof(FUN) };
+  enum { nfun = sizeof funtab/sizeof(FUN) };
 
   maxpavesize = 0;
 
@@ -390,8 +416,8 @@ nextline:
       string pos;
 
       *line = 0;
-      si = fgets(line, sizeof(line), file);
-      if( debug ) fputs(line, stderr);
+      si = fgets(line, sizeof line, file);
+      if( debug & 1 ) fputs(line, stddeb);
 
       if( si == NULL || MLAbort ) {
         int nexpr;
@@ -425,22 +451,22 @@ nextline:
           (pos = strstr(si, "===")) ) {
         pos += 4;
         if( strstr(errmsg, pos) == NULL ) {
-          strncpy(errend, pos, errmsg + sizeof(errmsg) - errend);
+          strncpy(errend, pos, errmsg + sizeof errmsg - errend);
           errend += strlen(errend);
         }
         continue;
       }
 
       if( inexpr ) {
-        if( *si != '\n' ) break;
-        if( di == (cstring)tp + sizeof(TERM) ) continue;
+        if( *si >= ' ' ) break;  /* catch both \n and \r (on Windows) */
+        if( di == (cstring)tp + sizeof *tp ) continue;
         *di++ = 0;
         termp = Downsize(termp, di);
       }
       else if( (pos = strchr(si, '=')) == NULL ) continue;
 
-      Allocate(tp, sizeof(TERM) + TERMBUF);
-      beg = delim = di = (string)tp + sizeof(TERM);
+      Allocate(tp, sizeof *tp + TERMBUF);
+      beg = delim = di = (string)tp + sizeof *tp;
       tp->last = termp;
       termp = tp;
       for( i = 0; i < LEVELS; ++i ) tp->f[i] = zero;
@@ -500,6 +526,7 @@ nextline:
 
       case '[':
         *di++ = '\\';
+        *di++ = '\\';
         break;
 
       case ';':
@@ -546,12 +573,11 @@ quit:
 
 /******************************************************************/
 
-static void readform_file(cstring filename, cint debug)
+static void readform_file(cstring filename)
 {
   FILE *file = fopen(filename, "r");
-
   if( file ) {
-    ReadForm(file, debug);
+    ReadForm(file);
     fclose(file);
   }
   else {
@@ -575,13 +601,17 @@ static inline int writeall(cint h, cstring buf, long n)
 
 static int ToMma(cint hw, string expr)
 {
-  int b = -10000;
+  int b = 0, decl = 256, verb = 0;
+  char br[64], c;
   cstring result, r;
   string s;
-  char c;
 
-//fprintf(stderr, DEBUG "to mma (%d bytes)" RESET, strlen(expr));
-//fprintf(stderr, "expr=|%s|\n", expr);
+  if( debug & 2 ) {
+    fprintf(stddeb, DEBUG "to mma (%lu bytes)" RESET,
+      (unsigned long)strlen(expr));
+    if( debug & 4 ) fprintf(stddeb, "4 |%s|\n", expr);
+  }
+
   MLPutFunction(stdlink, "EvaluatePacket", 1);
   MLPutFunction(stdlink, "FormEvalDecl", 1);
   MLPutString(stdlink, expr);
@@ -589,40 +619,54 @@ static int ToMma(cint hw, string expr)
 
   if( MLGetString(stdlink, &result) == 0 ) return 0;
 
-//fprintf(stderr, DEBUG "from mma raw (%d bytes)" RESET, strlen(result));
-//fprintf(stderr, "expr=|%s|\n", result);
+  if( debug & 2 ) {
+    fprintf(stddeb, DEBUG "from mma raw (%lu bytes)" RESET,
+      (unsigned long)strlen(result));
+    if( debug & 8 ) fprintf(stddeb, "8 |%s|\n", result);
+  }
+
   for( r = result, s = expr; (c = *r++); ) {
-    if( c <= ' ' && b >= 0 ) continue;
-    switch( c ) {
+    if( (c | decl) <= ' ' ) continue;
+    switch( c | verb ) {
     case '$':
       if( *r == c ) ++r, c = '_';
       break;
     case '[':
-    case '(':
-      c = '(';
-      ++b;
+      if( r[-2] == '\\' ) verb = 256, br[b++] = ']';
+      else c = '(', br[b++] = ')';
       break;
+    case '(':
+      br[b++] = ')';
+      break;
+    case ']' + 256:
+      verb = 0;
     case ']':
     case ')':
-      c = ')';
-      --b;
+      if( b > 0 ) c = br[--b];
       break;
     case '\\':
-      if( *r == '0' ) c = strtol(r, (string *)&r, 8);
+      if( *r != '0' ) continue;
+      c = strtol(r, (string *)&r, 8);
       break;
     case ',':
-      if( b ) break;
+      if( decl | b ) break;
       *s++ = '\n';
     case '{':
-//fprintf(stderr, DEBUG "from mma (%d bytes)" RESET, (int)(s - expr));
-//*s=0; fprintf(stderr, "expr=|%s|\n", expr);
+      if( debug & 2 ) {
+        fprintf(stddeb, DEBUG "from mma (%lu bytes)" RESET,
+          (unsigned long)(s - expr));
+        if( debug & 16 ) {
+          *s = 0;
+          fprintf(stddeb, "16 |%s|\n", expr);
+        }
+      }
       *s++ = '\n';
       if( writeall(hw, expr, s - expr) < 0 ) {
         MLDisownString(stdlink, result);
         return 0;
       }
       s = expr;
-      b = 0;
+      decl = 0;
       continue;
     }
     *s++ = c;
@@ -638,12 +682,12 @@ static int ToMma(cint hw, string expr)
 
 static void *ExtIO(void *h)
 {
-  cint hw = ((int *)h)[1];
-  cint hr = ((int *)h)[2];
+  cint hw = ((int *)h)[3];
+  cint hr = ((int *)h)[4];
   string expr;
   char br[64];
   enum { blocksize = 40960, linesize = 512, ahead = 32 };
-  int size = 2*blocksize, b, w, n;
+  int size = 2*blocksize, verb = 0, b, w, n;
 
   if( (n = read(hr, br, sizeof br) - 1) < 0 ||
       writeall(hw, br, n + sprintf(br + n, ",%d\n", getpid())) < 0 )
@@ -672,13 +716,10 @@ loop:
       pthread_exit(NULL);
     }
 
-//expr[r+n] = 0;
-//fprintf(stderr, "expr=|%s|\n", expr+r);
-
     do {
       char c = *s++;
       if( c <= ' ' ) continue;
-      switch( c ) {
+      switch( c | verb ) {
       case '#':
         expr[w++] = '0';
         expr[w++] = '}';
@@ -701,6 +742,14 @@ loop:
       case ')':
         if( b > 0 ) c = br[--b];
         break;
+      case '[':
+        expr[w++] = '\\';
+        expr[w++] = '\\';
+        verb = 256;
+        break;
+      case ']' + 256:
+        verb = 0;
+        break;
       }
       expr[w++] = c;
     } while( --n );
@@ -709,47 +758,66 @@ loop:
 
 /******************************************************************/
 
-static void readform_exec(cstring cmd, cstring filename, cint debug)
+static void readform_exec(cstring cmd, cstring incpath, cstring filename)
 {
-  int h[6] = {-1, -1, -1, -1, -1, -1}, i;
+  int hh[10] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+  int *h, i;
   pthread_t tid;
   void *tj = NULL;
   pid_t pid = -1;
   FILE *file;
   char arg[32];
-  cstring argv[5] = {cmd, filename, NULL, filename, NULL};
+  string fn = strdup(filename);
+  string argv[] = {strdup(cmd), "-p", strdup(incpath),
+    fn, NULL, fn, NULL};
+	/* need the stupid strdups for !#^$@* Win */
 
-  if( pipe(&h[0]) != -1 &&
-      pipe(&h[2]) != -1 &&
+  /* make sure we don't overlap with 0, 1, 2 */
+  i = -2;
+  do {
+    h = &hh[i += 2];
+    if( pipe(h) == -1 ) goto abort;
+  } while( h[1] <= 2 );
+
+#if !defined(__WIN32__) && !defined(__CYGWIN__)
+  if( pipe(&h[2]) != -1 &&
+      pipe(&h[4]) != -1 &&
       pthread_create(&tid, NULL, ExtIO, h) == 0 ) {
     tj = (void *)1;
-    sprintf(arg, "%d,%d", h[0], h[3]);
-    argv[1] = "-pipe";
-    argv[2] = arg;
+    sprintf(arg, "%d,%d", h[2], h[5]);
+    argv[3] = "-pipe";
+    argv[4] = arg;
   }
+#endif
+
+  while( i > 0 ) close(hh[--i]);
 
   signal(SIGCHLD, SIG_IGN);
-  if( pipe(&h[4]) == -1 || (pid = fork()) == -1 ) goto abort;
+  pid = fork();
+  if( pid == -1 ) goto abort;
 
   if( pid == 0 ) {
-    if( h[1] != -1 ) close(h[1]);
-    if( h[2] != -1 ) close(h[2]);
-    close(h[4]);
-    dup2(h[5], 1);
-    close(h[5]);
-    exit(execvp(cmd, (char *const *)argv));
+#if defined(__WIN32__) || defined(__CYGWIN__)
+    usleep(1000);
+#endif
+    close(h[0]);
+    dup2(h[1], 1);
+    close(h[1]);
+    if( h[3] != -1 ) close(h[3]);
+    if( h[4] != -1 ) close(h[4]);
+    exit(execvp(argv[0], argv));
   }
 
-  if( h[0] != -1 ) close(h[0]);
-  if( h[3] != -1 ) close(h[3]);
-  close(h[5]);
-  h[0] = h[3] = h[5] = -1;
+  close(h[1]);
+  if( h[2] != -1 ) close(h[2]);
+  if( h[5] != -1 ) close(h[5]);
+  h[1] = h[2] = h[5] = -1;
 
-  file = fdopen(h[4], "r");
+  file = fdopen(h[0], "r");
   if( file ) {
-    ReadForm(file, debug);
+    ReadForm(file);
     fclose(file);
-    h[4] = -1;
+    h[0] = -1;
   }
   else {
 abort:
@@ -763,9 +831,13 @@ abort:
     wait(&i);
   }
 
-  for( i = 5; i >= 0; --i ) if( h[i] != -1 ) close(h[i]);
+  for( i = 6; --i >= 0; ) if( h[i] != -1 ) close(h[i]);
 
   if( tj ) pthread_join(tid, &tj);
+
+  free(fn);
+  free(argv[0]);
+  free(argv[2]);
 }
 
 /******************************************************************/
@@ -781,11 +853,34 @@ static void CutBranch(BTREE *node)
 
 /******************************************************************/
 
-static void clearabbr(void)
+static void readformclear(void)
 {
   CutBranch(root);
   root = NULL;
   MLPutSymbol(stdlink, "Null");
+  MLEndPacket(stdlink);
+}
+
+/******************************************************************/
+
+static void readformdebug(cint deb, cstring filename)
+{
+  debug = deb;
+
+  stddeb = stderr;
+  if( *filename ) {
+    stddeb = fopen(filename, "w");
+    if( stddeb == NULL ) {
+      MLEmitMessage(stdlink, "noopen", filename);
+      MLPutSymbol(stdlink, "$Failed");
+      MLEndPacket(stdlink);
+      debug = 0;
+      return;
+    }
+    setbuf(stddeb, NULL);
+  }
+
+  MLPutSymbol(stdlink, "True");
   MLEndPacket(stdlink);
 }
 

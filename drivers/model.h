@@ -1,7 +1,7 @@
 * model.h
 * common blocks for the model parameters
 * this file is part of FormCalc
-* last modified 31 Jul 08 th
+* last modified 18 Oct 09 th
 
 
 	double precision pi, degree, sqrt2, hbar_c2
@@ -66,13 +66,13 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 	double complex CKM(3,3), CKMrhoeta
 	double precision CKMlambda, CKMA
 	double precision Mf(4,3), Mf2(4,3)
-	double precision MH, MH2, MG0, MG02, MGp, MGp2
+	double precision MH, MH2
 	double precision EL, GS, Alfas, Alfas2, AlfasMT, SW
 	logical sm_digest
 
 	common /sm_para/ CKM, CKMrhoeta, CKMlambda, CKMA
 	common /sm_para/ Mf, Mf2
-	common /sm_para/ MH, MH2, MG0, MG02, MGp, MGp2
+	common /sm_para/ MH, MH2
 	common /sm_para/ EL, GS, Alfas, Alfas2, AlfasMT, SW
 	common /sm_para/ sm_digest
 
@@ -95,7 +95,7 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 	double precision MHiggs(4), MHiggs2(4), MHiggstree2(4)
 	double precision CB, SB, TB, CB2, SB2, TB2, C2B, S2B
 	double precision CA, SA, CA2, SA2, C2A, S2A
-	double precision CAB, SAB, CBA, SBA
+	double precision CAB, SAB, CBA, SBA, CBA2, SBA2
 	logical mssm_digest
 
 	common /mssm_para/ UCha, VCha, ZNeu
@@ -110,7 +110,7 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 	common /mssm_para/ MHiggs, MHiggs2, MHiggstree2
 	common /mssm_para/ CB, SB, TB, CB2, SB2, TB2, C2B, S2B
 	common /mssm_para/ CA, SA, CA2, SA2, C2A, S2A
-	common /mssm_para/ CAB, SAB, CBA, SBA
+	common /mssm_para/ CAB, SAB, CBA, SBA, CBA2, SBA2
 	common /mssm_para/ mssm_digest
 
 #ifndef USfC

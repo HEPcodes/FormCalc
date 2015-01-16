@@ -2,7 +2,7 @@
 	Split.c
 		determine optimal cuts for splitting a region
 		this file is part of Divonne
-		last modified 7 May 09 th
+		last modified 22 Jul 09 th
 */
 
 
@@ -301,18 +301,15 @@ static void Split(count iregion, int depth)
 
   depth -= ncut;
   if( Explore(iregion, &samples_[0], depth, 1) ) {
-    real *b = (real *)region_[iregion].bounds;
-    real tmp, *b0, *b1 = &tmp;
     Cut *c;
     for( c = cut; ncut--; ++c ) {
-      *b1 = tmp;
-      b0 = &b[c->i];
-      b1 = &b[c->i ^ 1];
-      tmp = *b1;
-      *b1 = *b0;
-      *b0 = c->save;
-      if( !Explore(iregion, &samples_[0], depth++, ncut != 0) )
-        break;
+      real *b = (real *)region_[iregion].bounds;
+      ccount c0 = c->i, c1 = c0 ^ 1;
+      creal tmp = b[c1];
+      b[c1] = b[c0];
+      b[c0] = c->save;
+      if( !Explore(iregion, &samples_[0], depth++, ncut != 0) ) break;
+      if( ncut ) ((real *)region_[iregion].bounds)[c1] = tmp;
     }
   }
 

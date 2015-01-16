@@ -1,5 +1,6 @@
 system := $(DIR)/system
 kin := $(DIR)/kin
+cuttools := $(DIR)/cuttools
 diag := $(DIR)/diag
 univariate := $(DIR)/univariate
 compaz := $(DIR)/compaz
@@ -62,6 +63,15 @@ OBJS := \
   $(kin)/BxS.o \
   $(kin)/BeS.o \
   $(kin)/IndexEps.o \
+  $(kin)/PrintVec.o \
+  $(cuttools)/MomDecode.o \
+  $(cuttools)/mpnum.o \
+  $(cuttools)/Acut.o \
+  $(cuttools)/Bcut.o \
+  $(cuttools)/Ccut.o \
+  $(cuttools)/Dcut.o \
+  $(cuttools)/Ecut.o \
+  $(cuttools)/Fcut.o \
   $(diag)/Eigen2x2.o \
   $(diag)/NoMixing.o \
   $(diag)/HEigensystem.o \

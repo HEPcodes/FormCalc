@@ -2,7 +2,7 @@
 * all parameters for the MSSM are initialized here
 * this file is part of FormCalc
 * Christian Schappacher, 17 Feb 99
-* last modified 22 Oct 08 th
+* last modified 11 Nov 09 th
 
 
 * The input parameters for model_mssm are:
@@ -674,7 +674,9 @@
 	SAB = SA*CB + CA*SB
 	CAB = CA*CB - SA*SB
 	SBA = SB*CA - CB*SA
+	SBA2 = SBA**2
 	CBA = CB*CA + SB*SA
+	CBA2 = CBA**2
 	end
 
 
@@ -738,7 +740,9 @@
 	SAB = -C2B
 	CAB = S2B
 	SBA = 1
+	SBA2 = 1
 	CBA = 0
+	CBA2 = 0
 #endif
 	end
 

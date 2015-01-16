@@ -1,7 +1,7 @@
 * PolarizationSum.frm
 * the FORM part of the PolarizationSum function
 * this file is part of FormCalc
-* last modified 15 Dec 08 th
+* last modified 19 May 10 th
 
 
 #procedure PolSum(i, m)
@@ -14,26 +14,24 @@ d `$dim';
 
 keep brackets;
 
-id e`i' = E(?);
-id ec`i' = EC(?);
-id z`i' = E(?);
-id zc`i' = EC(?);
+id e`i' = ET(?);
+id ec`i' = ETC(?);
+id z`i' = ET(?);
+id zc`i' = ETC(?);
 
 #if `m' == "0"
 * massless case
 
 multiply 2;
-id E([mu]?) * EC([nu]?) = 1/2*( -d_([mu], [nu])
-#if `GaugeTerms' == 1
+id ET([mu]?) * ETC([nu]?) = 1/2*( -d_([mu], [nu])
+    + (d_(eta`i', [mu])*d_(k`i', [nu]) +
+       d_(eta`i', [nu])*d_(k`i', [mu]))/(eta`i'.k`i') );
 * The eta are gauge-dependent vectors.
 * Their appearance in the result is supposed to alert
 * the user to the presence of gauge-dependent terms.
-* The eta must fulfill e.eta = 0 and k.eta != 0.
-    - d_(k`i', [mu])*d_(k`i', [nu])*(eta`i'.eta`i')/(eta`i'.k`i')^2
-    + (d_(eta`i', [mu])*d_(k`i', [nu]) +
-       d_(eta`i', [nu])*d_(k`i', [mu]))/(eta`i'.k`i')
-#endif
-  );
+* The eta must fulfill eta.eta = e.eta = 0 and k.eta != 0.
+* Instead of imposing eta.eta = 0 one can add
+* - d_(k`i', [mu])*d_(k`i', [nu])*(eta`i'.eta`i')/(eta`i'.k`i')^2
 
 id eT`i'([mu]?, [nu]?) * eTc`i'([ro]?, [si]?) = 1/2*(
   d_([mu], [ro])*d_([nu], [si]) +
@@ -44,7 +42,7 @@ id eT`i'([mu]?, [nu]?) * eTc`i'([ro]?, [si]?) = 1/2*(
 * massive case
 
 multiply 3;
-id E([mu]?) * EC([nu]?) = 1/3*( -d_([mu], [nu]) +
+id ET([mu]?) * ETC([nu]?) = 1/3*( -d_([mu], [nu]) +
   k`i'([mu])*k`i'([nu])/(`m')^2 );
 
 #endif
@@ -92,6 +90,12 @@ id k`i' = `k`i'';
 
 #call kikj
 #call Neglect
+
+#if `GaugeTerms' == 0
+#do i = 1, `Legs'
+id eta`i' = 0;
+#enddo
+#endif
 
 .sort
 
@@ -181,7 +185,7 @@ t [t];
 
 cf abbM, powM, FormSimplify;
 cf `Bracket';
-t E, EC;
+t ET, ETC;
 
 .global
 

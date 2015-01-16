@@ -1,6 +1,6 @@
 #! /bin/sh
 # compile script for the C programs used by FormCalc
-# last modified 25 Mar 09 th
+# last modified 14 Jul 10 th
 
 # If this compile script doesn't work on your system, check these things:
 #
@@ -16,6 +16,8 @@
 #    setenv MCC /opt/Wolfram/Mathematica/5.2/Executables/mcc
 
 CC=${CC:-gcc}
+
+CXX=${CXX:-g++}
 
 MCC=${MCC:-mcc}
 
@@ -54,8 +56,8 @@ if [ -z "$DEST" ] ; then
 fi
 
 case "$DEST" in
-Linux)		CFLAGS="$CFLAGS -m32" ;;
-Linux-x86-64)	CFLAGS="$CFLAGS -m64" ;;
+Linux | MacOSX-x86)		CFLAGS="$CFLAGS -m32" ;;
+Linux-x86-64 | MacOSX-x86-64)	CFLAGS="$CFLAGS -m64" ;;
 esac
 
 [ -d "$DEST" ] || mkdir "$DEST" || {
@@ -69,8 +71,10 @@ case "$CFLAGS" in
 *-static*) MCFLAGS="$MCFLAGS -st" ;;
 esac
 
-fcc="$SRC/drivers/tools/fcc"
-mcc="CC=\"$fcc\" CXX=\"$fcc\" PATH=\""'$$PATH'":$SRC/drivers/tools\" $MCC $MCFLAGS $CFLAGS"
+t="$SRC/drivers/tools"
+mcc="REALCC=\"$CC\" CC=\"$t/fcc\" \
+REALCXX=\"$CXX\" CXX=\"$t/f++\" \
+PATH=\""'$$PATH'":$t\" $MCC $MCFLAGS $CFLAGS"
 
 cc="$CC $CFLAGS"
 
@@ -79,23 +83,23 @@ all: $DEST/ReadForm$exe $DEST/ToForm$exe $DEST/ToFortran$exe $DEST/ReadData$exe 
 
 $DEST/ReadForm$exe: $SRC/FormCalc/ReadForm.tm
 	$mcc -o $DEST/ReadForm$exe $SRC/FormCalc/ReadForm.tm
-	strip $DEST/ReadForm$exe
+	-strip $DEST/ReadForm$exe
 
 $DEST/ToForm$exe: $SRC/FormCalc/ToForm.c
 	$cc -o $DEST/ToForm$exe $SRC/FormCalc/ToForm.c
-	strip $DEST/ToForm$exe
+	-strip $DEST/ToForm$exe
 
 $DEST/ToFortran$exe: $SRC/FormCalc/ToFortran.c
 	$cc -o $DEST/ToFortran$exe $SRC/FormCalc/ToFortran.c
-	strip $DEST/ToFortran$exe
+	-strip $DEST/ToFortran$exe
 
 $DEST/ReadData$exe: $SRC/tools/ReadData.tm
 	$mcc -o $DEST/ReadData$exe $SRC/tools/ReadData.tm
-	strip $DEST/ReadData$exe
+	-strip $DEST/ReadData$exe
 
 $DEST/reorder$exe: $SRC/tools/reorder.c
 	$cc -o $DEST/reorder$exe $SRC/tools/reorder.c
-	strip $DEST/reorder$exe
+	-strip $DEST/reorder$exe
 _EOF_
 
 

@@ -3,7 +3,7 @@
 		rearranges Mma's InputForm output to yield
 		acceptable FORM input
 		this file is part of FormCalc
-		last modified 16 Oct 08 th
+		last modified 14 Jul 10 th
 */
 
 #include <stdio.h>
@@ -13,28 +13,23 @@ int main()
 {
   char in[2048], out[2048];
 
-  while( !feof(stdin) ) {
-    char *s, *d, closing;
-
-    *in = 0;
-    fgets(in, sizeof(in), stdin);
+  while( fgets(in, sizeof in, stdin) ) {
+    char *s, *d, closing = ')';
 
     if( *in == '#' ) {
       fputs(in, stdout);
       continue;
     }
 
-    closing = ')';
-
     for( s = in, d = out; *s; ++s ) {
       switch( *s ) {
       case '\\':
-        if( *(s + 1) == '\n' ) fgets(s, sizeof(in) - (int)(s - in), stdin);
+        if( s[1] == '\n' ) fgets(s, in + sizeof in - s, stdin);
         break;
       case '"':
         break;
       case '[':
-        *d++ = (*(s - 1) == '\\') ? (closing = ']', '[') : '(';
+        *d++ = (s[-1] == '\\') ? (closing = ']', '[') : '(';
         break;
       case ']':
         *d++ = closing;
@@ -51,8 +46,8 @@ int main()
         *d++ = ')';
         break;
       case ' ':
-        if( *(s + 1) == '.' || *(s - 1) == '.' ) break;
-        if( (int)(s - in) > 75 ) {
+        if( s[1] == '.' || s[-1] == '.' ) break;
+        if( s - in > 75 ) {
           *d++ = '\n';
           *d = 0;
           fputs(d = out, stdout);
@@ -62,7 +57,7 @@ int main()
         break;
       case '*':
       case '=':
-        if( *(s - 1) == *s ) break;
+        if( s[-1] == *s ) break;
       default:
         *d++ = *s;
       }

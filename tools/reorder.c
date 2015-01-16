@@ -3,7 +3,7 @@
 		reorders data from main.F-output for easier access
 		e.g. with gnuplot
 		this file is part of FormCalc
-		last modified 2 May 07 th
+		last modified 14 Jul 10 th
 
 Syntax: reorder var1 var2 var3... < infile > outfile
 
@@ -71,36 +71,33 @@ int main(int argc, char **argv)
   enum { Undefined, Comment, Data } state = Undefined;
   int warn[ARGC];
   char *para[ARGC];
+  char line[LINE];
   char prefix[2*LINE];
   char comment[BLOCK], *c;
   Group *anchor = NULL, *cur;
-  int plen;
+  unsigned plen;
 
   if( argc < 2 ) {
     fprintf(stderr, "Usage:  %s para1 para2 ... < infile > outfile\n\n"
       "Reorders data files produced with FormCalc utilities by moving\n"
       "parameter values from the headers into the data columns.  Most\n"
-      "plotting utilites can then easily plot the data vs. a parameter.\n\n",
+      "plotting utilites can then easily plot the data vs a parameter.\n\n",
       argv[0]);
     exit(1);
   }
 
-  memset(warn, 0, sizeof(warn));
+  memset(warn, 0, sizeof warn);
   *comment = 0;
 
-  while( !feof(stdin) ) {
-    char line[LINE];
+  while( fgets(line, sizeof line, stdin) ) {
     int len;
-
-    *line = 0;
-    fgets(line, sizeof(line), stdin);
 
     if( *line == '#' ) {
       char var[128];
       int i, n;
 
       if( state != Comment ) {
-        memset(para, 0, sizeof(para));
+        memset(para, 0, sizeof para);
         *comment = 0;
         c = comment;
         state = Comment;
@@ -114,9 +111,8 @@ int main(int argc, char **argv)
             para[i] = strdup(line + 1 + n);
             goto loop;
           }
-
-        c = memccpy(c, line, '\n', sizeof(line));
-        *c = 0;
+        strcpy(c, line);
+        c += strlen(c);
       }
       continue;
     }
@@ -135,7 +131,9 @@ int main(int argc, char **argv)
         int i;
         for( i = 1; i < argc; ++i )
           if( para[i] ) {
-            p = memccpy(p, para[i], '\n', sizeof(prefix)) - 1;
+            strcpy(p, para[i]);
+            p += strlen(p);
+            p[-1] = '\t';
             free(para[i]);
           }
           else if( !warn[i] ) {
@@ -144,7 +142,7 @@ int main(int argc, char **argv)
           }
       }
       *p = 0;
-      plen = (int)(p - prefix) + 1;
+      plen = p - prefix + 1;
 
       for( parent = &anchor; (cur = *parent); parent = &cur->next )
         if( strcmp(cur->para, comment) == 0 ) break;

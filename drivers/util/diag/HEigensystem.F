@@ -3,7 +3,7 @@
 * code adapted from the "Handbook" routines for complex A
 * (Wilkinson, Reinsch: Handbook for Automatic Computation, p. 202)
 * this file is part of the Diag library
-* last modified 27 Sep 07 th
+* last modified 25 Nov 09 th
 
 #include "diag.h"
 
@@ -62,7 +62,7 @@
 	      off = off + sq(Element(A,p,q))
 	    enddo
 	  enddo
-	  if( off .lt. SYM_EPS ) goto 1
+	  if( .not. off .gt. SYM_EPS ) goto 1
 
 	  thresh = 0
 	  if( sweep .lt. 4 ) thresh = off*red

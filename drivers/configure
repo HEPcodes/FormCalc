@@ -2,7 +2,7 @@
 # configure script for FormCalc
 # note: has nothing to do with GNU autoconf
 # this file is part of FormCalc
-# last modified 12 Jun 09 th
+# last modified 14 Jul 10 th
 
 
 LC_ALL=C
@@ -52,8 +52,10 @@ findlib()
     for path in \
       "$base/lib" \
       "$base/$CONF_HOSTTYPE/lib" \
+      ${CONF_QUAD+"$base/build-quad"} \
       "$base/build" \
-      "$base/src"
+      "$base/src" \
+      "$base"
     do
       if [ -f "$path/$file" ] ; then
         echo "$path" 1>&2
@@ -155,23 +157,34 @@ done
 
 ## look for some programs
 
-CONF_MAKE=`findprog make gmake Make make` || exit 1
+CONF_MAKE=`findprog make $MAKE gmake Make make` || exit 1
 
 CONF_CC=`findprog gcc $CC gcc` || exit 1
 
-CONF_CFLAGS="${CFLAGS-${CONF_DEBUG--O3 -g} -fomit-frame-pointer -ffast-math} $CONF_STATIC"
+opt=-O3
+case `$CONF_CC --version 2>&1 < /dev/null` in
+gcc*4.2* | gcc*4.4.3*) opt=-O0 ;;
+esac
+CONF_CFLAGS="${CFLAGS-${CONF_DEBUG-$opt -g} -fomit-frame-pointer -ffast-math} $CONF_STATIC"
 
 CONF_FC=`findprog f77 $FC ${CONF_QUAD+ifort} pgf77 ifort xlf fort77 f77 f90 g77 g95 gfortran` || exit 1
 
 CONF_DEF="-D"
 
-if $CONF_FC --version -c 2>&1 | grep GNU > /dev/null ; then
-  CONF_FFLAGS="-O0 -ffixed-line-length-none -g $CONF_STATIC"
+case "`$CONF_FC --version -c 2>&1`" in
+*G95*)
+  CONF_FFLAGS="-O0 -g -ffixed-line-length-132 -freal-loops $CONF_STATIC $FFLAGS" ;;
+*GNU*)
+  case "$CONF_FC" in
+  *gfortran*) CONF_WARN="-Wall -Wtabs ${CONF_DEBUG:+-ffpe-trap=invalid,overflow,zero}" ;;
+  *) CONF_WARN="-Wall" ;;
+  esac
+  CONF_FFLAGS="-O0 -g -ffixed-line-length-none $CONF_WARN $CONF_STATIC $FFLAGS" ;;
 #  case $CONF_HOSTTYPE in
 #  *cyg*) CONF_FFLAGS="$CONF_FFLAGS -mno-cygwin"
 #         CONF_CFLAGS="$CONF_CFLAGS -mno-cygwin" ;;
 #  esac
-else
+*)
   CONF_FFLAGS="${FFLAGS-default}"
   [ "$CONF_FFLAGS" = default ] && case "$CONF_FC$CONF_HOSTTYPE" in
   *pgf*)
@@ -190,7 +203,7 @@ else
   *)
 	CONF_FFLAGS="${CONF_DEBUG--O -g}" ;;
   esac
-fi
+esac
 
 
 ## find the Fortran libraries
@@ -273,9 +286,9 @@ esac
 
 # check for the necessary libraries
 
-CONF_LT="`findlib LoopTools libooptools.a \
-  $LT ../LoopTools ../../LoopTools ../../../LoopTools $HOME/LoopTools \
-  /usr/local/LoopTools /usr/LoopTools /usr/local /usr`" && \
+CONF_LT="`findlib LoopTools libooptools${CONF_QUAD+-quad}.a \
+  $LT ../LoopTools* ../../LoopTools* ../../../LoopTools* $HOME/LoopTools* \
+  /usr/local/LoopTools* /usr/LoopTools* /usr/local /usr`" && \
   CONF_STDLIBS="$CONF_STDLIBS -L\$(LT) -looptools${CONF_QUAD+-quad}"
 
 CONF_FH="`findlib FeynHiggs libFH.a \

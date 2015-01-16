@@ -14,7 +14,7 @@
 	ReadData.tm
 		reads data files produced by num.F into Mathematica
 		this file is part of FormCalc
-		last modified 19 Sep 06 th
+		last modified 14 Jul 10 th
 
 known shortcomings:
 - fixed memory requirements:
@@ -33,9 +33,9 @@ known shortcomings:
 #define MLCONST
 #endif
 
-#define MAXCOLS 16
+#define MAXCOLS 32
 #define MAXPARA 100
-#define MAXDATA 2000
+#define MAXDATA 4000
 #define MAXEVAL 1000
 
 typedef struct {
@@ -129,6 +129,7 @@ static void transmit(const char *parahead, const char *datahead, int setno)
 static void readdata(const char *filename, int setno,
   const char *parahead, const char *datahead)
 {
+  char line[4096];
   FILE *file = (*filename == '!') ?
     popen(filename + 1, "r") :
     fopen(filename, "r");
@@ -146,11 +147,8 @@ static void readdata(const char *filename, int setno,
     return;
   }
 
-  while( !feof(file) ) {
-    char line[1024], *s;
-
-    *line = 0;
-    fgets(line, sizeof(line), file);
+  while( fgets(line, sizeof line, file) ) {
+    char *s;
 
     if( *line == '#' ) {
       Para *p = &para[npara];

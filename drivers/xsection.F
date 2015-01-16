@@ -1,7 +1,7 @@
 * xsection.F
 * routines to compute the cross-section
 * this file is part of FormCalc
-* last modified 2 Dec 08 th
+* last modified 12 Oct 09 th
 
 
 #include "process.h"
@@ -33,11 +33,14 @@
 
 	integer i, c, bits, df
 
-#define SCALAR 0
-#define FERMION 1
-#define PHOTON 2
+#define SCALAR Z'001'
+#define FERMION Z'10A'
+#define PHOTON Z'20A'
 #define GLUON PHOTON
-#define VECTOR 3
+#define VECTOR Z'20E'
+#define GRAVITINO Z'31B'
+#define GRAVITON Z'41B'
+#define TENSOR Z'41F'
 
 	integer type(LEGS)
 	data type /TYPES/
@@ -50,51 +53,43 @@
 	df = 2**(LEGS)
 
 	do i = 1, LEGS
-	  if( type(i) .eq. SCALAR ) then
-	    c = ichar('S')
-	    bits = 1
-	  else
-	    c = ichar(pol(i:i))
-	    if( c .eq. ichar('+') ) then
-	      bits = 4
-	    else if( c .eq. ichar('-') ) then
-	      bits = 1
-	    else
-	      c = iand(c, 223)
-	      if( c .eq. ichar('U') ) then
-	        bits = 7
-	      else if( c .eq. ichar('T') ) then
-	        bits = 5
-	      else if( c .eq. ichar('L') ) then
-	        bits = 2
-	      else
-	        bits = 0
-	      endif
-
-	      if( type(i) .ne. VECTOR ) then
-	        bits = iand(bits, -3)
-	        c = ior(c, 1)
-	      endif
-
-	      if( bits .eq. 0 ) then
-	        Error("Invalid polarization for leg "/ /Digit(i))
-	        return
-	      endif
-
-	      if( i .le. LEGS_IN ) df = df*(ibits(bits, 0, 1) +
-     &          ibits(bits, 1, 1) + ibits(bits, 2, 1))
-
-#ifdef DIRACFERMIONS
-	      if( type(i) .eq. FERMION ) then
-	        df = df/2
-	        bits = 2
-	      endif
-#endif
-	    endif
+	  bits = iand(type(i), 255)
+	  c = ior(ichar(pol(i:i)), 32)
+	  if( c .eq. ichar('t') ) then
+	    c = ior(c, ibits(bits, 3, 1))
+	    bits = iand(bits, 16+8+2+1)
+	  else if( c .eq. ichar('p') ) then
+	    bits = iand(bits, 16)
+	  else if( c .eq. ichar('+') ) then
+	    bits = iand(bits, 8)
+	  else if( c .eq. ichar('l') ) then
+	    bits = iand(bits, 4)
+	  else if( c .eq. ichar('-') ) then
+	    bits = iand(bits, 2)
+	  else if( c .eq. ichar('m') ) then
+	    bits = iand(bits, 1)
+	  else if( c .ne. ichar('u') ) then
+	    bits = 0
 	  endif
 
+	  if( bits .eq. 0 ) then
+	    Error("Invalid polarization for leg "/ /Digit(i))
+	    return
+	  endif
+
+	  if( i .le. LEGS_IN ) df = df*(ibits(bits, 4, 1) +
+     &      ibits(bits, 3, 1) + ibits(bits, 2, 1) +
+     &      ibits(bits, 1, 1) + ibits(bits, 0, 1))
+
+#ifdef DIRACFERMIONS
+	  if( type(i) .eq. FERMION ) then
+	    df = df/2
+	    bits = 1
+	  endif
+#endif
+
 	  pol(i:i) = char(c)
-	  helicities = helicities*8 + bits
+	  helicities = helicities*32 + bits
 	enddo
 
 	Lower(SQRTS) = sqrtSfrom

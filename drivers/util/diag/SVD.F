@@ -1,7 +1,7 @@
 * SVD.F
 * singular value decomposition of an m-by-n matrix
 * this file is part of the Diag library
-* last modified 27 Sep 07 th
+* last modified 25 Nov 09 th
 
 #include "diag.h"
 
@@ -82,7 +82,7 @@
 	      off = off + sq(A(p,q)) + sq(A(q,p))
 	    enddo
 	  enddo
-	  if( off .lt. EPS ) goto 1
+	  if( .not. off .gt. EPS ) goto 1
 
 	  thresh = 0
 	  if( sweep .lt. 4 ) thresh = off*red

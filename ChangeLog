@@ -1,3 +1,247 @@
+20 Jul 10:
+
+- ToDoLoops now takes care to order the expressions such
+  that e.g. a loop that sums up variables comes after the
+  loop calculating them.  (Thanks to Martin Wiebusch.)
+
+- Added FinalCollect option to WriteExpr, was executed
+  automatically so far but could take quite long.
+
+- OpenFortran passes options to OpenWrite.
+
+
+14 Jul 10:
+
+- Fixed a lot of hiccups on Ubuntu.  Disabled optimization for
+  gcc 4.2.x and 4.4.3, which would lead to an Internal Compiler
+  Error when compiling Cuba.
+
+
+30 Jun 10:
+
+- Fixed hideous bug in ToFortran.c (strcpy vs. memmove) which
+  would lead to malformed Fortran output on some platforms.
+  (Thanks to Alex Arbey.)
+
+
+17 Jun 10:
+
+- Fixed problem with ClearProcess: the zap function (Remove) was
+  not applied correctly, so numbering of abbreviations and 
+  subexpressions did not get reset.
+
+- Repaired problems with the substitution of vectors in
+  ToComponents, nested spinor products, and conjugation properties
+  of polarization vectors in VecSet.m.
+
+
+11 May 10:
+
+- Improved GaugeTerms -> False to include originally eta-dependent
+  terms where the eta dependence drops out due to cancellations.
+
+- Fixed 'mysterious' problem that abbreviations would be
+  generated twice, rather delicate handling of head vs. whole
+  function substitution in SplitExpr.
+
+
+4 May 10:
+
+- Kept IndexSum from evaluating inside the G[_][__][_][_]
+  expressions, renaming index would upset substitution of
+  insertions.
+
+- Made Lorentz index in FourVector optional, to be used as in
+  LeviCivita[mu, nu, FourVector[k], FourVector[p]].
+
+
+20 Apr 10:
+
+- Added ExtractInt to isolate invocations of LoopTools functions
+  from an expression, i.e. the B0i, C0i, ... invocations are
+  replaced by Bval, Cval, ... and a list of corresponding
+  Bget, Cget, ... calls is added.
+
+
+15 Apr 10:
+
+- Fixed various issues with explicit Dirac indices.  Ghosts
+  either carry DiracObject[1][...] with them or P$NonCommuting
+  has to include U.
+
+- Added IndexSum[..., x] (not {x, n}) to indicate summation
+  over Lorentz indices.
+
+
+26 Mar 10:
+
+- Explicit Dirac indices on fermion objects are now handled,
+  in-chain: DiracObject[DiracMatrix[...]][di1, di2],
+  end-of-chain: DiracObject[DiracSpinor[...]][di],
+  See Dirac.gen of FeynArts.
+
+
+26 Feb 10:
+
+- Fixed problem with transferring Mathematica's special symbols
+  like \[Alpha] to/from ReadForm.
+
+
+3 Feb 10:
+
+- Fixed problem with (differences of) vectors becoming zero
+  in arguments of loop functions.
+
+
+31 Jan 10:
+
+- Added .so files to the linker-relevant bits in fcc.
+
+
+16 Dec 09:
+
+- Fixed problem with universal binaries (Mac OS) in fcc.
+
+- Added MmaGetInteger, MmaGetIntegerList to mktm.
+
+
+27 Nov 09:
+
+- Added {SM,MSSM}{Reduce,Shorten,Simplify} functions for
+  model-specific simplification.
+
+
+13 Nov 09:
+
+- Re-introduced "Divergence" in UVDivergentPart.  The version
+  with Dminus4, being in the denominator, was performing 
+  significantly worse in the simplification of renormalization
+  constants.
+
+
+10 Nov 09:
+
+- Added NClear function to remove numerical values for constants.
+
+
+4 Nov 09:
+
+- Added NoBracket option for CalcFeynAmp.
+
+
+12 Oct 09:
+
+- Removed hideous bug from bit encoding of helicities for
+  external massive vector bosons.
+
+- Added Dimension -> 0 mode where the dimensionality is retained
+  (Dminus4 appears in the amplitude).  Also no local (rational)
+  terms are added.
+
+
+2 Oct 09:
+
+- Fixed problem with Generic-only insertions.
+
+- Avoided substitution of momenta in CalcFeynAmp if those were
+  not of type FourMomentum.  This gave rise to silly errors
+  when people set momenta to zero by hand.
+
+
+3 Sep 09:
+
+- Added |Hel| = 2 modes for graviton and gravitino.  Not complete
+  yet, i.e. wave functions not initialized.  Just the "helicities"
+  argument of SquaredME.
+
+
+1 Sep 09:
+
+- Fixed problem with conjugation of VA chains in HelicityME.
+
+
+27 Aug 09:
+
+- Moved sorting of propagators inside loop back to FORM,
+  otherwise InsertionPolicy -> Begin would never have any effect.
+
+
+12 Aug 09:
+
+- Bug fixes in SubstSimpleAbbr and inv.
+
+- DiracCoeff glosses over polarization vectors
+  (experimental, for spin-3/2 particles).
+
+
+30 Jul 09:
+
+- Temporary FORM file is written out with explicit path now.
+  Was a problem when doing a SetDirectory after loading
+  ReadForm (FormCalc).
+
+
+29 Jul 09:
+
+- Fixed linking problem on Mac due to gcc -lstdc++ being used
+  instead of g++.
+
+
+27 Jul 09:
+
+- Yet more changes re Windows.
+  Fixed some bizarre problems in ReadForm for Cygwin with strings
+  and fork/exec.
+
+
+22 Jul 09:
+
+- Lots of trivia re Windows version, such as:
+  quoting for filenames with spaces,
+  removal of $TemporaryPrefix (%TEMP% not readable for non-root),
+  deactivation of -pipe switch for Win FORM.
+
+
+6 Jul 09:
+
+- Fixed problem due to overzealous replace_ in DotSimplify
+  (would work on e.g. Spinors).
+
+
+30 Jun 09:
+
+- Changed MomSimplify to MomElim: user can now choose which
+  momentum to eliminate via momentum conservation.  Automatic
+  chooses the combination that generates the fewest terms.
+
+
+22 Jun 09:
+
+- Replaced "contract 0" in CalcFeynAmp.frm by a procedure which
+  contracts only the e_ connected through Lorentz indices (thus
+  generating fewer terms).
+
+
+19 Jun 09:
+
+- Revamped DotSimplify in CalcFeynAmp.frm to use the shortest
+  combination of vectors for each term individually.
+
+
+16 Jun 09:
+
+- Adapted conventions of VecSet.m to VecSet.F and fixed a bug in 
+  the application of spinors in VecSet.m (missing multiplication 
+  with Hel[i]).
+
+
+15 Jun 09:
+
+- Fixed problem with e_ and composite vectors (e_(p1+p2, ...)).
+
+- Added proper contract statements in DotSimplify.
+
+
 12 Jun 09:
 
 - Added the possibility to pass options to InsertFields to

@@ -2,7 +2,7 @@
 # a script to set up the interface code for accessing
 # FormCalc-generated code in Mathematica
 # this file is part of FormCalc
-# last modified 2 Apr 09 th
+# last modified 14 Jul 10 th
 
 
 if [ $# -ne 1 ] ; then
@@ -10,9 +10,9 @@ if [ $# -ne 1 ] ; then
   exit 1
 fi
 
-file=$1
-base=`basename $file .F`
-name=`echo "$base" | sed s/_//`
+file="$1"
+base=`basename "$file" .F`
+name=`echo "$base" | sed s/[-_]//`
 
 pol=`awk '/^#include *".to.\.F"/ {
   print substr("UUUUUUUUUU", 1, int(substr($2,2,1)) + int(substr($2,5,1)));
@@ -20,9 +20,11 @@ pol=`awk '/^#include *".to.\.F"/ {
 }' process.h`
 
 set -- `sed '
+s/.*call MmaGetInteger(/i /
+s/.*call MmaGetIntegerList(/il /
 s/.*call MmaGetReal(/r /
-s/.*call MmaGetComplex(/c /
 s/.*call MmaGetRealList(/rl /
+s/.*call MmaGetComplex(/c /
 s/.*call MmaGetComplexList(/cl /
 y/_,)/$  /
 t
@@ -30,6 +32,23 @@ d' $file`
 
 while [ $# -gt 0 ] ; do
   case $1 in
+  i)	argsQ="$argsQ, $2_Integer"
+	argsL="$argsL, $2_"
+	argsR="$argsR, $2"
+	argsN="$argsN, $2"
+	argsT="$argsT, Integer"
+	argsC="$argsC, cint $2"
+	argsS="$argsS, $2"
+	;;
+  il)	argsQ="$argsQ, $2_?(il[$3])"
+	argsL="$argsL, $2_"
+	argsR="$argsR, $2"
+	argsN="$argsN, $2"
+	argsT="$argsT, IntegerList"
+	argsC="$argsC, int *$2, long n_$2"
+	argsS="$argsS, $2, n_$2"
+	shift
+	;;
   r)	argsQ="$argsQ, $2_?r"
 	argsL="$argsL, $2_"
 	argsR="$argsR, $2"
@@ -37,14 +56,6 @@ while [ $# -gt 0 ] ; do
 	argsT="$argsT, Real"
 	argsC="$argsC, creal $2"
 	argsS="$argsS, $2"
-	;;
-  c)	argsQ="$argsQ, $2_?c"
-	argsL="$argsL, $2_"
-	argsR="$argsR, $2"
-	argsN="$argsN, N[Re[$2]], N[Im[$2]]"
-	argsT="$argsT, Real, Real"
-	argsC="$argsC, creal re$2, creal im$2"
-	argsS="$argsS, (cplx){re$2, im$2}"
 	;;
   rl)	argsQ="$argsQ, $2_?(rl[$3])"
 	argsL="$argsL, $2_"
@@ -54,6 +65,14 @@ while [ $# -gt 0 ] ; do
 	argsC="$argsC, real *$2, long n_$2"
 	argsS="$argsS, $2, n_$2"
 	shift
+	;;
+  c)	argsQ="$argsQ, $2_?c"
+	argsL="$argsL, $2_"
+	argsR="$argsR, $2"
+	argsN="$argsN, N[Re[$2]], N[Im[$2]]"
+	argsT="$argsT, Real, Real"
+	argsC="$argsC, creal re$2, creal im$2"
+	argsS="$argsS, (cplx){re$2, im$2}"
 	;;
   cl)	argsQ="$argsQ, $2_?(cl[$3])"
 	argsL="$argsL, $2_"
@@ -68,7 +87,9 @@ while [ $# -gt 0 ] ; do
   shift 2
 done
 
-cat << _EOF_ > `dirname $file`/$base.tm
+file="`dirname $file`/$base.tm"
+
+cat << _EOF_ > $file
 :Evaluate: BeginPackage["XSection\`"]
 
 :Evaluate: Options[$name] = {
@@ -87,6 +108,8 @@ cat << _EOF_ > `dirname $file`/$base.tm
 :Evaluate: r = Head[# + 1.] === Real &
 
 :Evaluate: c = Head[# + 1. I] === Complex &
+
+:Evaluate: il[n_] = Length[#] === n && VectorQ[#, IntegerQ] &
 
 :Evaluate: rl[n_] = Length[#] === n && VectorQ[#, r] &
 
@@ -310,9 +333,35 @@ static void m$name(cint setno, string phead, string dhead,
 
 /******************************************************************/
 
+void FORTRAN(mmagetinteger)(int *i)
+{
+  *i = va_arg(xsection_ap, int);
+}
+
+/******************************************************************/
+
+void FORTRAN(mmagetintegerlist)(int *i, cint *n)
+{
+  const int *l = va_arg(xsection_ap, int *);
+  const long nl = va_arg(xsection_ap, long);
+  memcpy(i, l, nl*sizeof(int));
+	/* note: no buffer overflow due to pattern in Mma */
+}
+
+/******************************************************************/
+
 void FORTRAN(mmagetreal)(real *r)
 {
   *r = va_arg(xsection_ap, real);
+}
+
+/******************************************************************/
+
+void FORTRAN(mmagetreallist)(real *r, cint *n)
+{
+  const real *l = va_arg(xsection_ap, real *);
+  const long nl = va_arg(xsection_ap, long);
+  memcpy(r, l, nl*sizeof(real));
 }
 
 /******************************************************************/
@@ -325,16 +374,7 @@ void FORTRAN(mmagetcomplex)(cplx *c)
 
 /******************************************************************/
 
-void FORTRAN(mmagetreallist)(real *r, cint *nr)
-{
-  const real *l = va_arg(xsection_ap, real *);
-  const long nl = va_arg(xsection_ap, long);
-  memcpy(r, l, nl*sizeof(real));
-}
-
-/******************************************************************/
-
-void FORTRAN(mmagetcomplexlist)(cplx *c, cint *nc)
+void FORTRAN(mmagetcomplexlist)(cplx *c, cint *n)
 {
   const real *l = va_arg(xsection_ap, real *);
   const long nl = va_arg(xsection_ap, long);
@@ -377,6 +417,26 @@ void FORTRAN(mmaendset)()
 
 /******************************************************************/
 
+void FORTRAN(mmaputinteger)(string name, cint *i, cint len)
+{
+  MLPutFunction(stdlink, "Sequence", 2);
+
+  MLPutRule(stdlink, name, len);
+  MLPutInteger(stdlink, *i);
+}
+
+/******************************************************************/
+
+void FORTRAN(mmaputintegerlist)(string name, int *i, cint *n, cint len)
+{
+  MLPutFunction(stdlink, "Sequence", 2);
+
+  MLPutRule(stdlink, name, len);
+  MLPutIntegerList(stdlink, i, *n);
+}
+
+/******************************************************************/
+
 void FORTRAN(mmaputreal)(string name, creal *r, cint len)
 {
   MLPutFunction(stdlink, "Sequence", 2);
@@ -387,22 +447,22 @@ void FORTRAN(mmaputreal)(string name, creal *r, cint len)
 
 /******************************************************************/
 
-void FORTRAN(mmaputcomplex)(string name, ccplx *c, cint len)
-{
-  MLPutFunction(stdlink, "Sequence", 2);
-
-  MLPutRule(stdlink, name, len);
-  MLPutComplex(stdlink, *c);
-}
-
-/******************************************************************/
-
 void FORTRAN(mmaputreallist)(string name, real *r, cint *n, cint len)
 {
   MLPutFunction(stdlink, "Sequence", 2);
 
   MLPutRule(stdlink, name, len);
   MLPutRealList(stdlink, r, *n);
+}
+
+/******************************************************************/
+
+void FORTRAN(mmaputcomplex)(string name, ccplx *c, cint len)
+{
+  MLPutFunction(stdlink, "Sequence", 2);
+
+  MLPutRule(stdlink, name, len);
+  MLPutComplex(stdlink, *c);
 }
 
 /******************************************************************/

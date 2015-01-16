@@ -1,7 +1,7 @@
 # makefile.in
 # makefile template used by configure
 # this file is part of FormCalc
-# last modified 23 Apr 09 th
+# last modified 5 May 10 th
 
 # Note: make permanent changes only in makefile.in,
 # changes in makefile will be overwritten by configure.
@@ -16,7 +16,7 @@ MAKECMDGOALS := $(MAKECMDGOALS:%=%$(EXE))
 all: $(MAKECMDGOALS)
 
 
-VPATH := $(SRC):$(SRC)/renconst:$(LT)/../include
+VPATH := $(SRC):$(SRC)/squaredme:$(SRC)/renconst:$(LT)/../include:$(LT)
 
 INCLUDE := $(patsubst %,-I%,$(subst :, ,$(VPATH)))
 

@@ -1,7 +1,7 @@
 * xsection.h
 * common blocks for xsection.F
 * this file is part of FormCalc
-* last modified 22 May 08 th
+* last modified 3 Sep 09 th
 
 
 #include "decl.h"
@@ -25,10 +25,10 @@
 	double precision var(8, MINVAR:TRIVIAL)
 	double precision avgfac, sqrtS
 	double precision mass_in, mass_out, threshold, scale
-	integer sqrtSinvalid, helicities
-	integer flags
+	integer*8 helicities
+	integer sqrtSinvalid, flags
 
 	common /xsection/ var, avgfac, sqrtS,
      &    mass_in, mass_out, threshold, scale,
-     &    sqrtSinvalid, helicities, flags
+     &    helicities, sqrtSinvalid, flags
 

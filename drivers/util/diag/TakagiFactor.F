@@ -3,7 +3,7 @@
 * code adapted from the "Handbook" routines
 * (Wilkinson, Reinsch: Handbook for Automatic Computation, p. 202)
 * this file is part of the Diag library
-* last modified 27 Sep 07 th
+* last modified 17 Feb 10 th
 
 #include "diag.h"
 
@@ -23,7 +23,7 @@
 
 	integer p, q, j
 	double precision red, off, thresh
-	double precision sqp, sqq, fsq, t, invc, s
+	double precision sqp, sqq, t, invc
 	double complex f, x, y
 	double complex ev(2,MAXDIM)
 
@@ -61,7 +61,7 @@
 	      off = off + sq(Element(A,p,q))
 	    enddo
 	  enddo
-	  if( off .lt. SYM_EPS ) goto 1
+	  if( .not. off .gt. SYM_EPS ) goto 1
 
 	  thresh = 0
 	  if( sweep .lt. 4 ) thresh = off*red
@@ -76,45 +76,47 @@
 	        Element(A,p,q) = 0
 	      else
 	        if( off .gt. thresh ) then
-	          f = sign(1D0, sqp - sqq)*
-     &              (ev(2,q)*DCONJG(Element(A,p,q)) +
-     &                DCONJG(ev(2,p))*Element(A,p,q))
-	          fsq = DBLE(f)**2 + DIMAG(f)**2
-	          if( fsq .eq. 0 ) then
-	            f = 1
-	            fsq = 1
-	          endif
 	          t = .5D0*abs(sqp - sqq)
-	          t = 1/(t + sqrt(t**2 + fsq))
+	          if( t .eq. 0 ) then
+	            f = 1
+	            if( sqp .ne. 0 ) f = sqrt(ev(2,q)/ev(2,p))
+	          else
+	            f = sign(1D0, sqp - sqq)*
+     &                (ev(2,q)*DCONJG(Element(A,p,q)) +
+     &                  DCONJG(ev(2,p))*Element(A,p,q))
+	          endif
+	          t = t + sqrt(t**2 + DBLE(f)**2 + DIMAG(f)**2)
+	          f = f/t
 
-	          ev(1,p) = ev(1,p) + t*Element(A,p,q)*DCONJG(f)
+	          ev(1,p) = ev(1,p) + Element(A,p,q)*DCONJG(f)
 	          ev(2,p) = A(p,p) + ev(1,p)
-	          ev(1,q) = ev(1,q) - t*Element(A,p,q)*f
+	          ev(1,q) = ev(1,q) - Element(A,p,q)*f
 	          ev(2,q) = A(q,q) + ev(1,q)
 
-	          invc = sqrt(fsq*t**2 + 1)
-	          s = t/invc
-	          t = t*fsq/(invc + 1)
+	          t = DBLE(f)**2 + DIMAG(f)**2
+	          invc = sqrt(t + 1)
+	          f = f/invc
+	          t = t/(invc*(invc + 1))
 
 	          do j = 1, p - 1
 	            x = Element(A,j,p)
 	            y = Element(A,j,q)
-	            Element(A,j,p) = x + s*(DCONJG(f)*y - t*x)
-	            Element(A,j,q) = y - s*(f*x + t*y)
+	            Element(A,j,p) = x + (DCONJG(f)*y - t*x)
+	            Element(A,j,q) = y - (f*x + t*y)
 	          enddo
 
 	          do j = p + 1, q - 1
 	            x = Element(A,p,j)
 	            y = Element(A,j,q)
-	            Element(A,p,j) = x + s*(DCONJG(f)*y - t*x)
-	            Element(A,j,q) = y - s*(f*x + t*y)
+	            Element(A,p,j) = x + (DCONJG(f)*y - t*x)
+	            Element(A,j,q) = y - (f*x + t*y)
 	          enddo
 
 	          do j = q + 1, n
 	            x = Element(A,p,j)
 	            y = Element(A,q,j)
-	            Element(A,p,j) = x + s*(DCONJG(f)*y - t*x)
-	            Element(A,q,j) = y - s*(f*x + t*y)
+	            Element(A,p,j) = x + (DCONJG(f)*y - t*x)
+	            Element(A,q,j) = y - (f*x + t*y)
 	          enddo
 
 	          Element(A,p,q) = 0
@@ -122,8 +124,8 @@
 	          do j = 1, n
 	            x = Element(U,p,j)
 	            y = Element(U,q,j)
-	            Element(U,p,j) = x + s*(f*y - t*x)
-	            Element(U,q,j) = y - s*(DCONJG(f)*x + t*y)
+	            Element(U,p,j) = x + (f*y - t*x)
+	            Element(U,q,j) = y - (DCONJG(f)*x + t*y)
 	          enddo
 	        endif
 	      endif

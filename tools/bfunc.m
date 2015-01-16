@@ -3,7 +3,7 @@
 		explicit formulas for the one- and two-point
 		functions and their derivatives
 		this file is part of FormCalc
-		last modified 3 Nov 05 th
+		last modified 30 Sep 09 th
 
 The formulas are more or less directly from the Passarino-Veltman
 paper. The regularization parameters are
@@ -34,7 +34,7 @@ A0[0] = 0
 A0[m_] = m (1 - Log[m/Mudim] + Delta)
 
 
-B0[0, 0, 0] = 0
+B0[0, 0, 0] = BAD	(* divergent, must cancel *)
 
 B0[p_, 0, 0] = 2 - Log[-p/Mudim - I eps] + Delta
 
