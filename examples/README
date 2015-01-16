@@ -23,43 +23,40 @@ obtained from www.hep-processes.de.
 
 To execute the demo programs you need
 
-> Mathematica 3 or higher
+> Mathematica 4 or higher
 
 > FORM 3 or higher
   (available from http://www.nikhef.nl/~form)
 
-> FeynArts 3
+> FeynArts 3.1
   (available from http://www.feynarts.de)
 
 > LoopTools 2
   (available from http://www.feynarts.de/looptools)
 
-> the CERNlib
-  (available from http://wwwinfo.cern.ch/asd/index.html)
-
 > GNU make
-  (available from any GNU site, e.g. prep.ai.mit.edu)
+  (available e.g. from http://www.gnu.org/directory/GNU/make.html)
 
 > a Fortran-77 compiler (g77 if you don't have any other)
 
 > for plotting the results: gnuplot 3.6 or higher
-  (available from http://www.gnuplot.org)
+  (available from http://www.gnuplot.info)
 
 
 The demo programs are invoked as follows:
 
 Change to the respective directory, start Mathematica, and type
-"<<XXXX_MODEL.m", where XXXX is the process and MODEL is the model
+"<< XXXX_MODEL.m", where XXXX is the process and MODEL is the model
 (sm, smbgf, mssm).
 
 After the program has finished, quit Mathematica and change into the
-directory fortran_MODEL. You may want to look into run.F or model.h
-for changing some of the parameters. Then type
+directory fortran_MODEL.  You may want to look into run.F or model.h
+for changing some of the parameters.  Then type
 	./configure
-	gmake
-to compile the Fortran code. The resulting executable will be called
-run. For several runs, place the parameters for each in a separate file,
-say run1.F, run2.F, ..., and say "gmake run1", "gmake run2" etc.
+	make
+to compile the Fortran code.  The resulting executable will be called
+run.  For several runs, place the parameters for each in a separate file,
+say run1.F, run2.F, ..., and say "make run1", "make run2" etc.
 
 Run "run" with the following parameters:
 	./run <pol1> <pol2> <pol3> <pol4> <energyfrom> <energyto>
@@ -70,21 +67,21 @@ Sqrt[s] = 500 GeV use
 
 IMPORTANT: for the fermionic processes, the amplitudes are calculated
 for unpolarized fermions only (the line Hel[_] = 0 is responsible for
-this). Not surprisingly then, invoking "run" with polarizations
+this).  Not surprisingly then, invoking "run" with polarizations
 different from UUUU won't calculate what you expect: not only won't
 it calculate the cross-section for the required polarization, but in
 general it won't even give you the correct unpolarized result because
 of the different averaging factor.
 
 If you have gnuplot 3.6 (or higher) installed, it is very easy to
-plot the results. Invoke e.g.
-	plot run-diff.pol=UUUU.E=00500
-plot is a program which writes out a script for running gnuplot and
+plot the results.  Invoke e.g.
+	pnuglot run-diff.pol=UUUU.E=00500
+pnuglot is a program which writes out a script for running gnuplot and
 which exploits the structure of the file name to make the final plot
-as "publication-ready" as possible. Even if you're not completely
+as "publication ready" as possible.  Even if you're not completely
 satisfied with the plot it produces, say you want to modify some
 plotting parameter, you have a head start, because all you need to
-do is edit this script. Further notes on plot can be found in the
+do is edit this script.  Further notes on plot can be found in the
 FormCalc manual.
 
 

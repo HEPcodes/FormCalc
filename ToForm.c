@@ -3,46 +3,55 @@
 		rearranges Mma's InputForm output to yield
 		acceptable FORM input
 		this file is part of FormCalc
-		last modified 14 Dec 01 th
+		last modified 3 Dec 02 th
 */
 
 #include <stdio.h>
 
 main()
 {
-  char line[2048], *s, *d;
+  char in[2048], out[2048], *s, *d;
 
   while( !feof(stdin) ) {
-    *line = 0;
-    fgets(line, sizeof(line), stdin);
+    *in = 0;
+    fgets(in, sizeof(in), stdin);
 
-    if( *line != '#' ) {
-      for( s = d = line; *s; ++s )
-        switch( *s ) {
-        case '"':
-          break;
-        case '[':
-          *d++ = '(';
-          break;
-        case ']':
-          *d++ = ')';
-          break;
-        case ' ':
-          if( *(s + 1) != '.' && *(s - 1) != '.' ) *d++ = *s;
-          break;
-        case '\\':
-          if( *(s - 1) == '*' ) --d;
-          break;
-        case '*':
-        case '=':
-          if( *(s - 1) == *s ) break;
-        default:
-          *d++ = *s;
-        }
-      *d = 0;
+    if( *in == '#' ) {
+      fputs(in, stdout);
+      continue;
     }
 
-    fputs(line, stdout);
+    for( s = in, d = out; *s; ++s ) {
+      if( *s == '\\' ) fgets(s, sizeof(in) - (int)(s - in), stdin);
+      switch( *s ) {
+      case '"':
+        break;
+      case '[':
+        *d++ = '(';
+        break;
+      case ']':
+        *d++ = ')';
+        break;
+      case ' ':
+        if( *(s + 1) == '.' || *(s - 1) == '.' ) break;
+        if( (int)(s - in) > 75 ) {
+          *d++ = '\n';
+          *d = 0;
+          fputs(d = out, stdout);
+          s = strcpy(in, s);
+        }
+        *d++ = *s;
+        break;
+      case '*':
+      case '=':
+        if( *(s - 1) == *s ) break;
+      default:
+        *d++ = *s;
+      }
+    }
+
+    *d = 0;
+    fputs(out, stdout);
   }
 }
 

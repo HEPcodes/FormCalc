@@ -1,11 +1,11 @@
 * rc_zero.F
 * sets all renormalization constants to zero for debugging purposes
 * this file is part of FormCalc
-* last modified 21 Jun 01 th
+* last modified 14 Jan 03 th
 
 #include "prefix.h"
 
-	subroutine calc_renconst
+	subroutine CalcRenConst
 	implicit none
 
 #include "renconst.h"

@@ -1,15 +1,101 @@
-13 Sep 01: Added adaptive Gauss-Kronrod integration for 2 -> 3
-           (multigauss.F), algorithm can be tuned using the
-           NODES_var preprocessor defines in run.F and may be
-           significantly faster for some applications, though also
-           worse for nasty integrands.
-           Added special cases of B1[0, ...] to tools/btensor.m.
+17 Feb 03:
 
-30 Aug 01: Largely rewritten the internal FormCalc functions
-           for optimization and pre-output ordering:
-           OptimizeAbbr, Dependencies, and OnePassOrder,
-           yields some 30% in speed.
+- made DCUHRE the default integrator for 2 -> 3.
 
-27 Aug 01: Switched 2 -> 3 code from (fixed-point) multiple Gaussian
-           integration to VEGAS, added the adaptive ACM-algorithm
-           DCUHRE for checking.
+- dcuhre.f now included by 2to3.F, obviating the need to explicitly
+  compile libdcuhre.a.
+
+
+12 Feb 03:
+
+- Added OffShell function to take individual particles off shell.
+
+- Removed last remaining CERNlib dependence by adding own routine to
+  compute alpha_s.
+
+- Added "--with-cernlib" switch to configure to restore old behaviour
+  (e.g. alpha_s should be computed by PDFlib when using the parton
+  distribution functions from PDFlib).
+
+
+28 Jan 03:
+
+- Rearranged much of the Gauss-Kronrod integration in multigauss to
+  fix a bug. 
+
+- Fixed up minor problem with allocation of working space in DCUHRE, too.
+
+
+22 Jan 03: FormCalc 3.2 released, lots of new stuff:
+
+- Completely general and systematic introduction of invariants
+  for any number of external legs.
+
+- Added an absolute precision goal to Vegas and Multigauss.
+
+- Improvements in the ScanGraphics package.
+
+- Improvements in ReadData (much faster now).
+
+- 1 -> 2 drivers added.
+
+- Added possibility for parallel execution of FormCalc-generated
+  code (compile with -DPARALLEL, see hep-ph/0210220).
+
+- Improvements in the code generation:
+  1. Now uses preprocessor macros k(n), e(n), ec(n), and s(n) instead of
+     integers to access vectors.
+  2. New sumup function improves readability of squared_me.F considerably.
+  3. Helicities passed to SquaredME as arrays, not single integers.
+  4. sqrtS no longer passed to SquaredME.
+  5. Because of the changes in the calling conventions (#3 & #4), the
+     subroutine's name has been changed from squared_me to SquaredME
+     to alert the user to the new conventions.
+
+- Internal reordering mostly in the FORM part:
+  1. Better partial factorization of expressions
+  2. Simplification of invariants now done in FORM
+
+- Needs Mathematica 4 or higher now.
+
+- Compiled executables now reside in a single directory, which is named
+  by Mathematica's $SystemID, rather than by the shell's $HOSTTYPE,
+  e.g. Linux/{ReadForm,ToForm,ToFortran,ReadData}.
+  ($HOSTTYPE had led to some complications because tcsh and bash had
+  different values for it on some OSs.)
+
+- mssm_ini now uses At, Ab, and Atau (rather than Au and Ad).
+  Names have deliberately been chosen different than before because
+  Atau must be given in addition to At and Ab, hence this is not
+  just a renaming, but there must be at least a statement "Atau = Ab"
+  or similar.
+
+- mssm_ini has its own set of SVD and diagonalization routines and is
+  hence no longer dependent on LAPACK (libmathlib.a of CERNlib).
+  The conventions are now that all mass arrays are sorted into ascending 
+  order (MNeu and MCha were in decreasing order so far).  This matches
+  the conventions commonly adapted in the literature.
+
+
+13 Sep 01:
+
+- Added adaptive Gauss-Kronrod integration for 2 -> 3 (multigauss.F),
+  algorithm can be tuned using the NODES_var preprocessor defines in run.F
+  and may be significantly faster for some applications, though also worse
+  for nasty integrands.
+
+- Added special cases of B1[0, ...] to tools/btensor.m.
+
+
+30 Aug 01:
+
+- Largely rewritten the internal FormCalc functions for optimization and
+  pre-output ordering: OptimizeAbbr, Dependencies, and OnePassOrder, yields
+  some 30% in speed.
+
+
+27 Aug 01:
+
+- Switched 2 -> 3 code from (fixed-point) multiple Gaussian integration to
+  VEGAS, added the adaptive ACM-algorithm DCUHRE for checking.
+

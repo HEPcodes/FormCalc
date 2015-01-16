@@ -1,7 +1,7 @@
 * run.F
 * defines parameter settings for one run, then includes num.F
 * this file is part of FormCalc
-* last modified 23 Jul 01 th
+* last modified 12 Feb 03 th
 
 
 * Whether to run in debugging mode
@@ -10,25 +10,25 @@
 
 * Uncomment the following to check UV- and IR-finiteness
 
-*#define DELTA 1D10
-*#define MUDIM 1D100
-*#define LAMBDA 1D10
+c#define DELTA 1D7
+c#define MUDIM 1D100
+c#define LAMBDA 1D10
 
-* The model initialization code is included here. Options for the
+* The model initialization code is included here.  Options for the
 * XXX_ini.F file (e.g. NO_SQUARK_MIXING for mssm_ini.F) must be
 * defined before the #include line.
 
-*#define NO_SQUARK_MIXING
-*#define COMPLEX_PARAMETERS
-*#define SM_ONLY
-*#define NO_EXCLUSION_LIMITS
-*#define TREE_LEVEL_MH
+c#define NO_SQUARK_MIXING
+c#define COMPLEX_PARAMETERS
+c#define SM_ONLY
+c#define NO_EXCLUSION_LIMITS
+c#define TREE_LEVEL_MH
 
 #include "mssm_ini.F"
 
-* You can define LOOP[1..10] for scanning the parameter space. LOOP1
-* will be the outermost loop. Do not remove #defines which are not
-* needed. Note that all loops terminate at label 1, e.g.
+* You can define LOOP[1..15] for scanning the parameter space.
+* LOOP1 will be the outermost loop.  Do not remove #defines which
+* are not needed.  Note that all loops terminate at label 1, e.g.
 *	#define LOOP1 do 1 MH = 100, 500, 200
 * For a fixed parameter, use something like #define LOOP1 MH = 300.
 
@@ -37,9 +37,9 @@
 #define LOOP3 MSusy = 1000
 #define LOOP4 MUE = -1000
 #define LOOP5 M_2 = 100
-#define LOOP6 Au = MSusy
-#define LOOP7 Ad = Au
-#define LOOP8
+#define LOOP6 At = MSusy
+#define LOOP7 Ab = At
+#define LOOP8 Atau = At
 #define LOOP9
 #define LOOP10
 #define LOOP11
@@ -50,19 +50,19 @@
 
 * PRINT[1..5] defines output statements with which changes in 
 * parameters (typically the ones included in the scan) can be 
-* written to the output file and screen. For example,
+* written to the output file and screen.  For example,
 *	PRINT "MH=", MH, "MT=", MT
 * writes out the values of MH and MT in each pass of the loop.
 * Only real parameters are allowed (use dble and dimag for complex
 * ones) and a string identifier must be given as in the example above.
 
 #define PRINT1 PRINT "TB=", TB, "MA0=", MA0
-#define PRINT2 PRINT "M_2=", M_2, "MUE=", dble(MUE)
-#define PRINT3 PRINT "MSusy=", MSusy, "Au=", dble(Au), "Ad=", dble(Ad)
+#define PRINT2 PRINT "M_2=", M_2, "MUE=", reMUE
+#define PRINT3 PRINT "MSusy=", MSusy, "At=", reAt
 #define PRINT4
 #define PRINT5
 
-* Cuts and increments. May be defined in terms of Ecms, the CMS energy.
+* Cuts and increments.  May be defined in terms of sqrtS, the CMS energy.
 
 #define THETACUT (10*degree)
 #ifdef DEBUG
@@ -71,12 +71,10 @@
 #define THETASTEP (1*degree)
 #endif
 
-#define K50CUT ESOFTMAX
-#define K50STEP .05D0*Ecms
+#define SQRTSSTEP 10
 
-#define ECMSSTEP 10
-
-* The number of sampling points for the Gaussian integration
+* The integration parameters:
+* For 2 -> 2: the number of nodes for the Gaussian quadrature.
 
 #define GAUSSPOINTS 16
 

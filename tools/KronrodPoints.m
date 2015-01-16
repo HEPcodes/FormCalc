@@ -3,7 +3,7 @@
                 calculate the abscissas and weights for the
 		Gauss-Kronrod quadrature in multigauss.F
                 this file is part of FormCalc
-                last modified 10 Sep 01 th
+                last modified 10 Jan 03 th
 *)
 
 
@@ -71,7 +71,7 @@ FortranWrite[ns__, file_] :=
 Block[ {hh, datax, str},
   hh = OpenFortran[file];
   data = Flatten[TheData/@ {ns}];
-  str = {"     +    ", ToFortran[#], ",\n"}&/@ data;
+  str = {"     &    ", ToFortran[#], ",\n"}&/@ data;
   WriteString[hh,
     "\tdouble precision krdata(" <> ToString[Length[data]] <> ")\n" <>
     "\tdata krdata /\n" <> Drop[Flatten[str], -1] <> " /\n"];

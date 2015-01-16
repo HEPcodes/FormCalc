@@ -3,7 +3,7 @@
 		generates the Fortran code for
 		A A -> A A in the electroweak Standard Model
 		this file is part of FormCalc
-		last modified 28 Aug 01 th
+		last modified 13 Feb 03 th
 
 Reference: M. Boehm, R. Schuster, Z. Phys. C63 (1994) 219.
 
@@ -11,7 +11,9 @@ Reference: M. Boehm, R. Schuster, Z. Phys. C63 (1994) 219.
 
 
 << FeynArts`
-<< ../../FormCalc.m
+
+<< FormCalc`
+
 
 time1 = SessionTime[]
 
@@ -20,9 +22,7 @@ CKM = IndexDelta
 
 SetOptions[InsertFields, Model -> "SM"]
 
-AAAA = {V[1], V[1]} -> {V[1], V[1]}
-
-inss := ins = InsertFields[tops, AAAA]
+process = {V[1], V[1]} -> {V[1], V[1]}
 
 
 SetOptions[Paint, PaintLevel -> {Classes}, ColumnsXRows -> {4, 5}]
@@ -37,42 +37,21 @@ DoPaint[diags_, file_] := (
 *)
 
 
-tops = CreateTopologies[0, 2 -> 2];
-DoPaint[inss, "born"];
-born = CalcFeynAmp[CreateFeynAmp[ins]]
+Print["Boxes"]
 
-tops = CreateCTTopologies[1, 2 -> 2,
-  ExcludeTopologies -> {TadpoleCTs, WFCorrectionCTs}];
-DoPaint[inss, "counter"];
-counter = CreateFeynAmp[ins]
+tops = CreateTopologies[1, 2 -> 2, BoxesOnly];
+ins = InsertFields[tops, process];
+DoPaint[ins, "box"];
+box = CalcFeynAmp[CreateFeynAmp[ins]]
 
-tops = CreateTopologies[1, 2 -> 2,
-  ExcludeTopologies -> {Tadpoles, WFCorrections, Triangles, AllBoxes}];
-DoPaint[inss, "self"];
-self = CalcFeynAmp[
-  CreateFeynAmp[ins],
-  Select[counter, DiagramType[#] == 2 &]]
-
-tops = CreateTopologies[1, 2 -> 2,
-  ExcludeTopologies -> {Tadpoles, WFCorrections, SelfEnergies, AllBoxes}];
-DoPaint[inss, "vert"];
-vert = CalcFeynAmp[
-  CreateFeynAmp[ins],
-  Select[counter, DiagramType[#] == 1 &]]
-
-tops = CreateTopologies[1, 2 -> 2,
-  ExcludeTopologies -> {Tadpoles, WFCorrections, SelfEnergies, Triangles}];
-DoPaint[inss, "box"];
-box = CalcFeynAmp[
-  CreateFeynAmp[ins],
-  Select[counter, DiagramType[#] == 0 &]]
 
 abbr = OptimizeAbbr[Abbr[]]
 
-WriteSquaredME[born, {self, vert, box}, abbr, "fortran_sm",
-  Drivers -> "drivers_sm"]
 
-WriteRenConst[counter, "fortran_sm"]
+WriteSquaredME[{}, box, abbr, "fortran_sm", Drivers -> "drivers_sm"]
 
-Print["time used: ", SessionTime[] - time1];
+WriteRenConst[{}, "fortran_sm"]
+
+
+Print["time used: ", SessionTime[] - time1]
 

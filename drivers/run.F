@@ -1,7 +1,7 @@
 * run.F
 * defines parameter settings for one run, then includes num.F
 * this file is part of FormCalc
-* last modified 10 Oct 01 th
+* last modified 14 Feb 03 th
 
 
 * Whether to run in debugging mode
@@ -10,25 +10,25 @@
 
 * Uncomment the following to check UV- and IR-finiteness
 
-*#define DELTA 1D10
-*#define MUDIM 1D100
-*#define LAMBDA 1D10
+c#define DELTA 1D7
+c#define MUDIM 1D100
+c#define LAMBDA 1D10
 
-* The model initialization code is included here. Options for the
+* The model initialization code is included here.  Options for the
 * XXX_ini.F file (e.g. NO_SQUARK_MIXING for mssm_ini.F) must be
 * defined before the #include line.
 
-*#define NO_SQUARK_MIXING
-*#define COMPLEX_PARAMETERS
-*#define SM_ONLY
-*#define NO_EXCLUSION_LIMITS
-*#define TREE_LEVEL_MH
+c#define NO_SQUARK_MIXING
+c#define COMPLEX_PARAMETERS
+c#define SM_ONLY
+c#define NO_EXCLUSION_LIMITS
+c#define TREE_LEVEL_MH
 
 #include "sm_ini.F"
 
-* You can define LOOP[1..15] for scanning the parameter space. LOOP1
-* will be the outermost loop. Do not remove #defines which are not
-* needed. Note that all loops terminate at label 1, e.g.
+* You can define LOOP[1..15] for scanning the parameter space.
+* LOOP1 will be the outermost loop.  Do not remove #defines which
+* are not needed.  Note that all loops terminate at label 1, e.g.
 *	#define LOOP1 do 1 MH = 100, 500, 200
 * For a fixed parameter, use something like #define LOOP1 MH = 300.
 
@@ -50,7 +50,7 @@
 
 * PRINT[1..5] defines output statements with which changes in 
 * parameters (typically the ones included in the scan) can be 
-* written to the output file and screen. For example,
+* written to the output file and screen.  For example,
 *	PRINT "MH=", MH, "MT=", MT
 * writes out the values of MH and MT in each pass of the loop.
 * Only real parameters are allowed (use dble and dimag for complex
@@ -62,7 +62,7 @@
 #define PRINT4
 #define PRINT5
 
-* Cuts and increments. May be defined in terms of Ecms, the CMS energy.
+* Cuts and increments.  May be defined in terms of sqrtS, the CMS energy.
 
 #define THETACUT (10*degree)
 #ifdef DEBUG
@@ -72,9 +72,14 @@
 #endif
 
 #define K50CUT ESOFTMAX
-#define K50STEP .05D0*Ecms
+#define K50STEP .05D0*sqrtS
 
-#define ECMSSTEP 10
+#define SQRTSSTEP 10
+
+* For 2 -> 2: To compute the forward-backward asymmetry instead of
+* the total cross-section, uncomment the following line.
+
+c#define FB_ASYMMETRY
 
 * The integration parameters:
 * For 2 -> 2: the number of nodes for the Gaussian quadrature.
@@ -83,6 +88,7 @@
 
 * For 2 -> 3: the desired accuracy,
 * when using the adaptive Gauss-Kronrod quadrature:
+* - the MULTIGAUSS switch
 * - the number of nodes used in each dimension (must be even
 *   integers between 4 and 12, e.g. 4 = 4/9 Gauss-Kronrod rule),
 * - the maximum number of subintervals the integration interval
@@ -94,22 +100,22 @@
 * - the VEGAS switch,
 * - the number of calls per iteration, and
 * - the maximum number of iterations for VEGAS,
-* when using the DCUHRE algorithm (link with -ldcuhre):
-* - the DCUHRE switch,
+* when using the DCUHRE algorithm (default):
 * - the maximum number of integrand evaluations is NCALL*MAXITER,
 *   where NCALL and MAXITER are the VEGAS parameters.
 
-#define ACCURACY 1D-3
+#define RELACCURACY 1D-3
+#define ABSACCURACY 1D-7
 
+c#define MULTIGAUSS
 #define NODES_K50 8
 #define NODES_COSTH 4
 #define NODES_K30 6
 #define NODES_ETA 4
 #define MAXINTV 25
-#define GAIN 1
+c#define GAIN 2
 
-*#define VEGAS
-*#define DCUHRE
+c#define VEGAS
 #define NCALL 1000
 #define MAXITER 50
 

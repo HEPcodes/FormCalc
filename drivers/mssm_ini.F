@@ -2,7 +2,7 @@
 * all parameters for the MSSM are initialized here
 * this file is part of FormCalc
 * Christian Schappacher, 17 Feb 99
-* last modified 19 Jul 01 th
+* last modified 14 Jan 03 th
 
 
 * The input parameters for mssm_ini are:
@@ -17,7 +17,7 @@
 
 * Sfermion sector:
 *   MSusy
-*   Au, Ad
+*   Atau, At, Ab
 * If one wants to specify the breaking and mixing in the
 * sfermion sector more precisely, the following preprocessor
 * variables can be used:
@@ -28,13 +28,13 @@
 * (they are usually set in process.h):
 
 * NO_SQUARK_MIXING
-*   If defined, sets Au and Ad such that the off-diagonal entries of
-*   the sfermion mixing matrices vanish, i.e. gauge eigenstates =
+*   If defined, sets Atau, At, and Ab such that the off-diagonal entries
+*   of the sfermion mixing matrices vanish, i.e. gauge eigenstates =
 *   mass eigenstates.
 
 * COMPLEX_PARAMETERS
 *   If defined, uses a simpler (one-loop) approximation of the
-*   Higgs masses which is valid for all parameters. Normally,
+*   Higgs masses which is valid for all parameters.  Normally,
 *   the more precise (two-loop) approximation is taken, which is
 *   however valid only for real parameters.
 
@@ -112,22 +112,25 @@
 #define MGl_LOWERBOUND 175
 
 
-#define model_ini sm_ini
+#define ModelConstIni SMConstIni
+#define ModelVarIni SMVarIni
+#define ModelDigest SMDigest
 #include "sm_ini.F"
-#undef model_ini
+#undef ModelConstIni
+#undef ModelVarIni
+#undef ModelDigest
+
+#include "diag.F"
 
 
 ************************************************************************
 
-	subroutine model_ini(Ecms, reset, *)
+	subroutine ModelConstIni(*)
 	implicit none
-	double precision Ecms
-	logical reset
 
 #include "model.h"
 
-	integer i, j
-	double precision A, B
+	double precision alpha, beta
 
 	double precision Alfas_MT, sig1, sig12, sig2
 	common /radcor/ Alfas_MT, sig1, sig12, sig2
@@ -135,22 +138,7 @@
 	double precision ALPHAS2
 	external ALPHAS2
 
-	call sm_ini(Ecms, reset, *999)
-
-* Gluino mass: GUT relation
-* we use 1/Alfa(s) approx 1/Alfa(MZ2) - 20/(9*pi)*log(s/MZ2)
-
-	MGl = Alfas*(127.934D0 - 40/(9*pi)*log(Ecms/MZ))*SW2*M_2
-#ifndef NO_EXCLUSION_LIMITS
-	if(MGl .lt. MGl_LOWERBOUND) then
-	  print *, "mssm_ini: MGl = ", MGl,
-     +      " < MGl_LOWERBOUND = ", MGl_LOWERBOUND
-	  return 1
-	endif
-#endif
-	MGl2 = MGl**2
-
-	if(.not. reset) return
+	call SMConstIni(*999)
 
 	Alfas_MT = ALPHAS2(MT)
 
@@ -158,47 +146,48 @@
 	M_1 = 5/3D0*SW2/CW2*M_2
 
 #ifdef NO_SQUARK_MIXING
-	Au = dconjg(MUE)/TB
-	Ad = dconjg(MUE)*TB
+	At = dconjg(MUE)/TB
+	Ab = dconjg(MUE)*TB
+	Atau = Ab
 #endif
 
-	B   = atan(TB)
-	SB  = sin(B)
-	CB  = cos(B)
-	S2B = sin(2*B)
-	C2B = cos(2*B)
+	TB2 = TB**2
+	SB = TB/sqrt(1 + TB2)
+	CB = SB/TB
 	SB2 = SB**2
 	CB2 = CB**2
-	TB2 = TB**2
+	S2B = 2*SB*CB
+	C2B = CB2 - SB2
 
-	call sfermion_masses(*999)
-	call chargino_masses(*999)
-	call neutralino_masses(*999)
-	call higgs_masses(*999)
+	call SfermionMasses(*999)
+	call CharginoMasses(*999)
+	call NeutralinoMasses(*999)
+	call HiggsMasses(*999)
 
 #ifdef SM_ONLY
 
 * With SM_ONLY defined, the values of the MSSM parameters are set
-* such that the SM is reproduced. See Higgs Hunter's Guide p. 356.
+* such that the SM is reproduced.  See Higgs Hunter's Guide p. 356.
 * Note one tricky thing: the Higgs mass Mh0 is first calculated as
 * it would be in the MSSM (to get the same value when comparing
 * MSSM <-> SM), but then beta is reverse-engineered to be consistent
-* with the SM relations. In other words, we start with the MSSM-
+* with the SM relations.  In other words, we start with the MSSM-
 * value of beta, calculate Mh0, and then redefine beta to fulfill
-* cos(2 beta) = Mh0/MZ. In principle, beta could also be fixed such
+* cos(2 beta) = Mh0/MZ.  In principle, beta could also be fixed such
 * that cos(2 beta) = -Mh0/MZ, but this is insignificant here since
 * we only need beta to be consistent with the values of Mh0 and MZ.
 
 	C2B = Mh0/MZ
-	B   = .5D0*acos(C2B)
-	SB  = sin(B)
-	CB  = cos(B)
-	TB  = tan(B)
-	S2B = sin(2*B)
+	beta = .5D0*acos(C2B)
+	SB = sin(beta)
+	CB = cos(beta)
+	TB = SB/CB
+	S2B = 2*SB*CB
 
-	A   = 0
-	SA  = -CB
-	CA  = SB
+	SA = -CB
+	CA = SB
+	SA2 = CB2
+	CA2 = SB2
 	S2A = -S2B
 	C2A = -C2B
 	SAB = -C2B
@@ -206,78 +195,23 @@
 	SBA = 1
 	CBA = 0
 #else
-	A = (-(MA02 + MZ2)*SB*CB - sig12)/
+	alpha = (-(MA02 + MZ2)*SB*CB - sig12)/
      &        (MZ2*CB2 + MA02*SB2 - sig1 - Mh02)
-	if(A .le. 0) then
-	  A = atan(A)
+	if( alpha .le. 0 ) then
+	  alpha = atan(alpha)
 	else
-	  A = atan(A) - pi
+	  alpha = atan(alpha) - pi
 	endif
-	SA  = sin(A)
-	CA  = cos(A)
-	S2A = sin(2*A)
-	C2A = cos(2*A)
-	SAB = sin(A + B)
-	CAB = cos(A + B)
-	SBA = sin(B - A)
-	CBA = cos(B - A)
-#endif
-
-	SA2  = SA**2
-	CA2  = CA**2
-
-*-----------------------------------------------------------------------
-
-#ifdef DEBUG
-
-	print *, "SUSY parameters"
-	print *, "----------------------------"
-	print *, "TB =", TB
-	print *, "M_1 =", M_1
-	print *, "M_2 =", M_2
-	print *, "MUE =", MUE
-	print *, "MSusy =", MSusy
-	print *, "Af(top) =", Af(3, 3)
-	print *, "Af(bottom) =", Af(4, 3)
-	print *, "----------------------------"
-	print *, "Higgs masses:"
-#ifdef COMPLEX_PARAMETERS
-	print *, "(using simple approximation for Higgs mass)"
-#else
-	print *, "(using 2-loop approximation for Higgs mass)"
-#endif
-	print *, "Mh0 =", Mh0
-	print *, "MHH =", MHH
-	print *, "MHp =", MHp
-	print *, "MA0 =", MA0
-	print *, "----------------------------"
-	print *, "Sfermion masses:"
-#ifdef NO_SQUARK_MIXING
-	print *, "(diagonal sfermion mass matrix: L-R basis)"
-#else
-	print *, "(non-diagonal sfermion mass matrix: 1-2 basis)"
-#endif
-3	format(" MSf(1|2, ", I1, ", ", I1, ") =", 2G24.15)
-	do j = 1, 4
-	  do i = 1, 3
-	    print 3, j, i, MSf(1, j, i), MSf(2, j, i)
-	  enddo
-	enddo
-	print *, "----------------------------"
-	print *, "Chargino masses:"
-	print *, "MCha(1) =", MCha(1)
-	print *, "MCha(2) =", MCha(2)
-	print *, "----------------------------"
-	print *, "Neutralino masses:"
-	print *, "MNeu(1) =", MNeu(1)
-	print *, "MNeu(2) =", MNeu(2)
-	print *, "MNeu(3) =", MNeu(3)
-	print *, "MNeu(4) =", MNeu(4)
-	print *, "----------------------------"
-	print *, "Gluino mass:"
-	print *, "MGl =", MGl
-	print *, "============================"
-
+	SA = sin(alpha)
+	CA = cos(alpha)
+	SA2 = SA**2
+	CA2 = CA**2
+	S2A = 2*SA*CA
+	C2A = CA2 - SA2
+	SAB = SA*CB + CA*SB
+	CAB = CA*CB - SA*SB
+	SBA = SB*CA - CB*SA
+	CBA = CB*CA + SB*SA
 #endif
 	return
 
@@ -288,87 +222,75 @@
 *-----------------------------------------------------------------------
 * Sfermion sector:
 
-	subroutine sfermion_masses(*)
+	subroutine SfermionMasses(*)
 	implicit none
 
 #include "model.h"
 
-	integer lwork, i, j, svdinfo
-	parameter (lwork = 16)
-	double complex work(lwork), rwork(lwork), tmp
+	integer j
 
 	double precision Qe, Qu, Qd
-	parameter (Qe = -1D0, Qu = 2/3D0, Qd = -1/3D0)
+	parameter (Qe = -1, Qu = 2/3D0, Qd = -1/3D0)
 
 #ifndef NO_EXCLUSION_LIMITS
 	double precision f1f2, abs2, DeltaRho
 	double complex c_
 	external f1f2
-	abs2(c_) = dble(c_*dconjg(c_))
+	abs2(c_) = dble(c_)**2 + dimag(c_)**2
 #endif
 
 	do j = 1, 3
-	  Af(2, j) = Ad
-	  USf(1, 1, 2, j) = MSL2 + MZ2*(-.5D0 - Qe*SW2)*C2B + MLE2(j)
-	  USf(2, 2, 2, j) = MSE2 + Qe*MZ2*SW2*C2B + MLE2(j)
-	  USf(1, 2, 2, j) = MLE(j)*(Af(2, j) - dconjg(MUE)*TB)
+* Sneutrino masses:
+	  MSf2(1, 1, j) = MSL2 + .5D0*MZ2*C2B
+	  if( MSf2(1, 1, j) .lt. 0 ) return 1
+	  MSf(1, 1, j) = sqrt(MSf2(1, 1, j))
+	  MSf(2, 1, j) = -1
+	  MSf2(2, 1, j) = -1
 
-	  Af(3, j) = Au
-	  USf(1, 1, 3, j) = MSQ2 + MZ2*(.5D0 - Qu*SW2)*C2B + MQU2(j)
-	  USf(2, 2, 3, j) = MSU2 + Qu*MZ2*SW2*C2B + MQU2(j)
-	  USf(1, 2, 3, j) = MQU(j)*(Af(3, j) - dconjg(MUE)/TB)
+* Slepton mass matrix, family j
+	  Af(2, j) = Atau
+	  call Eigen2x2(MSf(1, 2, j), MSf2(1, 2, j), USf(1, 1, 2, j),
+     &      MSL2 + MZ2*(-.5D0 - Qe*SW2)*C2B + MLE2(j),
+     &      MSE2 + Qe*MZ2*SW2*C2B + MLE2(j),
+     &      MLE(j)*(dconjg(Af(2, j)) - MUE*TB), *999)
 
-	  Af(4, j) = Ad
-	  USf(1, 1, 4, j) = MSQ2 + MZ2*(-.5D0 - Qd*SW2)*C2B + MQD2(j)
-	  USf(2, 2, 4, j) = MSD2 + Qd*MZ2*SW2*C2B + MQD2(j)
-	  USf(1, 2, 4, j) = MQD(j)*(Af(4, j) - dconjg(MUE)*TB)
+* Up-type squark mass matrix, family j
+	  Af(3, j) = At
+	  call Eigen2x2(MSf(1, 3, j), MSf2(1, 3, j), USf(1, 1, 3, j),
+     &      MSQ2 + MZ2*(.5D0 - Qu*SW2)*C2B + MQU2(j),
+     &      MSU2 + Qu*MZ2*SW2*C2B + MQU2(j),
+     &      MQU(j)*(dconjg(Af(3, j)) - MUE/TB), *999)
 
-	  do i = 2, 4
-	    call ZHEEV('V', 'U', 
-     +         2, USf(1, 1, i, j), 2, MSf2(1, i, j),
-     +         work, lwork, rwork, svdinfo)
-* transpose USf
-	    tmp = USf(1, 2, i, j)
-	    USf(1, 2, i, j) = USf(2, 1, i, j)
-	    USf(2, 1, i, j) = tmp
-
-	    if(svdinfo .ne. 0) then
-	      print *,
-     +          "mssm_ini: error in sfermion matrix diagonalization"
-	      return 1
-	    endif
-	    if(MSf2(1, i, j) .lt. 0) then
-	      print *, "mssm_ini: negative sfermion mass squares"
-	      return 1
-	    endif
-
-	    MSf(1, i, j) = sqrt(MSf2(1, i, j))
-	    MSf(2, i, j) = sqrt(MSf2(2, i, j))
-	  enddo
+* Down-type squark mass matrix, family j
+	  Af(4, j) = Ab
+	  call Eigen2x2(MSf(1, 4, j), MSf2(1, 4, j), USf(1, 1, 4, j),
+     &      MSQ2 + MZ2*(-.5D0 - Qd*SW2)*C2B + MQD2(j),
+     &      MSD2 + Qd*MZ2*SW2*C2B + MQD2(j),
+     &      MQD(j)*(dconjg(Af(4, j)) - MUE*TB), *999)
 	enddo
 
 #ifndef NO_EXCLUSION_LIMITS
-	if(MSf(1, 4, 3) .lt. MSbottom_LOWERBOUND) then
+	if( MSf(1, 4, 3) .lt. MSbottom_LOWERBOUND ) then
 	  print *, "mssm_ini: MSf(1, 4, 3) = ", MSf(1, 4, 3),
-     +      " < MSbottom_LOWERBOUND = ", MSbottom_LOWERBOUND
+     &      " < MSbottom_LOWERBOUND = ", MSbottom_LOWERBOUND
 	  return 1
 	endif
 
-	if(MSf(1, 3, 3) .lt. MStop_LOWERBOUND) then
+	if( MSf(1, 3, 3) .lt. MStop_LOWERBOUND ) then
 	  print *, "mssm_ini: MSf(1, 3, 3) = ", MSf(1, 3, 3),
-     +      " < MStop_LOWERBOUND = ", MStop_LOWERBOUND
+     &      " < MStop_LOWERBOUND = ", MStop_LOWERBOUND
 	  return 1
 	endif
 
-	if(MSf(1, 2, 1) .lt. MSlepton_LOWERBOUND) then
+	if( MSf(1, 2, 1) .lt. MSlepton_LOWERBOUND ) then
 	  print *, "mssm_ini: MSf(1, 2, 1) = ", MSf(1, 2, 1),
-     +      " < MSlepton_LOWERBOUND = ", MSlepton_LOWERBOUND
+     &      " < MSlepton_LOWERBOUND = ", MSlepton_LOWERBOUND
 	  return 1
 	endif
 
-	if(MSf(1, 3, 1) .lt. MSquark_LOWERBOUND) then
+	if( MSf(1, 3, 1) .lt. MSquark_LOWERBOUND ) then
 	  print *, "mssm_ini: MSf(1, 3, 1) = ", MSf(1, 3, 1),
-     +      " < MSquark_LOWERBOUND = ", MSquark_LOWERBOUND
+     &      " < MSquark_LOWERBOUND = ", MSquark_LOWERBOUND
 	  return 1
 	endif
 
@@ -388,19 +310,15 @@
      &   + abs2(USf(2,1,3,3)) * abs2(USf(2,1,4,3))
      &     * f1f2(MSf2(2,3,3), MSf2(2,4,3))
 
-	if(DeltaRho .gt. DeltaRho_UPPERBOUND) then
+	if( DeltaRho .gt. DeltaRho_UPPERBOUND ) then
 	  print *, "mssm_ini: DeltaRho = ", DeltaRho,
-     +      " > DeltaRho_UPPERBOUND = ", DeltaRho_UPPERBOUND
+     &      " > DeltaRho_UPPERBOUND = ", DeltaRho_UPPERBOUND
 	  return 1
 	endif
 #endif
+	return
 
-	do j = 1, 3
-	  MSf2(1, 1, j) = MSL2 + .5D0*MZ2*C2B
-	  MSf(1, 1, j) = sqrt(MSf2(1, 1, j))
-	  MSf2(2, 1, j) = -1
-	  MSf(2, 1, j) = -1
-	enddo
+999	return 1
 	end
 
 
@@ -425,8 +343,8 @@
 	c1 = 2*m1*m2/(m1 - m2)*logm1m2
 	f1 = m1 + m2 - c1
 	f2 = m1 + m2 - c1*(2 + m1/m2*logm1m2)
-     +   + (m1 + m2)*m1**2/(m1 - m2)**2 * logm1m2**2
-     +   - 2*(m1 - m2) * dble(Li2(1 - m1/m2))
+     &   + (m1 + m2)*m1**2/(m1 - m2)**2 * logm1m2**2
+     &   - 2*(m1 - m2) * dble(Li2(1 - m1/m2))
 
 	f1f2 = 3*GF/(8*sqrt2*pi**2) * (f1 + 2/(3*pi)*Alfas_MT*f2)
 	end
@@ -435,43 +353,26 @@
 *-----------------------------------------------------------------------
 * Chargino sector:
 
-	subroutine chargino_masses(*)
+	subroutine CharginoMasses(*)
 	implicit none
 
 #include "model.h"
 
-	integer lwork, svdinfo
-	parameter (lwork = 16)
-	double complex work(lwork), rwork(lwork), X(2, 2), tmp
+	double complex X(2, 2)
 
 	X(1, 1) = M_2
 	X(1, 2) = sqrt2*MW*SB
 	X(2, 1) = sqrt2*MW*CB
 	X(2, 2) = MUE
-	call ZGESVD('A', 'A', 2, 2, X, 2, MCha, UCha, 2, VCha, 2,
-     +    work, lwork, rwork, svdinfo)
-
-	if(svdinfo .ne. 0) then
-	  print *, "mssm_ini: error in chargino matrix SVD"
-	  return 1
-	endif
-	if(MCha(2) .lt. 0) then
-	  print *, "mssm_ini: negative chargino mass squares"
-	  return 1
-	endif
+	call SingularValues(2, 2, X, 2, MCha, UCha, 2, VCha, 2)
 
 #ifndef NO_EXCLUSION_LIMITS
-	if(MCha(2) .lt. MChargino_LOWERBOUND) then
+	if( MCha(1) .lt. MChargino_LOWERBOUND ) then
 	  print *, "mssm_ini: MCha(2) = ", MCha(2),
-     +      " < MChargino_LOWERBOUND = ", MChargino_LOWERBOUND
+     &      " < MChargino_LOWERBOUND = ", MChargino_LOWERBOUND
 	  return 1
 	endif
 #endif
-
-* transpose UCha
-	tmp = UCha(1, 2)
-	UCha(1, 2) = UCha(2, 1)
-	UCha(2, 1) = tmp
 
 	MCha2(1) = MCha(1)**2
 	MCha2(2) = MCha(2)**2
@@ -481,16 +382,13 @@
 *-----------------------------------------------------------------------
 * Neutralino sector:
 
-	subroutine neutralino_masses(*)
+	subroutine NeutralinoMasses(*)
 	implicit none
 
 #include "model.h"
 
-	integer lwork, i, j, svdinfo
-	parameter (lwork = 16)
-	double complex work(lwork), rwork(lwork)
-	double complex Y(4, 4), phase
-	double complex USVD(4, 4), VHSVD(4, 4)
+	integer i, j
+	double complex Y(4, 4), UNeu(4, 4), VNeu(4, 4), phase
 
 	Y(1, 1) = M_1
 	Y(2, 1) = 0
@@ -508,39 +406,27 @@
 	Y(2, 4) = Y(4, 2)
 	Y(3, 4) = Y(4, 3)
 	Y(4, 4) = 0
-
-* ZGESVD calculates USVD, VHSVD, MNeu such that Y = USVD diag(MNeu) VHSVD.
-	call ZGESVD('A', 'A', 4, 4, Y, 4, MNeu, USVD, 4, VHSVD, 4,
-     +    work, lwork, rwork, svdinfo)
-
-	if(svdinfo .ne. 0) then
-	  print *, "mssm_ini: error in neutralino matrix SVD"
-	  return 1
-	endif
-	if(MNeu(4) .lt. 0) then
-	  print *, "mssm_ini: negative neutralino mass squares"
-	  return 1
-	endif
+	call SingularValues(4, 4, Y, 4, MNeu, UNeu, 4, VNeu, 4)
 
 #ifndef NO_EXCLUSION_LIMITS
-	if(MNeu(4) .lt. MNeutralino_LOWERBOUND) then
-	  print *, "mssm_ini: MNeu(4) = ", MNeu(4),
-     +      " < MNeutralino_LOWERBOUND = ", MNeutralino_LOWERBOUND
+	if( MNeu(1) .lt. MNeutralino_LOWERBOUND ) then
+	  print *, "mssm_ini: MNeu(1) = ", MNeu(1),
+     &      " < MNeutralino_LOWERBOUND = ", MNeutralino_LOWERBOUND
 	  return 1
 	endif
 #endif
 
-* ZNeu_{ij} = diag(sqrt(V . U^*)^*) . V
-*           = sqrt(sum_k V_{ik} U^*_{ki})^* V_{ij}
+* ZNeu_{ij} = (diag(sqrt(V . U^T)^*) . V)_{ij}
+*           = sqrt(sum_k V_{ik} U_{ik})^* V_{ij}
 	do i = 1, 4
 	  MNeu2(i) = MNeu(i)**2
 	  phase = 0
 	  do j = 1, 4
-	    phase = phase + VHSVD(i, j)*dconjg(USVD(j, i))
+	    phase = phase + VNeu(i, j)*UNeu(i, j)
 	  enddo
 	  phase = dconjg(sqrt(phase))
 	  do j = 1, 4
-	    ZNeu(i, j) = phase*VHSVD(i, j)
+	    ZNeu(i, j) = phase*VNeu(i, j)
 	  enddo
 	enddo
 	end
@@ -549,9 +435,9 @@
 *-----------------------------------------------------------------------
 * Higgs masses:
 * Mh0, MHH, (MHp) are tree-level masses if sig1 = sig12 = sig2 = 0,
-* otherwise they are radiatively corrected!
+* otherwise they are radiatively corrected
 
-	subroutine higgs_masses(*)
+	subroutine HiggsMasses(*)
 	implicit none
 
 #include "model.h"
@@ -587,7 +473,7 @@
 
 * Simple approximation: (for complex and/or real case)
 * ~~~~~~~~~~~~~~~~~~~~~
-	sig2 = 3*GF/(2*sqrt2*pi**2)*MTr2**2/SB2*
+	sig2 = -3*GF/(2*sqrt2*pi**2)*MTr2**2/SB2*
      &    log(1 + (MSQ2*MSU2/MTr2 + MSQ2 + MSU2)/MTr2)
 	sig1 = 0
 	sig12 = 0
@@ -666,7 +552,7 @@
      &    + pref2*MUE
      &      *(MB2*MUE*MbLR**2/(3*CB2*MSQ2)
      &        + MZ2*TB*(MbLR + MUE*TB/3D0))
-	if(MA0 .gt. MZ) then
+	if( MA0 .gt. MZ ) then
 	  tmplog = log(MA02/MZ2)
 	  sig1 = sig1 - pref*CB2*(P1h - P2h)*tmplog
 	  sig12 = sig12 - pref*SB*CB*(P1h + P2h_)*tmplog
@@ -675,7 +561,7 @@
 
 #endif COMPLEX_PARAMETERS
 
-	if(MA0 .le. 250 .and. MSQ .ge. 250) then
+	if( MA0 .le. 250 .and. MSQ .ge. 250 ) then
 	  MHp2 = MA02 + MW2
      &      + Alfa*MW2/(12*pi*SW2)
      &        *(Nc*(Ng - 1) + Ng - 9 + 15*SW2/CW2)*log(MSQ2/MW2)
@@ -695,7 +581,7 @@
      &    + sig12*((MA02 + MZ2)*S2B + sig12))
 
 	Mh02 = tmp - tmp2
-	if(Mh02 .lt. 0) then
+	if( Mh02 .lt. 0 ) then
 	  print *, "mssm_ini: negative Mh0^2 detected."
 	  return 1
 	endif
@@ -705,9 +591,9 @@
 	MH2 = Mh02
 
 #ifndef NO_EXCLUSION_LIMITS
-	if(Mh0 .lt. Mh0_LOWERBOUND) then
+	if( Mh0 .lt. Mh0_LOWERBOUND ) then
 	  print *, "mssm_ini: Mh0 = ", Mh0,
-     +      " < Mh0_LOWERBOUND = ", Mh0_LOWERBOUND
+     &      " < Mh0_LOWERBOUND = ", Mh0_LOWERBOUND
 	  return 1
 	endif
 #endif
@@ -718,3 +604,95 @@
 	MHp = sqrt(MHp2)
 	end
 
+
+************************************************************************
+
+	subroutine ModelVarIni(sqrtS, *)
+	implicit none
+	double precision sqrtS
+
+#include "model.h"
+
+	double precision ALPHAS2
+	external ALPHAS2
+
+	call SMVarIni(sqrtS, *999)
+
+* Gluino mass: GUT relation
+* we use 1/Alfa(s) approx 1/Alfa(MZ2) - 20/(9*pi)*log(s/MZ2)
+
+	MGl = Alfas*(127.934D0 - 40/(9*pi)*log(sqrtS/MZ))*SW2*M_2
+#ifndef NO_EXCLUSION_LIMITS
+	if( MGl .lt. MGl_LOWERBOUND ) then
+	  print *, "mssm_ini: MGl = ", MGl,
+     &      " < MGl_LOWERBOUND = ", MGl_LOWERBOUND
+	  return 1
+	endif
+#endif
+	MGl2 = MGl**2
+	return
+
+999	return 1
+	end
+
+
+************************************************************************
+
+	subroutine ModelDigest
+	implicit none
+
+#include "model.h"
+
+	integer i, j
+
+	call SMDigest
+
+	print *, "SUSY parameters"
+	print *, "----------------------------"
+	print *, "TB =", TB
+	print *, "M_1 =", M_1
+	print *, "M_2 =", M_2
+	print *, "MUE =", MUE
+	print *, "MSusy =", MSusy
+	print *, "Atau =", Af(2, 3)
+	print *, "At =", Af(3, 3)
+	print *, "Ab =", Af(4, 3)
+	print *, "----------------------------"
+	print *, "Higgs masses:"
+#ifdef COMPLEX_PARAMETERS
+	print *, "(using simple approximation for Higgs mass)"
+#else
+	print *, "(using 2-loop approximation for Higgs mass)"
+#endif
+	print *, "Mh0 =", Mh0
+	print *, "MHH =", MHH
+	print *, "MHp =", MHp
+	print *, "MA0 =", MA0
+	print *, "----------------------------"
+	print *, "Sfermion masses:"
+#ifdef NO_SQUARK_MIXING
+	print *, "(diagonal sfermion mass matrix: L-R basis)"
+#else
+	print *, "(non-diagonal sfermion mass matrix: 1-2 basis)"
+#endif
+3	format(" MSf(1|2, ", I1, ", ", I1, ") =", 2G24.15)
+	do j = 1, 4
+	  do i = 1, 3
+	    print 3, j, i, MSf(1, j, i), MSf(2, j, i)
+	  enddo
+	enddo
+	print *, "----------------------------"
+	print *, "Chargino masses:"
+	print *, "MCha(1) =", MCha(1)
+	print *, "MCha(2) =", MCha(2)
+	print *, "----------------------------"
+	print *, "Neutralino masses:"
+	print *, "MNeu(1) =", MNeu(1)
+	print *, "MNeu(2) =", MNeu(2)
+	print *, "MNeu(3) =", MNeu(3)
+	print *, "MNeu(4) =", MNeu(4)
+	print *, "----------------------------"
+	print *, "Gluino mass:"
+	print *, "MGl =", MGl
+	print *, "============================"
+	end

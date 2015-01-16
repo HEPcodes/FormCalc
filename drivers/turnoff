@@ -1,0 +1,25 @@
+#!/bin/sh
+# a script to turn off the calculation of certain modules in squared_me.F
+# this file is part of FormCalc
+# last modified 17 Feb 03 th
+
+# For example, "turnoff box" turns off the calculation of the box
+# corrections (provided those modules have a "box" in their name).
+
+# The original squared_me.F is backuped once to squared_me.F.orig,
+# i.e. running turnoff again does not overwrite the backup.
+
+
+file=squared_me.F
+
+script=""
+while [ $# -gt 0 ] ; do
+  script="$script
+/call.*$1/s/^/c/"
+  shift
+done
+
+[ -f $file.orig ] || mv $file $file.orig
+
+sed "$script" $file.orig > $file
+

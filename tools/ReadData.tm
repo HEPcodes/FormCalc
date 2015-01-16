@@ -1,21 +1,27 @@
 :Begin:
-:Function:	readdata
-:Pattern:	ReadData[filename_String, setn_Integer:1, para_:Para, data_:Data]
-:Arguments:	{filename, setn, ToString[para], ToString[data]}
-:ArgumentTypes:	{String, Integer, String, String}
-:ReturnType:	Manual
+:Function: readdata
+:Pattern: ReadData[filename_String, setno_Integer:1, parahead_:Para, datahead_:Data]
+:Arguments: {filename, setno, ToString[parahead], ToString[datahead]}
+:ArgumentTypes: {String, Integer, String, String}
+:ReturnType: Manual
 :End:
 
-:Evaluate:	DataRow = List
-:Evaluate:	Attributes[Set0] = {HoldFirst}
-:Evaluate:	Set0[x__] := (Set[x]; 0)
-:Evaluate:	ReadData::noopen = "Cannot open `1`."
+:Evaluate: DataRow = List
+:Evaluate: ReadData::noopen = "Cannot open `1`."
+
 
 /*
 	ReadData.tm
 		reads data files produced by num.F into Mathematica
 		this file is part of FormCalc
-		last modified 16 Oct 01 th
+		last modified 11 Dec 02 th
+
+known shortcomings:
+- fixed memory requirements:
+  1) at most MAXPARA parameters in each set
+  2) at most MAXCOLS columns
+  3) at most MAXDATA data lines in each set
+
 */
 
 #include "mathlink.h"
@@ -23,147 +29,136 @@
 #include <stdlib.h>
 #include <string.h>
 
-static char copyleft[] =
-  "@(#) ReadData utility for FormCalc, 16 Oct 01 Thomas Hahn";
-
 #ifndef MLCONST
 #define MLCONST
 #endif
 
 
-typedef struct {
-  double val;
-  char name[20];
-} VAR;
+#define MAXCOLS 5
+#define MAXPARA 100
+#define MAXDATA 2000
 
-VAR vars[20];
-int varcount = 0;
+struct _para { double val; char name[32]; } para[MAXPARA];
+int npara = 0;
+
+double data[MAXDATA][MAXCOLS];
+int ncols[MAXDATA];
+int ndata = 0;
 
 
-void parse_para(char *s)
+void transmit(const char *parahead, const char *datahead, int setn)
 {
-  int n;
-  char *s2;
+  int i;
 
-  for(s2 = s; *s2; ++s2)
-    switch(*s2) {
-    case '_':
-      *s2 = '$';
-      break;
-    case '(':
-      *s2 = '[';
-      break;
-    case ']':
-      *s2 = ']';
-      break;
-    }
+  MLPutFunction(stdlink, "List", 3);
 
-  do {
-    sscanf(s, " %[^=]=%lg %n",
-      vars[varcount].name, &vars[varcount].val, &n);
-    ++varcount;
-  } while(*(s += n));
-}
+  MLPutFunction(stdlink, "Set", 2);
 
-
-void xmit_para(const char *head, int setn)
-{
-  int p, i;
-
-  MLPutFunction(stdlink, "EvaluatePacket", 1);
-
-  MLPutFunction(stdlink, "Set0", 2);
-  MLPutFunction(stdlink, head, 1);
+  MLPutFunction(stdlink, parahead, 1);
   MLPutInteger(stdlink, setn);
-  MLPutFunction(stdlink, "List", varcount);
-  for(p = 0; p < varcount; ++p) {
+
+  MLPutFunction(stdlink, "List", npara);
+  for( i = 0; i < npara; i++ ) {
+    struct _para *p = &para[i];
+    char *s;
+
+    for( s = p->name; *s; ++s )
+      switch( *s ) {
+      case '_':
+        *s = '$';
+        break;
+      case '(':
+        *s = '[';
+        break;
+      case ']':
+        *s = ']';
+        break;
+      }
+
     MLPutFunction(stdlink, "Rule", 2);
     MLPutFunction(stdlink, "ToExpression", 1);
-    MLPutString(stdlink, vars[p].name);
-    MLPutDouble(stdlink, vars[p].val);
+    MLPutString(stdlink, p->name);
+    MLPutDouble(stdlink, p->val);
   }
-  varcount = 0;
 
-  MLEndPacket(stdlink);
+  MLPutFunction(stdlink, "Set", 2);
 
-  while((p = MLNextPacket(stdlink)) && p != RETURNPKT)
-    MLNewPacket(stdlink);
-  MLNewPacket(stdlink);
-}
-
-
-void xmit_data(char **begin, char ***end, const char *head, int setn)
-{
-  double dd[8];
-  int i, c, n, p;
-
-  n = (int)(*end - begin);
-  *end = begin;
-
-  MLPutFunction(stdlink, "EvaluatePacket", 1);
-
-  MLPutFunction(stdlink, "Set0", 2);
-  MLPutFunction(stdlink, head, 1);
+  MLPutFunction(stdlink, datahead, 1);
   MLPutInteger(stdlink, setn);
-  MLPutFunction(stdlink, "List", n);
-  while(n--) {
-    c = sscanf(*begin, "%lg %lg %lg %lg %lg %lg %lg %lg",
-      &dd[0], &dd[1], &dd[2], &dd[3], &dd[4], &dd[5], &dd[6], &dd[7]);
-    free(*begin++);
-    MLPutFunction(stdlink, "DataRow", c);
-    for(i = 0; i < c; ++i) MLPutDouble(stdlink, dd[i]);
+
+  MLPutFunction(stdlink, "List", ndata);
+  for( i = 0; i < ndata; i++ ) {
+    double *d = data[i];
+    int j;
+
+    MLPutFunction(stdlink, "DataRow", ncols[i]);
+    for( j = 0; j < ncols[i]; j++ ) MLPutDouble(stdlink, d[j]);
   }
 
-  MLEndPacket(stdlink);
-
-  while((p = MLNextPacket(stdlink)) && p != RETURNPKT)
-    MLNewPacket(stdlink);
-  MLNewPacket(stdlink);
+  npara = ndata = 0;
 }
 
 
-void readdata(const char *filename, int setn,
-  const char *para, const char *data)
+void readdata(const char *filename, int setno,
+  const char *parahead, const char *datahead)
 {
-  FILE *file;
-  char line[512], *s, *dataline[2048], **stor = dataline;
-  int xmit = 0, p;
+  FILE *file = (*filename == '!') ?
+    popen(filename + 1, "r") :
+    fopen(filename, "r");
 
-  file = fopen(filename, "r");
-  if(file == NULL) {
-    MLPutFunction(stdlink, "CompoundExpression", 2);
+  MLPutFunction(stdlink, "CompoundExpression", 2);
+
+  if( file == NULL ) {
     MLPutFunction(stdlink, "Message", 2);
     MLPutFunction(stdlink, "MessageName", 2);
     MLPutSymbol(stdlink, "ReadData");
     MLPutString(stdlink, "noopen");
     MLPutString(stdlink, filename);
     MLPutSymbol(stdlink, "$Failed");
+    MLEndPacket(stdlink);
     return;
   }
 
-  while(!feof(file)) {
+  while( !feof(file) ) {
+    char line[512], *s;
+
     *line = 0;
     fgets(line, sizeof(line), file);
+    line[sizeof(line) - 1] = 0;
+
     s = line + strspn(line, " \t");
-    if(*s >= '+' && *s <= '9') {
-      if(varcount) xmit_para(para, setn);
-      xmit = 1;
-      *stor++ = strdup(s);
+
+    if( *line == '#' ) {
+      struct _para *p = &para[npara];
+      if( sscanf(line + 1, " %[^=]=%lg", p->name, &p->val) == 2 ) npara++;
+      continue;
     }
-    else {
-      if(strchr(s, '=')) parse_para(s + strspn(s, "# \t"));
-      if(xmit) {
-        xmit = 0;
-        xmit_data(dataline, &stor, data, setn++);
+
+    s = line + strspn(line, " \t");
+
+    if( *s != 0 && *s != '\n' ) {
+      double *d = data[ndata];
+      int n;
+
+      for( n = 0; n < MAXCOLS; ++n ) {
+        char *p = s;
+        *d++ = strtod(s, &s);
+        if( s == p ) break;
       }
+
+      if( n ) ncols[ndata++] = n;
+      continue;
     }
+
+    if( npara || ndata ) transmit(parahead, datahead, setno++);
   }
 
-  if(xmit) xmit_data(dataline, &stor, data, setn++);
+  ((*filename == '!') ? pclose : fclose)(file);
 
-  fclose(file);
+  MLPutFunction(stdlink, "List", 0);
+  MLPutInteger(stdlink, setno - 1);
 
-  MLPutInteger(stdlink, setn - 1);
+  MLEndPacket(stdlink);
 }
 
 

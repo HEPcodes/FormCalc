@@ -3,7 +3,7 @@
 #	pnuglot
 #		makes plots from data files produced by num.F
 #		this file is part of FormCalc
-#		last modified 26 Jul 01 th
+#		last modified 16 Jan 03 th
 
 # This program works in two steps:
 #
@@ -26,30 +26,24 @@ files=""
 loop=1
 tree=1
 
-for arg in $* ; do
-  case $arg in
-  -o)
-	out="next"
+while [ $# -gt 0 ] ; do
+  case $1 in
+  -o)	out="$2.gpl"
+	shift
 	;;
-  -2)
-	loop=0
+  -2)	loop=0
 	;;
-  -3)
-	tree=0
+  -3)	tree=0
 	;;
-  *)
-	if [ "$out" = "next" ] ; then
-	  out=$arg.gpl
+  *)	if (file $1 | grep -q -i -e script -e PostScript) ; then
+	  echo "ignored: $1"
 	else
-	  if (file $arg | grep -q -i -e script -e PostScript) ; then
-	    echo "ignored: $arg"
-	  else
-	    files="$files $arg"
-	    [ -z "$out" ] && out=$arg.gpl
-	  fi
+	  files="$files $1"
+	  [ -z "$out" ] && out=$1.gpl
 	fi
 	;;
   esac
+  shift
 done
 
 if [ -z "$files" ] ; then
@@ -73,7 +67,7 @@ gnuplot << \_EOF_
 
 # ----- The gnuplot commands start here -----
 
-set term pslatex color solid norotate
+set term pslatex color solid
 # if you want black lines in different dash styles rather than
 # solid lines in different colors, remove the "color solid" above
 
@@ -85,6 +79,7 @@ set bmargin 2
 
 set size 1,1.3
 set key spacing 2
+set ticscale .6
 
 #set title "Cross-section"
 
@@ -149,17 +144,17 @@ cat << \_EOF_ > tmpgpl.tex
 \pagestyle{empty}
 \def\d{\mathrm{d}}
 
-% it's a good idea to use PostScript fonts here since the figures
-% will likely be expanded or shrunk to fit the final size
-\renewcommand{\rmdefault}{ppl}
-\DeclareSymbolFont{operators}{OT1}{pplcm}{m}{n}
-\DeclareSymbolFont{letters}{OML}{pplcm}{m}{it}
-\DeclareSymbolFont{largesymbols}{OMX}{psycm}{m}{n}
-\DeclareSymbolFont{bold}{OT1}{ppl}{bx}{n}
-\DeclareSymbolFont{italic}{OT1}{ppl}{m}{it}
-\DeclareMathAlphabet{\mathrm}{OT1}{ppl}{m}{n}
-\DeclareMathAlphabet{\mathbf}{OT1}{ppl}{bx}{n}
-\DeclareMathAlphabet{\mathit}{OT1}{ppl}{m}{it}
+% uncomment the following lines if you want to use
+% PostScript fonts to make the eps file smaller:
+%\renewcommand{\rmdefault}{ppl}
+%\DeclareSymbolFont{operators}{OT1}{pplcm}{m}{n}
+%\DeclareSymbolFont{letters}{OML}{pplcm}{m}{it}
+%\DeclareSymbolFont{largesymbols}{OMX}{psycm}{m}{n}
+%\DeclareSymbolFont{bold}{OT1}{ppl}{bx}{n}
+%\DeclareSymbolFont{italic}{OT1}{ppl}{m}{it}
+%\DeclareMathAlphabet{\mathrm}{OT1}{ppl}{m}{n}
+%\DeclareMathAlphabet{\mathbf}{OT1}{ppl}{bx}{n}
+%\DeclareMathAlphabet{\mathit}{OT1}{ppl}{m}{it}
 
 \begin{document}
 _EOF_
@@ -168,13 +163,12 @@ sed /endinput/d tmpgpl.pslatex >> tmpgpl.tex
 
 echo '\end{document}' >> tmpgpl.tex
 
-epsfile="`basename $0 .gpl`.eps"
+epsfile="`dirname $0`/`basename $0 .gpl`.eps"
 latex tmpgpl.tex
-dvips -E -o $epsfile tmpgpl.dvi
+dvips -Ppdf -E -o $epsfile tmpgpl.dvi
 gv -magstep 2 $epsfile &
 
 _TEMPLATE_
 
 chmod 755 $out
-exec $out
-
+exec `dirname $out`/`basename $out`

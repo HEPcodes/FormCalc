@@ -1,8 +1,8 @@
 #!/bin/sh
 # configure script for the GNUmakefile
 # this file is part of FormCalc
-# last modified 4 Feb 02 th
-# note: has _nothing_ to do with GNU autoconf
+# last modified 12 Feb 03 th
+# note: has nothing to do with GNU autoconf
 
 
 if (echo "test\c"; echo 1,2,3) | grep c > /dev/null ; then
@@ -54,46 +54,52 @@ findpath()
 }
 
 
-## look for some programs...
+## look for some programs
 
 CONF_MAKE=`findprog make gmake Make make` || exit 1
 
-if [ "$1" = "-g77" ] ; then
-  CONF_F77=`findprog f77 g77` || exit 1
-else
+if [ -z "$FC" ] ; then
   case $HOSTTYPE in
-    alpha)
-	CONF_F77="f77"
-	CONF_FFLAGS="-O -extend_source -warn truncated_source" ;;
-    *sun*)
-	CONF_F77="f77"
-	CONF_FFLAGS="-e" ;;
-    hp*)
-	CONF_F77="fort77 f77"
-	CONF_FFLAGS="-O2 +es +U77" ;;
-    *86 | *linux)
-	CONF_F77="pgf77"
-	CONF_FFLAGS="-O2 -Mextend -g77libs" ;;
+  alpha)
+	FC=f77
+	FFLAGS="${FFLAGS--O -extend_source -warn truncated_source}" ;;
+  *sun*)
+	FC=f77
+	FFLAGS="${FFLAGS--e}" ;;
+  hp*)
+	FC=fort77
+	FFLAGS="${FFLAGS--O2 +es +U77}" ;;
+  *86 | *linux)
+	FC=pgf77
+	FFLAGS="${FFLAGS--fast -Mextend -g77libs}" ;;
   esac
-  CONF_F77=`findprog f77 $CONF_F77 f77 fort77 xlf f90 pgf77 g77` || exit 1
 fi
 
-[ "$CONF_F77" = "g77" ] && CONF_FFLAGS="-O0 -ffixed-line-length-none"
+CONF_FC=`findprog f77 $FC f77 fort77 xlf f90 pgf77 g77` || exit 1
+CONF_FFLAGS=$FFLAGS
+
+$CONF_FC -v -c 2>&1 | grep "gcc version" > /dev/null && \
+  CONF_FFLAGS="-O0 -ffixed-line-length-none"
 
 
-## check out the necessary libraries
-
-if [ -z "$CERN" -o -z "$CERN_LEVEL" -o ! -d $CERN/$CERN_LEVEL ] ; then
-  echo ""
-  echo "Warning: CERNlib is not or not properly installed on your system."
-  echo "If it is installed, the environment variables CERN and CERN_LEVEL"
-  echo "should be set such that \$CERN/\$CERN_LEVEL/lib is the directory"
-  echo "in which the CERNlib libraries are installed."
-  echo ""
-fi
+## check for the necessary libraries
 
 LTDIR=`tcsh -c 'echo LoopTools/$HOSTTYPE'`
 CONF_LTDIR=`findpath LoopTools lib/libooptools.a ../$LTDIR ../../$LTDIR $HOME/$LTDIR /usr/local /usr` || exit 1
+
+if [ "$1" = "--with-cernlib" ] ; then
+  if [ -z "$CERN" -o -z "$CERN_LEVEL" -o ! -d $CERN/$CERN_LEVEL ] ; then
+    echo ""
+    echo "Warning: CERNlib is not or not properly installed on your system."
+    echo "If it is installed, the environment variables CERN and CERN_LEVEL"
+    echo "should be set such that \$CERN/\$CERN_LEVEL/lib is the directory"
+    echo "in which the CERNlib libraries are installed."
+    echo ""
+  else
+    CONF_CERNLIB='-L$(CERN)/$(CERN_LEVEL)/lib -lpdflib -lpacklib'
+    CONF_FFLAGS="$CONF_FFLAGS -DCERNLIB"
+  fi
+fi
 
 
 echo "creating GNUmakefile" 1>&2
@@ -101,16 +107,14 @@ echo "creating GNUmakefile" 1>&2
 cat - GNUmakefile.in > GNUmakefile << _EOF_
 # --- variables defined by configure ---
 
-LTDIR = $CONF_LTDIR/
-LOOPTOOLS = -L\$(LTDIR)lib -looptools
-CERNLIB = -L\$(CERN)/\$(CERN_LEVEL)/lib -lpdflib -lmathlib -lpacklib
-LIBS = \$(LOOPTOOLS) \$(CERNLIB)
+LTDIR = $CONF_LTDIR
+LIBS = -L\$(LTDIR)/lib -looptools $CONF_CERNLIB
 
-FFLAGS = $CONF_FFLAGS
-FC = $CONF_F77 \$(FFLAGS) -I. -I\$(LTDIR)include -g
+FC = $CONF_FC
+FFLAGS = $CONF_FFLAGS -I. -I\$(LTDIR)/include -g
 
 ifdef DEBUG
-FC += -DDEBUG
+FFLAGS += -DDEBUG
 endif
 
 # --- end defs by configure ---

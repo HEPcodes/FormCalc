@@ -1,59 +1,51 @@
 #!/bin/sh
 # compile script for the C programs used by FormCalc
-# last modified 25 Jul 01 th
+# last modified 11 Feb 03 th
 
 # If this compile script doesn't work on your system, check these things:
 #
-# a) You need gcc. If that's not installed on your system, change all
+# a) You need gcc.  If that's not installed on your system, change all
 #    "gcc"s to "cc"s, but have your fingers crossed: not all ccs will
-#    compile MathLink programs without errors. Sometimes you might need
-#    to add switches to relax strict ANSI compliance.
+#    compile MathLink programs without errors.  You may need to change
+#    CFLAGS to e.g. relax strict ANSI compliance.
 #
-# b) You need mcc. mcc is a script which compiles C programs that
-#    contain MathLink code. Such programs have the extension .tm.
-#    Presumably, if you legally own Mathematica, you should also have
-#    mcc. However, some sysadmins seem to be stupid enough not to place
-#    mcc in the path, so you might have to specify the full path in the
-#    "MCC=" line below, typically something like
-#    MCC=/usr/local/mathematica/AddOns/MathLink/DevelopersKits/Linux/CompilerAdditions/mcc
+# b) You need mcc.  mcc is a script which compiles MathLink programs.
+#    Such programs have the extension .tm.  If you have Mathematica,
+#    you should also have mcc.  If mcc is not on the path, specify it
+#    in the environment variable MCC, e.g.
+#    setenv MCC /opt/mathematica/Executables/Linux/mcc
 
-
-MCC=`csh -cf "which ${MCC:-mcc}"`
+MCC=`which ${MCC:-mcc}`
 
 if [ ! -x "$MCC" ] ; then
   echo "You need mcc (the MathLink C compiler) to compile ReadForm"
-  exit
+  exit 1
 fi
 
-SUNLIBS=""
-echo "$HOSTTYPE" | grep sun > /dev/null && SUNLIBS="-lnsl -lsocket"
+eval `awk '/^sysid=/ { print $0; exit; }' $MCC`
+
+[ -d $sysid ] || mkdir $sysid
 
 make -f - << _EOF_
-all: ReadForm_$HOSTTYPE ToForm_$HOSTTYPE ToFortran_$HOSTTYPE \
-tools/ReadData_$HOSTTYPE
+all: $sysid/ReadForm $sysid/ToForm $sysid/ToFortran $sysid/ReadData
 
-CFLAGS = -O6 $*
+CC = gcc
+CFLAGS = -O3 -fomit-frame-pointer $*
 
-ReadForm_$HOSTTYPE: ReadForm.tm
-	CC=gcc ; export CC ; \\
-	  sed "s/ cc / gcc /g" $MCC | \\
-	  sh -s ReadForm.tm \$(CFLAGS) -o ReadForm_$HOSTTYPE $SUNLIBS
-	strip ReadForm_$HOSTTYPE
+$sysid/ReadForm: ReadForm.tm
+	CC=\$(CC) $MCC ReadForm.tm \$(CFLAGS) -o $sysid/ReadForm
+	strip $sysid/ReadForm
 
-ToForm_$HOSTTYPE: ToForm.c
-	gcc \$(CFLAGS) -o ToForm_$HOSTTYPE ToForm.c
-	strip ToForm_$HOSTTYPE
+$sysid/ToForm: ToForm.c
+	\$(CC) \$(CFLAGS) -o $sysid/ToForm ToForm.c
+	strip $sysid/ToForm
 
-ToFortran_$HOSTTYPE: ToFortran.c
-	gcc \$(CFLAGS) -o ToFortran_$HOSTTYPE ToFortran.c
-	strip ToFortran_$HOSTTYPE
+$sysid/ToFortran: ToFortran.c
+	\$(CC) \$(CFLAGS) -o $sysid/ToFortran ToFortran.c
+	strip $sysid/ToFortran
 
-tools/ReadData_$HOSTTYPE: tools/ReadData.tm
-	cd tools ; CC=gcc ; export CC ; \\
-	  sed "s/ cc / gcc /g" $MCC | \\
-	  sh -s ReadData.tm \$(CFLAGS) -o ReadData_$HOSTTYPE $SUNLIBS
-	strip tools/ReadData_$HOSTTYPE
-	cd tools ; ln -sf ReadData_$HOSTTYPE ReadData
-
+$sysid/ReadData: tools/ReadData.tm
+	CC=\$(CC) $MCC tools/ReadData.tm \$(CFLAGS) -o $sysid/ReadData
+	strip $sysid/ReadData
 _EOF_
 

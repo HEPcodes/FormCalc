@@ -3,7 +3,7 @@
 		calculate the abscissas and weights for the
 		Gaussian quadrature in 2to2.F
 		this file is part of FormCalc
-		last modified 10 Sep 01 th
+		last modified 10 Jan 03 th
 *)
 
 
@@ -27,7 +27,7 @@ dif2[n_, x_] := D[LegendreP[n, y], y]^2 /. y -> x
 
 Weights[n_] := 2/((1 - #^2) dif2[n, #])&/@ SamplingPoints[n]
 
-hh = OpenFortran[ToFileName[$DriversDir, "gauss.F"]];
+hh = OpenFortran[ToFileName[$DriversDir, "gausspoints.F"]];
 
 theif := (theif = "#elif"; "#if")
 
@@ -36,13 +36,13 @@ WriteString[hh, "\
 \tdouble precision gauss_x(GAUSSPOINTS/2)\n\
 \tdouble precision gauss_w(GAUSSPOINTS/2)\n\n"]
 
-( delim = Prepend[Table[",\n     +    ", {#/2 - 1}], {}];
+( delim = Prepend[Table[",\n     &    ", {#/2 - 1}], {}];
   WriteString[hh,
     theif <> " GAUSSPOINTS == " <> ToString[#] <>
-    "\n\tdata gauss_x /\n     +    " <>
+    "\n\tdata gauss_x /\n     &    " <>
     Transpose[{delim,
       ToString/@ SetPrecision[SamplingPoints[#], 35]}] <>
-    " /\n\tdata gauss_w /\n     +    " <>
+    " /\n\tdata gauss_w /\n     &    " <>
     Transpose[{delim,
       ToString/@ SetPrecision[Weights[#], 35]}] <> " /\n" ]
 )&/@ Points;

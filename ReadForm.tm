@@ -1,32 +1,35 @@
 :Begin:
-:Function:	readform
-:Pattern:	ReadForm[filename_String]
-:Arguments:	{filename}
-:ArgumentTypes:	{String}
-:ReturnType:	Manual
+:Function: readform
+:Pattern: ReadForm[filename_String]
+:Arguments: {filename}
+:ArgumentTypes: {String}
+:ReturnType: Manual
 :End:
 
 :Begin:
-:Function:	clearcache
-:Pattern:	ClearCache[]
-:Arguments:	{}
-:ArgumentTypes:	{}
-:ReturnType:	Manual
+:Function: clearcache
+:Pattern: ClearCache[]
+:Arguments: {}
+:ArgumentTypes: {}
+:ReturnType: Manual
 :End:
 
-:Evaluate:	ReadForm::noopen = "Cannot open `1`."
-:Evaluate:	ReadForm::nooutput =
-		"Something went wrong, there was no output from FORM."
-:Evaluate:	ReadForm::toomany =
-		"Too many expressions. Increase MAXEXPR in ReadForm.tm."
-:Evaluate:	ReadForm::formerror = "`1`"
+:Evaluate: ReadForm::noopen = "Cannot open `1`."
+
+:Evaluate: ReadForm::nooutput =
+  "Something went wrong, there was no output from FORM."
+
+:Evaluate: ReadForm::toomany =
+  "Too many expressions. Increase MAXEXPR in ReadForm.tm."
+
+:Evaluate: ReadForm::formerror = "`1`"
 
 
 /*
 	ReadForm.tm
 		reads FORM output back into Mathematica
 		this file is part of FormCalc
-		last modified 2 Jan 02 th
+		last modified 11 Dec 02 th
 */
 
 #include "mathlink.h"
@@ -34,10 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static char copyleft[] =
-  "@(#) ReadForm utility for FormCalc, 2 Jan 02 Thomas Hahn";
-
-#define MAXEXPR 2000
+#define MAXEXPR 5000
 #define TERMBUF 100000
 #define STRINGSIZE 32767
 
@@ -130,7 +130,7 @@ char *getabbr(char *s)
   while( (lp = *node) ) {
     p = strcmp(s, lp->abb);
     if( p == 0 ) return lp->sym;
-    node = p < 0 ? &lp->lt : &lp->gt;
+    node = (p < 0) ? &lp->lt : &lp->gt;
   }
 
   MLPutFunction(stdlink, "EvaluatePacket", 1);
@@ -164,7 +164,7 @@ TERM *downsize(TERM *tp, char *end)
 
   new = realloc(tp, end - (char *)tp);
   if( (off = (char *)tp - (char *)new) ) {
-    for(f = new->f; f < &new->f[LEVELS]; ++f)
+    for( f = new->f; f < &new->f[LEVELS]; ++f )
       if( *f >= (char *)tp && *f <= end ) *f -= off;
   }
   return new;
@@ -187,8 +187,8 @@ void collect_pave()
   int i;
 
   do {
-    for(old = termp; (tp = old->last); ) {
-      for(i = LEVEL_PAVE + 1; i < LEVELS; ++i)
+    for( old = termp; (tp = old->last); ) {
+      for( i = LEVEL_PAVE + 1; i < LEVELS; ++i )
         if( strcmp(termp->f[i], tp->f[i]) ) {
           old = tp;
           goto loop;
@@ -255,9 +255,9 @@ TERM *transmit(TERM *tp, int level)
   if( level == LEVEL_SUMOVER ) MLPutFunction(stdlink, "List", n);
   else if( n > 1 ) MLPutFunction(stdlink, "Plus", n);
 
-  while(n--) {
+  while( n-- ) {
     ntimes = *tp->f[level] != 0;
-    for(i = level - 1; i > LEVEL_PAVE; --i) {
+    for( i = level - 1; i > LEVEL_PAVE; --i ) {
       ++ntimes;
       if( tp->nterms[i] > 1 ) goto sendit;
       if( *tp->f[i] == 0 ) --ntimes;
@@ -265,10 +265,11 @@ TERM *transmit(TERM *tp, int level)
 	/* orderchain goes down only to LEVEL_COEFF, hence: */
     if( *tp->f[LEVEL_PAVE] ) ++ntimes;
 sendit:
-    switch(ntimes) {
+    switch( ntimes ) {
     case 0:
       MLPutInteger(stdlink, 1);
       break;
+
     default:
       MLPutFunction(stdlink, "Times", ntimes);
     case 1:
@@ -276,7 +277,7 @@ sendit:
         MLPutFunction(stdlink, "ToExpression", 1);
         MLPutString(stdlink, tp->f[level]);
       }
-      for(i = level - 1; i > LEVEL_PAVE; --i) {
+      for( i = level - 1; i > LEVEL_PAVE; --i ) {
         if( tp->nterms[i] > 1 ) {
           tp = transmit(tp, i);
           goto loop;
@@ -309,8 +310,7 @@ void readform(const char *filename)
   TERM *tp, *last;
   FUN *funp;
 
-  file = *filename == '!' ?
-    popen(filename + 1, "r") : fopen(filename, "r");
+  file = (*filename == '!') ? popen(filename + 1, "r") : fopen(filename, "r");
   if( file == NULL ) {
     report_error("noopen", filename);
     MLPutFunction(stdlink, "Abort", 0);
@@ -338,7 +338,7 @@ nextline:
           goto abort;
         }
         MLPutFunction(stdlink, "List", inexpr);
-        for(ep = expressions; ep < exprp; ++ep) {
+        for( ep = expressions; ep < exprp; ++ep ) {
           orderchain(*ep, LEVELS - 1);
           transmit(*ep, LEVELS - 1);
         }
@@ -366,7 +366,7 @@ newterm:
         beg = delim = di = (char *)tp + sizeof(TERM);
         tp->last = termp;
         termp = tp;
-        for(pp = tp->f; pp < tp->f + LEVELS; ++pp) *pp = zero;
+        for( pp = tp->f; pp < tp->f + LEVELS; ++pp ) *pp = zero;
         tp->f[thislev = LEVEL_COEFF] = di;
         tp->coll = 0;
         if( inexpr ) goto nextline;
@@ -389,16 +389,16 @@ newterm:
         if( br == brackets ) {
           *di = 0;
           newlev = LEVEL_COEFF;
-          for(funp = funtab;
-              funp < &funtab[sizeof(funtab)/sizeof(FUN)];
-              ++funp)
+          for( funp = funtab;
+               funp < &funtab[sizeof(funtab)/sizeof(FUN)];
+               ++funp )
             if( strcmp(delim, funp->name) == 0 ) {
               newlev = funp->level;
               break;
             }
           if( thislev != newlev ) {
             if( delim > beg ) *(delim - 1) = 0;
-            switch(thislev) {
+            switch( thislev ) {
             case LEVEL_MAT:
               termp->f[LEVEL_MAT] = getabbr(termp->f[LEVEL_MAT]);
               break;
@@ -453,12 +453,12 @@ abort:
 quit:
   MLEndPacket(stdlink);
   while( exprp > expressions )
-    for(tp = *--exprp; tp; tp = last) {
+    for( tp = *--exprp; tp; tp = last ) {
       if( tp->coll ) free(tp->f[LEVEL_PAVE]);
       last = tp->last;
       free(tp);
     }
-  (*filename == '!' ? pclose : fclose)(file);
+  ((*filename == '!') ? pclose : fclose)(file);
 }
 
 
