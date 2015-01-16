@@ -7,18 +7,16 @@
 :End:
 
 :Begin:
-:Function:	powercountingfor
-:Pattern:	PowerCountingFor[mom___]
-:Arguments:	{mom}
-:ArgumentTypes:	{Manual}
+:Function:	clearcache
+:Pattern:	ClearCache[]
+:Arguments:	{}
+:ArgumentTypes:	{}
 :ReturnType:	Manual
 :End:
 
 :Evaluate:	ReadForm::noopen = "Cannot open `1`."
 :Evaluate:	ReadForm::nooutput =
 		"Something went wrong, there was no output from FORM."
-:Evaluate:	ReadForm::unknown =
-		"Unimplemented higher tensor functions found."
 :Evaluate:	ReadForm::toomany =
 		"Too many expressions. Increase MAXEXPR in ReadForm.tm."
 :Evaluate:	ReadForm::formerror = "`1`"
@@ -28,12 +26,7 @@
 	ReadForm.tm
 		reads FORM output back into Mathematica
 		this file is part of FormCalc
-		last modified 14 May 00 th
-
-Note: This is the fancy version which performs some simplifications
-      while sending the FORM output to Mma. Also in other respects
-      (e.g. power counting of momenta), it is pretty much adapted to
-      FormCalc. For a simple FORM -> Mma translator see FormGet.tm.
+		last modified 9 May 01 th
 */
 
 #include "mathlink.h"
@@ -42,9 +35,10 @@ Note: This is the fancy version which performs some simplifications
 #include <string.h>
 
 static char copyleft[] =
-  "@(#) ReadForm utility for FormCalc, 14 May 00 Thomas Hahn";
+  "@(#) ReadForm utility for FormCalc, 9 May 01 Thomas Hahn";
 
 #define MAXEXPR 2000
+#define TERMBUF 100000
 #define STRINGSIZE 32767
 
 #ifndef MLCONST
@@ -54,68 +48,50 @@ static char copyleft[] =
 
 /*
 
-A term in the FORM output is organized into the MATHOBJ structure
+A term in the FORM output is organized into the TERM structure
 in the following way:
 
- ____5_____     __4___     __3___     ___0___     _2_
-/          \   /      \   /      \   /       \   /   \
-SumOver(...) * Mat(...) * DEN(...) * pave(...) * ..... * (
-                                                 _
-    + 3/16*EL^2 * abb(...) [ * $Scale^n ]         |
-      \_     _/   \_   __/ \_         __/         | 1
-        coeff       abb      scale = n           _|
-    + ...
-)
-
-The lines inside the parentheses are referred to as "factors", the whole
-term as "expression".
+ ____4_____     __3___     __2___     ___0___     _____1_____
+/          \   /      \   /      \   /       \   /           \
+SumOver(...) * Mat(...) * Den(...) * pave(...) * ..... * (...)
 
 Hierarchy of collecting:
-5. SumOver
-4. Mat
-3. DEN
-2. [coefficient]
-1. [factor]
+4. SumOver
+3. Mat
+2. Den
+1. [coefficient]
 0. pave
 
 */
 
-#define LEVELS 6
-#define LEVEL_INTEGRAL 0
-#define LEVEL_FACTOR 1
-#define LEVEL_COEFFICIENT 2
-#define LEVEL_MAT 4
+#define LEVEL_PAVE 0
+#define LEVEL_COEFF 1
+#define LEVEL_DEN 2
+#define LEVEL_MAT 3
+#define LEVEL_SUMOVER 4
+#define LEVELS 5
 
 typedef struct {
-  char *func;
+  char *name;
   int level;
-} COLL;
+} FUN;
 
-COLL collecttable[] = {
-  {"SumOver", 5},
-  {"Mat", LEVEL_MAT},
-  {"DEN", 3},
-  {"pave", LEVEL_INTEGRAL}
+FUN funtab[] = {
+  {"SumOver", LEVEL_SUMOVER},
+  {"Mat",     LEVEL_MAT},
+  {"Den",     LEVEL_DEN},
+  {"pave",    LEVEL_PAVE}
 };
 
-
-typedef struct exprterm {
-  struct exprterm *last;
+typedef struct term {
+  struct term *last;
   char *f[LEVELS];
-  int nterms[LEVELS], sign, coll;
-} EXPRTERM;
-
-typedef struct facterm {
-  struct facterm *last;
-  char *abb;
-  int sign, scale;
-  char coeff[8];
-} FACTERM;
+  int nterms[LEVELS], coll;
+} TERM;
 
 typedef struct btree {
   struct btree *lt, *gt;
   char *sym;
-  int scale;
   char abb[8];
 } BTREE;
 
@@ -124,53 +100,79 @@ typedef struct btree {
    padding), and to compensate we need */
 #define sizeofstruct(x) (sizeof(x) - 8)
 
-
 char *tok;
-FACTERM *fp;
-EXPRTERM *ep, *old1;
-BTREE *abb_root = NULL, *abbsum_root = NULL, *mat_root = NULL;
-int infac, maxabbsize, maxintsize;
-
-static char zero[] = "";
-
-
-char *pctab[50], **pctabend = pctab;
-char pcstore[256];
+TERM *termp, *old1;
+int maxintsize;
+char zero[] = "";
+BTREE *root = NULL;
 
 
 void report_error(MLCONST char *tag, const char *arg)
 {
-  MLPutFunction(stdlink, "CompoundExpression", 2);
+  int p;
+
+  MLPutFunction(stdlink, "EvaluatePacket", 1);
   MLPutFunction(stdlink, "Message", arg ? 2 : 1);
   MLPutFunction(stdlink, "MessageName", 2);
   MLPutSymbol(stdlink, "ReadForm");
   MLPutString(stdlink, tag);
   if(arg) MLPutString(stdlink, arg);
-  MLPutFunction(stdlink, "Abort", 0);
   MLEndPacket(stdlink);
+
+  do {
+    p = MLNextPacket(stdlink);
+    MLNewPacket(stdlink);
+  } while(p != RETURNPKT);
 }
 
 
-char *getfac(char *s)
+char *getabbr(char *s)
 {
-  int bracket = 0;
+  BTREE *lp, **node = &root;
+  MLCONST char *mmares;
+  int p;
 
-  for(tok = s; ; ++tok)
-    switch(*tok) {
-    case '[':
-    case '(':
-      ++bracket;
-      break;
-    case ')':
-    case ']':
-      --bracket;
-      break;
-    case '*':
-      if(bracket) continue;
-      *tok++ = 0;
-    case 0:
-      return s;
-    }
+  while(lp = *node) {
+    p = strcmp(s, lp->abb);
+    if(p == 0) return lp->sym;
+    node = p < 0 ? &lp->lt : &lp->gt;
+  }
+
+  MLPutFunction(stdlink, "EvaluatePacket", 1);
+  MLPutFunction(stdlink, "ToString", 1);
+  MLPutFunction(stdlink, "ToExpression", 1);
+  MLPutString(stdlink, s);
+  MLEndPacket(stdlink);
+
+  while(MLNextPacket(stdlink) != RETURNPKT)
+    MLNewPacket(stdlink);
+  MLGetString(stdlink, &mmares);
+
+  p = strlen(s);
+  lp = malloc(p + strlen(mmares) + 2 + sizeofstruct(BTREE));
+  lp->lt = lp->gt = NULL;
+  *node = lp;
+  strcpy(lp->abb, s);
+  s = lp->sym = lp->abb + p + 1;
+  strcpy(s, mmares);
+
+  MLDisownString(stdlink, mmares);
+  return s;
+}
+
+
+TERM *downsize(TERM *tp, char *end)
+{
+  TERM *new;
+  char **f;
+  int off;
+
+  new = realloc(tp, end - (char *)tp);
+  if(off = (char *)tp - (char *)new) {
+    for(f = new->f; f < &new->f[LEVELS]; ++f)
+      if(*f >= (char *)tp && *f <= end) *f -= off;
+  }
+  return new;
 }
 
 
@@ -183,328 +185,89 @@ char *putfac(char *to, char *from)
 }
 
 
-#define nonalpha(c) ((unsigned char)((c | 0x20) - 'a') > 25)
-
-int powercount(char *s)
+void collect_pave()
 {
-  char **pct, *p, *t;
-  int c = 0;
-
-  for(pct = pctab; pct < pctabend; ++pct)
-    for(p = s; p = strstr(p, *pct); ) {
-      t = p - 1;
-      p += strlen(*pct);
-      if(nonalpha(*t) && nonalpha(*p) &&
-          !(*t == '[' && memcmp(t - 6, "Spinor", 6))) ++c;
-    }
-  return c;
-}
-
-
-char *getabbr(char *head, char *s, BTREE **root, int *count)
-{
-  MLCONST char *mmares;
-  BTREE *lp;
-  int p;
-
-  while(lp = *root) {
-    p = strcmp(s, lp->abb);
-    if(p == 0) {
-      if(count) *count = lp->scale;
-      return lp->sym;
-    }
-    root = p < 0 ? &lp->lt : &lp->gt;
-  }
-
-  MLPutFunction(stdlink, "EvaluatePacket", 1);
-  MLPutFunction(stdlink, "ToString", 1);
-  MLPutFunction(stdlink, head, 1);
-  MLPutString(stdlink, s);
-  MLEndPacket(stdlink);
-
-  while((p = MLNextPacket(stdlink)) && p != RETURNPKT)
-    MLNewPacket(stdlink);
-  MLGetString(stdlink, &mmares);
-
-  p = strlen(s);
-  lp = malloc(sizeofstruct(BTREE) + 4 + p + strlen(mmares));
-			/* 4 = strlen("()\0\0") */
-  lp->lt = lp->gt = NULL;
-  *root = lp;
-  strcpy(lp->abb, s);
-  if(count) *count = lp->scale = powercount(s);
-  s = lp->sym = lp->abb + p + 1;
-  if(strpbrk(mmares, "+-")) sprintf(s, "(%s)", mmares);
-  else strcpy(s, mmares);
-
-  MLDisownString(stdlink, mmares);
-  return s;
-}
-
-
-void fac_chopup(char *si)
-{
-  char *pabb;
-  int size;
-  FACTERM *mp;
-
-  size = strlen(si) + 1 + sizeofstruct(FACTERM);
-  if(pabb = strstr(si, "abb[")) {
-    getfac(pabb + 3);
-    size -= (int)(tok - pabb);
-  }
-  mp = malloc(size);
-  mp->last = fp;
-  fp = mp;
-
-  mp->sign = 1;
-  switch(*si) {
-  case '-':
-    mp->sign = -1;
-  case '+':
-    ++si;
-  }
-
-  if(pabb) {
-    mp->abb = getabbr("FromForm", pabb, &abb_root, &mp->scale);
-    maxabbsize += strlen(mp->abb) + 1;
-    if(size = pabb - si) {
-      if(*tok == 0) --size;		/* remove trailing "*" */
-      memcpy(mp->coeff, si, size);
-    }
-    strcpy(mp->coeff + size, tok);
-  }
-  else {
-    mp->scale = 0;
-    mp->abb = zero;
-    strcpy(mp->coeff, si);
-    maxabbsize += 2;
-  }
-}
-
-
-void sum_up_fac()
-{
-  FACTERM *f1p = fp, *f2p, *old;
-  char *pool, *s;
-  int overallsign, maxsumsize = 5;	/* 5 = strlen("o2[]\0") */
-
-  infac = 0;
-  pool = malloc(maxabbsize + 9);	/* 9 = strlen("abbsum[]\0") */
-  do {
-    s = NULL;
-    for(old = f1p; f2p = old->last; )
-      if(strcmp(f1p->coeff, f2p->coeff) ||
-         f1p->scale != f2p->scale) old = f2p;
-      else {
-        if(s == NULL) {
-          strcpy(s = pool, "abbsum[");
-          s = putfac(s + 7, f1p->abb);
-        }
-        *(s - 1) = f1p->sign*f2p->sign < 0 ? '-' : '+';
-        s = putfac(s, f2p->abb);
-        old->last = f2p->last;
-        free(f2p);
-      }
-    if(s) {
-      *(s - 1) = ']';
-      *s = 0;
-      f1p->abb = getabbr("ToExpression", pool, &abbsum_root, NULL);
-    }
-    maxsumsize += strlen(f1p->coeff) + strlen(f1p->abb) + 16;
-			/* 16 = strlen("+o1[]**$Scale^nn") */
-  } while(f1p = f1p->last);
-  free(pool);
-
-  ep->sign *= overallsign = fp->sign;
-  ep->f[LEVEL_FACTOR] = s = malloc(maxsumsize);
-  *s++ = 'o';
-  *s++ = '2';
-  *s++ = '[';
-  do {
-    *s++ = overallsign*fp->sign < 0 ? '-' : '+';
-    *s++ = 'o';
-    *s++ = '1';
-    *s++ = '[';
-    s = putfac(s, fp->coeff);
-    for(old = fp; f2p = old->last; )
-      if(strcmp(fp->abb, f2p->abb)) old = f2p;
-      else {
-        *(s - 1) = fp->sign*f2p->sign < 0 ? '-' : '+';
-        s = putfac(s, f2p->coeff);
-        old->last = f2p->last;
-        free(f2p);
-      }
-    *(s - 1) = ']';
-    if(fp->scale) {
-      s += sprintf(s, "*$Scale^%d", fp->scale);
-      if(fp->scale == 1) s -= 2;
-    }
-    if(*fp->abb) {
-      *s++ = '*';
-      s = memccpy(s, fp->abb, 0, STRINGSIZE) - 1;
-    }
-    old = fp->last;
-    free(fp);
-  } while(fp = old);
-  *s++ = ']';
-  *s++ = 0;
-  ep->f[LEVEL_FACTOR] =
-    realloc(ep->f[LEVEL_FACTOR], s - ep->f[LEVEL_FACTOR]);
-}
-
-
-void expr_chopup(char *si)
-{
-  char *pfunc, *pfunc0, *pcoeff, *pcoeff0, *di, *c, **pp, s[20];
-  COLL *cp;
-  int size, scale = 0, thislev = -1;
-  EXPRTERM *mp;
-
-  size = strlen(si) + sizeof(EXPRTERM) + 1;
-  mp = malloc(size);
-  mp->last = ep;
-  ep = mp;
-
-  mp->coll = 0;
-  mp->sign = 1;
-  switch(*si) {
-  case '-':
-    mp->sign = -1;
-  case '+':
-    ++si;
-  }
-  for(pp = mp->f; pp < mp->f + LEVELS; ++pp) *pp = zero;
-  pcoeff = pcoeff0 = (char *)mp + size;
-  pfunc = pfunc0 = (char *)mp + sizeof(EXPRTERM);
-
-  for(di = getfac(si); *di; di = getfac(tok)) {
-    if(c = strchr(di, '[')) {
-      *c = 0;
-      for(cp = collecttable;
-          cp < &collecttable[sizeof(collecttable)/sizeof(COLL)];
-          ++cp)
-        if(strcmp(di, cp->func) == 0) {
-          *c = '[';
-          if(cp->level == LEVEL_MAT)	/* note: if there's more than one
-					   Mat function per line, we're
-					   in trouble here */
-            mp->f[thislev = LEVEL_MAT] =
-              getabbr("FromForm", di, &mat_root, &scale);
-          else {
-            if(thislev == cp->level) *(pfunc - 1) = '*';
-            else mp->f[thislev = cp->level] = pfunc;
-            pfunc = memccpy(pfunc, di, 0, STRINGSIZE);
-          }
-          goto loop;
-        }
-      *c = '[';
-    }
-    thislev = -1;
-    pcoeff -= tok - di + (*tok == 0);
-    *((char *)memccpy(pcoeff, di, 0, STRINGSIZE) - 1) = '*';
-loop: ;
-  }
-
-  if(scale) {
-    if(scale == 1) memcpy(pcoeff -= 7, "$Scale*", 7);
-    else {
-      size = sprintf(s, "$Scale^%d*", scale);
-      memcpy(pcoeff -= size, s, size);
-    }
-  }
-  if(pcoeff != pcoeff0) {
-    *(pcoeff0 - 1) = 0;
-    mp->f[LEVEL_COEFFICIENT] = pcoeff;
-  }
-  maxintsize += strlen(mp->f[LEVEL_INTEGRAL]) + 2;
-}
-
-
-void collect_integrals()
-{
-  EXPRTERM *f2p, *old;
+  TERM *tp, *old;
   char *s;
   int i;
 
   do {
-    for(old = ep; f2p = old->last; ) {
-      for(i = LEVEL_INTEGRAL + 1; i < LEVELS; ++i)
-        if(strcmp(ep->f[i], f2p->f[i])) {
-          old = f2p;
+    for(old = termp; tp = old->last; ) {
+      for(i = LEVEL_PAVE + 1; i < LEVELS; ++i)
+        if(strcmp(termp->f[i], tp->f[i])) {
+          old = tp;
           goto loop;
         }
-      if(ep->coll == 0) {
-        s = ep->f[LEVEL_INTEGRAL];
-        s = putfac(ep->f[LEVEL_INTEGRAL] = malloc(maxintsize), s);
-        ep->coll = 1;
+      if(termp->coll == 0) {
+        s = termp->f[LEVEL_PAVE];
+        s = putfac(termp->f[LEVEL_PAVE] = malloc(maxintsize), s);
+        termp->coll = 1;
       }
-      *(s - 1) = ep->sign*f2p->sign < 0 ? '-' : '+';
-      s = putfac(s, f2p->f[LEVEL_INTEGRAL]);
-      old->last = f2p->last;
-      free(f2p);
+      *(s - 1) = '+';
+      s = putfac(s, tp->f[LEVEL_PAVE]);
+      old->last = tp->last;
+      free(tp);
 loop: ;
     }
-    if(ep->coll) ep->f[LEVEL_INTEGRAL] =
-      realloc(ep->f[LEVEL_INTEGRAL], s - ep->f[LEVEL_INTEGRAL]);
-  } while(ep = ep->last);
+    if(termp->coll) termp->f[LEVEL_PAVE] =
+      realloc(termp->f[LEVEL_PAVE], s - termp->f[LEVEL_PAVE]);
+  } while(termp = termp->last);
 }
 
 
-void orderchain(EXPRTERM *e1p, int level)
+void orderchain(TERM *t1p, int level)
 {
-  EXPRTERM *e2p, *old2, *ini;
-  int c = 0, c2, *nterms = &e1p->nterms[level];
+  TERM *t2p, *old2, *ini;
+  int c = 0, c2, *nterms = &t1p->nterms[level];
 
   do {
     ++c;
     c2 = 0;
-    ini = e1p;
+    ini = t1p;
     do {
       ++c2;
-      old1 = e1p;
-      e1p = old1->last;
-      if(e1p == NULL) goto next;
-    } while(strcmp(ini->f[level], e1p->f[level]) == 0);
-    e2p = e1p;
+      old1 = t1p;
+      t1p = old1->last;
+      if(t1p == NULL) goto next;
+    } while(strcmp(ini->f[level], t1p->f[level]) == 0);
+    t2p = t1p;
     do {
-      old2 = e2p;
+      old2 = t2p;
 over:
-      e2p = old2->last;
-      if(e2p == NULL) goto next;
-    } while(strcmp(ini->f[level], e2p->f[level]));
-    old1->last = e2p;
-    old1 = e2p;
-    old2->last = e2p->last;
+      t2p = old2->last;
+      if(t2p == NULL) goto next;
+    } while(strcmp(ini->f[level], t2p->f[level]));
+    old1->last = t2p;
+    old1 = t2p;
+    old2->last = t2p->last;
     ++c2;
     goto over;
 next:
-    if(level > LEVEL_COEFFICIENT) {
+    if(level > LEVEL_COEFF) {
       old1->last = NULL;
       orderchain(ini, level - 1);
     }
     else ini->nterms[level - 1] = c2;
-  } while(old1->last = e1p);
+  } while(old1->last = t1p);
   *nterms = c;
 }
 
 
-void transmit(EXPRTERM **xp, int level)
+TERM *transmit(TERM *tp, int level)
 {
-  EXPRTERM *ep = *xp, *last;
-  int n = ep->nterms[level], ntimes, i;
+  int n = tp->nterms[level], ntimes, i;
 
-  if(n > 1) MLPutFunction(stdlink, "Plus", n);
+  if(level == LEVEL_SUMOVER) MLPutFunction(stdlink, "List", n);
+  else if(n > 1) MLPutFunction(stdlink, "Plus", n);
   while(n--) {
-    ntimes = *ep->f[level] != 0;
-    for(i = level - 1; i > LEVEL_INTEGRAL; --i) {
+    ntimes = *tp->f[level] != 0;
+    for(i = level - 1; i > LEVEL_PAVE; --i) {
       ++ntimes;
-      if(ep->nterms[i] > 1) goto sendit;
-      if(*ep->f[i] == 0) --ntimes;
+      if(tp->nterms[i] > 1) goto sendit;
+      if(*tp->f[i] == 0) --ntimes;
     }
-	/* orderchain goes down only to LEVEL_FACTOR, hence: */
-    if(*ep->f[LEVEL_INTEGRAL]) ++ntimes;
-    if(ep->sign < 0) ++ntimes;
+	/* orderchain goes down only to LEVEL_COEFF, hence: */
+    if(*tp->f[LEVEL_PAVE]) ++ntimes;
 sendit:
     switch(ntimes) {
     case 0:
@@ -513,198 +276,210 @@ sendit:
     default:
       MLPutFunction(stdlink, "Times", ntimes);
     case 1:
-      if(*ep->f[level]) {
+      if(*tp->f[level]) {
         MLPutFunction(stdlink, "ToExpression", 1);
-        MLPutString(stdlink, ep->f[level]);
+        MLPutString(stdlink, tp->f[level]);
       }
-      for(i = level - 1; i > LEVEL_INTEGRAL; --i) {
-        if(ep->nterms[i] > 1) {
-          transmit(&ep, i);
+      for(i = level - 1; i > LEVEL_PAVE; --i) {
+        if(tp->nterms[i] > 1) {
+          tp = transmit(tp, i);
           goto loop;
         }
-        if(*ep->f[i]) {
+        if(*tp->f[i]) {
           MLPutFunction(stdlink, "ToExpression", 1);
-          MLPutString(stdlink, ep->f[i]);
+          MLPutString(stdlink, tp->f[i]);
         }
       }
-      if(*ep->f[LEVEL_INTEGRAL]) {
+      if(*tp->f[LEVEL_PAVE]) {
         MLPutFunction(stdlink, "ToExpression", 1);
-        MLPutString(stdlink, ep->f[LEVEL_INTEGRAL]);
+        MLPutString(stdlink, tp->f[LEVEL_PAVE]);
       }
-      if(ep->sign < 0) MLPutInteger(stdlink, -1);
     }
-    if(ep->coll) free(ep->f[LEVEL_INTEGRAL]);
-    free(ep->f[LEVEL_FACTOR]);
-    last = ep->last;
-    free(ep);
-    ep = last;
+    tp = tp->last;
 loop: ;
   }
-  *xp = ep;
-}
-
-
-void expr_as_fac(char *expr)
-{
-  EXPRTERM *np;
-  char **pp;
-
-  if(!infac) {
-    maxabbsize = 0;
-    np = malloc(sizeof(EXPRTERM));
-    for(pp = np->f; pp < np->f + LEVELS; ++pp) *pp = zero;
-    np->sign = 1;
-    np->coll = 0;
-    np->last = ep;
-    ep = np;
-    fp = NULL;
-    infac = 1;
-  }
-  fac_chopup(expr);
+  return tp;
 }
 
 
 void readform(const char *filename)
 {
   FILE *file;
-  char physicalline[280], logicalline[2048];
-  char *si, *di = logicalline;
+  char line[1024], *si, *di, *ind, *delim, *beg, **pp;
   char *er, errmsg[512], *erp = errmsg;
-  int brackets[16], *br = brackets;
-  int inexpr = 0;
-  EXPRTERM *delim[MAXEXPR], **dp = delim, **dp2;
+  char brackets[20], *br = brackets;
+  int inexpr = 0, thislev, newlev;
+  TERM *expressions[MAXEXPR], **exprp = expressions, **ep;
+  TERM *tp, *last;
+  FUN *funp;
 
   file = *filename == '!' ?
     popen(filename + 1, "r") : fopen(filename, "r");
   if(file == NULL) {
     report_error("noopen", filename);
+    MLPutFunction(stdlink, "Abort", 0);
+    MLEndPacket(stdlink);
     return;
   }
 
-  ep = NULL;
-  maxintsize = infac = 0;
+  termp = NULL;
+  maxintsize = 0;
 
   for( ; ; ) {
+
 nextline:
     do {
+      if(MLAbort) goto abort;
       if(feof(file)) {
-        if(erp == errmsg) {
-          (*filename == '!' ? pclose : fclose)(file);
-          inexpr = (int)(dp - delim);
-          if(inexpr == 0) report_error("nooutput", NULL);
-          else {
-            if(inexpr != 1) MLPutFunction(stdlink, "List", inexpr);
-            for(dp2 = delim; dp2 < dp; ++dp2) {
-              orderchain(*dp2, LEVELS - 1);
-              transmit(dp2, LEVELS - 1);
-            }
-            MLEndPacket(stdlink);
-          }
-          return;
+        if(erp > errmsg) {
+          *(erp - 1) = 0;	/* discard last \n */
+          report_error("formerror", errmsg);
+          goto abort;
         }
-        *(erp - 1) = 0;		/* discard last \n */
-        report_error("formerror", errmsg);
-        return;
+        inexpr = (int)(exprp - expressions);
+        if(inexpr == 0) {
+          report_error("nooutput", NULL);
+          goto abort;
+        }
+        MLPutFunction(stdlink, "List", inexpr);
+        for(ep = expressions; ep < exprp; ++ep) {
+          orderchain(*ep, LEVELS - 1);
+          transmit(*ep, LEVELS - 1);
+        }
+        goto quit;
       }
-      *physicalline = 0;
-      fgets(si = physicalline, sizeof(physicalline), file);
-      er = physicalline - 2;
-      if(*physicalline > ' ' || (er = strchr(physicalline, '>'))) {
-        er += 2;
+      *line = 0;
+      si = fgets(line, sizeof(line), file);
+      if((er = strstr(line, "-->")) ||
+         (er = strstr(line, "==>")) ||
+         (er = strstr(line, "==="))) {
+        er += 4;
         *erp = 0;
         if(!strstr(errmsg, er) &&
-             (int)(erp - errmsg) + strlen(er) < sizeof(errmsg))
+            (int)(erp - errmsg) + strlen(er) < sizeof(errmsg))
           erp = memccpy(erp, er, '\n', sizeof(errmsg));
       }
-      if(!inexpr && (er = strchr(physicalline, '='))) {
-        si = er + 1;
+      if(inexpr && *line == '\n') {
+        *di++ = 0;
+        termp = downsize(termp, di);
+        goto newterm;
+      }
+      if(!inexpr && (er = strchr(line, '='))) {
+newterm:
+        tp = malloc(sizeof(TERM) + TERMBUF);
+        beg = delim = di = (char *)tp + sizeof(TERM);
+        tp->last = termp;
+        termp = tp;
+        for(pp = tp->f; pp < tp->f + LEVELS; ++pp) *pp = zero;
+        tp->f[thislev = LEVEL_COEFF] = di;
+        tp->coll = 0;
+        if(inexpr) goto nextline;
         inexpr = 1;
+        si = er + 1;
+        break;
       }
     } while(!inexpr || erp > errmsg);
-    while(*si == ' ') ++si;
-    if(strstr(si, "unknown")) {
-      report_error("unknown", NULL);
-      return;
-    }
+
     for( ; *si; ++si)
       if(*si > ' ') switch(*si) {
+      case '+':
+      case '-':
+      case '*':
+        *di++ = *si;
+        if(br == brackets) delim = di;
+        break;
+
+      case '(':
+        if(br == brackets) {
+          *di = 0;
+          newlev = LEVEL_COEFF;
+          for(funp = funtab;
+              funp < &funtab[sizeof(funtab)/sizeof(FUN)];
+              ++funp)
+            if(strcmp(delim, funp->name) == 0) {
+              newlev = funp->level;
+              break;
+            }
+          if(thislev != newlev) {
+            if(delim > beg) *(delim - 1) = 0;
+            switch(thislev) {
+            case LEVEL_MAT:
+              termp->f[LEVEL_MAT] = getabbr(termp->f[LEVEL_MAT]);
+              break;
+            case LEVEL_PAVE:
+              maxintsize += (int)(delim - termp->f[LEVEL_PAVE]) + 2;
+            }
+            termp->f[thislev = newlev] = delim;
+          }
+        }
+        if(di == beg || strchr("+-*/^,([", *(di - 1)))
+          *di++ = '(', *br++ = ')';
+        else *di++ = '[', *br++ = ']';
+        break;
+      case ')':
+        *di++ = *--br;
+        break;
+
+      case ';':
+        *di++ = 0;
+        *exprp++ = termp = downsize(termp, di);
+        if(exprp >= expressions + MAXEXPR) {
+          report_error("toomany", NULL);
+          goto abort;
+        }
+        if(maxintsize) collect_pave();
+        termp = NULL;
+        maxintsize = inexpr = 0;
+        goto nextline;
+
       case '_':
         if(*(di - 1) == 'i') *(di - 1) = 'I';
         else *di++ = '$';
         break;
       case '?':
+        ind = di - 2;
+        do *(ind + 3) = *ind; while(*--ind != 'N');
+        *ind++ = 'L';
+        *ind++ = 'o';
+        *ind++ = 'r';
+        *ind++ = '[';
+        di += 2;
+        *di++ = ']';
         break;
-      case '*':
-        *di++ = br == brackets ? '*' : ' ';
-        break;
-      case '(':
-        if(*(di - 1) == '*') {
-          *(di - 1) = 0;
-          fp = NULL;
-          maxabbsize = 0;
-          expr_chopup(di = logicalline);
-          infac = 1;
-        }
-        else {
-          *br = *(si - 1) < '0' || *(si - 1) == '^';
-          *di++ = *br++ ? '(' : '[';
-        }
-        break;
-      case ')':
-        if(infac && br == brackets) {
-          *di = 0;
-          fac_chopup(di = logicalline);
-          sum_up_fac();
-        }
-        else *di++ = *--br ? ')' : ']';
-        break;
-      case ';':
-        if(di > logicalline) {
-          *di = 0;
-          expr_as_fac(di = logicalline);
-        }
-        if(infac) sum_up_fac();
-        *dp++ = ep;
-        if(dp >= delim + MAXEXPR) {
-          report_error("toomany", NULL);
-          return;
-        }
-        collect_integrals();
-        maxintsize = inexpr = 0;
-        goto nextline;
-      case '+':
-      case '-':
-        if(di > logicalline && *(di - 1) != '^' && br == brackets) {
-          *di = 0;
-          expr_as_fac(di = logicalline);
-        }
       default:
         *di++ = *si;
         break;
       }
   }
+
+abort:
+  MLPutFunction(stdlink, "Abort", 0);
+quit:
+  MLEndPacket(stdlink);
+  while(exprp > expressions)
+    for(tp = *--exprp; tp; tp = last) {
+      if(tp->coll) free(tp->f[LEVEL_PAVE]);
+      last = tp->last;
+      free(tp);
+    }
+  (*filename == '!' ? pclose : fclose)(file);
 }
 
 
-void powercountingfor(void)
+void cutbranch(BTREE *node)
 {
-  long argc;
-  const char *arg;
-  char *pcs = pcstore, **pct = pctab;
-
-  if(MLReady(stdlink)) {
-    MLGetFunction(stdlink, &arg, &argc);
-    MLDisownSymbol(stdlink, arg);
-    while(argc--) {
-      MLGetSymbol(stdlink, &arg);
-      pcs = memccpy(*pct++ = pcs, arg, 0, STRINGSIZE);
-      MLDisownSymbol(stdlink, arg);
-    }
-    pctabend = pct;
-    pct = pctab;
+  if(node) {
+    cutbranch(node->lt);
+    cutbranch(node->gt);
+    free(node);
   }
-  MLPutFunction(stdlink, "List", (int)(pctabend - pctab));
-  while(pct < pctabend) MLPutSymbol(stdlink, *pct++);
+}
+
+void clearcache(void)
+{
+  cutbranch(root);
+  root = NULL;
+  MLPutSymbol(stdlink, "Null");
   MLEndPacket(stdlink);
 }
 

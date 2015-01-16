@@ -1,8 +1,8 @@
 (*
 
-This is FormCalc, Version 2
-Copyright by Thomas Hahn 1996-2000
-last modified 27 Jun 00 by Thomas Hahn
+This is FormCalc, Version 3
+Copyright by Thomas Hahn 1996-2001
+last modified 24 Jun 01 by Thomas Hahn
 
 Release notes:
 
@@ -30,8 +30,9 @@ http://www.feynarts.de/formcalc.
 If you find any bugs, or want to make suggestions, or
 just write fan mail, address it to:
 	Thomas Hahn
-	Institut fuer Theoretische Physik
-	Universitaet Karlsruhe
+	Institute for Theoretical Physics
+	University of Karlsruhe
+	D-76128 Karlsruhe, Germany
 	e-mail: hahn@feynarts.de
 
 To join the FormCalc mailing list, send a mail (any text) to
@@ -42,347 +43,233 @@ Have fun!
 *)
 
 Print[""];
-Print["FormCalc 2"];
+Print["FormCalc 3"];
 Print["by Thomas Hahn"];
-Print["last revision: 27 Jun 00"];
+Print["last revised 24 Jun 01"];
 
+
+(* symbols from the model files live in Global` *)
+
+{ DiracMatrix, DiracSlash, ChiralityProjector,
+  DiracSpinor, MajoranaSpinor, PolarizationVector,
+  MetricTensor, FourVector, ScalarProduct, Lorentz,
+  SUNT, SUNF, SUNTSum, Colour, Gluon }
+
+(* symbols from FeynArts *)
+
+Begin["FeynArts`"]
+
+{ FeynAmp, FeynAmpList, Process,
+  GraphID, Number, Insertions, Classes, Particles,
+  PropagatorDenominator, FeynAmpDenominator,
+  FourMomentum, Internal,
+  Index, IndexDelta, IndexSum, SumOver, External,
+  MatrixTrace, FermionChain, NonCommutative,
+  CreateTopologies, ExcludeTopologies, Tadpoles,
+  Paint, InsertFields, CreateFeynAmp }
+
+End[]
+
+
+(* these symbols are used in the model file, and hence live in Global` *)
+
+RenConst::usage = "RenConst[rc] holds the definition of the
+renormalization constant rc."
+
+SelfEnergy::usage = "SelfEnergy[from -> to, mass] calculates the
+self-energy with incoming particle from and outgoing particle to, taken at
+k^2 = mass^2."
+
+DSelfEnergy::usage = "DSelfEnergy[from -> to, mass] calculates the
+derivative with respect to k^2 of the self-energy with incoming particle
+from and outgoing particle to, taken at k^2 = mass^2."
+
+LVectorCoeff::usage = "LVectorCoeff[expr] returns the coefficient of
+DiracChain[6, k[1]] (= k1slash omega_-) in expr."
+
+RVectorCoeff::usage = "RVectorCoeff[expr] returns the coefficient of
+DiracChain[7, k[1]] (= k1slash omega_+) in expr."
+
+LScalarCoeff::usage = "LScalarCoeff[expr] returns the coefficient of
+DiracChain[7] (= omega_-) in expr."
+
+RScalarCoeff::usage = "RScalarCoeff[expr] returns the coefficient of
+DiracChain[6] (= omega_+) in expr."
+
+ReTilde::usage = "ReTilde[expr] takes the real part of loop integrals
+occurring in expr."
+
+ImTilde::usage = "ImTilde[expr] takes the imaginary part of loop integrals
+occurring in expr."
+
+AddScalar::usage = "AddScalar[expr, s] adds the scalar expression s to
+expr, which might be a list. This is different from expr + s, which adds s
+to every component of expr."
+
+
+If[ !MemberQ[$ContextPath, "FeynArts`"],
+  PrependTo[$ContextPath, "FeynArts`"] ]
 
 BeginPackage["FormCalc`"]
 
-(* FeynArts symbols and their FormCalc counterparts *)
+(* some internal symbols must be visible for ReadForm *)
 
-FeynAmpList::usage = "FeynAmpList[info][amps] is the head of a list of
-FeynAmp objects. info contains additional information handed down by
-FeynArts about the process, the momenta etc."
-
-FeynAmp::usage = "FeynAmp[gname, mom, amp] is the FeynArts way of writing
-a Feynman amplitude amp with name gname and integration momentum mom."
-
-GraphName::usage = "GraphName[identifiers] gives the name of a Feynman
-diagram."
-
-Insertions::usage = "Insertions[lev][ins] gives a list of insertion rules
-for the generic amplitude at level lev."
-
-G::usage = "G[sym][cto][fi][kin] is the FeynArts notation of a generic
-coupling constant. It is converted to a symbol like GM1 in FormCalc."
-
-Process::usage = "Process -> {proc} contains the process specification
-handed down by FeynArts in the information field of a FeynAmpList."
-
-PropagatorDenominator::usage = "PropagatorDenominator[p, m] is the
-FeynArts expression for 1/(p^2 - m^2)."
-
-FeynAmpDenominator::usage = "FeynAmpDenominator[prden..] is the head
-wrapped around the PropagatorDenominators inside a loop."
-
-DEN::usage = "DEN[p2, m2] stands for 1/(p2 - m2). Note that in contrast
-to PropagatorDenominator p2 and m2 are the momentum and mass _squared_."
+{ ReadForm, ClearCache, FormSetup, FormSubst,
+  abb, fme, sun, pave, sqrt2, d$, e$, q1 }
 
 
-Spinor::usage = "Spinor[p, m] is the spinor with momentum p and mass m.
-Spinor corresponds to the more conventional way of writing spinors by\n
-   Spinor[p, m, 1] ** ...  -> \\bar u,\n
-   Spinor[p, m, -1] ** ... -> \\bar v,\n
-   ... ** Spinor[p, m, 1]  -> u,\n
-   ... ** Spinor[p, m, -1] -> v."
+(* symbols appearing in the output *)
 
-LeptonSpinor = Spinor
+Amp::usage = "Amp[proc][expr1, expr2, ...] is the result of the
+calculation of diagrams of the process proc. The result is divided into
+parts expr1, expr2, ..., such that index sums (marked by SumOver) apply
+to the whole of each part."
 
-QuarkSpinor = Spinor
+Den::usage = "Den[p2, m2] stands for 1/(p2 - m2). Note that in contrast
+to PropagatorDenominator, p2 and m2 are the momentum and mass *squared*."
 
-DiracSlash::usage = "DiracSlash[p] represents p_mu gamma^mu."
+Delta::usage = "Delta[a, b] is the Kronecker delta with indices a and b."
 
-DiracMatrix::usage = "DiracMatrix[mu] represents the Dirac matrix with
-Lorentz index mu."
+DiracChain::usage = "DiracChain[objs] is a chain of Dirac matrices
+contracted with the given objects. The integers 5, 6, and 7 appearing as
+arguments denote gamma_5, (1 + gamma_5)/2, and (1 - gamma_5)/2,
+respectively."
 
-ga::usage = "ga[li] represents the gamma matrix with Lorentz index li."
-
-ga5::usage = "ga5 represents gamma_5."
-
-ChiralityProjector::usage = "ChiralityProjector[+-1] represents the
-chirality projectors omega_{+-} = (1 +- gamma_5)/2."
-
-omp::usage = "omp represents the right handed chirality projector."
-
-omm::usage = "omm represents the left handed chirality projector."
-
-DiracTrace::usage = "DiracTrace represents the trace over Dirac matrices
-in a fermion loop."
-
-SpinorChain::usage = "SpinorChain[Spinor[...], ..., Spinor[...]]
-represents an open fermion chain."
-
-
-Index::usage = "Index[t, n] represents an index of type t with number n."
-
-IndexDelta::usage = "IndexDelta[i1, i2] represents the Kronecker delta."
-
-SumOver::usage = "SumOver[i, r, ext] specifies that the amplitude which
-it is multiplied with is to be summed in the index i over the range r.
-For an index belonging to an external particle there is a third argument,
-External."
-
-External::usage = "External is a possible third argument for SumOver
-and indicates that the index being summed over belongs to an external
-leg."
-
-MetricTensor::usage = "MetricTensor[mu, nu] represents the metric tensor
-with Lorentz indices mu and nu."
-
-FourVector::usage = "FourVector[p, mu] represents the four-vector p with
-Lorentz index mu."
-
-PolarizationVector::usage = "PolarizationVector[p, mu] represents the
-polarization vector belonging to the momentum p with Lorentz index mu."
+FeynArts`Spinor::usage = "Spinor[p, m, s] is a spinor with momentum p and
+mass m, i.e. a solution of the Dirac equation (pslash + s m) Spinor[p, m,
+s] = 0. On screen, particle spinors (s = 1) are printed as u[p, m],
+antiparticle spinors (s = -1) as v[p, m]."
 
 e::usage = "e[n] is the nth polarization vector."
 
-Momentum::usage = "Momentum[p] is an obsolete form to represent the
-four-momentum p."
-
 k::usage = "k[n] is the nth momentum."
-
-q1::usage = "q1 is the integration momentum in a one-loop amplitude."
-
-ScalarProduct::usage = "ScalarProduct[p1, p2] is the scalar product of two
-four-vectors p1 and p2. It is converted to Pair[p1, p2] in FormCalc."
-
-GaugeXi::usage = "GaugeXi[v] is the way FeynArts denotes the gauge
-parameter for the gauge boson v."
-
 
 SUNN::usage = "SUNN specifies the N in SU(N), i.e. the number of colours."
 
-SUNN = 3
+FeynArts`S::usage = "S is the Mandelstam variable s. If k1 and k2 are the
+incoming momenta, S = (k1 + k2)^2."
 
-SUNT::usage = "SUNT[g, c1, c2] are the generators of SU(N). Products
-of generators are denoted by SUNT[g1, g2, ..., c1, c2]. Similarly, the
-SU(N) delta is written as SUNT[c1, c2]."
+T::usage = "T is the Mandelstam variable t. If k1 denotes the first
+incoming and k3 the first outgoing momentum, T = (k1 - k3)^2."
 
-SUNTSum::usage = "SUNTSum[c1, c2, c3, c4] is short for
-Sum[SUNT[g, c1, c2] SUNT[g, c3, c4], g]."
-
-SUNF::usage = "SUNF[g1, g2, g3] are the structure constants of SU(N).
-SUNF can also denote products of structure constants, for example
-SUNF[g1, g2, g3, g4] is short for
-Sum[SUNF[g1, g2, i] SUNF[i, g3, g4], i]."
-
-
-S::usage = "S is the Mandelstam variable s. If p1 and p2 denote the
-incoming momenta, S = (p1 + p2)^2."
-
-T::usage = "T is the Mandelstam variable t. If p1 denotes the first
-incoming and k1 the first outgoing momentum, T = (p1 - k1)^2."
-
-U::usage = "U is the Mandelstam variable u. If p1 denotes the first
-incoming and k2 the second outgoing momentum, U = (p1 - k2)^2."
+FeynArts`U::usage = "U is the Mandelstam variable u. If k1 denotes the
+first incoming and k4 the second outgoing momentum, U = (k1 - k4)^2."
 
 Sf::usage = "Sf is an extended Mandelstam variable for a 2 -> 3 reaction.
-If k1 and k2 denote the first two outgoing momenta, Sf = (k1 + k2)^2."
+If k3 and k4 denote the first two outgoing momenta, Sf = (k3 + k4)^2."
 
 Tf::usage = "Tf is an extended Mandelstam variable for a 2 -> 3 reaction.
-If p2 denotes the second incoming and k2 the second outgoing momentum,
-Tf = (p2 - k2)^2."
+If k2 denotes the second incoming and k4 the second outgoing momentum,
+Tf = (k2 - k4)^2."
 
 Uf::usage = "Uf is an extended Mandelstam variable for a 2 -> 3 reaction.
-If p2 denotes the second incoming and k1 the first outgoing momentum,
-Uf = (p2 - k1)^2."
-
-STUSum::usage = "STUSum represents S + T + U. This variable is used by
-MandelstamSimplify. For a 2 -> 2 process, STUSum is the sum of the
-external masses squared."
-
-MandelstamSimplify::usage = "MandelstamSimplify attempts to simplify sums
-containing S, T, and U using the Mandelstam relation S + T + U = STUSum.
-This functions is useful only for a 2 -> 2 process, since only in this
-case STUSum is the sum of the external masses squared."
+If k2 denotes the second incoming and k3 the first outgoing momentum,
+Uf = (k2 - k3)^2."
 
 
-(* the main functions: OneLoop, ProcessFile, and their options *)
+(* CalcFeynAmp and its options *)
 
-OneLoop::usage = "OneLoop[amps] is the basic function for evaluating
-Feynman diagrams. It takes as an argument either a single diagram (with
-head FeynAmp) or a list of diagrams and returns the results in a collected
-and abbreviated form."
+CalcFeynAmp::usage = "CalcFeynAmp[amps] calculates the Feynman amplitudes
+given in amps. The resulting expression is broken up into categories which
+are returned in a list."
 
-AmplitudeLevel::usage = "AmplitudeLevel is an option of OneLoop. It is
-used in amplitudes generated with FeynArts 2 only, and specifies the level
-(Classes or Particles) at which to calculate the amplitudes. The default
-setting Automatic takes the deepest level available."
+CalcLevel::usage = "CalcLevel is an option of CalcFeynAmp. It specifies
+the level (Classes or Particles) at which to calculate the amplitudes.
+Automatic takes Classes level, if available, otherwise Particles."
 
-ChiralME::usage = "ChiralME is an option of OneLoop. It specifies whether
-spinor chains are returned in terms of the chirality projectors omega_+
-and omega_-, or in the vector/axial vector decomposition 1 and gamma_5.
-The former is the default since it yields much more compact helicity
-matrix elements."
+Dimension::usage = "Dimension is an option of CalcFeynAmp. It specifies
+the space-time dimension in which to perform the calculation and can take
+the values D, where dimensional regularization is used, and 4, where
+constrained differential renormalization is used. The latter method is
+equivalent to dimensional reduction at the one-loop level."
 
-DiracSimplify::usage = "DiracSimplify is an option of OneLoop. With
-DiracSimplify -> True (the default), OneLoop simplifies fermionic matrix
-elements by replacing in turn all momenta via momentum conservation and
-then using the Dirac equation. However, this procedure can be rather slow,
-so DiracSimplify -> False can be used to turn it off."
+OnShell::usage = "OnShell is an option of CalcFeynAmp. It specifies
+whether FORM should be instructed to put the external particles on their
+mass shell, i.e. to apply ki^2 = mi^2."
 
-DotSimplify::usage = "DotSimplify is an option of OneLoop. When set to
-True (the default), FormCalc tries to reduce the number of independent
-matrix elements by eliminating one momentum via momentum conservation in
-dot products and epsilon tensors."
+Mandelstam::usage = "Mandelstam is an option of CalcFeynAmp. It specifies
+whether FORM should be instructed to introduce kinematical invariants,
+like the Mandelstam variables for a 2 -> 2 process."
 
-NoExpand::usage = "NoExpand is an option of OneLoop. NoExpand -> {sym1,
-sym2, ...} specifies that sums containing any of sym1, sym2, ... are
-not expanded in FORM."
+Transverse::usage = "Transverse is an option of CalcFeynAmp. It specifies
+whether FORM should be instructed to apply the transversality relations
+for polarization vectors (ei.ki = 0)."
 
-EditCode::usage = "EditCode is an option of OneLoop and HelicityME. It
-edits the temporary file passed to FORM using $Editor and is of course
-used only for debugging."
+Normalized::usage = "Normalized is an option of CalcFeynAmp. It specifies
+whether FORM should be instructed to exploit the normalization of the
+polarization vectors (ei.ei^* = -1)."
 
-RetainFile::usage = "RetainFile is an option of OneLoop and HelicityME.
-When set to True, it prevents removing the temporary file which contains
-the FORM input after running FORM."
+MomSimplify::usage = "MomSimplify is an option of CalcFeynAmp. It
+specifies whether FORM should be instructed to try all possible
+permutations of the momentum conservation equation on dot products and
+fermion chains in order to find the shortest possible combination. This
+might be slow, however."
 
-ProcessFile::usage = "ProcessFile[amps, outtag] evaluates amps using
-OneLoop. The results are split into blocks according to the Classification
-option, but at least such that each block contains only diagrams with the
-same index summations. These blocks are then written to files whose
-names are outtag <> an identifier for the block. If a file name is given
-for amps, the corresponding file is loaded.\n
-ProcessFile[amps] does the same as ProcessFile[amps, outtag] but returns
-the blocks in a list instead of writing them to files."
+VADecompose::usage = "VADecompose is an option of CalcFeynAmp. It
+specifies whether the usual chiral fermion chains should be decomposed
+into vector and axial-vector parts."
 
-Classification::usage = "Classification is an option of ProcessFile.
-It can take the values IndexSumsOnly, Standard (default), and Tough which
-control how ProcessFile divides the diagrams into different classes.
-In all cases, diagrams with different index summations are separated,
-i.e. each class contains only diagrams which have the same index
-summations. For Standard, the amplitude is split into bosonic and
-fermionic parts, too, and for Tough also into different topologies and (if
-applicable) different fermion families. The latter is mainly used for
-large amplitudes."
+NoExpand::usage = "NoExpand is an option of CalcFeynAmp. NoExpand ->
+{sym1, sym2, ...} specifies that sums containing any of sym1, sym2, ...
+are not expanded during the FORM calculation."
 
-IndexSumsOnly::usage = "IndexSumsOnly is a value the Classification
-option of ProcessFile can take. The criterium for two diagrams to be put
-into different classes is in this case that they have different index
-summations."
+AbbrScale::usage = "AbbrScale is an option of CalcFeynAmp. It specifies a
+factor with which the abbreviations introduced by CalcFeynAmp are scaled
+for every momentum they include. This way, the abbreviations can be made
+dimensionless which is of advantage in some applications, e.g. in treating
+resonances."
 
-Standard::usage = "Standard is a value the Classification option of
-ProcessFile can take. The criterium for two diagrams to be put into
-different classes is in this case that they either have different index
-summations or are bosonic and fermionic."
+EditCode::usage = "EditCode is a debugging option of CalcFeynAmp and
+HelicityME. It edits the temporary file passed to FORM using the editor
+command in $Editor."
 
-Tough::usage = "Tough is a value the Classification option of ProcessFile
-can take. The criterium for two diagrams to be put into different classes
-is in this case that they either have different index summations, or are
-bosonic and fermionic, or belong to different topologies or (if they are
-fermionic) fermion families. This is not so much a meaningful as a
-practical criterium to break down large amplitudes."
-
-FermionFamily::usage = "FermionFamily[patt] = \"string\" returns the
-identifier appended to the filename by ProcessFile if Classification ->
-Tough is set, the amplitude is fermionic, and it contains patt. Typically
-used like FermionFamily[ME | MM | ML] = \"e\" which gives files containing
-leptonic amplitudes an extra e in the name."
-
-
-(* internal stuff (some of it needs to be visible because of ReadForm) *)
-
-ReadForm::usage = "ReadForm[\"file\"] reads file which it assumes to
-contain FORM output into Mathematica.\n
-ReadForm[\"!cmd\"] executes cmd and pipes its output back into
-Mathematica."
-
-PowerCountingFor::usage = "PowerCountingFor[momlist] tells ReadForm to
-multiply each abbreviation in the FORM result by $Scale^n, where n is the
-number of momlist members appearing in the term. Usually, momlist is the
-list of momenta, e.g. {p1, p2, k1, k2}. This function is intended for
-internal use only."
-
-FromForm::usage = "FromForm is used internally to reverse substitutions
-that were necessary for FORM."
-
-a0::usage = "a0[m] is used internally to represent a pre-form of the
-one-point function."
-
-b0::usage = "b0[p, m1, m2] is used internally to represent a pre-form of
-the two-point function."
-
-c0::usage = "c0[p1, p2, m1, m2, m3] is used internally to represent a
-pre-form of the three-point function."
-
-d0::usage = "d0[p1, p2, p3, m1, m2, m3, m4] is used internally to
-represent a pre-form of the four-point function."
-
-e0::usage = "e0[p1, p2, p3, p4, m1, m2, m3, m4, m5] is used internally to
-represent a pre-form of the five-point function."
-
-f0::usage = "e0[p1, p2, p3, p4, m1, m2, m3, m4, m5] is used internally to
-represent a pre-form of the six-point function."
-
-(* more internal symbols: *)
-
-{ abb, abbsum, mat, fme, sun, pave, amp3,
-  sqrt2, Unhide, d$, e$, gi$, ncm,
-  IND1, IND2, IND3, IND4, IND1c, IND2c, IND3c, IND4c }
+RetainFile::usage = "RetainFile is a debugging option of CalcFeynAmp and
+HelicityME. When set to True, the temporary file containing the FORM
+code is not removed after running FORM."
 
 
 (* abbreviationing-related functions *)
 
-Abbreviations::usage = "Abbreviations[] returns a list of all
-abbreviations introduced so far. It is typically used at the end of a
-calculation to save the abbreviations with a command like
-Abbreviations[] >> abbrfile."
+Abbr::usage = "Abbr[] returns a list of all abbreviations introduced
+so far."
 
-UseAbbreviations::usage = "UseAbbreviations[abbr] registers the
-abbreviations abbr with FormCalc. abbr may be either the abbreviations
-themselves (a list of rules) or a filename containing them. This is useful
-when continuing a former FormCalc session. UseAbbreviations requires that
-the value of $Scale that was used in the former session is also set in
-the current session."
+OptimizeAbbr::usage = "OptimizeAbbr[abbr] optimizes the abbreviations
+in abbr by eliminating common subexpressions."
 
-OptimizeAbbreviations::usage = "OptimizeAbbreviations[abbr] optimizes the
-set of abbreviations returned by Abbreviations[] by eliminating common
-subexpressions."
+Pair::usage = "Pair[a, b] represents the contraction of the two
+four-vectors or Lorentz indices a and b."
 
-Scale::usage = "Scale is a scale introduced via $Scale to scale matrix
-elements, e.g. to make them dimensionless. The variable Scale itself
-appears in the Abbreviations[]."
+Eps::usage = "Eps[a, b, c, d] represents -I times the antisymmetric
+Levi-Civita tensor epsilon_{abcd}. The sign convention is
+epsilon^{0123} = +1."
 
-Pair::usage = "Pair[a, b] represents the Minkowskian scalar product of
-the four-vectors a and b."
+num::usage = "num is the function in which FORM collects the numerical
+prefactor of a term."
 
-Eps::usage = "Eps[p, q, r, s] represents -I times the antisymmetric
-Levi-Civita tensor contracted with four vectors: Eps[p, q, r, s] =
--I p_mu q_nu r_rho s_sigma epsilon^{mu nu rho sigma}, where the sign
-convention is epsilon^{0123} = +1."
-
-o1::usage = "o1 is a head wrapped around the prefactor of an abbreviation
-in an amplitude. Its default value is o1 = Identity (doing nothing). To
-get the shortest possible amplitude, set o1 = Simplify or similar."
-
-o2::usage = "o2 is a head wrapped around a linear combination of
-abbreviations. Its default value is o2 = Identity (doing nothing). To get
-the shortest possible amplitude, set o2 = Simplify or similar."
+kin::usage = "kin is the function in which FORM collects kinematical
+factors."
 
 
 (* miscellaneous functions *)
 
-DiagramType::usage = "DiagramType[diag] returns 2 for a self-energy
-diagram, 1 for a vertex diagram, and 0 for a box. In other words, it
-returns the number of denominators not containing the integration
-momentum."
+MandelstamSimplify::usage = "MandelstamSimplify attempts to simplify
+expressions containing S, T, and U using the Mandelstam relation
+S + T + U = sum of external masses squared, which holds for on-shell
+2 -> 2 processes. For all other reactions, MandelstamSimplify is
+equivalent to Simplify."
+
+ClearProcess::usage = "ClearProcess[] is necessary to clear internal
+definitions before calculating a process with a different kinematical
+set-up."
+
+DiagramType::usage = "DiagramType[diag] returns the number of
+denominators not containing the integration momentum."
 
 FermionicQ::usage = "FermionicQ[diag] gives True for a diagram containing
 fermions and False otherwise."
 
-Small::usage = "Small[sym] = 0 tells FormCalc to put sym = 0 except when
-it appears in negative powers or in loop integrals."
-
-PickLevel::usage = "PickLevel[lev][amps] selects amplitude level lev from
-amps."
-
-Pick::usage = "Pick[amp, graphs] picks diagrams from amp where graphs is
-of the form {5} which picks diagram # 5, {{5, 9}} which picks diagrams # 5
-through 9, or combinations of these. For example, Pick[amp, {6, {10, 12},
-27}] picks diagrams # 6, 10, 11, 12, and 27 from amp."
+Small::usage = "Small[sym] = 0 tells FormCalc to put sym = 0 except
+when it appears in negative powers or in loop integrals."
 
 
 (* FeynCalc compatibility functions *)
@@ -409,24 +296,23 @@ function as used by FeynCalc. It is converted to C0i or D0i in FormCalc."
 
 (* one-loop integrals *)
 
-A0::usage = "A0[m] is the one-point scalar Passarino-Veltman function
-where m is the mass squared."
+A0::usage = "A0[m] is the one-point one-loop scalar integral. m is the
+mass squared."
 
-B0::usage = "B0[p, m1, m2] is the scalar two-point Passarino-Veltman
-function where p is the external momentum squared and m1 and m2 are the
-masses squared."
+B0::usage = "B0[p, m1, m2] is the two-point one-loop scalar integral. p is
+the external momentum squared and m1 and m2 are the masses squared."
 
-B1::usage = "B1[p, m1, m2] is the tensor two-point Passarino-Veltman
-function B_1 where p is the external momentum squared and m1 and m2 are
-the masses squared."
+B1::usage = "B1[p, m1, m2] is the coefficient of k_\\mu in the two-point
+one-loop tensor integral B_\\mu. p is the external momentum k squared and
+m1 and m2 are the masses squared."
 
-B00::usage = "B00[p, m1, m2] is the tensor two-point Passarino-Veltman
-function B_00 where p is the external momentum squared and m1 and m2 are
-the masses squared."
+B00::usage = "B00[p, m1, m2] is the coefficient of g_{\\mu\\nu} in the
+two-point one-loop tensor integral B_{\\mu\\nu}. p is the external
+momentum squared and m1 and m2 are the masses squared."
 
-B11::usage = "B11[p, m1, m2] is the tensor two-point Passarino-Veltman
-function B_11 where p is the external momentum squared and m1 and m2 are
-the masses squared."
+B11::usage = "B11[p, m1, m2] is the coefficient of k_\\mu k_\\nu in the
+two-point one-loop tensor integral B_{\\mu\\nu}. p is the external
+momentum k squared and m1 and m2 are the masses squared."
 
 DB0::usage = "DB0[p, m1, m2] is the derivative of B0[p, m1, m2] with
 respect to p."
@@ -441,21 +327,21 @@ DB11::usage = "DB11[p, m1, m2] is the derivative of B11[p, m1, m2] with
 respect to p."
 
 C0i::usage = "C0i[id, p1, p2, p1p2, m1, m2, m3] is the generic three-point
-Passarino-Veltman function which includes both scalar and tensor
-integrals, specified by id. For example, C0i[cc0, ...] is the scalar
-function C_0, C0i[cc112, ...] the tensor function C_{112} etc. If the
-external momenta are called k1...k3, the arguments of C0i are p1 = k1^2,
-p2 = k2^2, p1p2 = (k1 + k2)^2, and m1...m3 are the masses squared."
+loop integral which includes both scalar and tensor coefficients,
+specified by id. For example, C0i[cc0, ...] is the scalar function C_0,
+C0i[cc112, ...] the tensor coefficient function C_{112} etc. The arguments
+of C0i are p1 = k1^2, p2 = k2^2, p1p2 = (k1 + k2)^2, where k1...k3 are the
+external momenta, and m1...m3 are the masses squared."
 
 D0i::usage = "D0i[id, p1, p2, p3, p4, p1p2, p2p3, m1, m2, m3, m4] is the
-generic Passarino-Veltman four-point function which includes both scalar
-and tensor integrals, specified by id. For example, D0i[dd0, ...] is the
-scalar function D_0, D0i[dd1233, ...] the tensor function D_{1233} etc.
-If the external momenta are called k1...k4, the arguments of D0i are
-p1 = k1^2, p2 = k2^2, p3 = k3^2, p4 = k4^2, p1p2 = (k1 + k2)^2,
-p2p3 = (k2 + k3)^2, and m1...m4 are the masses squared."
+generic four-point loop integral which includes both scalar and tensor
+coefficients, specified by id. For example, D0i[dd0, ...] is the scalar
+function D_0, D0i[dd1233, ...] the tensor function D_{1233} etc. The
+arguments of D0i are p1 = k1^2, p2 = k2^2, p3 = k3^2, p4 = k4^2, p1p2 =
+(k1 + k2)^2, p2p3 = (k2 + k3)^2, where k1...k4 are the external momenta,
+and m1...m4 are the masses squared."
 
-{A0i, B0i}	(* not used yet *)
+{ A0i, B0i, E0i }
 
 { cc0, cc1, cc2, cc00, cc11, cc12, cc22, cc001, cc002, cc111, cc112,
   cc122, cc222,
@@ -470,22 +356,12 @@ p2p3 = (k2 + k3)^2, and m1...m4 are the masses squared."
 
 UVDivergentPart::usage = "UVDivergentPart[expr] returns expr with all loop
 integrals replaced by their UV-divergent part. The divergence itself is
-denoted by Divergence, so to assert that expr is UV finite, one can check
-if Coefficient[UVDivergentPart[expr], Divergence] is zero."
-
-IRDivergentPart::usage = "IRDivergentPart[expr] returns expr with all loop
-integrals replaced by their IR divergent part. The divergence is contained
-in logarithms of the form Log[Lambda/m], where Lambda is the infinitesimal
-photon mass. In an IR finite expression, the Lambda-dependence must
-cancel."
+denoted by Divergence, so to assert that expr is UV-finite, one can check
+if FreeQ[Expand[UVDivergentPart[expr], Divergence], Divergence] is True."
 
 Divergence::usage = "Divergence stands for the dimensionally regularized
 divergence 2/(4 - D) of loop integrals. It is used by the function
 UVDivergentPart."
-
-Lambda::usage = "Lambda denotes the infinitesimal mass given to the
-photon in IR divergent loop integrals. It is used by the function
-IRDivergentPart."
 
 
 (* matrix elements *)
@@ -494,38 +370,40 @@ HelicityME::usage = "HelicityME[plain, conj] calculates the helicity
 matrix elements for all combinations of spinor chains that appear in the
 expression (plain conj^*). Terms of this kind arise in the calculation of
 the squared matrix element, where typically plain is the one-loop result
-and conj the Born expression. The arguments don't even have to be
-amplitudes since they are only used to determine which spinor chains to
-select from the abbreviations. The symbol All can be used to select all
-spinor chains currently defined in the abbreviations."
+and conj the Born expression. The arguments do not necessarily have to
+be amplitudes since they are only used to determine which spinor chains
+to select from the abbreviations. The symbol All can be used to select
+all spinor chains currently defined in the abbreviations."
 
 ColourME::usage = "ColourME[plain, conj] calculates the colour matrix
 elements. ColourME is very similar to HelicityME, except that it computes
-the matrix elements for SU(N) objects, and not for spinor chains."
+the matrix elements for SU(N) objects, not for spinor chains."
 
-All::usage = "All is a possible input value for HelicityME and ColourME,
-indicating that all spinor chains currently defined in the abbreviations
-should be used instead of just those appearing in a particular
-expression."
+All::usage = "All as an argument of HelicityME and ColourME indicates
+that all spinor chains or SUNT objects currently defined in the
+abbreviations should be used instead of just those appearing in the
+argument."
 
-AbbreviationsToUse::usage = "AbbreviationsToUse is an option of
-HelicityME. It specifies which abbreviations are used to calculate the
-helicity matrix elements."
+AbbrToUse::usage = "AbbrToUse is an option of HelicityME. It specifies
+which abbreviations are used to calculate the helicity matrix elements."
 
-Hel::usage = "Hel[i] denotes the helicity of the ith external particle.
-It can take the values +-1."
+Hel::usage = "Hel[i] is the helicity of the ith external particle. It can
+take the values +1, 0, -1, where 0 stands for an unpolarized particle."
 
 s::usage = "s[n] is the nth helicity reference vector."
 
-Mat::usage = "Mat[Fi SUNi] denotes a matrix element in an amplitude. This
-is an auxillary symbol and it used to aid FormCalc when calculating the
-squared matrix elements with HelicityME.\n
-Mat[Fi, Fj] denotes a squared matrix element composed from the simple
-matrix elements Fi and Fj."
+Mat::usage = "Mat[Fi SUNi] is a matrix element in an amplitude, i.e. an
+amplitude is a linear combination of Mat objects.\n
+Mat[Fi, Fj] appears in the squared matrix element and stands for the
+product of the two arguments, Fi Fj^*. Such expressions are calculated
+by HelicityME and ColourME."
+
+Lor::usage = "Lor[n] is a contracted Lorentz index in a product of Dirac
+chains."
 
 SquaredME::usage = "SquaredME[plain, conj] returns the matrix element
-plain Conjugate[conj]. This performs a nontrivial task only for fermionic
-amplitudes: the product of two fermionic amplitudes\n
+(plain Conjugate[conj)]. This performs a nontrivial task only for
+fermionic amplitudes: the product of two fermionic amplitudes\n
     M1 = a1 F1 + a2 F2 + ... and\n
     M2 = b1 F1 + b2 F2 + ... is returned as\n
     M1 M2^* = a1 b1^* Mat[F1, F1] + a2 b1^* Mat[F2, F1] + ...\n
@@ -536,380 +414,445 @@ RealQ::usage = "RealQ[sym] is True if sym represents a real quantity
 which means in particular that Conjugate[sym] = sym."
 
 
+(* writing out Fortran code *)
+
+WriteSquaredME::usage = "WriteSquaredME[tree, loop, me, abbr, ..., dir]
+writes out Fortran code to compute the squared matrix element for a
+process whose tree-level and one-loop contributions are given in the first
+and second argument, respectively. All further arguments except the last
+specify the necessary matrix elements and abbreviations. The last argument
+dir finally gives the path to write the generated code to."
+
+SymbolPrefix::usage = "SymbolPrefix is an option of WriteSquaredME. It
+specifies a string which is prepended to global symbols in the generated
+Fortran code to prevent collision of names when several processes are
+linked together."
+
+RenConstFile::usage = "RenConstFile is an option of WriteSquaredME and
+WriteRenConst. It specifies the name of the Fortran program used to
+calculate the renormalization constants."
+
+Drivers::usage = "Drivers is an option of WriteSquaredME. Drivers points
+to a directory containing customized versions of the driver programs for
+running the generated Fortran code. This directory need not contain all
+driver programs: files not contained therein are taken from the default
+directory $DriversDir."
+
+
+(* renormalization constants *)
+
+CalcRenConst::usage = "CalcRenConst[expr] calculates the renormalization
+constants appearing in expr."
+
+WriteRenConst::usage = "WriteRenConst[expr, dir] calculates the
+renormalization constants appearing in expr and generates a Fortran
+program from the results. The resulting files (the Fortran program itself
+and the corresponding declarations) are written to the directory dir.  
+The names of the files are determined by the RenConstFile option."
+
+InsertFieldsHook::usage = "InsertFieldsHook[tops, proc] is the function
+called by SelfEnergy and DSelfEnergy to insert fields into the topologies
+tops for the process proc. It is normally equivalent to InsertFields, but
+may be redefined to change the diagram content of certain self-energies."
+
+ClearSE::usage = "ClearSE[] clears the internal definitions of
+already-calculated self-energies."
+
+$PaintSE = "$PaintSE determines whether SelfEnergy paints the diagrams it
+generates to compute the self-energies. $PaintSE can be True, False, or a
+string which indicates that the output should be saved in a PostScript
+file instead of being displayed on screen, and is prepended to the
+filename."
+
+
+(* low-level Fortran output functions *)
+
+ToFortran::usage = "ToFortran[expr] returns the Fortran form of expr as
+a string."
+
+OpenFortran::usage = "OpenFortran[file] opens file for writing in
+Fortran format."
+
+TimeStamp::usage = "TimeStamp[] returns a string with the current date
+and time."
+
+WriteExpr::usage = "WriteExpr[file, {var1 -> expr1, var2 -> expr2, ...},
+addto] writes a list of variable assignments in Fortran format to
+file. If an expression's leaf count is larger than $BlockSize, the
+expression is cut into blocks, viz.\n\
+\tvar = part1\n\
+\tvar = var + part2\n\
+\t...\n
+addto is an optional argument: if True, the variables var1, var2, ... are
+always added to, i.e. \"var = var + expr\"."
+
+Newline::usage = "Newline is an option of WriteExpr. If set to True,
+WriteExpr writes out an empty line (\\n) after each statement."
+
+Optimize::usage = "Optimize is an option of WriteExpr. With Optimize ->
+True, WriteExpr introduces variables for subexpressions which are used
+more than once."
+
+WriteSummedExpr::usage = "WriteSummedExpr[file, var -> expr] writes
+\"var = expr\" in Fortran format to file. Unlike WriteExpr, it writes out
+code to perform any summations over indices occurring in expr."
+
+PrintResult::usage = "PrintResult is an option of WriteSummedExpr. With
+PrintResult -> True, WriteSummedExpr puts a print statement in the Fortran
+code after the variable assignment to print out the result. With
+PrintResult -> IfDebug, the print statement is wrapped in \"#ifdef DEBUG\"
+and \"#endif\"."
+
+IfDebug::usage = "IfDebug is a selection for the option PrintResult of
+WriteSummedExpr. It specifies that the print statement written out by
+WriteSummedExpr is wrapped in \"#ifdef DEBUG\" and \"#endif\"."
+
+ToDoLoops::usage = "ToDoLoops[list, ifunc] splits list into patches which
+must be summed over the same set of indices. ifunc is an optional
+argument: ifunc[expr] must return the indices occurring in expr."
+
+DoLoop::usage = "DoLoop[ind, expr] is a symbol introduced by ToDoLoops
+indicating that expr is to be summed over the set of indices ind."
+
+WriteDoLoops::usage = "WriteDoLoops[file, list, func] writes the do-loops
+occurring in list to file. For writing the actual expressions, func[file,
+item] is called."
+
+Dim::usage = "Dim[i] returns the highest value the index i takes on."
+
+OnePassOrder::usage = "OnePassOrder[r] orders a list of interdependent
+rules such that the definition of each item (item -> ...) comes before its
+use in the right-hand sides of other rules."
+
+SubroutineDecl::usage = "SubroutineDecl[name, cfuncs, ifuncs, expr]
+returns a string with the declaration of the Fortran subroutine name. The
+members of cfuncs and ifuncs, if they appear in expr, are declared
+respectively as double complex and integer external functions."
+
+VarDecl::usage = "VarDecl[\"\\n\\tTYPE \", vars] returns a string with the
+declaration of vars as variables of type TYPE in Fortran."
+
+CommonDecl::usage = "CommonDecl[\"\\n\\tTYPE \", vars, com] returns a
+string with the declaration of vars as variables of type TYPE and members
+of the common block com in Fortran."
+
+
+(* symbols used in the Fortran code *)
+
+Ctree::usage = "Ctree[Fi] is the ith form factor (the coefficient of Fi)
+of the tree-level amplitude."
+
+Cloop::usage = "Cloop[Fi] is the ith form factor (the coefficient of Fi)
+of the one-loop amplitude."
+
+MomSquare::usage = "MomSquare[a, b] is a Fortran function which computes
+the square of the difference of the momenta indexed by a and b, i.e.
+Pair[k[a] - k[b], k[a] - k[b]]."
+
+dconjg::usage = "dconjg[z] takes the complex conjugate of z in Fortran."
+
+dble::usage = "dble[z] takes the real part of z in Fortran."
+
+dimag::usage = "dimag[z] takes the imaginary part of z in Fortran."
+
+Cval::usage = "Cval is the array containing the cached three-point
+integrals in LoopTools."
+
+Cget::usage = "Cget computes all three-point coefficients in LoopTools."
+
+Dval::usage = "Dval is the array containing the cached four-point
+integrals in LoopTools."
+
+Dget::usage = "Dget computes all four-point coefficients in LoopTools."
+
+
 (* system variables *)
 
-$Editor::usage = "$Editor specifies the editor used in debugging FORM
-code."
+$Editor::usage = "$Editor specifies the editor command line used in
+debugging FORM code."
 
-$TempFile::usage = "$TempFile is the name for the temporary file used to
-write out FORM code in OneLoop. Unless an error occurs in FORM or
-RetainFile -> True is used, it is deleted after usage."
+$FormCalc::usage = "$FormCalc contains the version number of FormCalc."
 
-$OnShell::usage = "$OnShell specifies whether the external particles may
-be assumed on shell. Caution: This variable must be set *before* loading
-amplitudes."
-
-$FormCalcDir::usage = "$FormCalcDir is the directory in which FormCalc
-lives."
+$FormCalcDir::usage = "$FormCalcDir points to the directory where
+FormCalc lives."
 
 $Platform::usage = "$Platform is a string that identifies the platform
 FormCalc is running on. It is the value of the environment variable
-HOSTTYPE in the Bourne shell (sh) and is used to distinguish the ReadForm
-binaries of different platforms."
+HOSTTYPE in the Bourne shell (sh) and is used to distinguish the
+executables of different platforms."
 
 $FormCmd::usage = "$FormCmd gives the name of the actual FORM executable.
 It may contain a path."
 
-$Transversality::usage = "$Transversality specifies whether FormCalc may
-assume transversality for polarization vectors, i.e. e[i].k[i] = 0."
+$DriversDir::usage = "$DriversDir is the path where the driver programs
+for the generated Fortran code are located."
 
-$Scale::usage = "The abbreviations introduced by FormCalc are scaled
-with $Scale for every momentum they include, e.g. e1.k2 is abbreviated
-by Pair1/$Scale, e1.k2 e2.k3 by Pair1 Pair2/$Scale^2, etc. The idea is
-to make the abbreviations dimensionless by cleverly choosing a scale
-factor, e.g. $Scale = Sqrt[S] for a 2 -> 2 process."
+$BlockSize::usage = "$BlockSize is the maximum LeafCount a single Fortran
+statement written out by WriteExpr may have. Any expression with
+LeafCount > $BlockSize will be chopped up before being written to the
+Fortran file."
 
-$Dimension::usage = "$Dimension specifies the dimension FormCalc works in.
-It can be D for dimensional regularization and 4 for dimensional reduction
-and constrained differential renormalization."
+$FileSize::usage = "$FileSize gives the maximum LeafCount the expressions
+in a single Fortran file may have. If the expressions grow larger than
+$FileSize, the file is split into several pieces."
 
 
 Begin["`Private`"]
 
-$FormCalcDir =
-  If[ FileType[$Input] === File, $Input,
-	(* if FormCalc was loaded from a directory in $Path: *)
-    Block[ {full},
-      Scan[
-        If[ FileType[full = # <> "/" <> $Input] === File, Return[full] ]&,
-        $Path ] ]
-  ]
+$ContextPath = {"FormCalc`", "FeynArts`", "Global`", "System`"}
 
-Block[ {pos = StringPosition[$FormCalcDir, "/"]},
-  If[Length[pos] === 0, $FormCalcDir = "",
-    $FormCalcDir =
-      SetDirectory[StringTake[ $FormCalcDir, pos[[-1, -1]] ]] <> "/";
-    ResetDirectory[] ]
+
+FullFileName[file_, path_] :=
+Block[ {full},
+  Catch[
+    Scan[
+      If[ FileType[full = ToFileName[#, file]] === File, Throw[full] ] &,
+      path ];
+    file ]
 ]
+
+$FormCalc = 3
+
+$FormCalcDir =
+  SetDirectory[DirectoryName[ FullFileName[$Input, $Path] ]]
+
+ResetDirectory[]
 
 
 $Platform = Environment["HOSTTYPE"]
 
 If[ Head[$Platform] =!= String, $Platform = "" ]
 
+Check[
+  Install[ToFileName[$FormCalcDir, "ReadForm_" <> $Platform]],
+  ReadForm::notcompiled = "\
+The ReadForm executable could not be installed.
+Did you run the compile script first?";
+  Message[ReadForm::notcompiled];
+  Abort[] ]
 
-If[ $LinkSupported,
-  Install[$FormCalcDir <> "ReadForm_" <> $Platform],
-(* else *)
-  Print["WARNING: Your Mathematica kernel does not support MathLink."];
-  Print["This means that the main functions OneLoop, ProcessFile, and"];
-  Print["HelicityME will not work."];
-  ReadForm[_] = $Failed ]
 
+$NumberMarks = False
 
-Off[General::spell1, General::spell, Unset::norep]
+Off[General::spell1, General::spell, CopyFile::filex]
 
 
 (* generic functions *)
 
+ParseOpt::noopt = "Warning: `2` is not a valid option of `1`."
+
+ParseOpt[opt___, func_] :=
+Block[ {names = First/@ Options[func]},
+  Message[ParseOpt::noopt, func, #]&/@
+    Complement[First/@ {opt}, names];
+  names /. {opt} /. Options[func]
+]
+
+
 ToSymbol[x__] := ToExpression[ StringJoin[ToString/@ Flatten[{x}]] ]
 
 
-Pick[amp_, graphs_] :=
-  amp[[ Flatten[ If[Head[#] === List, Range@@ #, #]&/@ graphs /.
-    a_Integer (Repeated | RepeatedNull)[b_] :>
-      Range@@ Sort[Floor[{b, a}]] ]//Union ]]
+DiagramType[a_FeynAmp] := Count[a[[3]] /. _FeynAmpDenominator -> 1,
+  _PropagatorDenominator, Infinity]
 
 
-Attributes[DiagramType] = {Listable}
-
-DiagramType[a_FeynAmp] := Exponent[a[[3]] /. _DEN -> DEN, DEN]
+FermionicQ[a_FeynAmp] := !FreeQ[a[[3]], FermionChain | MatrixTrace]
 
 
-FermionicQ[a_] :=
-  !FreeQ[a, Spinor | ga | ga5 | omp | omm | ChiralityProjector |
-    DiracMatrix | DiracSlash | DiracTrace | SpinorChain]
+(* preparations for FORM *)
+
+Attributes[delta] = Attributes[Delta] = {Orderless}
+
+delta[c1:Index[Colour, _], c2_] := SUNT[c1, c2]
+
+delta[g1:Index[Gluon, _], g2_] := 2 SUNT[g1, g2, 0, 0]
+
+delta[x__] := Delta[x]
 
 
-TakeGraph[gr_ -> _] = gr
+sum[expr_, {i_, r_}] := r expr /; FreeQ[expr, i]
 
-TakeGraph[gr_] = gr
-
-PickLevel[lev_][ FeynAmp[n__, a_, coup_ -> ins_] ] :=
-Block[ {sel},
-  sel = TakeGraph/@
-    Cases[{ins}, Insertions[lev][rulz__] :> rulz, Infinity];
-  If[ Length[coup] === 0, FeynAmp[n, Length[sel] a],
-    FeynAmp[n, a, coup -> Insertions[lev]@@ sel] ]
-]
-
-PickLevel[_][a_FeynAmp] = a
-
-PickLevel[lev_][a_] := PickLevel[lev]/@ a
-
-
-PropagatorDenominator[p_, m_] :=
-  PropagatorDenominator[-p, m] /; !FreeQ[p, -q1]
-
-PropagatorDenominator[0, m_] = -1/m^2
-
-Attributes[FeynAmpDenominator] = {Orderless}
-
-FeynAmpDenominator[ a___, _[q_, m1_], _[q_, m2_], b___ ] :=
-  1/Factor[m1^2 - m2^2] (
-    FeynAmpDenominator[a, PropagatorDenominator[q, m1], b] -
-    FeynAmpDenominator[a, PropagatorDenominator[q, m2], b] )
-
-FeynAmpDenominator[ _[q1, m1_], den___ ] := I Pi^2 *
-  {a0, b0, c0, d0, e0, f0}[[ Length[{den}] + 1 ]]@@
-    Flatten[{First/@ {den} - q1, m1^2, (Last[#]^2)&/@ {den}}]
-
-
-Attributes[IndexDelta] = {Orderless}
-
-IndexDelta[n_, n_] = 1
-
-IndexDelta[_Integer, n_Integer] = 0
-
-
-(* Fermion stuff: Dirac algebra etc *)
-
-(* DiracSlash[p_] := -DiracSlash[-p] /; !FreeQ[p, -q1] *)
-
-
-Spinor[(s_Integer:1) p_, m_] := Spinor[p, m, s]
-
-Spinor[p_, m_, s_] := Spinor[p, Small[m], s] /; Head[Small[m]] =!= Small
-
-SpinorType[-1] = "v";
-SpinorType[1] = "u"
-
-
-Unprotect[NonCommutativeMultiply]
-
-Format[ Spinor[p1_, m1_, s1_] ** c___ ** Spinor[p2_, m2_, s2_] ] :=
-  SequenceForm[ "(",
-    ColumnForm[{"_", SpinorType[s1][p1, m1]}, Left, Above] **
-      c ** SpinorType[s2][p2, m2], ")" ]
-
-___ ** 0 ** ___ = 0
-
-Protect[NonCommutativeMultiply]
-
-
-Unprotect[Dot]
-
-Format[ sp_Spinor . c__ ] := sp ** c
-
-Protect[Dot]
-
-ga[0] = 0
-
-
-(* Boson stuff: 4-vectors etc *)
-
-ScalarProduct = Pair
-
-
-FourVector[p_Plus, li_] := FourVector[#, li]&/@ p
-
-FourVector[n_?NumberQ k_, li_] := n FourVector[k, li]
-
-FourVector[k_ x_GaugeXi, li_] := x FourVector[k, li]
-
-FourVector[k_, li_] := k[li]
-
-
-Attributes[MetricTensor] = {Orderless}
-
-MetricTensor/: MetricTensor[li__]^2 :=
-  MetricTensor[li] ** MetricTensor[li]
-
-
-Momentum[p_] = p
-
-
-Conjugate[PolarizationVector] ^= PolarizationVector
-
-PolarizationVector[n_?NumberQ p_, li_] := n PolarizationVector[p, li]
-
-PolarizationVector[p_, li_] :=
-  PolarizationVector[p, li] = ToSymbol["e", p][li]
-
-
-
-(* Reading and analyzing FeynArts files *)
-
-FormMandelstam = FormDotSimplify = FormDiracSimplify = ""
-
-FromFormRules = FormVectors = FormIndices = IndexRanges = {}
-
-
-SetPair22[p1_, p2_, sign_, kin_] :=
-  p1/: Pair[p1, p2] = sign kin - sign MomSquare[p1] - sign MomSquare[p2]
-
-SetPair12[mom_, i_] :=
-Block[ {lhs = Pair@@ Delete[mom, i], rhs},
-  rhs = Plus@@
-    Array[ If[# == i, 1, -1]/2 MomSquare[ mom[[#]] ] &, Length[mom]];
-  If[MatchQ[lhs, -_], lhs = -lhs; rhs = -rhs];
-  TagSet@@ {lhs[[1]], lhs, rhs}
+sum[expr_, {i_, r_}] :=
+Block[ {dummy = Unique[ToString[i]]},
+  FormIndices = {FormIndices, dummy};
+  (expr /. i -> dummy) SumOver[dummy, r]
 ]
 
 
-id[0, _] = {}
+momlist = Array[ToSymbol["Global`k", #]&, 8];
+epslist = Array[ToSymbol["Global`e", #]&, 8];
+epsclist = Array[ToSymbol["Global`e", #, "c"]&, 8]
 
-id[lhs_, rhs_] :=
-  { "id ", ToString[lhs//InputForm], " = ",
-           ToString[rhs//InputForm], ";\n" }
+MapThread[
+  (pol[_, #1, li_] := #2[li]; Conjugate[#2[li_]] ^= #3[li])&,
+  {momlist, epslist, epsclist} ]
+
+Conjugate[pol] ^= pol
+
+vector[p_Plus, li_] := vector[#, li]&/@ p
+
+vector[n_. p_Symbol, li_] := n p[li]
 
 
-FeynAmpList::noFAfile = "Hold it! This is no FeynArts amplitude."
+Attributes[scalar] = {Orderless}
 
-FeynAmpList[h__][a___] :=
-Block[ {amps, proc, mom, ps, eps, epsc, sf, tf, uf, mandel, dotprods = {},
-dot, iddot, sunind, Index, PropagatorDenominator, MetricTensor = "d_"},
-  proc = Process /. {h};
-  If[ Head[proc] =!= Rule,
-    Message[FeynAmpList::noFAfile];
-    Return[$Failed] ];
+scalar[0, _] = 0
 
-  mom = #[[2]]&/@ Join[ proc[[1]], -proc[[2]] ];
-  proc = Select[Join@@ proc, Head[ #[[2]] ] === Symbol &];
+scalar[p_Plus, x_] := scalar[#, x]&/@ p
 
-  Scan[Clear, ps = #[[2]]&/@ proc];
-  Clear[U, STUSum];
+scalar[n1_. p1_Symbol, n2_. p2_Symbol] := n1 n2 p1.p2
 
-  eps = ToSymbol["e", #]&/@ ps;
-  epsc = ToSymbol[#, "c"]&/@ eps;
-  FormVectors = Flatten[{q1, eps, epsc, ps}];
-  PowerCountingFor[ps];
-  FromFormRules = Join[
-    MapIndexed[#1 -> k@@ #2 &, ps],
-    MapIndexed[#1 -> e@@ #2 &, eps],
-    MapIndexed[#1 -> Conjugate[e@@ #2]&, epsc] ];
+
+prop[0, m_Symbol] = -1/m^2
+
+prop[p_, m_] := prop[-p, m] /; !FreeQ[p, -q1]
+
+prop[p_, m_] := Den[p, m^2]
+
+Attributes[loop] = {Orderless}
+
+loop[a___, d_[p_, m1_], _[p_, m2_], b___] :=
+  (loop[a, d[p, m1], b] - loop[a, d[p, m2], b])/Factor[m1 - m2]
+
+loop[_[q1, m_], d___] := I Pi^2 *
+  {A0i, B0i, C0i, D0i, E0i}[[ Length[{d}] + 1 ]]@@
+    Flatten[{First/@ {d} - q1, m, Last/@ {d}}]
+
+
+slash[p_Plus] := slash/@ p
+
+slash[n_. p_Symbol] := n ga[p]
+
+noncomm[p_Plus] := noncomm/@ p
+
+noncomm[g_] := g ga[] /; FreeQ[g, ga | Spinor]
+
+noncomm[g_] = g
+
+noncomm[g__] := NonCommutativeMultiply[g]
+
+
+DeclareProcess[proc_,
+  flags:{onshell_, mandel_, transv_, norm_, momsimp_}] :=
+Block[ {moms, signs, masses, legs, eps, epsc,
+s, ki, kj, kiki = {}, kikj = {}, eiki = {}, eiei = {}},
+
+  CurrentProcess = proc;
+  CurrentFlags = flags;
+  FormSymbols = FormProcs = MomRules = {};
+  Clear[STUSum];
+
+  signs = Flatten[{1&/@ proc[[1]], -1&/@ proc[[2]]}];
+  masses = Level[proc, {2}]^2;
+  legs = Length[masses];
+  moms = Take[momlist, legs];
+  eps = Take[epslist, legs];
+  epsc = Take[epsclist, legs];
+
+  FormVectors = Flatten[{eps, epsc, moms}];
+  FromFormRules = MapThread[Rule,
+    { FormVectors,
+      Flatten[{{#, Conjugate[#]}&[Array[e, legs]], Array[k, legs]}] }];
+  PrependTo[FormVectors, q1];
   Block[ {Set},
-    (FromForm[x_] := Block[#, ToExpression[x]])& @
-      Append[Apply[Set, FromFormRules, 1], Dot = abbpair]
+    (FormExec[cmd_] := Block[#, ReadForm[cmd]])& @
+      Flatten[{Apply[Set, FromFormRules, 1], Dot = p$, sqrt2 = Sqrt[2]}]
   ];
 
-  Index[t_, n_] := Index[t, n] =
-    ToSymbol[StringTake[ToString[t], 3], n];
+  If[ onshell,
+    kiki = MapThread[#1.#1 -> #2 &, {moms, FormSymbols = masses}] ];
 
-  amps = {a} /. Conjugate[ep:(Alternatives@@ eps)[__]] -> ep;
+  If[ mandel,
+    Switch[ Length[moms],
+      3,
+        kikj = Array[
+          Dot@@ Drop[moms, {#}] -> Plus@@
+            (-Times@@ Drop[signs, {#}]/2 MapAt[-#&, #.#&/@ moms, #])&,
+          3 ] /. kiki,
+      4 | 5,
+        kikj = If[ Length[moms] === 5, {S, T, U, Sf, Tf, Uf},
+          If[onshell, STUSum = Plus@@ masses /.
+            s_Symbol :> Small[s] /. Small -> Identity];
+          {S, T, U, S, T, U} ];
+        FormSymbols = {FormSymbols, kikj};
+        kikj = MapThread[
+          ( ki = moms[[#2]]; kj = moms[[#3]];
+            s = signs[[#2]] signs[[#3]]/2;
+            ki.kj -> s #1 - s ki.ki - s kj.kj )&,
+          {kikj, {1, 1, 1, 3, 2, 2}, {2, 3, 4, 4, 4, 3}} ] /. kiki;
+        If[ Length[moms] === 5,
+          s = -signs[[-1]] Drop[signs, -1];
+          ki = Drop[moms, -1];
+          kikj = {kikj, Block[ {Dot},
+            Attributes[Dot] = {Orderless, Listable};
+            #1.k5 -> Plus@@ (s #1.ki /. kiki /. kikj)&/@ ki ]} ]
+    ]
+  ];
 
-  sunind = Union[Flatten[
-    Cases[amps, SUNobjs[s__] :> Cases[{s}, _Symbol], Infinity] ]];
-	(*      ^^^^^^^ we have to take into account that some
-	   colour or gluon indices might have been fixed by the user
-	   in FeynArts; these would by default be declared as symbols
-	   in FORM and not be seen by SUN.h *)
-  FormIndices = Union[Flatten[{
-    Cases[DownValues[Index], _[_, s_Symbol] -> s], sunind }]];
-  IndexRanges =
-  Block[ {dim},
-    amps /. SumOver[x1_, x2_, ___] :> (dim[x1] = x1 -> x1 == x2);
-    dim[x_] = x -> x == 0;
-    dim/@ FormIndices ];
-
-	(* this is p^2 = m^2: *)
-  If[ $OnShell,
-    mandel = Plus@@ Apply[UpSet@@ {MomSquare[#2], #3^2} &, proc, 1] ];
-
-	(* introduce kinematical invariants: *)
-  Switch[ Length[ps],
+  ki = {""};
+  Switch[ Length[moms],
+    0 | 1,
+      Null,
     2,
-      amps = amps /. Rule@@ Reverse[ps],
-    3,
-      SetPair12[mom, 1];
-      SetPair12[mom, 2];
-      SetPair12[mom, 3],
-    4 | 5,
-      {sf, tf, uf} =
-        If[ Length[ps] === 4,
-          If[ $OnShell,
-            STUSum = mandel /. s_Symbol :> Small[s] /. Small -> Identity;
-            U/: S + T + U = STUSum ];
-          {S, T, U},
-        (* else *)
-          {Sf, Tf, Uf} ];
-      SetPair22[ ps[[1]], ps[[2]], 1/2, S ];
-      SetPair22[ ps[[3]], ps[[1]], -1/2, T ];
-      SetPair22[ ps[[4]], ps[[1]], -1/2, U ];
-      SetPair22[ ps[[3]], ps[[4]], 1/2, sf ];
-      SetPair22[ ps[[4]], ps[[2]], -1/2, tf ];
-      SetPair22[ ps[[3]], ps[[2]], -1/2, uf ]
+      MomRules = moms[[2]] -> moms[[1]];
+      moms[[2]] = moms[[1]],
+    _,
+      kj = signs moms;
+      FormProcs = {"#define MomSum \"", ToString[Plus@@ kj], "\"\n"};
+      kj = Array[{-Plus@@ Drop[kj, {#}], kj[[#]]}&, Length[kj]];
+      kj = Join[kj, -kj];
+      MomRules = Apply[Rule, kj, 1];
+      If[ momsimp,
+        ki = Flatten[{ki, Cases[kj, {p2_, p1_Symbol} :>
+          "id " <> ToString[p1] <> " = " <> ToString[p2] <> ";"]}];
+        If[!(transv || onshell || mandel), ki = Drop[ki, {2, -2}]]
+      ]
   ];
 
-  PropagatorDenominator[p_, m_] :=
-    PropagatorDenominator[p, m] = DEN[MomSquare[p], m^2];
+  If[ transv, eiki =
+    MapThread[Dot[##] -> 0 &, Flatten/@ {{eps, epsc}, {moms, moms}}] ];
 
-  FormDiracSimplify = FormDotSimplify = "";
+  If[ norm, eiei = MapThread[Dot[##] -> -1 &, {eps, epsc}] ];
 
-  mandel = Cases[ UpValues[#] /. Pair -> Dot,
-    (_[p_] :> sp_) :> id[p, sp] ]&/@ ps;
-
-  dotprods = MapThread[id[#1 . #2, -1]&, {eps, epsc}];
-  eps = Join[eps, epsc];
-  If[ $Transversality,
-    AppendTo[dotprods, MapThread[
-      (dot[#1][#2] = 0; id[#1 . #2, 0])&, {eps, Join[ps, ps]} ]]
-  ];
-
-  If[ Length[ps] > 2,
-    mom = Array[{-Plus@@ Delete[mom, #], mom[[#]]}&, Length[mom]];
-    mom = Join[mom, -mom];
-    proc = Cases[mom, {pb_, pa_Symbol} -> {pa, pb}];
-    sf = Alternatives@@ ps;
-
-    If[ Length[ps] > 4,
-	(* in this case elim last mom completely *)
-      AppendTo[dotprods, {mandel[[-1]], id@@ proc[[-1]]}];
-      mandel = Drop[mandel, -1];
-	(* use System` so that x is not declared as FORM symbol later: *)
-      Apply[ (Pair[#1, System`x_] ^= Pair[#2, System`x])&, proc[[-1]] ],
-    (* else *)
-      If[ $Transversality,
-        dot[x1_][x2_] := x1 . x2;
-        iddot[pp_] := id@@ (pp /. p:sf :> dot[#][p])&/@ eps,
-      (* else *)
-        iddot[_] = {}
-      ];
-      FormDotSimplify = Apply[
-        { iddot[{##}],
-          id["e_"["J1?,J2?,J3?", #1], #2 /. p:sf :> "e_"["J1,J2,J3", p]],
-          ".sort\n" }&,
-        proc, 1 ]//StringJoin;
-    ];
-
-    If[ $OnShell,
-      FormDiracSimplify = Apply[
-        { id[ga["C?", #1], #2 /. p:sf :> ga["C", p]],
-          "#call DiracEquation{}\n" }&,
-        proc, 1 ]//StringJoin ];
-
-	(* set the momentum-conservation rules: *)
-    Apply[
-      If[(sf = Select[#1, AtomQ, 1]) =!= 0, TagSet@@ {sf, ##}]&,
-      mom, 1 ];
-  ];
-  FormMandelstam = dotprods <> mandel;
-
-  amps /. (1/GaugeXi[f_])^r_Rational :> GaugeXi[f]^-r
-]
+  s = If[onshell, 1, Length[ki]];
+  FormProcs = FormProcs <>
+    "#define Legs \"" <> ToString[legs] <>
+    "\"\n\n#procedure eiki\n" <>
+    Id[eiki] <>
+    "#endprocedure\n\n#procedure eiei\n" <>
+    Id[eiei] <>
+    "#endprocedure\n\n#procedure kikj\n" <>
+    Id[kiki, kikj] <>
+    "#endprocedure\n\n#procedure MomConserv(proc)\n" <>
+    ({"#call `proc'(", #, callkikj[--s]}&)/@ ki <>
+    "#endprocedure\n\n";
+] /; proc =!= CurrentProcess || flags =!= CurrentFlags
 
 
-GList = Array[ToSymbol["Global`GM", #]&, 50]
+callkikj[0] = ",#call kikj);\n"
 
-DeleteIns[ins_List] := Delete[ins, p]
+callkikj[_] = ",);\n"
 
-DeleteIns[ins_] := DeleteIns/@ ins
+Id[eqs__] := Apply[{"id ", ToString[#1//InputForm], " = ",
+  ToString[#2//InputForm], ";\n"}&, Flatten[{eqs}], 1]
 
-FeynAmp[g_GraphName, ___, amp_, coup_ -> ins_] :=
-Block[ {t, u, p, p2, r, c = 0, coupvar = Take[GList, Length[coup]]},
-  t = Transpose[{ins} /. Rule | _Insertions -> Sequence];
+CurrentProcess = Sequence[]
+
+
+GList = Array[ToSymbol["Global`G", #]&, 30]
+
+lhs[gr_ -> _] = gr
+
+lhs[gr_] = gr
+
+LevelSelect[lev_][id_, _, amp_, coup_ -> ins_] :=
+Block[ {gen = amp, ins2, t, u, p, r, c = 0,
+coupvar = Take[GList, Length[coup]]},
+  ins2 = Apply[TrivialSums,
+    lhs/@ Cases[{ins}, Insertions[lev][rulz__] :> rulz, Infinity], 1];
+  t = Transpose[ins2];
   u = Union/@ t;
-  p = Position[u, {_}, {1}];
+  p = Position[u, {_}, 1, Heads -> False];
   Apply[(coupvar[[#]] = u[[#, 1]])&, p, 1];
   t = ReplacePart[t, 0, p];
   While[ Length[t] > 1,
@@ -917,380 +860,362 @@ Block[ {t, u, p, p2, r, c = 0, coupvar = Take[GList, Length[coup]]},
     t = Rest[t];
     ++c;
     If[ u =!= 0,
-      If[Length[r = Position[t, -u, {1}]] =!= 0,
+      If[Length[r = Position[t, -u, 1, Heads -> False]] =!= 0,
         t = ReplacePart[t, 0, r];
         coupvar = ReplacePart[coupvar, -coupvar[[c]], r += c];
         p = Join[p, r] ];
-      If[Length[r = Position[t, u, {1}]] =!= 0,
+      If[Length[r = Position[t, u, 1, Heads -> False]] =!= 0,
         t = ReplacePart[t, 0, r];
         coupvar = ReplacePart[coupvar, coupvar[[c]], r += c];
         p = Join[p, r] ]
     ]
   ];
-  FeynAmp[ g[[-1]], g[[2]],
-    amp /. Thread[coup -> coupvar],
-    DeleteIns[coupvar -> ins] ]
+  r = amp /. Thread[coup -> coupvar];
+  If[ Length[coupvar = Delete[coupvar, p]] === 0,
+    {AmpID[id], Length[ins2] r},
+    {AmpID[id], r, coupvar -> (Delete[#, p]&)/@ ins2} ]
 ]
 
-FeynAmp[g_GraphName, ___, amp_] :=
-  FeynAmp[ g[[-1]], g[[2]], amp /.
-    G[_][cto_][fi__][k_] :>
-      (G[cto, fi, kinid[k]] /. List -> Sequence) ]
+LevelSelect[_][id_, _, amp_] :=
+  Flatten[{AmpID[Select[id, FreeQ[#, Number]&]], TrivialSums[amp]}]
 
-kinid[k_] := kinid[k] =
-Block[ {DiracMatrix = "ga", DiracSlash = "ga", ChiralityProjector,
-MetricTensor = "g", FourVector = List, ScalarProduct = List},
-  ChiralityProjector[1] = "omp";
-  ChiralityProjector[-1] = "omm";
-  ToExpression[
-    StringJoin[ToString/@
-      DeleteCases[Flatten[k //. a_[b__] :> {a, b} /; a =!= List],
-        sym_Symbol /; Context[sym] === "System`"]] ]
+
+AmpID[g_] :=
+Block[ {s, c},
+  s = StringJoin@@
+    Apply[{StringTake[ToString[#1], 1], ToString[#2]}&, g, 1];
+  If[ (c = ++uniq[s]) === 96, s, s <> FromCharacterCode[c] ]
 ]
 
 
-(* FORM interface and main function *)
+TrivialSums[ins___, r_] := {ins, r} /; FreeQ[r, SumOver]
 
-FormWrite[ FeynAmp[gname_, _, amp_, rulz___] ] :=
-Block[ {Pair = Dot, na = gname, fline = 0, ftrace = {}, diags, noins,
-DiracTrace = FormDiracTrace, SpinorChain = FormSpinorChain},
-  WriteString["stdout", na, " "];
-  If[ MemberQ[amplist, na], na = Unique[ToString[na] <> "n"] ];
-  AppendTo[amplist, na];
-  noins = Length[{rulz}] === 0;
-  WriteString[hh, "g ", If[ noins, na, na@@ rulz[[1]] ], " =\n  "];
-  Write[hh, amp /.
-    { d_Dot :> FormSpinorChain@@ d /; FermionicQ[d],
-      f:(ChiralityProjector | DiracMatrix | DiracSlash)[__] :>
-        FormSpinorChain[f] } /.
-    NonCommutativeMultiply[a_] -> a, ";"];
-  AppendTo[alltrace, ftrace];
-  If[ noins, WriteString[hh, ".store\n\n"],
-    WriteString[hh, ".sort\n\n"];
-    diags = Plus@@ Apply[na, Map[Replace[#, ins]&, rulz[[2]], {2}], 1];
-    na = ToSymbol["Ins", na];
-    inssum += na;
-    AppendTo[names, na -> diags] ];
+TrivialSums[ins___, r_] :=
+Block[ {test = {ins, r /. _SumOver -> 1, gen}},
+  {ins, r /. SumOver -> CarryOut}
 ]
 
+CarryOut[i_, r__] := SumOver[i, r] /; !FreeQ[test, i]
 
-chp[1] = "g6_";
-chp[-1] = "g7_"
+CarryOut[_, v_] = v
 
-FormDiracTrace[expr__] :=
-Block[ {DiracMatrix, Dot = NonCommutativeMultiply},
-  AppendTo[ftrace, ++fline];
-  DiracMatrix[5] = "g5_"[fline];
-  DiracMatrix[li_] = "g_"[fline, li];
-  NonCommutativeMultiply[expr] /.
-    f1_. DiracSlash[k_] + m_. :>
-      f1 Map[If[Head[#] === Symbol, "g_"[fline, #], #]&, k, {-1}] +
-        m "gi_"[fline] /.
-    f1_. ChiralityProjector[1] + f1_. ChiralityProjector[-1] + rr_. :>
-      (f1 + rr) "gi_"[fline] /.
-    f1_. ChiralityProjector[1] + f2_. ChiralityProjector[-1] + rr_. :>
-      f1/2 "g6_"[fline] + f2/2 "g7_"[fline] + rr "gi_"[fline] /.
-    f1_. ChiralityProjector[pm_] + m_. :>
-      f1/2 chp[pm][fline] + m "gi_"[fline]
-]
-
-FormSpinorChain[expr__] :=
-Block[ {DiracMatrix, DiracSlash, ChiralityProjector,
-Dot = NonCommutativeMultiply},
-  extferm = "1";
-  ++fline;
-  DiracMatrix[5] = omp[fline]/2 - omm[fline]/2;
-  DiracMatrix[li_] = ga[fline, li];
-  DiracSlash[k_] :=
-    Map[If[Head[#] === Symbol, ga[fline, #], #]&, k, {-1}];
-  ChiralityProjector[1] = omp[fline];
-  ChiralityProjector[-1] = omm[fline];
-  NonCommutativeMultiply[expr]
-]
+CarryOut[_, v_, _] := Sqrt[v]
 
 
-FormDecl[type_, _[f_, v___]] :=
-Block[ {l, ll, s},
-  ll = StringLength[s = type <> ToString[f]];
-  WriteString[hh,
-    Fold[
-      ( l = StringLength[s = ToString[#2]] + 2;
-        {#1, If[(ll += l) > 70, ll = l; ",\n  ", ", "], s} )&,
-      s, {v} ] <> ";\n"]
-]
-
-
-FormPattern[ _[_[ sym_Symbol ]], val_ ] :=
-  (vars = {vars, sym}; id[sym, val])
-
-FormPattern[ _[_[ (h_Symbol)[args__] ]], val_ ] :=
-Block[ {patt, lhs, c1 = 0, c2 = 0},
-  lhs = h[args] /. Pattern -> Arg2 /.
-    _Blank :> "Patt" <> ToString[++c1] <> "?" /.
-    _BlankSequence | _BlankNullSequence :>
-      StringJoin[Table["?", {++c2}]];
-  vars = {vars, ToSymbol["Patt", #]&/@ Range[c1], Cases[lhs, _Symbol]};
-  AppendTo[func, h];
-  id[lhs, val]
-]
-
-Arg2[_, x_] = x
-
-
-DeclareVars[expr_, lorentzind_] :=
-Block[ {theexpr, vars, indx, func = {}},
-  theexpr = {expr, Last/@ Flatten[UpValues/@ FormVectors]};
-  vars = Cases[theexpr, x_Symbol /; Context[x] =!= "System`",
-    Infinity, Heads -> True];
-  smalls = StringJoin[ Apply[FormPattern, DownValues[Small], 1] ];
-  vars = Complement[Flatten[{vars, Pi}], FormVectors];
-  func = Union[func,
-    Select[Flatten[{vars, Conjugate, Sqrt}], !FreeQ[theexpr, #[___]]&] ];
-  indx = Intersection[vars,
-    Join[FormIndices, ToExpression/@ Names[lorentzind]]];
-  vars = Complement[vars, func, indx];
-  FormDecl["i ", indx /. IndexRanges];
-  FormDecl["v ", FormVectors];
-  FormDecl["s ", vars];
-  FormDecl["cf ", DeleteCases[func,
-    FeynAmp | Spinor | DiracMatrix | DiracSlash |
-    ChiralityProjector | DiracTrace | tr]];
-]
-
-
-DoTrivialSums[ FeynAmp[n_, top_, a_, coup_ -> ins_] ] :=
-Block[ {amp},
-  amp = DoTrivialSumsAmp[a, ins];
-  FeynAmp[n, top, amp, coup -> DoTrivialSumsIns/@ ins]
-] /; !FreeQ[{a, ins}, SumOver]
-
-DoTrivialSums[ FeynAmp[n_, top_, a_] ] :=
-  FeynAmp[n, top, DoTrivialSumsAmp[a]] /; !FreeQ[a, SumOver]
-
-DoTrivialSums[ a_ ] = a
-
-
-DoTrivialSumsIns[{ins___, relcf_}] :=
-  {ins, DoTrivialSumsAmp[relcf, {amp, ins}]}
-
-DoTrivialSumsIns[a_] = a
-
-DoTrivialSumsAmp[a_ SumOver[i_, v__], ins___] :=
-  If[ FreeQ[{a, ins}, i],
-    DoTrivialSumsAmp[a ExecSum[v], ins],
-    SumOver[i, v] DoTrivialSumsAmp[a, ins] ]
-
-DoTrivialSumsAmp[a_, ___] = a
-
-ExecSum[v_, External] := Sqrt[v]
-
-ExecSum[v_] = v
-
-
-TakeIns[FeynAmp[__, _ -> ins_]] := List@@ ins
-
-TakeIns[_] = {}
-
-
-kinobjs = Spinor | ChiralityProjector | DiracMatrix | DiracSlash |
-  DiracTrace | SpinorChain | q1 | Global`p1 | Global`p2 | Global`p3 |
-  Global`k1 | Global`k2 | Global`k3 | Global`k4 | _String
-
-IList = Array[ToSymbol["Global`Ins", #]&, 500]
+InsList = Array[ToSymbol["Global`Ins", #]&, 500]
 
 SUNobjs = SUNT | SUNTSum | SUNF
 
 
-Options[OneLoop] = {
-  AmplitudeLevel -> Automatic,
-  DiracSimplify -> True,
-  DotSimplify -> True,
-  ChiralME -> True,
+(* the main function CalcFeynAmp *)
+
+Options[CalcFeynAmp] = {
+  CalcLevel -> Automatic,
+  Dimension -> D,
+  OnShell -> True,
+  Mandelstam -> True,
+  Transverse -> True,
+  Normalized -> True,
+  MomSimplify -> True,
+  VADecompose -> False,
   NoExpand -> {},
+  AbbrScale -> 1,
   EditCode -> False,
   RetainFile -> False }
 
-OneLoop[___Rule] = OneLoop[_[], ___Rule] = 0
+CalcFeynAmp::syntax = "Wrong syntax: CalcFeynAmp expects FeynAmpList
+objects as arguments."
 
-OneLoop[amps_, opt___Rule] :=
-Block[ {lev, diracsimp, dotsimp, chime, noexp, edcode, retain,
-hh, amplist, res, res3, res4, smalls,
-Hide, Unhide, hidec = 0, extferm = "0", inssum = 0, ins = {},
-allins = {}, iabbr = {}, names = {}, alltrace = {}},
+CalcFeynAmp::incomp = "Calculation of incompatible process(es) attempted.
+If you want to calculate a new process, run ClearProcess[] first."
 
-  {lev, diracsimp, dotsimp, chime, noexp, edcode, retain} =
-    {AmplitudeLevel, DiracSimplify, DotSimplify,
-      ChiralME, NoExpand, EditCode, RetainFile} /.
-      {opt} /. Options[OneLoop];
+CalcFeynAmp[fal:FeynAmpList[__][___].., opt___Rule] :=
+Block[ {lev, dim, onshell, mandel, transv, norm, momsimp, va, edit,
+retain, procs, proc, uniq, FourMomentum, c = 0,
+Index, FormIndices = {}, Dim, deny, hide, smalls, temp, hh,
+amps, ampnoins, ampins, allins, ins, iabbr, insgen = {},
+traces = False, ampsum = 0, Global`NoIns, Global`Result, res},
 
-  res = Flatten[{amps}] /. {
-    2^(1/2) -> sqrt2, 2^(-1/2) -> 1/sqrt2,
-    Complex[a_, b_] -> a + "i_" b,
-    Eps -> "e_" };
+  procs = Cases[Head/@ {fal}, _[Process, p_] -> p, {2}];
+  proc = Union[Apply[#3 &, procs, {3}], {CurrentProcess}];
+  If[ Length[proc] =!= 1, Message[CalcFeynAmp::incomp]; Abort[] ];
+
+  {lev, dim, onshell, mandel, transv, norm, momsimp,
+    va, noexp, scale, edit, retain} = ParseOpt[opt, CalcFeynAmp];
+  lev = Flatten[{lev}][[-1]] /.
+    Automatic :> If[FreeQ[{fal}, Classes], Particles, Classes];
+
+  DeclareProcess[proc[[1]],
+    TrueQ/@ {onshell, mandel, transv, norm, momsimp}];
+  Apply[(#2 = momlist[[++c]])&, procs[[1]], {2}];
+  FourMomentum[Internal, 1] = q1;
+
+  uniq[_] = 95;
+  amps = Apply[LevelSelect[lev], Level[Hold[fal], {2}], 1] /.
+    PolarizationVector -> pol /.
+    MomRules /. {
+      _MetricTensor^2 -> dim,
+      MetricTensor -> "d_",
+      ScalarProduct -> scalar,
+      IndexDelta -> delta,
+      IndexSum -> sum,
+      PropagatorDenominator -> prop,
+      FeynAmpDenominator -> loop,
+      ChiralityProjector[c_] :> ga[(13 - c)/2],
+      DiracMatrix -> ga,
+      DiracSlash -> slash,
+      (DiracSpinor | MajoranaSpinor)[(s_Integer:1) p_, m_] ->
+        Spinor[p, m, s],
+      NonCommutative -> noncomm,
+      FourVector -> vector };
+
+  amps = DeleteCases[amps, {_, 0, ___}];
+  If[ Length[amps] === 0, Return[Amp[CurrentProcess][0]] ];
+
+  Index[type_, n_] :=
+  Block[ {i = ToSymbol[StringTake[ToString[type], 3], n]},
+    FormIndices = {FormIndices, i};
+    If[type === Lorentz, Dim[i] = i];
+    Index[type, n] = i
+  ];
+
+  (amps = amps /. {2^(1/2) -> sqrt2, 2^(-1/2) -> 1/sqrt2,
+            Complex[a_, b_] -> a + "i_" b}) /.
+    SumOver[x1_, x2_, ___] :> (Dim[x1] = x1 == x2; 1);
+  Dim[x_] = x == 0;
+
+  FormIndices = Union[Flatten[ {FormIndices,
+    Cases[amps, SUNobjs[s__] :> Cases[{s}, _Symbol], Infinity]} ]];
+	(*      ^^^^^^^ possibly some colour or gluon
+	   indices have been fixed by the user in FeynArts;
+	   these would by default be declared as symbols
+	   and not be seen by FORM *)
 
   noexp = Alternatives@@ Flatten[{noexp}];
   If[ Length[noexp] =!= 0,
-    Hide[p__] := Plus[p] /; FreeQ[{p}, noexp] || !FreeQ[{p}, kinobjs];
-    Hide[a:-_, b__] := -Hide@@ (-#&)/@ {a, b};
-    Hide[p__] := Hide[p] =
-      ( Unhide[++hidec] = Plus[p] /. "Unhide" -> Unhide;
-        "Unhide"[hidec] );
-    res = res /. Plus -> Hide;
+    deny = Alternatives@@ Flatten[{FormVectors, FormFunc}];
+    c = 0;
+    hide[p_] := (hide[p] = -hide[-p]) /; MatchQ[p[[1]], -_];
+    hide[p_] := hide[p] = ToSymbol["nx", ++c];
+    amps = amps /. p_Plus :> hide[p] /; !FreeQ[p, noexp] && FreeQ[p, deny]
   ];
 
-  If[ FreeQ[res, Insertions], res = DoTrivialSums/@ res,
-    If[lev === Automatic,
-      lev = Union[ Cases[res,
-        Insertions[t_][__] -> t, Infinity] ][[-1]] ];
-    res = DoTrivialSums/@ PickLevel[lev][res];
-    allins = Union[Flatten[TakeIns/@ res]];
-    ins = Select[allins, Head[#] =!= Symbol &];
-    iabbr = Take[IList, Length[ins]];
-    ins = Thread[ins -> iabbr];
-  ];
-  res3 = Select[res, Length[#] === 3 &];
-  res4 = Select[res, Length[#] === 4 &];
+  ampnoins = Select[amps, Length[#] === 2 &];
+  ampins = Select[amps, Length[#] === 3 &];
+  allins = Union[Flatten[#[[-1, 2]]&/@ ampins]];
+  ins = DeleteCases[allins, _Symbol];
+  iabbr = Take[InsList, Length[ins]];
+  ins = Thread[ins -> iabbr];
 
   OpenFormTemp;
+  If[ Head[dim] === Symbol, WriteString[hh, "s ", dim, ";\n"] ];
+  WriteString[hh, "d ", dim, ";\n"];
+  DeclareVars[amps, SUNN];
+  WriteString[hh, "f Spinor;\n\n.global\n\n"];
 
-  If[ Head[$Dimension] === Symbol,
-    WriteString[hh, "s ", $Dimension, ";\n"] ];
-  WriteString[hh, "d ", $Dimension, ";\n"];
+  If[ Length[ampnoins] =!= 0,
+    Apply[FormWrite, ampnoins, 1];
+    Write[hh, "g ", Global`NoIns == ampsum, ";"];
+    WriteString[hh, "\n"];
+    ampsum = Global`NoIns ];
+  Apply[FormWrite, ampins, 1];
 
-  DeclareVars[{#[[3]]&/@ res, allins, SumOver[], Unhide[], SUNN}, "li*"];
-  WriteString[hh, "\
-f Spinor;\n\
-#if 'VERSION_' > 1\n\
-NT ga, omp, omm, ga5;\n\
-#else\n\
-f ga, omp, omm, ga5;\n\
-#endif\n\n\
-.global\n\n\
-#procedure Mandelstam()\n" <>
-    FormMandelstam <>
-    "#endprocedure\n\n#procedure DotSimplify()\n" <>
-    If[TrueQ[dotsimp], FormDotSimplify, ""] <>
-    "#endprocedure\n\n#procedure DiracSimplify()\n" <>
-    If[TrueQ[diracsimp], FormDiracSimplify, ""] <>
-    "#endprocedure\n\n"];
+  WriteString[hh, ".sort\n\n" <>
+    If[traces, "trace4,1;\n\n", ""] <>
+    FormProcs <> "\
+#procedure TrivialSubst\n\
+id sqrt2^2 = 2;\n\
+id sqrt2^-2 = 1/2;\n" <>
+    FormSubst <>
+    smalls <> "\
+#endprocedure\n\n\
+#procedure Insertions\n"];
 
-  amplist = {};
-  If[ Length[res3] =!= 0,
-    Scan[FormWrite, res3];
-    WriteString[hh, "g amp3 = "];
-    Write[hh, Plus@@ amplist, ";"];
-    WriteString[hh, ".sort\n\n"];
-    inssum = amp3 ];
-  Scan[FormWrite, res4];
-
-  Scan[ WriteString[hh, "trace4,", #, ";\n"]&,
-    Union[Flatten[alltrace]] ];
-
-  WriteString[hh,
-    "\n#define VADecomp \"" <> If[chime =!= False, "0", "1"] <>
-    "\"\n#define DIM \"" <> ToString[$Dimension /. D -> 0] <>
-    "\"\n#define ExtFermions \"" <> extferm <>
-    "\"\n\n#if 'VERSION_' > 1\n" <>
-    "#include " <> $FormCalcDir <> "OneLoop.h2\n#else\n" <>
-    "#include " <> $FormCalcDir <> "OneLoop.h1\n" <>
-    "#endif\n\n.store\n\n"];
-  If[ Length[res4] === 0, WriteString[hh, "l amp = amp3;\n"],
-    FormDecl["s ", iabbr];
-    WriteString[hh, "\n.global\n"];
+  If[ Length[ampins] =!= 0,
+    WriteString[hh, FormDecl["s ", iabbr] <> ".global\n\n"];
     Apply[
-      ( WriteString[hh, "\ng ", #1, " = "];
-        Write[hh, #2, ";"];
-        WriteString[hh, ".store\n"] )&, names, 1 ];
-    WriteString[hh, "\nl amp = "];
-    Write[hh, inssum, ";"];
-    Apply[
-      ( WriteString[hh, "id ", #2, " = "];
-        Write[hh, #1, ";"] )&, ins, 1 ]
+      ( Write[hh, "g ", #1 == #2, ";"];
+        WriteString[hh, ".store\n\n"] )&, Flatten[insgen], 1 ] ];
+  Write[hh, "l ", Global`Result == ampsum, ";"];
+  If[ Length[ampins] =!= 0,
+    WriteString[hh, "\
+.sort\n\n\
+#call FillIns\n\
+argument;\n\
+#call FillIns\n\
+endargument;\n\
+#endprocedure\n\n\
+#procedure FillIns\n"];
+    Apply[Write[hh, "id ", #2 == #1, ";"]&, ins, 1]
   ];
 
-  WriteString[hh, "\n" <> smalls <> "\n#call TrivialSubst{}\n\n"];
-  If[!FreeQ[res, SUNobjs],
-    WriteString[hh, "\
-#define SUNN \"" <> ToString[SUNN] <> "\"\n\
-#include " <> $FormCalcDir <> "SUN.h\n\n"] ];
   WriteString[hh, "\
-b SumOver, Mat, DEN, pave, Unhide, i_;\n\n\
-print +s amp;\n\n\
-.end\n"];
-  Close[hh];
+#endprocedure\n\n\
+#define Dim \"" <> ToString[dim /. D -> 0] <> "\"\n\
+#define OnShell \"" <> ToBin[onshell] <> "\"\n\
+#define VADecompose \"" <> ToBin[va] <> "\"\n\
+#define Scaled \"" <> ToBin[scale =!= 1] <> "\"\n\
+#define FermionChains \"" <> ToBin[!FreeQ[amps, FermionChain]] <> "\"\n\
+#define SUNobjs \"" <> ToBin[!FreeQ[amps, SUNobjs]] <> "\"\n\
+#define SUNN \"" <> ToString[SUNN] <> "\"\n\n\
+#include " <> ToFileName[$FormCalcDir, "OneLoop.h"] <> "\n"];
 
+  If[scale === 1, scale = Sequence[]];
   Block[ {Set},
-    (res := Block[#, RunForm])&[Apply[(#2 = #1)&, ins, 1]] ];
-  res
+    (res := Block[#, RunForm])& @
+      Cases[DownValues[hide] /. "i_" -> I,
+        _[p_, x_Symbol] :> (x = p[[1, 1]])]
+  ];
+  Amp[CurrentProcess]@@ res[[1]]
+]
+
+CalcFeynAmp[___] := (Message[CalcFeynAmp::syntax]; Abort[])
+
+
+ToBin[True] = "1"
+
+ToBin[___] = "0"
+
+
+(* FORM interfacing *)
+
+chain[expr__] := (++fline; NonCommutativeMultiply[expr] /. ga -> om)
+
+trace[expr__] := (traces = True;
+  NonCommutativeMultiply[expr] /. {
+    a_. ga[li_] ** ga[1] + a_. ga[li_] ** ga[-1] :> a "g_"[fline, li],
+    a_. ga[1] + a_. ga[-1] :> a "g_"[fline],
+    ga -> om }
+)
+
+FormWrite[na_, amp_] :=
+Block[ {fline = 1},
+  WriteString["stdout", na <> " "];
+  Write[hh, "g " <> na == amp /.
+    MatrixTrace -> trace /. FermionChain -> chain /.
+    NonCommutativeMultiply[a_] -> a, ";"];
+  WriteString[hh, ".store\n\n"];
+  ampsum += na;
+]
+
+FormWrite[na_, amp_, gm_ -> rulz_] :=
+Block[ {insna = "Ins" <> na, fline = 1},
+  WriteString["stdout", na <> " "];
+  Write[hh, "g ", na@@ gm == amp /.
+    MatrixTrace -> trace /. FermionChain -> chain /.
+    NonCommutativeMultiply[a_] -> a, ";"];
+  WriteString[hh, "\n"];
+  insgen = {insgen,
+    insna -> Plus@@ Apply[na, Map[Replace[#, ins]&, rulz, {2}], 1]};
+  ampsum += insna;
 ]
 
 
+FormDecl[_, _[]] = {}
+
+FormDecl[type_, _[f_, v___]] :=
+Block[ {l, ll, s},
+  ll = StringLength[s = type <> ToString[f]];
+  { Fold[
+      ( l = StringLength[s = ToString[#2]] + 2;
+        {#1, If[(ll += l) > 70, ll = l; ",\n  ", ", "], s} )&,
+      s, {v} ],
+    ";\n" }
+]
+
+
+FormPattern[ _[_[ sym_Symbol ]], val_ ] :=
+  (vars = {vars, sym}; Id[sym -> val])
+
+FormPattern[ _[_[ (h_Symbol)[args__] ]], val_ ] :=
+Block[ {patt, lhs, c1 = 0, c2 = 96},
+  lhs = h[args] /. Pattern -> (#2 &) /.
+    _Blank :> "patt" <> ToString[++c1] <> "?" /.
+    _BlankSequence | _BlankNullSequence :> "?" <> FromCharacterCode[++c2];
+  vars = {vars, ToSymbol["patt", #]&/@ Range[c1], Cases[lhs, _Symbol]};
+  func = {func, h};
+  Id[lhs -> val]
+]
+
+
+FormFunc = {ga, Spinor, Den, A0i, B0i, C0i, D0i, E0i,
+  SumOver, SUNT, SUNF, SUNTSum}
+
+DeclareVars[expr__] :=
+Block[ {theexpr, vars, func = {}, const},
+  theexpr = {expr, FormSymbols};
+  vars = Cases[theexpr, x_Symbol /; Context[x] =!= "System`",
+    Infinity, Heads -> True];
+  smalls = StringJoin[ Apply[FormPattern, DownValues[Small], 1] ];
+  vars = Complement[Flatten[{vars, Pi}], FormVectors,
+    {ga, Spinor, MatrixTrace, FermionChain}];
+  func = Union[ Flatten[func],
+    Select[Flatten[{vars, Conjugate, Sqrt}],
+      !FreeQ[theexpr, HoldPattern[Blank[#]]]&] ];
+  vars = Complement[vars, FormIndices];
+  const = Complement[vars, FormFunc,
+    {S, T, U, Sf, Tf, Uf, External, Delta}, GList];
+  WriteString[hh,
+    FormDecl["i ", Dim/@ FormIndices] <>
+    FormDecl["v ", FormVectors] <>
+    FormDecl["s ", Complement[vars, func]] <>
+    FormDecl["cf ", func] <>
+    "#define Const \"" <> StringTake[ToString[const], {2, -2}] <> "\"\n"
+  ]
+]
+
+
+toform = "!" <> ToFileName[$FormCalcDir, "ToForm_" <> $Platform] <> " > "
+
+tempnum = 1
+
 OpenFormTemp := (
-  Print["preparing FORM code in ", $TempFile];
-  hh = OpenWrite[
-    "!sed -e '/^[^#]/s/\"//g' -e 's/\\[/(/g' -e 's/]/)/g' " <>
-    "-e 's/\\*\\*/\\*/g' -e 's/\\*\\\\//g' -e 's/==/=/g' > " <> $TempFile,
+  While[
+    temp = $TemporaryPrefix <> ToString[tempnum] <> ".frm";
+    FileType[temp] =!= None, ++tempnum];
+  Print[""];
+  Print["preparing FORM code in ", temp];
+  hh = OpenWrite[toform <> temp,
     FormatType -> InputForm, PageWidth -> 73];
-  WriteString[hh, "#-\n"];
+  WriteString[hh, FormSetup];
 )
 
 RunForm := (
-  If[edcode, Pause[1]; Run[StringForm[$Editor, $TempFile]]; Pause[3]];
+  Close[hh];
+  If[edit, Pause[1]; Run[StringForm[$Editor, temp]]; Pause[3]];
   WriteString["stdout", "\nrunning FORM... "];
-  res = Block[ {Dot = Pair, sqrt2 = Sqrt[2]},
-    ReadForm["!" <> $FormCmd <>
-      " -s " <> $FormCalcDir <> "form.set " <> $TempFile]
-  ] /. FromFormRules /. Pair -> abbpair;
+  res = FormExec["!" <> $FormCmd <> " " <> temp];
   Print["ok"];
-  If[!retain, DeleteFile[$TempFile]];
+  If[!retain, DeleteFile[temp]];
   res
 )
 
 
-(* Things to do when amplitude comes back from FORM *)
+(* things to do when the amplitude comes back from FORM *)
 
-	(* for maximum simplification set e.g. o1 = o2 = Simplify *)
-o1 = o2 = Identity
+num = Identity
 
+kin = MandelstamSimplify
 
-FormCalc`d$ = MetricTensor
+d$ = MetricTensor
 
-e$ = abbeps
+pave[A0i[0], args__] := A0[args];
+pave[B0i[0], args__] := B0[args];
+pave[B0i[1], args__] := B1[args];
+pave[B0i[0, 0], args__] := B00[args];
+pave[B0i[1, 1], args__] := B11[args];
+pave[n_[i__], args__] := n[paveid[n, i], args]
 
-gi$[_] = Sequence[]
-
-ncm[x_] := x;
-ncm[x__] := NonCommutativeMultiply[x]
-
-
-paveargs[p1_, p2_, p3_, m1_, m2_, m3_, m4_] :=
-  D0i[MomSquare[p1], MomSquare[p1 - p2], MomSquare[p2 - p3],
-    MomSquare[p3], MomSquare[p2], MomSquare[p1 - p3],
-    m1, m2, m3, m4]
-
-paveargs[p1_, p2_, m1_, m2_, m3_] :=
-  C0i[MomSquare[p1], MomSquare[p1 - p2], MomSquare[p2], m1, m2, m3]
-
-paveargs[h_:B0i, p_, m1_, m2_] :=
-  h[MomSquare[p], m1, m2]
-
-paveargs[h_:A0i, m_] := h[m]
-
-pave[a0[0], args__] := paveargs[A0, args];
-pave[b0[0], args__] := paveargs[B0, args];
-pave[b0[1], args__] := paveargs[B1, args];
-pave[b0[0, 0], args__] := paveargs[B00, args];
-pave[b0[1, 1], args__] := paveargs[B11, args]
-
-pave[n_[i__], args__] :=
-Block[ {t = StringTake[ToString[n], 1]},
-  Prepend[ paveargs[args], ToSymbol[t, t, Sort[{i}]] ]
+paveid[n_, i__] := paveid[n, i] =
+Block[ {t = ToLowerCase[StringTake[ToString[n], 1]]},
+  ToSymbol[t, t, i]
 ]
-
 
 A0[0] = 0
 
 B0[p_, m1_, m2_] := B0[p, m2, m1] /; !OrderedQ[{m1, m2}]
+
+DB0[p_, m1_, m2_] := DB0[p, m2, m1] /; !OrderedQ[{m1, m2}]
 
 Derivative[1, 0, 0][B0] = DB0;
 Derivative[1, 0, 0][B1] = DB1;
@@ -1298,18 +1223,139 @@ Derivative[1, 0, 0][B11] = DB11;
 Derivative[1, 0, 0][B00] = DB00
 
 
+(* abbreviationing business *)
+
+Mat[0] = 0
+
+DiracChain[s___Spinor, 1, r___] := DiracChain[s, r]
+
+sun[x_] := sun[x] = Unique["SUN"]
+
+fme[x_] := ferm[x, scale]
+
+ferm[x__] := ferm[x] = Unique["F"]
+
+
+p$[a_, x_^n_] := p$[a, x]^n
+	(* different operator priority in FORM *)
+
+p$[x__] := pair[Pair[x], scale]
+
+pair[x__] := pair[x] = Unique["Pair"]
+
+
+e$[x__] := eps[Eps[x], scale]
+
+eps[x__] := eps[x] = Unique["Eps"]
+
+
+abb[p_Plus] := abbsum[abb/@ p]
+
+abb[n_?NumberQ s_] := n abb[s]
+
+abb[s_?AtomQ] = s
+
+abb[s_] := abb[s] = Unique["Abb"]
+
+abbsum[s_] := abbsum[s] = Unique["AbbSum"]
+
+
+Abbr[] := Flatten[
+  Apply[dv, DownValues/@ {ferm, sun, pair, eps, abb, abbsum}, {2}] ]
+
+Attributes[dv] = {HoldAll}
+
+dv[x_, _] := {} /; !FreeQ[x, Pattern]
+
+dv[_[_[x_]], s_Symbol] := s -> x
+
+dv[_[_[x_, sc_]], s_Symbol] := s -> sc^Count[5 x, _k, {2}] x
+
+
+ClearProcess[] := (
+  CurrentProcess = Sequence[];
+  ClearCache[];
+  Apply[zap, DownValues/@ {ferm, sun, pair, eps, abb, abbsum}, {2}]; )
+
+Attributes[zap] = {HoldAll}
+
+zap[p_, s_Symbol] := (Unset@@ p; Remove[s]) /; FreeQ[p, Pattern]
+
+
+IntSec[a__Plus] :=
+Block[ {i = Intersection[a]},
+  If[Head[i] === Plus, i, 0]
+]
+
+IntSec[___] = 0
+
+TempInsert[li_, t_] := Insert[li, t,
+  Max[0, Position[First/@ li, #, {1}, 1]&/@
+    DeleteCases[Level[t[[2]], {-1}], -1]] + 1]
+
+OptLevel12[rul_] :=
+Block[ {l = 0, pl, rl = Length[rul], i, is, iss, isl, pr,
+repl, nurul = {}},
+  Attributes[pl] = {Flat, Orderless};
+  Apply[
+    (Set@@ {pl@@ -#2, -#1}; Set@@ {pl@@ #2, #1})&,
+    Sort[rul, Length[ #1[[2]] ] < Length[ #2[[2]] ] &], 1 ];
+  repl = Cases[DownValues[pl],
+    _[_[_[p__]], s_Symbol] :> (s -> Plus[p])];
+
+  rl = Length[repl] - 1;
+  Do[
+    While[
+      is = IntSec[ repl[[i, 2]], repl[[i + 1, 2]] ];
+      If[ Length[is] < Length[ repl[[i, 2]] ]/2,
+        iss = IntSec[ repl[[i, 2]], -repl[[i + 1, 2]] ];
+        If[Length[is] < Length[iss], is = iss]
+      ];
+      Length[is] > 3,
+    (* while body: *)
+      isl = Ceiling[Length[is]/2];
+      iss = IntSec@@ Select[
+        (IntSec[#[[2]], is] + IntSec[-#[[2]], is])&/@
+          Drop[repl, {i, i + 1}],
+        Length[#] > isl &];
+      If[Length[iss] < 4, iss = is];
+      is = ToSymbol["help", ++l];
+      AppendTo[nurul, is -> iss];
+      repl = repl /. iss -> is /. -iss -> -is
+    ],
+  {i, rl}];
+  Fold[TempInsert, repl, nurul]
+]
+
+OptimizeAbbr[rul:{__Rule}] :=
+  Flatten[ {Select[rul, FreeQ[#, Plus]&],
+    OptLevel12[Select[rul, !FreeQ[#, Plus]&]]} ]
+
+
+Cost[x_] :=
+Block[ {sx = Simplify[x]},
+  {Plus@@ ((Length[#] - 1) Head[#]&)/@
+    Level[sx /. Plus -> 1 /. -1 -> 1 /. Times | Power -> 2, {0, -2}], sx}
+]
+
+MandelstamSimplify[x_] := x /; FreeQ[x, Plus]
+
+MandelstamSimplify[x_] :=
+  Sort[Cost/@ {x, x /. T -> STUSum - S - U,
+    x /. U -> STUSum - S - T, x /. S -> STUSum - T - U}][[1, 2]] /;
+  ValueQ[STUSum]
+
+MandelstamSimplify[x_] := Simplify[x]
+
+
 (* UV and IR finiteness checks *)
 
 loopint = A0 | B0 | B1 | B00 | B11 | DB0 | DB1 | DB00 | DB11 | C0i | D0i
 
+loopintArg = Flatten[loopint | Cget | Dget]
+
+
 UVDivergentPart[expr_] := expr /. int:loopint[__] :> UVDiv[int]
-
-(* WARNING: For the D functions, the IR divergences are currently
-            implemented only in the SCALAR case. This means the IR
-            divergences of the tensor coefficients are set to ZERO!!! *)
-
-IRDivergentPart[expr_] := expr /. int:loopint[__] :> IRDiv[int]
-
 
 UVDiv[A0[m_]] = m Divergence
 
@@ -1332,304 +1378,7 @@ UVDiv[D0i[dd0000, __]] = 1/24 Divergence
 UVDiv[_] = 0
 
 
-IRDiv[DB0[m_, 0, m_]] = IRDiv[DB0[m_, m_, 0]] = -Log[Lambda^2/m]/2/m
-
-IRDiv[DB1[m_, m_, 0]] = -IRDiv[DB0[m, m, 0]]
-
-
-IRDiv[C0i[cc0, m_, 0, m_, 0, m_, m_]] = IRDiv[DB0[m, m, 0]]
-
-IRDiv[C0i[cc0, p1_, p2_, p1p2_, 0, p1_, p1p2_]] := C0ir[p2, p1, p1p2]
-
-IRDiv[C0i[cc0 | cc22, p1_, p2_, p1p2_, p1p2_, p2_, 0]] :=
-  C0ir[p1, p1p2, p2]
-
-IRDiv[C0i[cc2 | cc222, p1_, p2_, p1p2_, p1p2_, p2_, 0]] :=
-  -C0ir[p1, p1p2, p2]
-
-IRDiv[C0i[cc0 | cc11, p1_, p2_, p1p2_, p1_, 0, p2_]] :=
-  C0ir[p1p2, p2, p1]
-
-IRDiv[C0i[cc1 | cc111, p1_, p2_, p1p2_, p1_, 0, p2_]] :=
-  -C0ir[p1p2, p2, p1]
-
-
-C0ir[p_, m1_, m2_] :=
-Block[ {p12, beta},
-  p12 = p - m1 - m2;
-  beta = Sqrt[p12^2 - 4 m1 m2];
-  Log[-Lambda^2/p] Log[1/2 (beta - p12)/Sqrt[m1 m2]]/beta
-]
-
-
-IRDiv[D0i[dd0, p1_, p2_, p3_, p4_, p1p2_, p2p3_, 0, p1_, m3_, p4_]] :=
-  D0ir[p1, p2, p3, p4, p1p2, p2p3, m3]
-
-IRDiv[D0i[dd0, p1_, p2_, p3_, p4_, p1p2_, p2p3_, 0, p1_, p1p2_, m4_]] :=
-  D0ir[p1, p2p3, p3, p1p2, p4, p2, m4]
-
-IRDiv[D0i[dd0, p1_, p2_, p3_, p4_, p1p2_, p2p3_, 0, m2_, p1p2_, p4_]] :=
-  D0ir[p1p2, p2, p2p3, p4, p1, p3, m2]
-
-
-IRDiv[D0i[dd0, p1_, p2_, p3_, p4_, p1p2_, p2p3_, p1_, 0, p2_, m4_]] :=
-  D0ir[p1, p4, p3, p2, p2p3, p1p2, m4]
-
-IRDiv[D0i[dd0, p1_, p2_, p3_, p4_, p1p2_, p2p3_, p1_, 0, m3_, p2p3_]] :=
-  D0ir[p1, p1p2, p3, p2p3, p2, p4, m3]
-
-IRDiv[D0i[dd0, p1_, p2_, p3_, p4_, p1p2_, p2p3_, m1_, 0, p2_, p2p3_]] :=
-  D0ir[p2, p1p2, p4, p2p3, p1, p3, m1]
-
-
-IRDiv[D0i[dd0, p1_, p2_, p3_, p4_, p1p2_, p2p3_, m1_, p2_, 0, p3_]] :=
-  D0ir[p2, p1, p4, p3, p1p2, p2p3, m1]
-
-IRDiv[D0i[dd0, p1_, p2_, p3_, p4_, p1p2_, p2p3_, p1p2_, p2_, 0, m4_]] :=
-  D0ir[p2, p2p3, p4, p1p2, p3, p1, m4]
-
-IRDiv[D0i[dd0, p1_, p2_, p3_, p4_, p1p2_, p2p3_, p1p2_, m2_, 0, p3_]] :=
-  D0ir[p1p2, p1, p2p3, p3, p2, p4, m2]
-
-
-IRDiv[D0i[dd0, p1_, p2_, p3_, p4_, p1p2_, p2p3_, p4_, m2_, p3_, 0]] :=
-  D0ir[p3, p2, p1, p4, p2p3, p1p2, m2]
-
-IRDiv[D0i[dd0, p1_, p2_, p3_, p4_, p1p2_, p2p3_, p4_, p2p3_, m3_, 0]] :=
-  D0ir[p2p3, p2, p1p2, p4, p3, p1, m3]
-
-IRDiv[D0i[dd0, p1_, p2_, p3_, p4_, p1p2_, p2p3_, m1_, p2p3_, p3_, 0]] :=
-  D0ir[p3, p1p2, p1, p2p3, p4, p2, m1]
-
-
-D0ir[p1_, p2_, p3_, p4_, p1p2_, p2p3_, m3sq_] :=
-Block[ {m1 = Sqrt[p1], m4 = Sqrt[p4], d, f, xs, beta},
-  f = 1/2/m1/m4/(p1p2 - m3sq);
-  d = PowerExpand[p2p3 - (m1 - m4)^2]//Simplify;
-  If[ d =!= 0,
-    beta = Sqrt[1 - 4 m1 m4/d];
-    xs = (beta - 1)/(beta + 1);
-    f *= 2 xs Log[xs]/(xs^2 - 1)
-  ];
-  f Which[
-      m3sq === 0 && p1 === p2 && p3 === p4,	(* doubly IR-div box *)
-        2 Log[-Lambda^2/p1p2],
-      m3sq === 0,
-        Log[Lambda^2/m1/m4],
-      True,
-        2 Log[Sqrt[m3sq] Lambda/(m3sq - p1p2)]
-    ]
-]
-
-IRDiv[_] = 0
-
-
-(* Abbreviationing business *)
-
-FromForm[x_] := Block[{Dot = abbpair}, ToExpression[x]]
-(* preliminary def, will be overwritten by FeynAmpList *)
-
-
-fme[x_] := fme[x] = Unique["F"]
-
-sun[x_] := sun[x] = Unique["SUN"]
-
-
-abb[x_?AtomQ] = x
-
-abb[x_] := abb[x] = Unique["Abb"]
-
-
-abbsum[x_?AtomQ] = x
-
-abbsum[x_] := (abbsum[x] =
-Block[ {ft = FactorTerms[x]},
-  If[ Head[ft] === Times, MapAt[abbsum, ft, 2], ft ]
-]) /; Union[Head/@ List@@ x] === {Times}
-
-abbsum[x_] := abbsum[x] = Unique["AbbSum"]
-
-
-Attributes[abbpair] = {Orderless}
-
-	(* due to different operator priority in FORM: *)
-abbpair[a_, x_^n_] := abbpair[a, x]^n
-
-abbpair[x__] := abbpair[x] = Unique["Pair"]
-
-
-abbeps[x__] := abbeps[x] = Unique["Eps"]
-
-
-Attributes[Pair] = {Orderless}
-
-Pair[a_, x_Plus] := Block[ {Pair}, Distribute[Pair[a, x]] ]
-
-Pair[a_, n_?NumberQ x_] := n Pair[a, x]
-
-Pair[0, _] = 0
-
-
-MomSquare[0] = 0
-
-MomSquare[p_] := Pair[p, p]
-
-
-abdim[x_] := x /; $Scale === 1
-
-abdim[x_] :=
-Block[ {c = 0},
-  x /. Spinor[__] -> 1 /. k[_] :> ++c;
-  x Scale^c
-]
-
-dv[sym_, h_:Identity] :=
-  Cases[ DownValues[sym], _[ _[_[ab__]], p_Symbol ] :>
-    (p -> h[ab]) /; FreeQ[{ab}, Pattern] ]
-
-Abbreviations[] :=
-Block[ {ab},
-  ab = Join[
-    dv[fme, abdim],
-    dv[sun],
-    dv[abbpair, Composition[abdim, Pair]],
-    dv[abbeps, Composition[abdim, Eps]],
-    dv[abb],
-    dv[abbsum]
-  ];
-  If[ $Scale === 1, ab, Prepend[ab, Scale -> $Scale^-1] ]
-]
-
-
-UseAbbreviations::mismatch =
-"Cannot use these abbreviations because `1` were already defined
-differently."
-
-UseAbbreviations::scaleinfo =
-"$Scale has been set to `1` to use these abbreviations."
-
-UseAbbreviations::badscale =
-"These abbreviations were introduced with $Scale = `1` and cannot be
-used with the current $Scale = `2`."
-
-UseAbbreviations[file_String] := UseAbbreviations[Get[file]]
-
-UseAbbreviations[abbr_] :=
-Block[ {sc, cur = Abbreviations[]},
-  sc = 1/Scale /. abbr /. Scale -> 1;
-  If[ sc =!= $Scale,
-    If[ FreeQ[cur /. Spinor[__] -> 1, k],
-      Message[UseAbbreviations::scaleinfo, sc];
-      $Scale = sc,
-    (* else *)
-      Message[UseAbbreviations::badscale, sc, $Scale];
-      Return[$Failed] ]
-  ];
-  sc = Intersection[cur, abbr, SameTest -> (#1[[1]] === #2[[1]] &)];
-  If[ Length[sc] =!= 0,
-    Message[UseAbbreviations::mismatch, First/@ sc];
-    Return[$Failed]
-  ];
-  newab/@ (abbr /. Scale -> 1)
-]
-
-newab[ s_Symbol -> Pair[a__] ] := abbpair[a] = s;
-newab[ s_Symbol -> Eps[a__] ] := abbeps[a] = s;
-newab[ s_Symbol -> p_Plus ] := abbsum[p] = s;
-newab[ s_Symbol -> f_?FermionicQ ] := fme[f] = s;
-newab[ s_Symbol -> m_ ] := abb[m] = s;
-newab[ _ ] = Sequence[]
-
-
-IntSec[a__Plus] :=
-Block[ {i = Intersection[a]},
-  If[Head[i] === Plus, i, 0]
-]
-
-IntSec[___] = 0
-
-TempInsert[li_, t_] := Insert[li, t,
-  Max[0, Position[First/@ li, #, {1}, 1]&/@
-    DeleteCases[Level[t[[2]], {-1}], -1]] + 1]
-
-OptLevel12[rul_] :=
-Block[ {l = 0, pl, rl = Length[rul], i, is, iss, isl, pr,
-repl, nurul = {}},
-  Print["level 1: redundancy removal"];
-  Attributes[pl] = {Flat, Orderless};
-  Apply[
-    ( WriteString["stdout", "\r", --rl, " "];
-      Set@@ {pl@@ -#2, -#1};
-      Set@@ {pl@@ #2, #1} )&,
-    Sort[rul, Length[ #1[[2]] ] < Length[ #2[[2]] ] &], 1 ];
-  repl = Cases[DownValues[pl],
-    (_[_[p__]] :> o_Symbol) :> (o -> Plus[p])];
-
-  Print["\rlevel 2: common subexpression elimination"];
-  rl = Length[repl] - 1;
-  Do[
-    pr = False;
-    While[
-      is = IntSec[ repl[[i, 2]], repl[[i + 1, 2]] ];
-      If[ Length[is] < Length[ repl[[i, 2]] ]/2,
-        iss = IntSec[ repl[[i, 2]], -repl[[i + 1, 2]] ];
-        If[Length[is] < Length[iss], is = iss]
-      ];
-      Length[is] > 3,
-    (* while body: *)
-      isl = Ceiling[Length[is]/2];
-      iss = IntSec@@ Select[
-        (IntSec[#[[2]], is] + IntSec[-#[[2]], is])&/@
-          Drop[repl, {i, i + 1}],
-        Length[#] > isl &];
-      If[Length[iss] < 4, iss = is];
-      is = ToSymbol["tmp", ++l];
-      AppendTo[nurul, is -> iss];
-      repl = repl /. iss -> is /. -iss -> -is;
-      pr = True;
-    ];
-    If[pr, WriteString["stdout", "\r", rl - i, " "]],
-  {i, rl}];
-  WriteString["stdout", "\r     \r"];
-  Fold[TempInsert, repl, nurul]
-]
-
-OptimizeAbbreviations[file_String] :=
-Block[ {abbr = Get[file], new, orig = file <> ".orig"},
-  new = OptimizeAbbreviations[abbr];
-  If[ FileType[orig] === File, DeleteFile[orig] ];
-  RenameFile[file, orig];
-  Put[new, file];
-]
-
-OptimizeAbbreviations[rul_] :=
-  Join[ Select[rul, FreeQ[#, Plus]&],
-    OptLevel12[Select[rul, !FreeQ[#, Plus]&]] ]
-
-
-Cost[x_] := Plus@@ ((Length[#] - 1) Head[#]&)/@
-  Level[x /. Plus -> 1 /. -1 -> 1 /. Times | Power -> 2, {0, -2}]
-
-mandelplus[a__] := Plus[a] /;
-  LeafCount[{a}] > 30 || FreeQ[{a}, S | T | U] ||
-  Length[Complement[Head/@ Level[{a}, -2], {Plus, Times}]] =!= 0;
-
-mandelplus[a__] :=
-Block[ {p = Plus[a], simp, cost},
-  simp = {
-    Simplify[p],
-    Simplify[p /. T -> STUSum - S - U],
-    Simplify[p /. U -> STUSum - S - T],
-    Simplify[p /. S -> STUSum - T - U] };
-  cost = Cost/@ simp;
-  simp[[ Position[cost, Min[cost]][[1, 1]] ]]
-]
-
-MandelstamSimplify[expr_] :=
-  If[ValueQ[STUSum], expr /. Plus -> mandelplus, expr]
-
-
-(* This is for backward compatibility with FeynCalc *)
+(* FeynCalc-compatibility functions *)
 
 C0[p1_, p2_, p1p2_, m1_, m2_, m3_] :=
   C0i[cc0, p1, p2, p1p2, m1, m2, m3]
@@ -1645,14 +1394,10 @@ PaVe[i__Integer, {p__}, {m1_, m2_, m3_, m4_}] :=
 
 
 FeynCalcGet[mask___] :=
-Block[ {Global`OneLoopResult, GraphName},
-  GraphName[__] = 0;
-  Plus@@ ((Print[#]; Get[#]; Global`OneLoopResult[0])&)/@
-    FileNames[mask] /.
-    (p:S | T | U - m_)^(n_?Negative) :> DEN[p, m]^(-n) /.
-    (p:S | T | U)^(n_?Negative) :> DEN[p, 0]^(-n) /.
-    (m_ - p:S | T | U)^(n_?Negative) :> -DEN[p, m]^(-n) /.
-    ep_Eps :> I ep
+Block[ {Global`OneLoopResult, Global`GraphName},
+  _Global`GraphName = 0;
+  Plus@@ ((Get[#]; Global`OneLoopResult[0])&)/@
+    FileNames[mask] /. ep_Eps :> I ep
 ]
 
 
@@ -1660,113 +1405,49 @@ FeynCalcPut[expr_, file_] :=
 Block[ {PaVe, C0i, D0i, C0, D0},
   C0i[cc0, args__] := C0[args];
   D0i[dd0, args__] := D0[args];
-  C0i[i_, p1_, p2_, p1p2_, m1_, m2_, m3_] := PaVe[
-    Sequence@@ (ToExpression/@ Characters[StringDrop[ToString[i], 2]]),
-    {p1, p2, p1p2}, {m1, m2, m3}];
-  D0i[i_, p1_, p2_, p3_, p4_, p1p2_, p2p3_, m1_, m2_, m3_, m4_] := PaVe[
-    Sequence@@ (ToExpression/@ Characters[StringDrop[ToString[i], 2]]),
-    {p1, p2, p3, p4, p1p2, p2p3}, {m1, m2, m3, m4}];
-  Put[expr, file]
+  C0i[i_, p__, m1_, m2_, m3_] := PaVe[
+    Sequence@@ (ToExpression/@ Drop[Characters[ToString[i]], 2]),
+    {p}, {m1, m2, m3} ];
+  D0i[i_, p__, m1_, m2_, m3_, m4_] := PaVe[
+    Sequence@@ (ToExpression/@ Drop[Characters[ToString[i]], 2]),
+    {p}, {m1, m2, m3, m4} ];
+  Put[expr /. _Amp -> List, file]
 ]
 
 
-(* Classifying amplitudes *)
+(* helicity matrix elements *)
 
-FermionFamily[-x_] := FermionFamiliy[x]
+om[5] := "g5_"[fline]
 
-FermionFamily[_] = ""
+om[6] := "g6_"[fline]/2
 
+om[7] := "g7_"[fline]/2
 
-ClassIndex[ FeynAmp[_, top_, amp_, ___] ] :=
-Block[ {cname = ""},
-  If[howcls =!= IndexSumsOnly,
-    If[FermionicQ[amp], cname = "F"];
-    If[howcls === Tough && !FreeQ[amp, d0],
-      If[cname === "F", cname = cname <> Union[Cases[
-        Cases[amp, (DiracTrace | SpinorChain | Dot)[t__] :> t, Infinity],
-        _. _DiracSlash + m_. :> FermionFamily[m] ]] ];
-      cname = cname <> ToString[top]
-    ]
-  ];
-  cname
-]
+om[rho[k[n_], 0, sign_]] :=
+  ("g_"[fline] + sign Hel[n] "g5_"[fline]) ** "g_"[fline, k[n]]/2
 
+om[rho[k[n_], m_, sign_]] :=
+  ("g_"[fline] + Hel[n] "g5_"[fline] ** "g_"[fline, e[n]]) **
+    ("g_"[fline, k[n]] + sign m "g_"[fline])/2
 
-SeparateSums[amp_Plus, cname__] :=
-  { SeparateTerm[Select[amp, FreeQ[#, SumOver]&], cname],
-    (SeparateTerm[#, cname]&)/@
-      Select[List@@ amp, !FreeQ[#, SumOver]&] } /; !FreeQ[amp, SumOver]
+om[rhoc[k[n_], 0, sign_]] :=
+  -"g_"[fline, k[n]] ** ("g_"[fline] + sign Hel[n] "g5_"[fline])/2
 
-SeparateSums[amp___] := SeparateTerm[amp]
+om[rhoc[k[n_], m_, sign_]] :=
+  (-"g_"[fline, k[n]] + sign m "g_"[fline]) **
+    ("g_"[fline] - Hel[n] "g_"[fline, e[n]] ** "g5_"[fline])/2
 
-SeparateTerm[0, __] = {}
-
-SeparateTerm[amp_, outtag_, cname_] :=
-Block[ {na},
-  na = outtag <> cname <>
-    Cases[amp, SumOver[i_, ___] :> "_" <> ToString[i]] <> ".m";
-  Print["writing ", na];
-  Put[amp, na];
-  na
-]
-
-SeparateTerm[amp_, cname_] :=
-Block[ {s},
-  s = Cases[amp, SumOver[i_, ___] -> i];
-  Print["part ", ++modnr,
-    If[Length[s] === 0, " (no index sums)",
-      " (sum over " <> StringTake[ToString[s], {2, -2}] <> ")"]
-  ];
-  amp
-]
+om[li___] := "g_"[fline, li]
 
 
-Options[ProcessFile] = {Classification -> Standard}
-
-ProcessFile[filename_String, outtag___String, opt___Rule] :=
-  ProcessFile[Get[filename], outtag, opt]
-
-ProcessFile[amps_List, outtag___String, opt___Rule] :=
-Block[ {howcls, class, theamps, res, modnr = 0},
-  howcls = Classification /. {opt} /. Options[ProcessFile];
-  theamps = If[ FreeQ[amps, Insertions], amps,
-    lev = AmplitudeLevel /. {opt} /. Options[OneLoop];
-    If[lev === Automatic,
-      lev = Union[ Cases[amps,
-        Insertions[t_][__] -> t, Infinity] ][[-1]] ];
-    PickLevel[lev][amps] ];
-  class[_] = {};
-  Scan[AppendTo[class[ClassIndex[#]], #]&, theamps];
-  Cases[ DownValues[class], (_[_[cname_String]] :> amp_) :>
-    ( Print[""];
-      Print["processing class [", cname, "]"];
-      res = OneLoop[amp, opt];
-      Share[];
-      SeparateSums[res, outtag, cname] ) ]//Flatten
-]
-
-
-(* Helicity matrix elements *)
-
-rho[fline_, k[n_], 0, sign_] :=
-  "g_"[fline, k[n]] ** ("gi_"[fline] + sign Hel[n] "g5_"[fline])/2
-
-rho[fline_, k[n_], m_, sign_] :=
-  ("g_"[fline, k[n]] + sign m "gi_"[fline]) **
-    ("gi_"[fline] + Hel[n] "g5_"[fline] ** "g_"[fline, e[n]])/2
-
-rhoc[fline_, k[n_], 0, sign_] :=
-  -("gi_"[fline] + sign Hel[n] "g5_"[fline]) ** "g_"[fline, k[n]]/2
-
-rhoc[fline_, k[n_], m_, sign_] :=
-  ("gi_"[fline] - Hel[n] "g_"[fline, e[n]] ** "g5_"[fline]) **
-    (-"g_"[fline, k[n]] + sign m "gi_"[fline])/2
+Spinor[p_, m_, s_] := Spinor[p, Small[m], s] /; Head[Small[m]] =!= Small
 
 
 ToTrace[fi_ -> plain_, fj_ -> conj_] :=
 Block[ {me, fline = 0},
   me = plain conj //. {
-    (a___ ** Spinor[km__]) (Spinor[km__] ** b___) :> a ** rho[km] ** b,
+    DiracChain[a___, Spinor[km__]] DiracChain[Spinor[km__], b___] :>
+      DiracChain[a, rho[km], b],
 	(* If the spinors at the ends don't match directly, we
 	   have to reverse one chain. This is a charge conjugation,
 	   not a hermitian conjugation like the one HelicityME
@@ -1776,32 +1457,35 @@ Block[ {me, fline = 0},
 	     c) add a global minus sign to compensate for the change
 	        in the permutation of the external fermions.
 	   For details see the Denner/Eck/Hahn/Kueblbeck paper. *)
-    (Spinor[k1_, m1_, _] ** a___ ** Spinor[k2_, m2_, s2_]) *
-      (Spinor[k1_, m1_, s1_] ** b___) :>
-      -(1 - 2 Mod[Count[{a}, _ga], 2]) *
-        (Reverse[a ** Spinor[k2, m2, -s2]] /.
-          {rho -> rhoc, rhoc -> rho}) ** rho[k1, m1, s1] ** b
+    DiracChain[Spinor[k1_, m1_, _], a___, Spinor[k2_, m2_, s2_]] *
+      DiracChain[Spinor[k1_, m1_, s1_], b___] :>
+      -gasign[a] DiracChain[
+        Spinor[k2, m2, -s2],
+        Sequence@@ Reverse[{a} /. {rho -> rhoc, rhoc -> rho}],
+        rho[k1, m1, s1], b ]
   } /.
-    Spinor[km__] ** a___ ** Spinor[km__] :> rho[km] ** a /.
-    n_NonCommutativeMultiply :>
-      ( ++fline;
-        n /. { ga[x_] :> "g_"[fline, x],
-               ga5 :> "g5_"[fline],
-               omp :> "g6_"[fline]/2,
-               omm :> "g7_"[fline]/2,
-               (r:rho | rhoc)[x__] :> r[fline, x] } );
-  Mat[fi, fj] -> tr[fline, me]
+    DiracChain[Spinor[km__], a___, Spinor[km__]] :>
+      (++fline; om/@ (rho[km] ** a));
+  Mat[fi, fj] -> {fline, me}
 ]
+
+gasign[a___] := -1 /;
+  OddQ[Length[DeleteCases[{a}, _Integer | _rho | _rhoc]]]
+
+gasign[___] = 1
 
 
 ToHel[k[n_], __] := {{}, {}} /; Head[Hel[n]] =!= Hel
 
 ToHel[k[n_], 0, s_] :=
-Block[ {h = ToSymbol["Hel", n]},
+Block[ {h = Heli[n]},
   {Hel[n] -> h - s, h -> Hel[n] + s}
 ]
 
 ToHel[k_, __] := ToHel[k, 0, 0]
+
+
+Heli[n_] := Heli[n] = ToSymbol["Hel", n]
 
 
 SelectArg[All] := fabbr
@@ -1809,76 +1493,120 @@ SelectArg[All] := fabbr
 SelectArg[expr_] := Union[Select[fabbr, !FreeQ[ expr, #[[1]] ]&]]
 
 
+uv[1] = "u"
+
+uv[-1] = "v"
+
+Format[DiracChain[Spinor[p1_, m1_, s1_], c___, Spinor[p2_, m2_, s2_]]] :=
+  DiracChain[Overscript[uv[s1], "_"][p1, m1], c, uv[s2][p2, m2]]
+
+
+ConjChain[s___Spinor, 5, g___] := -Reverse[DiracChain[s, 5, g]]
+
+ConjChain[s___Spinor, 6, g___] := Reverse[DiracChain[s, 7, g]]
+
+ConjChain[s___Spinor, 7, g___] := Reverse[DiracChain[s, 6, g]]
+
+ConjChain[g__] := Reverse[DiracChain[g]]
+
+
 Options[HelicityME] = {
-  AbbreviationsToUse :> Abbreviations[],
+  AbbrToUse :> Abbr[],
   EditCode -> False,
   RetainFile -> False }
 
-HelicityME[plain_, conj_, opt___] :=
-Block[ {abbr, fabbr, edcode, retain, part, tohel, fromhel, hels,
-hh, res, e, traces, smalls},
-  Update[Spinor];
-  {abbr, edcode, retain} = {AbbreviationsToUse, EditCode, RetainFile} /.
-    {opt} /. Options[HelicityME];
+HelicityME::noprocess =
+"No process defined so far. HelicityME works only after CalcFeynAmp."
 
+HelicityME::nomat = "Warning: No matrix elements to compute."
+
+HelicityME[plain_, conj_, opt___?OptionQ] :=
+Block[ {abbr, edit, retain,
+fabbr, part, tohel, fromhel, hels,
+FormIndices = {}, ind, c = 0,
+temp, hh, res, e, traces, smalls},
+
+  If[{CurrentProcess} === {}, Message[HelicityME::noprocess]; Abort[]];
+  {abbr, edit, retain} = ParseOpt[opt, HelicityME];
+
+  Update[Spinor];
   fabbr = Select[abbr, !FreeQ[#, Spinor]&];
-  If[ Length[fabbr] === 0, Return[{}] ];
   abbr = SelectArg/@ {plain, conj};
+  If[ Times@@ Length/@ abbr === 0,
+    Message[HelicityME::nomat];
+    Return[{}] ];
 
   part = Cases[abbr, _Spinor, Infinity]//Union;
   {tohel, fromhel} = Flatten/@ Transpose[Apply[ToHel, part, 1]];
   part = #[[1, 1]]&/@ part;
   hels = First/@ fromhel;
 
-  traces = Outer[ ToTrace, abbr[[1]],
-    abbr[[2]] /.
-      {omp -> omm, omm -> omp, ga5 -> -ga5, ep_Eps -> -ep} /.
-      n_NonCommutativeMultiply :> Reverse[n] /.
-      ep_e :> Conjugate[ep] /.
-      { IND1 -> IND1c, IND2 -> IND2c,
-        IND3 -> IND3c, IND4 -> IND4c } ]//Flatten;
+  ind = Map[# -> "N" <> ToString[++c] <> "_?" &,
+    Union[Cases[#, _Lor, Infinity]]&/@ abbr, {2}];
+
+  traces = Flatten[Outer[ ToTrace, abbr[[1]] /. ind[[1]],
+    abbr[[2]] /. ind[[2]] /. DiracChain -> ConjChain /.
+      ep_Eps -> -ep /. ep_e :> Conjugate[ep] ]];
   traces = traces /. tohel /. Reverse/@ FromFormRules /. Eps -> "e_";
 
   OpenFormTemp;
-  DeclareVars[{Last/@ traces, hels}, "IND*"];
+  DeclareVars[Last/@ traces, hels];
 
-  WriteString[hh, "\n\
+  WriteString[hh, "\
 i J1, J2, J3, J4;\n\
 v P1, P2;\n\
-s X1, X2;\n\
-cf abb;\n\n\
-.global\n\n\
+s scale;\n\
+cf abb, kin;\n\n\
+.global\n\n" <>
+    FormProcs <> "\
+#procedure DotSimplify(momsubst, moresimp)\n\
+`momsubst'\n\
+#call eiki\n\
+`moresimp'\n\
+.sort\n\
+#endprocedure\n\n\
 #procedure Simplify()\n\
-contract,0;\n" <>
-    FormMandelstam <>
+contract 0;\n\
+#call eiei\n\
+#call MomConserv(DotSimplify)\n\
+polyfun abb;\n" <>
     smalls <>
-    FormDotSimplify <> "\
-id P1? . P2? = abb(P1 . P2);\n\
+    If[scale === 1, "", "\
+$pow = count_(<k1,1>,...,<k`Legs',1>);\n\
+multiply scale^$pow;\n"
+    ] <> "\
+id P1?.P2? = abb(P1.P2);\n\
 id e_(J1?, J2?, J3?, J4?) = abb(e_(J1, J2, J3, J4));\n\
-repeat;\n\
-  id abb(X1?) * abb(X2?) = abb(X1 * X2);\n\
-endrepeat;\n" ];
-  FormDecl["b ", hels];
-  WriteString[hh, "print +s;\n.store\n#endprocedure\n"];    
+.sort\n\
+polyfun;\n\
+normalize abb;\n\
+id abb(1) = 1;\n" <>
+    FormDecl["b ", Append[hels, abb]] <> "\
+.sort\n\
+collect kin;\n\
+normalize kin;\n\
+id kin(1) = 1;\n" <>
+    FormDecl["b ", hels] <> "\
+print;\n\
+.store\n\
+#endprocedure\n\n"];
 
   Apply[
-    ( WriteString["stdout", x = "Mat" <> ToString/@ List@@ #1 <> " "];
-      WriteString[hh, "\nl " <> x <> "= "];
-      Write[hh, #2[[2]], ";"];
+    ( WriteString["stdout", c = "Mat" <> ToString/@ List@@ #1 <> " "];
+      Write[hh, "l " <> c <> "= ", #2[[2]], ";"];
       Array[ WriteString[hh, "trace4,", #, ";\n"]&, #2[[1]] ];
-      WriteString[hh, "#call Simplify{}\n"] )&,
+      WriteString[hh, "#call Simplify()\n\n"] )&,
     traces, 1 ];
 
   WriteString[hh, "\n.end\n"];
-  Close[hh];
 
   (e[#] = s[#])&/@ part;
 
-  Thread[First/@ traces -> RunForm] /. fromhel
+  Thread[First/@ traces -> Apply[Plus, RunForm, 1]] /. fromhel
 ]
 
 
-(* Colour matrix elements *)
+(* colour matrix elements *)
 
 sunT[a___, 0, 0] := Block[ {c = Unique["col"]}, sunT[a, c, c] ]
 
@@ -1889,9 +1617,9 @@ sunT/: sunT[t1___, a_, t2___, i_, j_] sunT[t3___, a_, t4___, k_, l_] :=
   1/2 (sunT[t1, t4, i, l] sunT[t3, t2, k, j] -
         1/SUNN sunT[t1, t2, i, j] sunT[t3, t4, k, l])
 
-sunT[i_, i_] = SUNN
+sunT[i_, i_] := SUNN
 
-sunT/: sunT[i_, j_]^2 = SUNN
+sunT/: sunT[a___, i_, j_]^2 := ((1 - 1/SUNN)/2)^Length[{a}] SUNN
 
 sunT/: sunT[a___, i_, j_] sunT[b___, j_, k_] := sunT[a, b, i, k]
 
@@ -1900,37 +1628,51 @@ ColourFactor[fi_ -> plain_, fj_ -> conj_] :=
   Mat[fi, fj] -> Simplify[plain conj /. SUNT -> sunT]
 
 
-Options[ColourME] = { AbbreviationsToUse :> Abbreviations[] }
+Options[ColourME] = {AbbrToUse :> Abbr[]}
 
-ColourME[plain_, conj_, opt___] :=
+ColourME::nomat = HelicityME::nomat
+
+ColourME[plain_, conj_, opt___?OptionQ] :=
 Block[ {abbr, fabbr},
-  abbr = AbbreviationsToUse /. {opt} /. Options[ColourME];
+  {abbr} = ParseOpt[opt, ColourME];
   fabbr = Select[abbr, !FreeQ[#, SUNT]&];
   abbr = SelectArg/@ {plain, conj};
+  If[ Times@@ Length/@ abbr === 0,
+    Message[ColourME::nomat];
+    Return[{}] ];
 
   Outer[ ColourFactor, abbr[[1]],
     abbr[[2]] /. t_SUNT :> RotateLeft[Reverse[t], 2] ]//Flatten
 ]
 
 
+UniquefyIndices[conj_, plain__] :=
+Block[ {ind},
+  ind = Intersection@@
+    (Union[Cases[#, SumOver[x_] -> x, Infinity]]&)/@ {conj, plain};
+  conj /. Thread[ind -> (ToSymbol[#, "c"]&)/@ ind]
+]
+
+
+SquaredME[amp_] := SquaredME[amp, amp]
+
+SquaredME[Amp[_][plain__], Amp[_][conj__]] :=
+  Plus[plain] Conjugate[UniquefyIndices[Plus[conj], plain]] /;
+  FreeQ[{plain, conj}, Mat]
+
+SquaredME[Amp[_][plain__], Amp[_][conj__]] :=
+  Flatten[Outer[ToSquared,
+    Collect[Plus[plain], _Mat, Hold],
+    Collect[UniquefyIndices[Plus[conj], plain], _Mat, Hold]
+  ]]
+
+
+ToSquared[Mat[m1_] x1_., Mat[m2_] x2_.] :=
+  ReleaseHold[x1 Conjugate[x2]] ToMat[m1, m2]
+
 ToMat[m1_Symbol, m2_Symbol] := Mat[m1, m2]
 
 ToMat[m1_, m2_] := Inner[Mat, m1, m2, Times]
-
-ToSquared[Mat[m1_] x1_., Mat[m2_] x2_.] :=
-  x1 Conjugate[x2] ToMat[m1, m2]
-
-
-SquaredME[plain_, conj_] :=
-  plain Conjugate[conj] /; FreeQ[{plain, conj}, Mat]
-
-SquaredME[plain_, conj_] :=
-  Plus@@ Flatten[Outer[ToSquared,
-    Flatten[{plain} //. m_Mat x_. + r_ :> {m x, r}],
-    Flatten[{conj} //. m_Mat x_. + r_ :> {m x, r}]
-  ]]
-    
-SquaredME[amp_] := SquaredME[amp, amp]
 
 
 Unprotect[Conjugate]
@@ -1940,7 +1682,7 @@ Format[ Conjugate[x_] ] := SequenceForm[x, Superscript["*"]]
 Format[ Conjugate[t_Times] ] :=
   SequenceForm["(", t, ")", Superscript["*"]]
 
-Conjugate[p:_Plus | _DEN] := Conjugate/@ p
+Conjugate[p:_Plus | _Den] := Conjugate/@ p
 
 Conjugate[sym_?RealQ] := sym
 
@@ -1950,6 +1692,946 @@ Protect[Conjugate]
 (RealQ[#] = True)&/@ {S, T, U, Sf, Tf, Uf}
 
 
+(* Fortran code generation *)
+
+Attributes[WriteFF] = {HoldFirst, Listable}
+
+WriteFF[s_Symbol, array_] :=
+  FFPut[s, array, Block[{s}, ToString[s]]]
+
+WriteFF[amp_, array_] :=
+  FFPut[amp, array, ToString[array] <> ToString[++modnum]]
+
+ProcessCheck[p_] := (
+  proc = p;
+  header = "\n\
+* this file is part of the process " <> ToString[p] <> "\n\
+* generated by WriteSquaredME " <> TimeStamp[] <> "\n\n\
+#include \"prefix.h\"\n\n";
+)
+
+ProcessCheck[p_, p_] = 0
+
+ProcessCheck[__] := Message[WriteSquaredME::incomp]
+
+FFPut[Amp[p_][amp__], array_, file_] := (
+  ProcessCheck[p, proc];
+  mandel = Select[mandel, FreeQ[{amp}, #]&];
+  FFPut[#, array, file]&/@ {amp}
+)
+
+FFPut[0, _, _] = {}
+
+FFPut[amp_, array_, file_] :=
+Block[ {ind},
+  ind = Cases[amp, SumOver[i_, r_] :> (Dim[i] = r; i)];
+  mods = FFMod[
+    amp /. unused[array] -> 0 /. fcs /. {
+      _SumOver -> 1,
+      Den[p_, m_] -> 1/(p - m),
+      int:loopint[__] :> abbint[int] },
+    array,
+    file <> ({"_", ToString[#]}&)/@ ind ];
+  Indices[mods /. List -> Alternatives] = ind;
+  mods
+]
+
+FFMod[amp_Plus, array_, mod_] :=
+Block[ {c = 96},
+  FFMod[#, array, mod <> FromCharacterCode[++c]]&/@
+    SizeSplit[amp, $FileSize]
+] /; LeafCount[amp] > $FileSize
+
+FFMod[amp_, array_, mod_] :=
+Block[ {file = mod <> ".F", hh},
+  hh = OpenFortran[ModName[file]];
+  WriteString[hh,
+    "* " <> file <> header <>
+    SubroutineDecl[mod, {Pair, Eps}, {Delta}, amp] <>
+    "#include \"vars.h\"\n\n"];
+  WriteExpr[hh, FFList[amp, array], True,
+    Newline -> True, Optimize -> True];
+  WriteString[hh, "\tend\n"];
+  Close[hh];
+  mod
+]
+
+FFList[0, _] := Sequence[]
+
+FFList[amp_, array_] :=
+  (maxmat[array] = {Mat[1]}; array[1] -> amp) /; FreeQ[amp, Mat]
+
+FFList[amp_Plus, array_] := FFList[#, array]&/@ List@@ amp
+
+FFList[x_. Mat[m_], array_] :=
+  ( maxmat[array] = MaxDims[maxmat[array], Level[m, {-2}]];
+    Level[m, {-1}, array] -> x )
+
+
+(* Calculating the abbreviations in a clever way is key to a decent
+   performance of the generated code. Therefore, the abbreviations are
+   split into three categories:
+   1. objects that depend only on model constants and S
+      -> subroutine abbr_s,
+   2. objects that depend on other phase-space variables (angles etc.)
+      -> subroutine abbr_angle,
+   3. objects that depend on the helicities
+      -> subroutine abbr_hel.
+   The final user-callable subroutine squared_me takes care to
+   invoke these abbr_nnn subroutines only when necessary. *)
+
+Category[rul_] := {{}, {}, rul} /; !FreeQ[rul[[2]], hels]
+
+Category[rul_] := {{}, rul, {}} /;
+  !FreeQ[rul[[2]], T | U | Sf | Tf | Uf | Pair | Eps]
+
+Category[rul_] := {rul, {}, {}}
+
+
+Dependencies[l_] := {l}
+
+Dependencies[f__, l_] :=
+Block[ {deps = First/@ l, f2 = {f}, f3, pl = {}, p},
+  f3 = Map[Last, f2, {2}];
+  While[ True,
+    p = Union[ Take[#, 2]&/@
+      Position[f3, Alternatives@@ deps, {2, Infinity}, Heads -> False] ];
+    If[ Length[p] === 0, Break[] ];
+    pl = Union[pl, p];
+    deps = Apply[f2[[##, 1]]&, p, 1];
+  ];
+  Append[
+    Dependencies@@ Delete[f2, pl],
+    Flatten[{l, Apply[f2[[##]]&, pl, 1]}] ]
+]
+
+
+OnePassOrder::recurs =
+"Recursive definition in list. Returning list unordered."
+
+OnePassOrder[li_] :=
+Block[ {c = 0, c2 = -1, l = Length[li], fi, Dep, Ticket, posmap},
+  fi = Alternatives@@ First/@ li;
+  Ticket[a_, b_] := (Dep[a] = Random[]; ++c) /; FreeQ[b, Dep];
+  posmap = Apply[Ticket[#1, #2 /. x:fi :> Dep[x]]&, li, 1];
+  While[c < l,
+    If[c2 === c, Message[OnePassOrder::recurs]; Return[li]];
+    c2 = c;
+    posmap = posmap];
+  li[[ Level[Sort[MapIndexed[List, posmap]], {3}] ]]
+]
+
+
+DepCats[abbr__] := OnePassOrder/@ Dependencies@@
+  Flatten/@ Transpose[Category/@ Flatten[{abbr}]]
+
+
+AbbrMod[_[], _] = {}
+
+AbbrMod[abbr_, mod_] :=
+Block[ {c = 96},
+  Flatten[AbbrMod[#, mod <> FromCharacterCode[++c]]&/@
+    SizeSplit[abbr, $FileSize]]
+] /; LeafCount[abbr] > $FileSize
+
+AbbrMod[abbr_, mod_] :=
+Block[ {file = mod <> ".F", hh},
+  hh = OpenFortran[ModName[file]];
+  WriteString[hh,
+    "* " <> file <> header <>
+    SubroutineDecl[mod, {Pair, Eps}, {}, abbr] <>
+    "#include \"vars.h\"\n\n"];
+  WriteDoLoops[hh, abbr, WriteExpr];
+  WriteString[hh, "\tend\n"];
+  Close[hh];
+  {mod}
+]
+
+
+VarDecl[_, _[]] = ""
+
+VarDecl[decl_, vars_] :=
+Block[ {llen = Infinity, dl = StringLength[decl], l, s},
+  Fold[
+    ( l = StringLength[s = ToFortran[#2]];
+      {#1, If[(llen += l + 2) > 64, llen = dl + l; decl, ", "], s} )&,
+		(* 64 = 70 - 8 for the tab + 1 for \t + 1 for \n *)
+    "",
+    vars ]
+]
+
+
+CommonDecl[_[], __] = {}
+
+CommonDecl[vars_, type_, common_] :=
+Block[ {v, pindex, phead},
+  v = Select[DeleteCases[lhs/@ vars, _[0]],
+    StringTake[ToString[#], 1] =!= "t" &];
+  pindex = Position[v, _[_Symbol..], 1, Heads -> False];
+  phead = Position[v, _[__], 1, Heads -> False];
+  VarDecl["\n\t" <> type,
+    MapAt[Dim/@ # &, v, pindex]] <>
+  VarDecl["\n\tcommon /" <> common <> "/ ",
+    MapAt[Head, v, phead]] <>
+  "\n"
+]
+
+
+SubroutineDecl[name_, cext_, iext_, expr_] :=
+Block[ {ce, ie},
+  ce = Select[cext, !FreeQ[expr, #]&];
+  ie = Select[iext, !FreeQ[expr, #]&];
+  { "\tsubroutine ", name, "\n\
+\timplicit character (a-s,u-z)\n\
+\timplicit double complex (t)\n",
+    VarDecl["\n\tdouble complex ", ce],
+    VarDecl["\n\tinteger ", ie],
+    VarDecl["\n\texternal ", Join[ce, ie]], "\n" }
+]
+
+
+MaxDims[args__] := List@@ MaxIndex@@ Union[Flatten[{args}]]
+
+Attributes[MaxIndex] = {Flat}
+
+MaxIndex[s_[i__], s_[j__]] :=
+  MaxIndex[ s@@ MapThread[Max, {{i}, {j}}] ]
+
+
+	(* LoopComponents gives back e.g.
+		1. {F[4], SUN[3]}
+		2. {F[j1], SUN[j2]}
+		3. Tree[4, 3]
+		4. Tree[j1, j2]
+		5. "\tdo j1 = 1, 4\n\tdo j2 = 1, 3\n"
+		6. "\tenddo\n\tenddo\n"			*)
+
+LoopComponents[arr_] := 0 /; maxmat[arr] === {}
+
+LoopComponents[arr_] :=
+  ReplacePart[
+    Transpose[LoopVar/@ maxmat[arr]],
+    arr, {{3, 0}, {4, 0}} ]
+
+LoopVar[mat:_[1]] := {mat, mat, 1, 1, "", ""}
+
+LoopVar[mat_[max_]] :=
+Block[ {var = Unique["j"]},
+  { mat[max], mat[var], max, var,
+    "\tdo " <> ToString[var] <> " = 1, " <> ToString[max] <> "\n",
+    "\tenddo\n" }
+]
+
+
+MatType[_Mat, _] = 1
+
+MatType[h_[i_], h_[j_]] := MatType[h][i, j]
+
+MatType[h_] := MatType[h] = ToSymbol["Mat", h]
+
+
+Assort[m_Mat -> x_] := {{}, m -> (x /. Hel -> Heli), {}}
+
+	(* convert FormCalc's abbreviations (symbols) to arrays which
+	   are easier to handle in Fortran: *)
+Assort[f_ -> x_] :=
+Block[ {c = Characters[ToString[f]]},
+  {{}, {}, (f -> #1[#2])&@@ (ToExpression[StringJoin[#]]&)/@
+    {Select[c, LetterQ], Select[c, DigitQ]}}
+] /; !FreeQ[x, DiracChain | SUNT]
+
+Assort[x_] := {x /. Conjugate[ep_e] -> -ep /.
+  { k[j_] :> 4 (j - 1) + 1,
+	(* the spin reference vector of fermions is equivalent
+	   to the longitudinal polarization vector of bosons *)
+    s[j_] :> 4 (j - 1) + 2,
+    e[j_] :> 4 (j - 1) + 2 + Heli[j] }, {}, {}}
+
+
+DefNeeded[m_[i_, j_]] := (Needed[m[x_, y_] -> _] := x <= i && y <= j)
+
+
+MandelstamVars = {T, U, Sf, Tf, Uf}
+
+MapThread[
+  (MandelstamDef[#1] := MomSquare[ mom[[#2]], -mom[[#3]] ])&,
+  {MandelstamVars, {1, 1, 3, 2, 2}, {3, 4, 4, 4, 3}}
+]
+
+MomSquare[a_?Negative, b_] := MomSquare[-a, -b]
+
+
+CheckDir[dir_] :=
+Block[ {full},
+  Check[
+    If[FileType[dir] === None, CreateDirectory[dir]];
+    full = SetDirectory[dir],
+    Abort[] ];
+  ResetDirectory[];
+  full
+]
+
+
+Attributes[WriteSquaredME] = {HoldAll}
+
+Options[WriteSquaredME] = {
+  SymbolPrefix -> "",
+  RenConstFile -> "renconst.F",
+  Drivers -> "drivers" }
+
+WriteSquaredME::baddir = "`1` is not a directory."
+
+WriteSquaredME::incomp = "Warning: writing out Fortran code for
+incompatible processes."
+
+WriteSquaredME::empty = "Warning: no amplitudes were specified."
+
+WriteSquaredME[tree_, loop_, outdir_String, opt___Rule] :=
+  WriteSquaredME[tree, loop, Abbr[], outdir, opt]
+
+WriteSquaredME[tree_, loop_, abbr__, outdir_String, opt___Rule] :=
+Block[ {prefix, rconst, drivers,
+dir, abr, mat, fcs, proc = Sequence[],
+abbint, cints = {}, iints = {}, cc = 0, ic = 0,
+ModName, Indices, hels, mandel, mom,
+files, hh, n, unused, maxmat, ntree, ntree2, nloop,
+header, ffmods, abbrmods, Conjugate = dconjg},
+
+  {prefix, rconst, drivers} = ParseOpt[opt, WriteSquaredME];
+
+  dir = CheckDir[outdir];
+  ModName[mod_] := ModName[mod] = ToFileName[dir, mod];
+
+(* abbint introduces abbreviations for the loop integrals.
+   They fall into two categories:
+   1. A0, B0, B1, B00, B11, DB0, DB1, DB00, DB11 (cint..),
+   2. C0i and D0i (iint..).
+   For the latter the LoopTools functions Cget and Dget can be used to
+   compute all tensor coefficients at once (which is much more efficient).
+   Unlike the other integrals, whose results are double complex numbers,
+   Cget and Dget return an integer pointing into a cache array. In the
+   conventions of LoopTools 2, the actual tensor coefficients are
+   retrieved from the arrays Cval and Dval. *)
+
+  abbint[C0i[i_, args__]] :=
+  Block[ {uu = ToSymbol["iint", ++ic]},
+    If[Length[#] =!= 0, uu = uu@@ #]& @
+      Union[Cases[{args} /. Plus | Times -> Sequence, _Symbol, {2}]];
+    iints = {iints, uu -> Cget[args]};
+    abbint[C0i[id_, args]] = Cval[id, uu];
+    Cval[i, uu]
+  ];
+
+  abbint[D0i[i_, args__]] :=
+  Block[ {uu = ToSymbol["iint", ++ic]},
+    If[Length[#] =!= 0, uu = uu@@ #]& @
+      Union[Cases[{args} /. Plus | Times -> Sequence, _Symbol, {2}]];
+    iints = {iints, uu -> Dget[args]};
+    abbint[D0i[id_, args]] = Dval[id, uu];
+    Dval[i, uu]
+  ];
+
+  abbint[func_] :=
+  Block[ {uu = ToSymbol["cint", ++cc]},
+    If[Length[#] =!= 0, uu = uu@@ #]& @
+      Union[Cases[func /. Plus | Times -> Sequence, _Symbol, {2}]];
+    cints = {cints, uu -> func};
+    abbint[func] = uu
+  ];
+
+  {abr, mat, fcs} = Flatten/@ Transpose[Assort/@ Flatten[{abbr}]];
+  n = First/@ DeleteCases[mat, _ -> 0];
+  unused[Ctree] = Alternatives@@
+    Select[Union[#[[1, 2]]&/@ mat], FreeQ[n, Mat[_, #]]&];
+  unused[Cloop] = Alternatives@@
+    Select[Union[#[[1, 1]]&/@ mat], FreeQ[n, Mat[#, _]]&];
+
+(* Part 1: the form factors *)
+
+  mandel = Select[MandelstamVars, FreeQ[mat, #]&];
+  maxmat[_] = {};
+  ffmods = Flatten[{
+    Block[{modnum = 0}, WriteFF[tree, Ctree]],
+    Block[{modnum = 0}, WriteFF[loop, Cloop]] }];
+  If[ Length[ffmods] === 0,
+    Message[WriteSquaredME::empty]; Return[{}] ];
+  mandel = Complement[MandelstamVars, mandel];
+
+  n = 0;
+  mom = Flatten[{#[[1]], -#[[2]]}]&[Map[4 n++ + 1 &, proc, {2}]];
+
+(* Part 2: the variable declarations *)
+
+  iints = Flatten[iints];
+  cints = Flatten[cints];
+  hels = Alternatives@@ Array[Heli, Plus@@ Length/@ proc];
+
+  ntree = LoopComponents[Ctree];
+  nloop = LoopComponents[Cloop];
+  ntree2 = LoopComponents[If[ntree === 0, Cloop, Ctree]];
+  If[ nloop === 0, nloop = {{}, {}, {}, {}, "", ""} ];
+  n = MapThread[MatType,
+    {MaxDims[ ntree2[[1]], nloop[[1]] ], ntree2[[1]]}];
+  Scan[DefNeeded, n];
+
+  hh = OpenWrite[ModName["vars.h"]];
+
+  WriteString[hh, "\
+#include \"model.h\"\n\
+#include \"looptools.h\"\n\
+#include \"renconst.h\"\n" <>
+    CommonDecl[Flatten[{S, mandel}], "double precision ", "kinvars"] <>
+    CommonDecl[hels, "integer ", "kinvars"] <>
+    CommonDecl[First/@ abr, "double complex ", "abbrev"] <>
+    CommonDecl[cints, "double complex ", "loopint"] <>
+    CommonDecl[iints, "integer ", "loopint"] <>
+    CommonDecl[
+      #[[1, 1, 1]]&/@ DownValues[Dim],
+      "integer ", "indices"] <>
+    CommonDecl[
+      Flatten[{ntree2[[3]], nloop[[3]], DeleteCases[n, 1]}]//Union,
+      "double complex ", "coeff" ]
+  ];
+  Close[hh];
+
+(* Part 3: the abbreviations *)
+
+  mat = Select[mat /. fcs /. Mat -> MatType, Needed];
+  abbrmods = MapThread[AbbrMod,
+    { ToDoLoops/@ DepCats[abr, mat, cints, iints],
+      {"abbr_s", "abbr_angle", "abbr_hel"} }];
+
+(* Part 4: possible renaming of global symbols in prefix.h *)
+
+  hh = OpenWrite[ModName["prefix.h"]];
+
+  If[ prefix =!= "",
+    WriteString[hh, "#define " <> # <> " " <> prefix <> # <> "\n"]&/@
+      Flatten[{ffmods, abbrmods, "squared_me",
+        "kinvars", "abbrev", "loopint", "indices", "coeff",
+        "calc_renconst", "renconst"}] ];
+
+  Close[hh];
+
+(* Part 5: the makefile *)
+
+  hh = OpenWrite[ModName["GNUmakefile.in"]];
+
+  WriteString[hh, "\
+OBJS =" <> ({" \\\n ", #, ".o"}&)/@ Flatten[{abbrmods, ffmods}] <> "\n\n\
+RENCONST = " <> StringReplace[rconst, ".F" -> ".o"] <> "\n\n\
+ALLOBJS = $(OBJS) $(RENCONST) squared_me.o\n\n\
+STDDEPS = prefix.h model.h renconst.h\n\n\n\
+default: run\n\n\
+clean:\n\
+\t$(RM) $(ALLOBJS) squared_me.a\n\n\
+squared_me.a: squared_me.a($(ALLOBJS))\n\
+squared_me.a($(RENCONST)): $(STDDEPS)\n\
+squared_me.a($(OBJS) squared_me.o): vars.h $(STDDEPS)\n\n\
+(%.o): %.F\n\
+\t$(FC) -c $< # -DDEBUG\n\
+\t$(AR) cr $@ $%\n\
+\t$(RM) $%\n\n\
+%:: %.F num.F process.h kin.h gauss.F $(STDDEPS) squared_me.a\n\
+\t$(FC) -o $@ $< squared_me.a $(LIBS)\n\n"];
+
+  Close[hh];
+
+(* Part 6: the control file squared_me.F *)
+
+  hels = {#, # <> "from", # <> "to"}&/@ ToString/@ List@@ hels;
+  n = Flatten[Rest/@ hels];
+
+  hh = OpenFortran[ModName["squared_me.F"]];
+
+  WriteString[hh, "* squared_me.F" <> header <> "\
+\tsubroutine squared_me(treeres, loopres, Ecms2" <>
+    VarDecl[",\n     +    ", n] <> ", reset)\n\
+\timplicit integer (j)\n\
+\timplicit character (a-i,k-z)\n\n\
+\tdouble precision treeres, loopres\n\
+\tdouble precision Ecms2" <> VarDecl["\n\tinteger ", n] <> "\n\
+\tlogical reset\n\n\
+#include \"vars.h\"\n\n" <>
+    If[ Length[mandel] === 0, "", "\
+\tdouble precision MomSquare\n\
+\texternal MomSquare\n\n"
+    ] <> "\
+\tdouble complex c, m\n\
+\tinteger Cptr, Dptr\n\
+\tdouble precision prevS\n\
+\tsave prevS\n\
+\tdata prevS /-1/\n\n\
+\tS = Ecms2\n"];
+
+  WriteExpr[hh, # -> MandelstamDef[#]&/@ mandel];
+
+  WriteString[hh, "\n\
+\tif(reset .or. S .ne. prevS) then\n\
+\t  call setcachelast(Ccache, 0)\n\
+\t  call setcachelast(Dcache, 0)\
+" <> ({"\n\t  call ", #}&)/@ abbrmods[[1]] <> "\n\
+\t  reset = .FALSE.\n\
+\t  prevS = S\n\
+\tendif\n\
+\tCptr = getcachelast(Ccache)\n\
+\tDptr = getcachelast(Dcache)\n\
+" <> ({"\n\tcall ", #}&)/@ abbrmods[[2]] <> "\n\n\
+\ttreeres = 0\n\
+\tloopres = 0\n\
+" <> Apply[{"\n\tdo 1 ", #1, " = ", #2, ", ", #3}&, hels, 1] <> "\n\
+" <> ({"\n\tcall ", #}&)/@ abbrmods[[3]] <> "\n\n" <>
+    If[ ntree === 0, "", ntree[[5]] <> "\
+\t" <> ToFortran[ ntree[[4]] ] <> " = 0\n\
+" <> ntree[[6]] <> "\n"
+    ] <>
+    If[ nloop[[1]] === {}, "", nloop[[5]] <> "\
+\t" <> ToFortran[ nloop[[4]] ] <> " = 0\n\
+" <> nloop[[6]] <> "\n"
+    ]
+  ];
+
+  WriteDoLoops[hh, ToDoLoops[ffmods, Indices],
+    WriteString[#1, "\tcall " <> #2 <> "\n"]&];
+
+  WriteString[hh, "\n\
+" <> ntree2[[5]] <> "\
+\tc = dconjg(" <> ToFortran[ ntree2[[4]] ] <> ")\n\n" <>
+    If[ ntree === 0, "", "\
+\tm = 0\n\
+" <> ntree[[5]] <> "\
+\tm = m + " <>
+      ToFortran[ ntree[[4]] *
+        Inner[MatType, ntree[[2]], ntree2[[2]], Times] ] <> "\n\
+" <> ntree[[6]] <> "\
+\ttreeres = treeres + dble(c*m)\n\n"
+    ] <>
+    If[ nloop[[1]] === {}, "", "\
+\tm = 0\n\
+" <> nloop[[5]] <> "\
+\tm = m + " <>
+      ToFortran[ nloop[[4]] *
+        Inner[MatType, nloop[[2]], ntree2[[2]], Times] ] <> "\n\
+" <> nloop[[6]] <> "\
+\tloopres = loopres + " <> If[ntree === 0, "", "2*"] <> "dble(c*m)\n\n"
+    ] <>
+    ntree2[[6]] <> "\n\
+1\tcontinue\n\n\
+\tcall setcachelast(Ccache, Cptr)\n\
+\tcall setcachelast(Dcache, Dptr)\n\
+\tend\n"];
+
+  Close[hh];
+
+(* Part 7: copy the driver files *)
+
+  files = {};
+
+  If[ FileType[drivers] === Directory,
+    SetDirectory[drivers];
+    CopyFile[#, ModName[#]]&/@ (files = FileNames[]);
+    ResetDirectory[]
+  ];
+
+  If[ FileType[$DriversDir] === Directory,
+    SetDirectory[$DriversDir];
+    CopyFile[#, ModName[#]]&/@ Complement[FileNames[], files];
+    ResetDirectory[]
+  ];
+
+  Cases[DownValues[ModName], _[_, s_String] -> s]
+]
+
+
+(* renormalization constants *)
+
+SelfEnergy[proc_, m_] :=
+  CalcSelfEnergy[proc, Options[InsertFields]] /. K2 -> m^2
+
+DSelfEnergy[proc_, m_] :=
+  D[CalcSelfEnergy[proc, Options[InsertFields]], K2] /. K2 -> m^2
+
+CalcSelfEnergy[proc_, opt_] := CalcSelfEnergy[proc, opt] =
+Block[ {se, num = Simplify, Small},
+  Needs["FeynArts`"];
+  ClearProcess[];
+  se = InsertFieldsHook[
+    CreateTopologies[1, Length[Flatten[{#}]]&/@ proc,
+      ExcludeTopologies -> Internal],
+    proc ];
+  OptionalPaint[se, $PaintSE];
+  se = CreateFeynAmp[se, Truncated -> !FreeQ[proc, F]];
+  se = CalcFeynAmp[se, OnShell -> False, Transverse -> False] //.
+    Abbr[] /. {
+    Mat -> Identity,
+    Pair[_k, _k] -> K2,
+	(* take only the transverse part of vector-boson SEs: *)
+    Pair[_e, _k] -> If[MatchQ[proc, _V -> _V], 0, 1],
+    Pair[_e, _e] -> 1,
+    SUNT[_, _] -> 1,
+    SUNT[_, _, 0, 0] -> 1/2 };
+  List@@ se
+]
+
+InsertFieldsHook[tops_, proc_] := InsertFields[tops, proc]
+
+
+ClearSE[] := (DownValues[CalcSelfEnergy] =
+  Select[DownValues[CalcSelfEnergy], #[[1, 1, 1, 0]] =!= Pattern &];)
+
+
+OptionalPaint[ins_, True] := Paint[ins]
+
+OptionalPaint[ins_, path_String] :=
+Block[ {file},
+  file = path <>
+    ToString/@ Cases[Process /. List@@ Head[ins],
+      _Integer | (s_Symbol /; Context[s] === "FeynArts`"),
+      {-1}, Heads -> True] <> "_" <>
+    ToString[Model /. List@@ Head[ins]] <> ".ps";
+  Paint[ins, DisplayFunction -> (Display[file, #]&)];
+]
+
+
+(* These are special versions of Re and Im where the real and
+   imaginary part is taken only of the loop integrals (see A. Denner, 
+   Forts. Phys. 41 (1993) 307). *)
+
+ReTilde[expr_] := expr /. int:loopint[__] :> Re[int]
+
+ImTilde[expr_] :=
+  (expr /. int:loopint[__] :> Im[int]) - (expr /. loopint[__] -> 0)
+
+
+AddScalar[{l1_, lr___}, x_] := {l1 + x, lr} /; FreeQ[l1, SumOver]
+
+AddScalar[{l___}, x_] := {x, l}
+
+
+	(* Note: it seems weird that the left-handed vector component
+	   is taken as the coefficient of DiracChain[6, k]: this is
+	   because DiracChain[6, k] = DiracChain[k, 7]. *)
+
+LVectorCoeff[se_] := Coefficient[se, DiracChain[6, k[1]]]
+
+RVectorCoeff[se_] := Coefficient[se, DiracChain[7, k[1]]]
+
+LScalarCoeff[se_] := Coefficient[se, DiracChain[7]]
+
+RScalarCoeff[se_] := Coefficient[se, DiracChain[6]]
+
+
+IntCollect[p__] := Plus[p] /; FreeQ[{p}, Re]
+
+IntCollect[p__] := Collect[Plus[p], _Re, Simplify]
+
+
+ExecRenConst[rc_[args___]] := ExecRenConst[rc[args], Options[rc]]
+
+ExecRenConst[rc_] := ExecRenConst[rc, Options[rc]]
+
+ExecRenConst[rc_, {}] := RenConst[rc]
+
+ExecRenConst[rc_, opts_] :=
+Block[ {saveopts = Options[InsertFields], res},
+  SetOptions[InsertFields, Sequence@@ opts];
+  res = RenConst[rc];
+  Options[InsertFields] = saveopts;
+  res
+]
+
+
+RenConst::nodef =
+"Warning: `` might be renormalization constants, but have no definition."
+
+CalcRenConst[expr__] :=
+Block[ {patt, rcs = {}, rcdefs = {}, test = {expr}, new},
+  patt = Alternatives@@ (#[[1, 1, 1]]&)/@ DownValues[RenConst];
+  While[ Length[new = Complement[Cases[test, patt, Infinity], rcs]] =!= 0,
+    rcs = Flatten[{rcs, new}];
+    test = ExecRenConst/@ new;
+    rcdefs = {rcdefs, Thread[new -> test]} ];
+
+  new = Select[ToExpression/@ Names["Global`d*"],
+    FreeQ[rcs, #] && !FreeQ[{expr}, #]&];
+  If[ Length[new] =!= 0, Message[RenConst::nodef, new] ];
+
+  Expand[Sort[AddParts/@ Flatten[rcdefs]]] /. Plus -> IntCollect
+]
+
+
+AddParts[rc_ -> li_List] := rc -> Plus@@ li
+
+AddParts[other_] = other
+
+
+NElements[rc_[i__]] := rc[Times[i]]
+
+NElements[rc_] := rc[1]
+
+
+Options[WriteRenConst] = {RenConstFile -> "renconst.F"}
+
+WriteRenConst::norcs = "Warning: no renormalization constants found."
+
+WriteRenConst[rcdefs:{___Rule}..., outdir_String, opt___Rule] :=
+Block[ {rconst, include, dir, file, ifile, header, hh, arr,
+rcs = Flatten[{rcdefs}]},
+
+  {rconst} = ParseOpt[opt, WriteRenConst];
+
+  dir = CheckDir[outdir];
+  include = StringReplace[rconst, ".F" -> ""] <> ".h";
+  header = "\n* generated by WriteRenConst " <> TimeStamp[] <> "\n";
+
+  If[ Length[rcs] === 0, Message[WriteRenConst::norcs],
+    rcs = OnePassOrder[rcs] ];
+
+  hh = OpenFortran[file = ToFileName[dir, rconst]];
+  WriteString[hh, "* " <> rconst <> "\n\
+* this file contains renormalization constants" <> header <> "\n\
+#include \"prefix.h\"\n\n" <>
+    SubroutineDecl["calc_renconst", {}, {Delta}, rcs] <> "\
+#include \"model.h\"\n\
+#include \"looptools.h\"\n\
+#include \"" <> include <> "\"\n" <>
+    VarDecl[ "\n\tinteger ",
+      Union[Cases[rcs, SumOver[i_, _] -> i, Infinity]] ] <>
+    "\n\n"];
+  WriteDoLoops[hh, ToDoLoops[rcs],
+    WriteSummedExpr[##, PrintResult -> IfDebug]&];
+  WriteString[hh, "\tend\n"];
+  Close[hh];
+
+  rcs = MaxDims[First/@ rcs] /. m_Max :> Dim/@ m;
+  arr = NElements/@ rcs;
+  hh = OpenFortran[ifile = ToFileName[dir, include]];
+  WriteString[hh, "* " <> include <> "\n\
+* the declarations for " <> rconst <> header <>
+    CommonDecl[rcs, "double complex ", "renconst"] <> "\n\
+\tinteger sizeof_rc\n\
+\tparameter (sizeof_rc = " <> ToFortran[Level[arr, {2}, Plus]] <> ")\n\
+\tdouble complex rc(sizeof_rc)\n\
+\tequivalence (" <> ToFortran[ arr[[1, 0]] ] <> ", rc)\n"];
+  Close[hh];
+
+  {file, ifile}
+]
+
+WriteRenConst[expr__, outdir_String, opt___Rule] :=
+Block[ {Dim, AddParts = Identity},
+  Dim[i_Integer] = i;
+  Cases[{expr},
+    SumOver[i_, r_, ___] | IndexSum[_, {i_, r_}] :> (Dim[i] = r),
+    Infinity];
+  WriteRenConst[CalcRenConst[expr], outdir, opt]
+]
+
+
+(* low-level Fortran output functions *)
+
+ToFortran[s_String] = s
+
+ToFortran[s_] := ToString[FortranForm[s]]
+
+
+tofortran =
+  "!" <> ToFileName[$FormCalcDir, "ToFortran_" <> $Platform] <> " > "
+
+OpenFortran[file_] := OpenWrite[tofortran <> file,
+  FormatType -> FortranForm, PageWidth -> 67]
+
+
+TimeStamp[] :=
+  ToString[#3] <> " " <>
+  {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug",
+   "Sep", "Oct", "Nov", "Dec"}[[#2]] <> " " <>
+  ToString[#1] <> " " <>
+  ToString[#4] <> ":" <>
+  StringTake["0" <> ToString[#5], -2]&@@ Date[]
+
+
+(* The following routines are concerned with breaking a large
+   expression into pieces the Fortran compiler will compile.
+   This is controlled by two variables:
+
+   - $BlockSize is the maximum LeafCount a single Fortran statement
+     may have. The cutting-up of expressions into such blocks is
+     performed by the function WriteExpr.
+
+   - $FileSize is the maximum LeafCount a whole file may have.
+     The function which separates large expressions into file-size
+     fragments is SizeSplit. *)
+
+SizeSplit[expr_, n_] :=
+Block[ {maxsize = n, cb},
+  List@@ Flatten[Operate[Coalesce, expr]]
+]
+
+Coalesce[h_][a_, b_, r___] :=
+  Coalesce[h][{a, b}, r] /; LeafCount[{a, b}] < maxsize
+
+Coalesce[h_][a_, r___] := cb[ h@@ Flatten[{a}], Coalesce[h][r] ]
+
+Coalesce[_][] = Sequence[]
+
+
+Options[WriteExpr] = {Newline -> False, Optimize -> False}
+
+WriteExpr[fi_, expr_, addtovar_:False, opt___Rule] :=
+Block[ {hh = fi, newline, optim, addto,
+Conjugate = dconjg, Re = dble, Im = dimag},
+  {newline, optim} = ParseOpt[opt, WriteExpr];
+  If[ newline, newline := WriteString[hh, "\n"] ];
+  If[ addtovar,
+    Cases[{expr}, (var_ -> _) :> (addto[var] = True), Infinity] ];
+  WriteAssign[ If[optim, RemoveRedundancy[expr], expr] ];
+]
+
+RemoveRedundancy[expr_] :=
+Block[ {dups, objs, vars, tmpdefs = {}, optexpr = expr},
+  Block[ {Plus},
+    Do[
+      objs = Cases[optexpr, p_Plus /; LeafCount[N[p]] > 10, {-i}];
+      dups = Union[objs];
+      dups = Select[dups,
+        Length[Position[objs, #, {1}, 2, Heads -> False]] > 1 &,
+        Length[objs] - Length[dups]];
+      vars = Table[Unique["tmp"], {Length[dups]}];
+      tmpdefs = {tmpdefs, Hold@@ Thread[vars -> dups]};
+      MapThread[Set, {dups, vars}];
+      optexpr = optexpr,
+    {i, 3, Depth[expr] - 1}];
+  ];
+  Flatten[{ReleaseHold[tmpdefs], optexpr}]
+]
+
+
+Attributes[WriteAssign] = {Listable}
+
+WriteAssign[var_ -> 0] := 0 /; addto[var]
+
+WriteAssign[var_ -> expr_Plus] :=
+  ChopUp[var, Plus@@ (List@@ expr /. Plus -> PlusChop)]
+
+WriteAssign[var_ -> expr_] :=
+  WriteBlock[var, expr /. Plus -> PlusChop]
+
+
+PlusChop[expr__] := ChopUp[Unique["tmp"], Plus[expr]] /;
+  LeafCount[{expr}] > $BlockSize
+
+PlusChop[expr__] := Plus[expr]
+
+ChopUp[var_, expr_] :=
+  (Scan[WriteBlock[var, #]&, SizeSplit[expr, $BlockSize]]; var)
+
+WriteBlock[var_, expr_] :=
+Block[ {for},
+  for = expr /. int:loopintArg[__] :> Nargs/@ int /.
+    p:_Integer^_Rational :> N[p] /.
+    Times -> OptTimes;
+  If[ TrueQ[addto[var]], for += var, addto[var] = True ];
+  Write[hh, var -> for];
+  newline
+]
+
+Nargs[0] = 0.
+
+Nargs[i_Integer] := N[i]
+
+Nargs[x_] = x
+
+
+Unprotect[Rule]
+
+Format[a_ -> b_, FortranForm] := SequenceForm[a, " = ", b]
+
+Protect[Rule]
+
+
+OptTimes[a__] :=
+Block[ {p, const, var},
+  p = Position[N[{a}], _Real, 1, Heads -> False];
+  const = Times@@ {a}[[ Flatten[p] ]];
+  If[ IntegerQ[const], Return[Times[a]] ];
+  var = Times@@ Delete[{a}, p];
+  If[ var === 1, Return[Times[a]] ];
+  If[ MatchQ[const, _?Negative _.],
+    -HoldForm[HoldForm[#1] #2]&[-const, var],
+    HoldForm[HoldForm[#1] #2]&[const, var] ]
+]
+
+
+Options[WriteSummedExpr] = {PrintResult -> False}
+
+WriteSummedExpr[hh_, var_ -> expr_, opt___Rule] :=
+Block[ {SumOver, Dim, addto, pr, svar, si},
+  {pr} = ParseOpt[opt, WriteSummedExpr];
+  loops = ToDoLoops[ {SeparateSums[expr]}//Flatten ];
+  If[ loops[[1, 0]] === DoLoop,
+    WriteString[hh, "\t" <> ToFortran[var] <> " = 0\n"];
+    addto = True,
+  (* else *)
+    addto := (addto = True; False) ];
+  SumOver[i_, r_] := (Dim[i] = r; 1);
+  WriteDoLoops[hh, loops,
+    WriteExpr[#1, var -> #2, addto, Optimize -> True]&];
+  If[ pr =!= False,
+    svar = ToFortran[var];
+    WriteString[hh,
+      If[pr === IfDebug, "\n#ifdef DEBUG", ""] <>
+      "\n\tprint *, '" <>
+      StringReplace[svar, Cases[var,
+        i_Symbol :> (si = ToFortran[i]; si -> "'," <> si <> ",'")]] <>
+      " =', " <> svar <>
+      If[pr === IfDebug, "\n#endif\n\n", "\n\n"] ]
+  ];
+]
+
+
+Attributes[SeparateSums] = {Listable}
+
+SeparateSums[x_] := x /; FreeQ[x, SumOver]
+
+SeparateSums[x_] :=
+  If[Head[#] === Plus, List@@ #, #]&[ Collect[x, _SumOver] ]
+
+
+FindIndices[var_ -> _] := Union[Cases[var, _Symbol]]
+
+FindIndices[t_Times] := Cases[t, SumOver[i_, _] -> i]
+
+FindIndices[_] = {}
+
+ToDoLoops[h_[li__], func_:FindIndices] :=
+Block[ {do},
+  do[_] = {};
+  Apply[(do[#1] = {do[#1], #2})&, {func[#], #}&/@ {li}, 1];
+  Cases[ DownValues[do],
+    _[_[_[ind_List]], a_] :> DoLoop[ind, h@@ Flatten[a]] ]
+]
+
+ToDoLoops[x_, ___] := Flatten[{x}]
+
+
+DoLoop[_[], {a___}] = a
+
+DoLoop[_[], a_] = a
+
+
+Attributes[WriteDoLoops] = {Listable}
+
+WriteDoLoops[hh_, DoLoop[ind_, expr_], func_] := (
+  WriteString[hh,
+    {"\n\tdo ", ToFortran[#], " = 1, ", ToFortran[Dim[#]]}&/@ ind <>
+    "\n"];
+  WriteDoLoops[hh, expr, func];
+  WriteString[hh, StringJoin[Table["\tenddo\n", {Length[ind]}]] ];
+)
+
+WriteDoLoops[hh_, expr_, func_] := func[hh, expr]
+
 End[]
 
 
@@ -1957,26 +2639,30 @@ Format[ Continuation[_] ] = "    "
   (* eliminate those `>' in front of continuation lines so one can cut
      and paste more easily *)
 
-$OnShell = True
-  (* whether the external particles are on-shell *)
-
-$Transversality = True
-  (* whether to enforce transversality on the external polarization
-     vectors, i.e. e[i].k[i] = 0 *)
-
-$Dimension = D
-
-$FormCmd = "form"
+$FormCmd = "form3"
   (* the filename of the actual FORM executable; may contain a path *)
 
+FormSetup = "\
+#-\n\
+#:SmallSize 5000000\n\
+#:LargeSize 10000000\n\
+#:WorkSpace 500000\n\
+#:MaxTermSize 30000\n\
+#:TermsInSmall 30000\n\
+#:TempDir " <> DirectoryName[$TemporaryPrefix] <> "\n\
+off stats;\n\
+format 255;\n\n"
+
 $Editor = "xterm -geometry 80x30 -e pico `1` &"
-  (* which editor to use when debugging FORM code *)
+  (* editor to use when debugging FORM code *)
 
-$Scale = 1
-  (* factor which scales momenta in abbreviations, see usage *)
+$BlockSize = 700
 
-$TempFile = "t" <> ToString[$ProcessID] <> ".frm"
+$FileSize = 30 $BlockSize
 
+$DriversDir = ToFileName[{$FormCalcDir, "drivers"}]
+
+$PaintSE = False
 
 EndPackage[]
 
@@ -1984,6 +2670,19 @@ EndPackage[]
 (* global definitions for specific models *)
 
 (* definitions for the Standard Model *)
+
+FormSubst = "\
+id CW^2 = CW2;\n\
+id CW^-2 = CW2^-1;\n\
+id SW^2 = SW2;\n\
+id SW^-2 = SW2^-1;\n\
+id EL^2 = 4*Pi*Alfa;\n\
+id Alfa^2 = Alfa2;\n\
+id GS^2 = 4*Pi*Alfas;\n\
+id Alfas^2 = Alfas2;\n"
+
+Conjugate[CKM[a__]] ^:= CKMC[a];
+Conjugate[CKMC[a__]] ^:= CKM[a]
 
 EL/: EL^2 = 4 Pi Alfa;
 EL/: EL^4 = 16 Pi^2 Alfa2;
@@ -1998,9 +2697,11 @@ CW^(n_?EvenQ) ^= CW2^(n/2)
 
 CW2/: CW2 + SW2 = 1
 
-MW^(n_?EvenQ) ^= MW2^(n/2);
 MZ^(n_?EvenQ) ^= MZ2^(n/2);
-MH^(n_?EvenQ) ^= MH2^(n/2)
+MW^(n_?EvenQ) ^= MW2^(n/2);
+MH^(n_?EvenQ) ^= MH2^(n/2);
+MG0^(n_?EvenQ) ^= MG02^(n/2)
+MGp^(n_?EvenQ) ^= MGp2^(n/2);
 
 ME^(n_?EvenQ) ^= ME2^(n/2);
 MM^(n_?EvenQ) ^= MM2^(n/2);
@@ -2017,15 +2718,7 @@ MS^(n_?EvenQ) ^= MS2^(n/2);
 MB^(n_?EvenQ) ^= MB2^(n/2);
 MQD[a__]^(n_?EvenQ) ^= MQD2[a]^(n/2)
 
-IndexDelta[c1:Index[Colour, _], c2:Index[Colour, _]] := SUNT[c1, c2];
-IndexDelta[g1:Index[Gluon, _], g2:Index[Gluon, _]] := 2 SUNT[g1, g2, 0, 0]
-
-(* these are the identifiers for fermion classes used by ProcessFile *)
-
-FermionFamily[0] = "N";				(* neutrinos *)
-FermionFamily[ME | MM | ML | MLE[_]] = "E";	(* massive leptons *)
-FermionFamily[MU | MC | MT | MQU[_]] = "U";	(* up-type quarks *)
-FermionFamily[MD | MS | MB | MQD[_]] = "D"	(* down-type quarks *)
+SUNN = 3
 
 (* these symbols represent real quantities, i.e. Conjugate[sym] = sym
    for any of these. Thinking e.g. of complex masses this looks
@@ -2034,16 +2727,33 @@ FermionFamily[MD | MS | MB | MQD[_]] = "D"	(* down-type quarks *)
 
 Scan[ (RealQ[#] = True)&,
   { EL, Alfa, Alfa2, GS, Alfas, Alfas2,
+    MW, MW2, MZ, MZ2,
     SW, CW, SW2, CW2,
-    MW, MW2, MZ, MZ2, MH, MH2,
+    MH, MH2, MG0, MG02, MGp, MGp2,
     ME, ME2, MM, MM2, ML, ML2, _MLE, _MLE2,
     MU, MU2, MC, MC2, MT, MT2, _MQU, _MQU2,
     MD, MD2, MS, MS2, MB, MB2, _MQD, _MQD2 } ]
 
+(* Model parameters which are defined using the parameter statement in
+   Fortran (i.e. as numeric constants; see model.h) are given some
+   numeric value here. Using this information, the OptTimes function can
+   significantly optimize the generated Fortran code. The idea is to put
+   everything that is known as constant at compile time in one place,
+   i.e. rearrange products such that they are of the form (const)*(vars),
+   then the compiler will usually collect all of these constants into one
+   number. *)
+
+Scan[ (N[#] = Random[])&,
+  { Alfa, Alfa2, SW2, CW, CW2,
+    MW, MW2, MZ, MZ2,
+    ME, ME2, MM, MM2, ML, ML2,
+    MU, MU2, MC, MC2, MT, MT2,
+    MD, MD2, MS, MS2, MB, MB2 } ]
+
 
 (* definitions for the MSSM *)
 
-SetOptions[OneLoop,
+SetOptions[CalcFeynAmp,
   NoExpand -> {USf, USfC, UCha, UChaC, VCha, VChaC, ZNeu, ZNeuC}]
 
 USf[t_, g_][a_, b_] := USf[a, b, t, g]
@@ -2075,14 +2785,11 @@ MNeu[a__]^(n_?EvenQ) ^= MNeu2[a]^(n/2)
 Mh0^(n_?EvenQ) ^= Mh02^(n/2);
 MHH^(n_?EvenQ) ^= MHH2^(n/2);
 MA0^(n_?EvenQ) ^= MA02^(n/2);
-MG0^(n_?EvenQ) ^= MG02^(n/2);
-MHp^(n_?EvenQ) ^= MHp2^(n/2);
-MGp^(n_?EvenQ) ^= MGp2^(n/2)
+MHp^(n_?EvenQ) ^= MHp2^(n/2)
 
 Scan[ (RealQ[#] = True)&,
-  { TB, CB, SB, CA, SA, CB2, SB2, C2A, S2A, CAB, SAB, CBA, SBA,  
-    Mh0, Mh02, MHH, MHH2, MA0, MA02, MG0, MG02,
-    MHp, MHp2, MGp, MGp2,
+  { TB, CB, SB, CA, SA, CB2, SB2, C2A, S2A, CAB, SAB, CBA, SBA,
+    Mh0, Mh02, MHH, MHH2, MA0, MA02, MHp, MHp2,
     _MSf, _MSf2, _MCha, _MCha2, _MNeu, _MNeu2 } ]
 
 Null

@@ -1,0 +1,121 @@
+#!/bin/sh
+# configure script for the GNUmakefile
+# this file is part of FormCalc
+# last modified 8 Jun 01 th
+# note: has _nothing_ to do with GNU autoconf
+
+
+if (echo "test\c"; echo 1,2,3) | grep c > /dev/null ; then
+  if (echo -n test; echo 1,2,3) | grep n > /dev/null ; then
+    echo_n=
+    echo_c='
+'
+  else
+    echo_n=-n
+    echo_c=
+  fi
+else
+  echo_n=
+  echo_c='\c'
+fi
+
+
+findprog()
+{
+  echo $echo_n "looking for $1... $echo_c" 1>&2
+  shift
+  for prog in $* ; do
+    full=`csh -cf "which $prog"`
+    if [ -x "$full" ] ; then
+      echo $full 1>&2
+      basename $full
+      return 0
+    fi
+  done
+  echo "no $* in your path" 1>&2
+  return 1
+}
+
+
+findpath()
+{
+  echo $echo_n "looking for path to $1... $echo_c" 1>&2
+  file=$2
+  shift 2
+  for path in $* ; do
+    if [ -f "$path/$file" ] ; then
+      echo $path 1>&2
+      echo $path
+      return 0
+    fi
+  done
+  echo "no $file in $*" 1>&2
+  return 1
+}
+
+
+## look for some programs...
+
+CONF_MAKE=`findprog make gmake Make make` || exit 1
+
+if [ "$1" = "-g77" ] ; then
+  CONF_F77=`findprog f77 g77` || exit 1
+else
+  case $HOSTTYPE in
+    alpha)
+	CONF_F77="f77"
+	CONF_FFLAGS="-O -extend_source -warn truncated_source" ;;
+    *sun*)
+	CONF_F77="f77"
+	CONF_FFLAGS="-e" ;;
+    hp*)
+	CONF_F77="fort77 f77"
+	CONF_FFLAGS="-O2 +es +U77" ;;
+    *86 | *linux)
+	CONF_F77="pgf77"
+	CONF_FFLAGS="-O2 -Mextend -g77libs" ;;
+  esac
+  CONF_F77=`findprog f77 $CONF_F77 f77 fort77 xlf f90 pgf77 g77` || exit 1
+fi
+
+[ "$CONF_F77" = "g77" ] && CONF_FFLAGS="-O0"
+
+
+## check out the necessary libraries
+
+if [ -z "$CERN" -o -z "$CERN_LEVEL" -o ! -d $CERN/$CERN_LEVEL ] ; then
+  echo ""
+  echo "Warning: CERNlib is not or not properly installed on your system."
+  echo "If it is installed, the environment variables CERN and CERN_LEVEL"
+  echo "should be set such that \$CERN/\$CERN_LEVEL/lib is the directory"
+  echo "in which the CERNlib libraries are installed."
+  echo ""
+fi
+
+CONF_LTDIR=`findpath LoopTools lib/libooptools.a $HOME/LoopTools/$HOSTTYPE /usr/local /usr` || exit 1
+
+
+echo "creating GNUmakefile" 1>&2
+
+cat - GNUmakefile.in > GNUmakefile << _EOF_
+# --- variables defined by configure ---
+
+LTDIR = $CONF_LTDIR/
+LOOPTOOLS = -L\$(LTDIR)lib -looptools
+CERNLIB = -L\$(CERN)/\$(CERN_LEVEL)/lib -lpdflib -lmathlib -lpacklib
+LIBS = \$(LOOPTOOLS) \$(CERNLIB)
+
+FFLAGS = $CONF_FFLAGS
+FC = $CONF_F77 \$(FFLAGS) -I. -I\$(LTDIR)include -g
+
+# --- end defs by configure ---
+
+
+_EOF_
+
+echo "" 1>&2
+echo "now you must run $CONF_MAKE" 1>&2
+echo "" 1>&2
+
+exit 0
+
