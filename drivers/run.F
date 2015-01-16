@@ -1,7 +1,7 @@
 * run.F
 * defines parameter settings for one run, then includes num.F
 * this file is part of FormCalc
-* last modified 16 Dec 04 th
+* last modified 11 Feb 05 th
 
 
 * Whether to run in debugging mode
@@ -33,6 +33,7 @@ c#define HIGGS_MASSES TREE
 c#define HIGGS_MASSES SIMPLE
 c#define HIGGS_MASSES FEYNHIGGS
 c#define SM_HIGGS
+c#define FLAVOUR_VIOLATION
 c#define NO_EXCLUSION_LIMITS
 
 * options for thdm_ini.F:

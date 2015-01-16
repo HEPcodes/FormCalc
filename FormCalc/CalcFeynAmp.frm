@@ -1,7 +1,7 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 8 Dec 04 th
+* last modified 21 Sep 05 th
 
 
 #procedure DotSimplify
@@ -600,10 +600,16 @@ repeat;
   sum DUMMY;
 endrepeat;
 
+id Delta([mu]?, [mu]?) = 1;
+id Delta([x]?int_, [y]?int_) = 0;
 repeat;
-  repeat once Delta([mu]?, [LA]?) * SumOver([LA]?, [nu]?) = replace_([LA], [mu]);
-  repeat once Delta([LA]?, [mu]?) * SumOver([LA]?, [nu]?) = replace_([LA], [mu]);
-  id Delta([x]?int_, [y]?int_) = delta_([x], [y]);
+  once ifmatch->1 Delta([mu]?, [LA]?) * SumOver([LA]?, [x]?) =
+    replace_([LA], [mu]);
+  once Delta([LA]?, [mu]?) * SumOver([LA]?, [x]?) =
+    replace_([LA], [mu]);
+  label 1;
+  id Delta([mu]?, [mu]?) = 1;
+  id Delta([x]?int_, [y]?int_) = 0;
 endrepeat;
 
 id TMP([x]?int_) = 1;

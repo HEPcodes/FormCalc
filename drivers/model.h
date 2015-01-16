@@ -1,7 +1,7 @@
 * model.h
 * common blocks for the model parameters
 * this file is part of FormCalc
-* last modified 16 Dec 04 th
+* last modified 4 May 06 th
 
 
 	double precision pi, degree, sqrt2, hbar_c2
@@ -62,10 +62,13 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 	double precision Mf(4,3), Mf2(4,3)
 	double precision MH, MH2, MG0, MG02, MGp, MGp2
 	double precision EL, GS, Alfas, Alfas2, AlfasMT, SW
+	logical sm_digest
 
-	common /sm_para/
-     &    CKM, Mf, Mf2, MH, MH2, MG0, MG02, MGp, MGp2,
-     &    EL, GS, Alfas, Alfas2, AlfasMT, SW
+	common /sm_para/ CKM
+	common /sm_para/ Mf, Mf2
+	common /sm_para/ MH, MH2, MG0, MG02, MGp, MGp2
+	common /sm_para/ EL, GS, Alfas, Alfas2, AlfasMT, SW
+	common /sm_para/ sm_digest
 
 
 * MSSM parameters
@@ -82,18 +85,21 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 	double precision CB, SB, TB, CB2, SB2, TB2, C2B, S2B
 	double precision CA, SA, CA2, SA2, C2A, S2A
 	double precision CAB, SAB, CBA, SBA
+	logical mssm_digest
 
-	common /mssm_para/
-     &    UCha, VCha, ZNeu,
-     &    USf, Af, Xf, Atau, At, Ab, MUE,
-     &    MCha, MCha2, MNeu, MNeu2,
-     &    MSS, MSS2, DSf, MSf, MSf2, MSusy,
-     &    Mh0, Mh02, MHH, MHH2, MA0, MA02, MHp, MHp2,
-     &    Mh02tree, MHH2tree, MHp2tree,
-     &    M_1, M_2, MGl, MGl2,
-     &    CB, SB, TB, CB2, SB2, TB2, C2B, S2B,
-     &    CA, SA, CA2, SA2, C2A, S2A,
-     &    CAB, SAB, CBA, SBA
+	common /mssm_para/ UCha, VCha, ZNeu
+	common /mssm_para/ USf, Af, Xf
+	common /mssm_para/ Atau, At, Ab, MUE
+	common /mssm_para/ MCha, MCha2, MNeu, MNeu2
+	common /mssm_para/ MSS, MSS2, DSf
+	common /mssm_para/ MSf, MSf2, MSusy
+	common /mssm_para/ Mh0, Mh02, MHH, MHH2, MA0, MA02, MHp, MHp2
+	common /mssm_para/ Mh02tree, MHH2tree, MHp2tree
+	common /mssm_para/ M_1, M_2, MGl, MGl2
+	common /mssm_para/ CB, SB, TB, CB2, SB2, TB2, C2B, S2B
+	common /mssm_para/ CA, SA, CA2, SA2, C2A, S2A
+	common /mssm_para/ CAB, SAB, CBA, SBA
+	common /mssm_para/ mssm_digest
 
 	double precision reimMUE(2), reMUE, imMUE
 	equivalence (MUE, reimMUE)
@@ -120,12 +126,71 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 #endif
 
 
+* flavour-violating parameters
+
+	double complex UASf(6,6,3:4)
+	double precision MASf(6,3:4), MASf2(6,3:4)
+	double precision deltaSf(6,6,3:4)
+
+	common /fv_para/ UASf, MASf, MASf2, deltaSf
+
+	double precision deltaSf_flat(6*6*2)
+	equivalence (deltaSf, deltaSf_flat)
+
+	double complex deltaLLuc, deltaLRuc
+	double complex deltaRLuc, deltaRRuc
+	equivalence (deltaSf(3,1  ,2  ), deltaLLuc)
+	equivalence (deltaSf(3,1  ,2+3), deltaLRuc)
+	equivalence (deltaSf(3,2  ,1+3), deltaRLuc)
+	equivalence (deltaSf(3,1+3,2+3), deltaRRuc)
+
+	double complex deltaLLct, deltaLRct
+	double complex deltaRLct, deltaRRct
+	equivalence (deltaSf(3,2  ,3  ), deltaLLct)
+	equivalence (deltaSf(3,2  ,3+3), deltaLRct)
+	equivalence (deltaSf(3,3  ,2+3), deltaRLct)
+	equivalence (deltaSf(3,2+3,3+3), deltaRRct)
+
+	double complex deltaLLut, deltaLRut
+	double complex deltaRLut, deltaRRut
+	equivalence (deltaSf(3,1  ,3  ), deltaLLut)
+	equivalence (deltaSf(3,1  ,3+3), deltaLRut)
+	equivalence (deltaSf(3,3  ,1+3), deltaRLut)
+	equivalence (deltaSf(3,1+3,3+3), deltaRRut)
+
+	double complex deltaLLds, deltaLRds
+	double complex deltaRLds, deltaRRds
+	equivalence (deltaSf(4,1  ,2  ), deltaLLds)
+	equivalence (deltaSf(4,1  ,2+3), deltaLRds)
+	equivalence (deltaSf(4,2  ,1+3), deltaRLds)
+	equivalence (deltaSf(4,1+3,2+3), deltaRRds)
+
+	double complex deltaLLsb, deltaLRsb
+	double complex deltaRLsb, deltaRRsb
+	equivalence (deltaSf(4,2  ,3  ), deltaLLsb)
+	equivalence (deltaSf(4,2  ,3+3), deltaLRsb)
+	equivalence (deltaSf(4,3  ,2+3), deltaRLsb)
+	equivalence (deltaSf(4,2+3,3+3), deltaRRsb)
+
+	double complex deltaLLdb, deltaLRdb
+	double complex deltaRLdb, deltaRRdb
+	equivalence (deltaSf(4,1  ,3  ), deltaLLdb)
+	equivalence (deltaSf(4,1  ,3+3), deltaLRdb)
+	equivalence (deltaSf(4,3  ,1+3), deltaRLdb)
+	equivalence (deltaSf(4,1+3,3+3), deltaRRdb)
+
+#ifndef UASfC
+#define UASfC(a,b,t) dconjg(UASf(a,b,t))
+#endif
+
+
 * THDM parameters
 
 	double precision Lambda5
 	double precision Yuk1, Yuk2, Yuk3
+	logical thdm_digest
 
-	common /thdm_para/
-     &    Lambda5,
-     &    Yuk1, Yuk2, Yuk3
+	common /thdm_para/ Lambda5
+	common /thdm_para/ Yuk1, Yuk2, Yuk3
+	common /thdm_para/ thdm_digest
 

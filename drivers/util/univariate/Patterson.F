@@ -2,7 +2,7 @@
 * non-adaptive 1D Gauss-Kronrod-Patterson integration
 * adapted from Quadpack's dqng.f for vector integrands
 * this file is part of FormCalc
-* last modified 16 Jun 04 th
+* last modified 7 Feb 05 th
 
 
 #include "config.h"
@@ -10,7 +10,7 @@
 ************************************************************************
 
 	subroutine Patterson(ncomp, lower, upper, integrand,
-     &    epsrel, epsabs, result, error, neval, fail)
+     &    epsrel, epsabs, neval, fail, result, error)
 	implicit none
 	integer ncomp, neval, fail
 	double precision lower, upper, epsrel, epsabs

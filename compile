@@ -1,6 +1,6 @@
-#!/bin/sh
+#! /bin/sh
 # compile script for the C programs used by FormCalc
-# last modified 18 Nov 04 th
+# last modified 7 Mar 05 th
 
 # If this compile script doesn't work on your system, check these things:
 #
@@ -40,7 +40,7 @@ make -f - << _EOF_ || exit 1
 all: $1/ReadForm $1/ToForm $1/ToFortran $1/ReadData $1/reorder
 
 $1/ReadForm: FormCalc/ReadForm.tm
-	$MCC $CFLAGS -o $1/ReadForm FormCalc/ReadForm.tm
+	CC=tools/fcmcc $MCC $CFLAGS -o $1/ReadForm FormCalc/ReadForm.tm
 	strip $1/ReadForm
 
 $1/ToForm: FormCalc/ToForm.c

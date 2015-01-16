@@ -1,7 +1,7 @@
 * run.F
 * defines parameter settings for one run, then includes num.F
 * this file is part of FormCalc
-* last modified 8 Apr 04 th
+* last modified 11 Feb 05 th
 
 
 * Whether to run in debugging mode
@@ -24,12 +24,17 @@ c#define CalcRenConst ZeroRenConst
 * XXX_ini.F file (e.g. NO_SQUARK_MIXING for mssm_ini.F) must be
 * defined before the #include line.
 
+* options for sm_ini.F:
+c#define NO_CKM
+
 * options for mssm_ini.F:
 c#define NO_SQUARK_MIXING
-c#define COMPLEX_PARAMETERS
-c#define SM_ONLY
+c#define HIGGS_MASSES TREE
+c#define HIGGS_MASSES SIMPLE
+c#define HIGGS_MASSES FEYNHIGGS
+c#define SM_HIGGS
+c#define FLAVOUR_VIOLATION
 c#define NO_EXCLUSION_LIMITS
-c#define TREE_LEVEL_MH
 
 * options for thdm_ini.F:
 c#define MODEL_TYPE_I
@@ -96,12 +101,12 @@ c#define NO_EXCLUSION_LIMITS
 * - the desired relative and absolute accuracy
 
 #define RELACCURACY 1D-3
-#define ABSACCURACY 1D-7
+#define ABSACCURACY 1D-10
 
 * The multidimensional integration routines (2 -> 3) also need
 
 #define METHOD DIVONNE
-#define FLAGS 1
+#define VERBOSE 1
 #define MINEVAL 0
 #define MAXEVAL 50000
 

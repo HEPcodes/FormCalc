@@ -1,13 +1,53 @@
 * sm_ini.F
 * all parameters for the Standard Model are initialized here
 * this file is part of FormCalc
-* last modified 24 Jan 05 th
+* last modified 9 Feb 05 th
 
 
 	subroutine ModelDefaults
 	implicit none
 
 #include "model.h"
+
+#ifdef NO_CKM
+
+	CKM(1,1) = 1
+	CKM(2,2) = 1
+	CKM(3,3) = 1
+	CKM(2,1) = 0
+	CKM(3,1) = 0
+	CKM(1,2) = 0
+	CKM(3,2) = 0
+	CKM(1,3) = 0
+	CKM(2,3) = 0
+
+#else
+
+	double precision s12, s23, s13, delta13
+	double precision c12, c23, c13
+	double complex s13c
+
+	parameter (s12 = .2243D0)
+	parameter (s23 = .0413D0)
+	parameter (s13 = .0037D0)
+	parameter (delta13 = 60*degree)
+
+	c12 = sqrt(1 - s12**2)
+	c23 = sqrt(1 - s23**2)
+	c13 = sqrt(1 - s13**2)
+	s13c = s13*exp(cI*delta13)
+
+	CKM(1,1) = c12*c13
+	CKM(2,1) = -s12*c23 - c12*s23*s13c
+	CKM(3,1) = s12*s23 - c12*c23*s13c
+	CKM(1,2) = s12*c13
+	CKM(2,2) = c12*c23 - s12*s23*s13c
+	CKM(3,2) = -c12*s23 - s12*c23*s13c
+	CKM(1,3) = dconjg(s13c)
+	CKM(2,3) = s23*c13
+	CKM(3,3) = c23*c13
+
+#endif
 
 	Mf(1,1) = 0
 	Mf(2,1) = ME
@@ -34,32 +74,6 @@
 	Mf2(2,3) = ML2
 	Mf2(3,3) = MT2
 	Mf2(4,3) = MB2
-
-* Warning: With the PDG values used here, the CKM matrix is
-* not strictly unitary.  In cases where GIM cancellations are
-* important, this parameterization may give wrong results!
-
-#ifdef NO_CKM
-	CKM(1,1) = 1
-	CKM(2,2) = 1
-	CKM(3,3) = 1
-	CKM(2,1) = 0
-	CKM(3,1) = 0
-	CKM(1,2) = 0
-	CKM(3,2) = 0
-	CKM(1,3) = 0
-	CKM(2,3) = 0
-#else
-	CKM(1,1) = .97495D0
-	CKM(2,1) = .222D0
-	CKM(3,1) = .009D0
-	CKM(1,2) = .2225D0
-	CKM(2,2) = .97415D0
-	CKM(3,2) = .039D0
-	CKM(1,3) = .0035D0
-	CKM(2,3) = .040D0
-	CKM(3,3) = .99915D0
-#endif
 	end
 
 
@@ -74,6 +88,8 @@
 	SW = sqrt(SW2)
 
 	MH2 = MH**2
+
+	sm_digest = .FALSE.
 	end
 
 
@@ -91,15 +107,9 @@
 	Alfas = ALPHAS2(sqrtS)
 	Alfas2 = Alfas**2
 	GS = sqrt(4*pi*Alfas)
-	end
 
-
-************************************************************************
-
-	subroutine ModelDigest
-	implicit none
-
-#include "model.h"
+	if( sm_digest ) return
+	sm_digest = .TRUE.
 
 	print *, "============================"
 	print *, "SM parameters"

@@ -1,8 +1,8 @@
 (*
 
-This is FormCalc, Version 4
-Copyright by Thomas Hahn 1996-2004
-last modified 14 Dec 04 by Thomas Hahn
+This is FormCalc, Version 4.1
+Copyright by Thomas Hahn 1996-2005
+last modified 4 May 06 by Thomas Hahn
 
 Release notes:
 
@@ -43,9 +43,9 @@ Have fun!
 *)
 
 Print[""];
-Print["FormCalc 4"];
+Print["FormCalc 4.1"];
 Print["by Thomas Hahn"];
-Print["last revised 14 Dec 04"]
+Print["last revised 4 May 06"]
 
 
 (* symbols from FeynArts *)
@@ -367,6 +367,9 @@ Eps::usage = "Eps[a, b, c, d] represents -I times the antisymmetric
 Levi-Civita tensor epsilon_{abcd}.  The sign convention is
 epsilon^{0123} = +1."
 
+ToSymbol::usage = "ToSymbol[s...] concatenates its arguments into a
+new symbol."
+
 
 (* miscellaneous functions *)
 
@@ -378,6 +381,15 @@ fulfilled with the new value of mi."
 Combine::usage = "Combine[amp1, amp2, ...] combines the amplitudes
 amp1, amp2, ... which can be either FeynAmpList or Amp objects, i.e.
 Combine works before and after CalcFeynAmp."
+
+TagDiagrams::usage = "TagDiagrams[amp] tags each diagram in amp with an
+identifier of the form Diagram[number], where number runs sequentially
+through the diagrams at all levels.  This makes it possible to locate
+the contribution of individual diagrams in the final CalcFeynAmp
+output."
+
+Diagram::usage = "Diagram[number] is the identifier used to tag a single
+diagram by TagDiagrams."
 
 ClearProcess::usage = "ClearProcess[] is necessary to clear internal
 definitions before calculating a process with a different kinematical
@@ -518,9 +530,7 @@ into account only the interference term, 2 Re M_0^* M_1, which is of
 order alpha."
 
 Folder::usage = "Folder is an option of WriteSquaredME and WriteRenConst.
-It specifies the folder into which the generated files are written.  The
-name must be acceptable as a Fortran identifier, too, as it is prepended
-to the externally visible symbols in the code."
+It specifies the folder into which the generated files are written."
 
 SymbolPrefix::usage = "SymbolPrefix is an option of WriteSquaredME and
 WriteRenConst.  It specifies a string which is prepended to externally
@@ -551,11 +561,11 @@ may be redefined to change the diagram content of certain self-energies."
 ClearSE::usage = "ClearSE[] clears the internal definitions of
 already-calculated self-energies."
 
-$PaintSE = "$PaintSE determines whether SelfEnergy paints the diagrams it
-generates to compute the self-energies.  $PaintSE can be True, False, or a
-string which indicates that the output should be saved in a PostScript
-file instead of being displayed on screen, and is prepended to the
-filename."
+$PaintSE::usage = "$PaintSE determines whether SelfEnergy paints the
+diagrams it generates to compute the self-energies.  $PaintSE can be
+True, False, or a string which indicates that the output should be saved
+in a PostScript file instead of being displayed on screen, and is
+prepended to the filename."
 
 
 (* low-level Fortran output functions *)
@@ -684,6 +694,10 @@ v as variables of type t in Fortran."
 CommonDecl::usage = "CommonDecl[v, t, c] returns a string with the
 declaration of v as variables of type t and members of the common block
 c in Fortran."
+
+$Prefix::usage = "$Prefix is a string prepended to all externally
+visible symbols in the generated Fortran code to avoid symbol
+collisions."
 
 
 (* symbols used in the Fortran code *)
@@ -1122,8 +1136,7 @@ Block[ {name = AmpName[Select[id, FreeQ[#, Classes | Particles | Number]&]]},
 LevelSelect[level_][id_, _, gen_, gm_ -> ins_] :=
 Block[ {old, new, amp, name = AmpName[id], pc},
   _pc = 0;
-  old = TrivialSums/@ Cases[{ins}, Insertions[level][r__] :> r, Infinity] /.
-    fixPlus;
+  old = TrivialSums/@ Cases[{ins}, Insertions[level][r__] :> r, Infinity];
   new = Thread[Flatten[ReduceIns[gm, Transpose[old]]], Rule];
   amp = gen /. new[[1]] /.
     {p_PropagatorDenominator :> (p /. small[m_] -> m), _small -> 0};
@@ -1138,7 +1151,7 @@ Block[ {old, new, amp, name = AmpName[id], pc},
 
 LevelSelect[_][id_, _, amp_] :=
 Block[ {name = AmpName[Select[id, FreeQ[#, Number]&]]},
-  {name -> (TrivialSums[amp] /. fixPlus), name, {}, {}}
+  {name -> TrivialSums[amp], name, {}, {}}
 ]
 
 
@@ -1236,6 +1249,27 @@ Component[r_ s__SumOver] := comp[s] += r
 Component[other_] := comp[] += other
 
 
+TagDiagrams[fal:FeynAmpList[__][___]] :=
+Block[ {diag = 0},
+  TagAmp/@ fal
+]
+
+TagDiagrams[fa_FeynAmp] :=
+Block[ {diag = 0},
+  TagAmp[fal]
+]
+
+TagAmp[FeynAmp[id_, q_, gen_, gm_ -> ins_]] :=
+  FeynAmp[id, q, gen, gm -> TagIns/@ ins]
+
+TagAmp[FeynAmp[id_, q_, amp_]] :=
+  FeynAmp[id, q, amp Diagram[++diag]]
+
+TagIns[{r__, f_}] := {r, f Diagram[++diag]}
+
+TagIns[ins_ -> more_] := TagIns[ins] -> TagIns/@ more
+
+
 (* the main function CalcFeynAmp *)
 
 SUNObjs = SUNSum | SUNT | SUNTSum | SUNF
@@ -1323,6 +1357,7 @@ amps, traces = False, res = 0},
   InsSym[s_Symbol] =.;
   amps = { Flatten/@ Transpose[amps],
     Cases[DownValues[InsSym], _[_[_[ins_]], s_Symbol] :> s == ins] } /.
+    fixPlus /.
     { x_^r_Rational -> pow[x, r],
       Complex[a_, b_] -> a + "i_" b };
 
@@ -2350,6 +2385,9 @@ Block[ {file = mod <> ".F", hh},
 ]
 
 
+$Prefix = ""
+
+
 VarDecl[_[], _] = ""
 
 VarDecl[vars_, type_String] :=
@@ -2370,13 +2408,13 @@ Block[ {v, pindex, phead},
   pindex = Position[v, _[_Symbol..], 1, Heads -> False];
   phead = Position[v, _[__], 1, Heads -> False];
   VarDecl[MapAt[Dim/@ # &, v, pindex], type] <>
-    VarDecl[MapAt[Head, v, phead], "common /PREFIX " <> common <> "/"] <>
+    VarDecl[MapAt[Head, v, phead], "common /" <> $Prefix <> common <> "/"] <>
     "\n"
 ]
 
 
 SubroutineDecl[name_] := "\
-\tsubroutine PREFIX " <> name <> "\n\
+\tsubroutine " <> $Prefix <> name <> "\n\
 \timplicit character (a-s,u-z)\n\
 \timplicit double complex (t)\n\n"
 
@@ -2510,13 +2548,13 @@ WriteSquaredME[tree_, loop_, dir_, opt___Rule] :=
   WriteSquaredME[tree, loop, Abbr[], dir, opt]
 
 WriteSquaredME[tree_, loop_, abbr__, dir_, opt___Rule] :=
-Block[ {loopsq, folder, prefix, abr, mat, fcs, proc = Sequence[],
+Block[ {loopsq, folder, $Prefix, abr, mat, fcs, proc = Sequence[],
 Dim, abbint, cints = {}, iints = {}, cc = 0, ic = 0,
 ModName, Indices, Hel, hels, mandel, legs,
 files, hh, unused, maxmat, ntree, nloop, mats, loops,
 header, ffmods, abbrmods, Conjugate = dconjg},
 
-  {loopsq, folder, prefix} = ParseOpt[WriteSquaredME, opt];
+  {loopsq, folder, $Prefix} = ParseOpt[WriteSquaredME, opt];
 
   (ModName[mod_] := ModName[mod] = ToFileName[#, mod])& @
     MkDir[dir, folder];
@@ -2615,8 +2653,6 @@ header, ffmods, abbrmods, Conjugate = dconjg},
   hh = OpenWrite[ModName["makefile"]];
 
   WriteString[hh, "\
-PREFIX = " <> prefix <> "\n\n\
-FFLAGS += -DPREFIX=$(PREFIX)\n\n\
 LIB = $(CURDIR).a\n\n\
 OBJS =" <> ({" \\\n  ", #, ".o"}&)/@
   Flatten[{abbrmods, ffmods, "SquaredME"}] <> "\n\n\
@@ -2641,14 +2677,14 @@ clean distclean:\n\
   WriteString[hh, "\
 *#define CHECK\n\n\
 * SquaredME.F" <> header <> "\
-\tsubroutine PREFIX SquaredME(result, helicities, reset)\n\
+\tsubroutine " <> $Prefix <> "SquaredME(result, helicities, reset)\n\
 \timplicit none\n\
 \tdouble precision result(*)\n\
 \tinteger helicities\n\
 \tlogical reset\n\n\
 #include \"vars.h\"\n\n\
-\tdouble precision PREFIX sumup\n\
-\texternal PREFIX sumup\n\n\
+\tdouble precision " <> $Prefix <> "sumup\n\
+\texternal " <> $Prefix <> "sumup\n\n\
 \tinteger Cptr, Dptr, Eptr" <>
     VarDecl[First/@ hels, "integer"] <>
     Apply[{"\n\tequivalence (", #1, ", Hel(", #2, "))"}&, hels, 1] <>
@@ -2665,37 +2701,37 @@ clean distclean:\n\
 \t  call setcachelast(Ccache, 0)\n\
 \t  call setcachelast(Dcache, 0)\n\
 *\t  call setcachelast(Ecache, 0)" <>
-    ({"\n\t  call PREFIX ", #}&)/@ abbrmods[[1]] <> "\n\
+    ({"\n\t  call ", $Prefix, #}&)/@ abbrmods[[1]] <> "\n\
 \t  reset = .FALSE.\n\
 \tendif\n\
 \tCptr = getcachelast(Ccache)\n\
 \tDptr = getcachelast(Dcache)\n\
 *\tEptr = getcachelast(Ecache)\n" <>
-    ({"\n\tcall PREFIX ", #}&)/@ abbrmods[[2]] <> "\n\n\
+    ({"\n\tcall ", $Prefix, #}&)/@ abbrmods[[2]] <> "\n\n\
 \tresult(1) = 0\n\
 \tresult(2) = 0\n\n\
 #define Test(i) if( .not. btest(helicities, \
 3*(" <> ToString[legs] <> " - i) + 1 + Hel(i)) ) goto i\n\n" <>
     Apply[{"\tdo ", #1, " = -1, 1\n\tTest(", #2, ")\n"}&, hels, 1] <>
-    ({"\n\tcall PREFIX ", #}&)/@ abbrmods[[3]] <>
+    ({"\n\tcall ", $Prefix, #}&)/@ abbrmods[[3]] <>
     ({"\n", #[[6]], "\n\t", #[[2]], " = 0", #[[7]]}&)/@ loops <> "\n\n"];
 
   (* d) calculation of the form factors *)
   WriteDoLoops[hh, ToDoLoops[ffmods, Indices],
-    WriteString[#1, "\tcall PREFIX " <> #2 <> "\n"]&];
+    WriteString[#1, "\tcall " <> $Prefix <> #2 <> "\n"]&];
 
   (* e) summing up *)
   WriteString[hh,
     If[ ntree =!= 0,
-      {"\n\tresult(1) = result(1) + PREFIX sumup(",
+      {"\n\tresult(1) = result(1) + ", $Prefix, "sumup(",
         ntree[[3]], ", ", ntree[[3]], ")"},
       {} ] <>
     If[ ntree =!= 0 && nloop =!= 0,
-      {"\n\tresult(2) = result(2) + 2*PREFIX sumup(",
+      {"\n\tresult(2) = result(2) + 2*", $Prefix, "sumup(",
         nloop[[3]], ", ", ntree[[3]], ")"},
       {} ] <>
     If[ nloop =!= 0 && (ntree === 0 || TrueQ[loopsq]),
-      {"\n\tresult(2) = result(2) + PREFIX sumup(",
+      {"\n\tresult(2) = result(2) + ", $Prefix, "sumup(",
         nloop[[3]], ", ", nloop[[3]], ")"},
       {} ] <> "\n\n" <>
     Apply[{#2, "\tenddo\n"}&, Reverse[hels], 1] <> "\n\
@@ -2716,7 +2752,7 @@ clean distclean:\n\
 
   (* f) the sumup function *)
   WriteString[hh, "\n\
-\tdouble precision function PREFIX sumup(C" <>
+\tdouble precision function " <> $Prefix <> "sumup(C" <>
       nloop[[3]] <> ", C" <> ntree[[3]] <> ")\n\
 \timplicit none\n\n\
 #include \"vars.h\"\n" <>
@@ -2725,14 +2761,15 @@ clean distclean:\n\
 \tdouble complex C" <>
     StringReplace[nloop[[2]] <> ", C" <> ntree[[2]], "j" -> "n"] <> "\n\
 \tdouble complex m\n\n\
-\tPREFIX sumup = 0\n" <>
+\t" <> $Prefix <> "sumup = 0\n" <>
     ntree[[6]] <> "\n\
 \tm = 0" <>
     nloop[[6]] <> "\n\
 \tm = m + C" <> nloop[[2]] <> "*" <>
       ToFortran[Inner[MatType, nloop[[1]], ntree[[1]], Times]] <>
     nloop[[7]] <> "\n\
-\tPREFIX sumup = PREFIX sumup + dble(dconjg(C" <> ntree[[2]] <> ")*m)" <>
+\t" <> $Prefix <> "sumup = " <>
+      $Prefix <> "sumup + dble(dconjg(C" <> ntree[[2]] <> ")*m)" <>
     ntree[[7]] <> "\n\
 \tend\n"];
 
@@ -2767,7 +2804,7 @@ Block[ {se, Small},
     Pair[_k, _k] -> K2,
 	(* take only the transverse part of vector-boson SEs: *)
     Pair[_e | _ec, _k] -> If[MatchQ[proc, _V -> _V], 0, 1],
-    Pair[_e, _ec] -> 1,
+    Pair[_e, _ec] -> -1,
     SUNT[_, _] -> 1,
     SUNT[_, _, 0, 0] -> 1/2 }
 ]
@@ -2897,7 +2934,7 @@ Block[ {file = mod <> ".F", hh},
   WriteString[hh,
     "* " <> file <> header <>
     SubroutineDecl[mod] <>
-    ({"\n\tcall PREFIX ", #}&/@ mods) <>
+    ({"\n\tcall ", $Prefix, #}&/@ mods) <>
     "\n\tend\n"];
   Close[hh];
   {mod, mods}
@@ -2911,9 +2948,9 @@ Options[WriteRenConst] = {
 WriteRenConst::norcs = "Warning: no renormalization constants found."
 
 WriteRenConst[expr_, dir_, opt___Rule] :=
-Block[ {folder, prefix, ModName, rcs, rcmods, header, hh},
+Block[ {folder, $Prefix, ModName, rcs, rcmods, header, hh},
 
-  {folder, prefix} = ParseOpt[WriteRenConst, opt];
+  {folder, $Prefix} = ParseOpt[WriteRenConst, opt];
 
   (ModName[mod_] := ModName[mod] = ToFileName[#, mod])& @
     MkDir[dir, folder];
@@ -2957,8 +2994,6 @@ Block[ {folder, prefix, ModName, rcs, rcmods, header, hh},
   hh = OpenWrite[ModName["makefile"]];
 
   WriteString[hh, "\
-PREFIX = " <> prefix <> "\n\n\
-FFLAGS += -DPREFIX=$(PREFIX)\n\n\
 LIB = $(CURDIR).a\n\n\
 OBJS =" <> ({" \\\n  ", #, ".o"}&)/@
   Flatten[{rcmods, "ZeroRenConst"}] <> "\n\n\
@@ -3358,12 +3393,17 @@ Scan[ (N[#] = Random[])&,
 (* definitions for the MSSM *)
 
 SetOptions[CalcFeynAmp,
-  NoExpand -> {USf, USfC, UCha, UChaC, VCha, VChaC, ZNeu, ZNeuC}]
+  NoExpand -> {USf, USfC, UASf, UASfC,
+    UCha, UChaC, VCha, VChaC, ZNeu, ZNeuC}]
 
-USf[t_, g_][a_, b_] := USf[a, b, t, g]
+USf[t_, g_][a_, b_] := USf[a, b, t, g];
+UASf[t_][a_, b_] := UASf[a, b, t]
 
 Conjugate[USf[a__]] ^:= USfC[a];
 Conjugate[USfC[a__]] ^:= USf[a]
+
+Conjugate[UASf[a__]] ^:= UASfC[a];
+Conjugate[UASfC[a__]] ^:= UASf[a]
 
 Conjugate[UCha[a__]] ^:= UChaC[a];
 Conjugate[UChaC[a__]] ^:= UCha[a]
@@ -3385,6 +3425,7 @@ CB2/: CB2 + SB2 = 1
 
 Sq[MGl] = MGl2;
 Sq[MSf[a__]] = MSf2[a];
+Sq[MASf[a__]] = MASf2[a];
 Sq[MCha[a__]] = MCha2[a];
 Sq[MNeu[a__]] = MNeu2[a]
 

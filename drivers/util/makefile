@@ -1,33 +1,43 @@
 LIB = $(CURDIR).a
 
+common = cuba/common
+vegas = cuba/vegas
+suave = cuba/suave
+divonne = cuba/divonne
+cuhre = cuba/cuhre
 
-VEGAS_C = vegas/Vegas.c
-VEGAS_F = vegas/vegas-f.c
-VEGAS_H = vegas/decl.h vegas/stddecl.h
-VEGAS_SRCS = vegas/util.c vegas/debug.c vegas/common.c \
-  vegas/Random.c vegas/ChiSquare.c \
-  vegas/Grid.c vegas/Integrate.c
+CFLAGS += -I$(common)
 
-SUAVE_C = suave/Suave.c
-SUAVE_F = suave/suave-f.c
-SUAVE_H = suave/decl.h suave/stddecl.h
-SUAVE_SRCS = suave/util.c suave/debug.c suave/common.c \
-  suave/Random.c suave/ChiSquare.c suave/Grid.c \
-  suave/Fluct.c suave/Sample.c suave/Integrate.c
+VEGAS_C = $(vegas)/Vegas.c
+VEGAS_F = $(vegas)/vegas-f.c
+VEGAS_H = $(vegas)/decl.h $(common)/stddecl.h
+VEGAS_SRCS = $(common)/debug.c $(common)/Random.c \
+  $(common)/ChiSquare.c $(common)/Erf.c $(vegas)/util.c \
+  $(vegas)/common.c $(vegas)/Grid.c $(vegas)/Integrate.c
 
-DIVONNE_C = divonne/Divonne.c
-DIVONNE_F = divonne/divonne-f.c
-DIVONNE_H = divonne/decl.h divonne/stddecl.h
-DIVONNE_SRCS = divonne/util.c divonne/debug.c divonne/common.c \
-  divonne/KorobovCoeff.c divonne/Random.c divonne/ChiSquare.c \
-  divonne/Rule.c divonne/Sample.c divonne/FindMinimum.c \
-  divonne/Explore.c divonne/Split.c divonne/Integrate.c \
+SUAVE_C = $(suave)/Suave.c
+SUAVE_F = $(suave)/suave-f.c
+SUAVE_H = $(suave)/decl.h $(common)/stddecl.h
+SUAVE_SRCS = $(common)/debug.c $(common)/Random.c \
+  $(common)/ChiSquare.c $(common)/Erf.c $(suave)/util.c \
+  $(suave)/common.c $(suave)/Grid.c $(suave)/Fluct.c \
+  $(suave)/Sample.c $(suave)/Integrate.c
 
-CUHRE_C = cuhre/Cuhre.c
-CUHRE_F = cuhre/cuhre-f.c
-CUHRE_H = cuhre/decl.h cuhre/stddecl.h
-CUHRE_SRCS = cuhre/util.c cuhre/debug.c cuhre/common.c \
-  cuhre/ChiSquare.c cuhre/Rule.c cuhre/Integrate.c
+DIVONNE_C = $(divonne)/Divonne.c
+DIVONNE_F = $(divonne)/divonne-f.c
+DIVONNE_H = $(divonne)/decl.h $(common)/stddecl.h
+DIVONNE_SRCS = $(common)/debug.c $(common)/Random.c \
+  $(common)/ChiSquare.c $(common)/Erf.c $(divonne)/util.c \
+  $(divonne)/common.c $(divonne)/KorobovCoeff.c \
+  $(divonne)/Rule.c $(divonne)/Sample.c $(divonne)/FindMinimum.c \
+  $(divonne)/Explore.c $(divonne)/Split.c $(divonne)/Integrate.c
+
+CUHRE_C = $(cuhre)/Cuhre.c
+CUHRE_F = $(cuhre)/cuhre-f.c
+CUHRE_H = $(cuhre)/decl.h $(common)/stddecl.h
+CUHRE_SRCS = $(common)/debug.c \
+  $(common)/ChiSquare.c $(common)/Erf.c $(cuhre)/util.c \
+  $(cuhre)/common.c $(cuhre)/Rule.c $(cuhre)/Integrate.c
 
 CUBA = \
   $(VEGAS_C) $(VEGAS_F) \
@@ -40,7 +50,6 @@ OBJS = \
   system/logfile.o \
   kin/Delta.o \
   kin/ThreeMom.o \
-  kin/Li2.o \
   kin/VecSet.o \
   kin/SInvariant.o \
   kin/TInvariant.o \
@@ -64,7 +73,8 @@ OBJS = \
   diag/IdentityMatrix.o \
   univariate/Patterson.o \
   univariate/Gauss.o \
-  $(CUBA:.c=.o)
+  $(CUBA:.c=.o) \
+  compaz/CompAZ.o
 
 
 $(LIB): $(LIB)($(OBJS))

@@ -1,13 +1,15 @@
 * 2to3.F
 * the kinematics for a 2 -> 3 process
 * this file is part of FormCalc
-* last modified 18 Nov 04 th
+* last modified 7 Feb 05 th
 
 
 * some definitions for main.F
 #define LEGS 5
 #define LEGS_IN 2
 #define TYPES TYPE1, TYPE2, TYPE3, TYPE4, TYPE5
+
+#define HEADER "2to3.h"
 
 * this defines the order of integrations:
 #define K50 4
@@ -17,7 +19,7 @@
 
 #define MAXDIM 4
 
-#define HEADER "2to3.h"
+#include "cuba.F"
 
 
 ************************************************************************
@@ -29,11 +31,12 @@
 #include HEADER
 
 	double precision result(NCOMP), error(NCOMP)
+	external Sample
 
 	print *, "sqrt(s) =", sqrtS
 	call flush(6)
 
-	call IntegratedCS(result, error, MAXDIM)
+	call Cuba(MAXDIM, Sample, result, error)
 
 100	format(TAG, G19.10, NCOMP G24.15, NCOMP G15.6)
 	print 100, sqrtS, result, error
@@ -50,6 +53,7 @@
 #include HEADER
 
 	double precision result(NCOMP), error(NCOMP), k50
+	external Sample
 
 * at k50 = MASS5 (i.e. k5 = 0) the phase-space volume is precisely
 * zero, plus we have difficulties computing certain kinematical
@@ -63,7 +67,7 @@
 
 	  var(K50) = k50
 	  call SetLimits
-	  call IntegratedCS(result, error, MAXDIM - 1)
+	  call Cuba(MAXDIM - 1, Sample, result, error)
 
 100	  format(TAG, G19.10, NCOMP G24.15, NCOMP G15.6)
 	  print 100, k50, result, error
@@ -100,7 +104,9 @@
 #include HEADER
 #include "util.h"
 
-	double precision threshold, m, Pin
+	double precision Pin
+
+	double precision threshold, m
 	logical adjust
 
 	adjust = .FALSE.
@@ -254,76 +260,3 @@
 	  result(c) = result(c)*jacobian
 	enddo
 	end
-
-
-************************************************************************
-** IntegratedCS integrates the differential cross-section over the
-** dimensions 1..ndim.
-
-#define VEGAS 1
-#define SUAVE 2
-#define DIVONNE 3
-#define CUHRE 4
-
-#define FLAGS_LAST 4
-
-	subroutine IntegratedCS(result, error, ndim)
-	implicit none
-	double precision result(*), error(*)
-	integer ndim
-
-#include HEADER
-
-	integer nregions, neval, fail, c
-	double precision prob(NCOMP)
-	external Sample
-
-#if METHOD == VEGAS
-
-	call vegas(ndim, NCOMP, Sample,
-     &    dble(RELACCURACY), dble(ABSACCURACY),
-     &    VERBOSE, MINEVAL, MAXEVAL,
-     &    NSTART, NINCREASE,
-     &    neval, fail, result, error, prob)
-	nregions = 1
-
-#elif METHOD == SUAVE
-
-	call suave(ndim, NCOMP, Sample,
-     &    dble(RELACCURACY), dble(ABSACCURACY),
-     &    VERBOSE + FLAGS_LAST, MINEVAL, MAXEVAL,
-     &    NNEW, dble(FLATNESS),
-     &    nregions, neval, fail, result, error, prob)
-
-#elif METHOD == DIVONNE
-
-	call divonne(ndim, NCOMP, Sample,
-     &    dble(RELACCURACY), dble(ABSACCURACY),
-     &    VERBOSE, MINEVAL, MAXEVAL,
-     &    KEY1, KEY2, KEY3, MAXPASS,
-     &    dble(BORDER), dble(MAXCHISQ), dble(MINDEVIATION),
-     &    0, NDIM, 0, 0, 0,
-     &    nregions, neval, fail, result, error, prob)
-
-#else
-
-	call cuhre(ndim, NCOMP, Sample,
-     &    dble(RELACCURACY), dble(ABSACCURACY),
-     &    VERBOSE + FLAGS_LAST, MINEVAL, MAXEVAL,
-     &    KEY,
-     &    nregions, neval, fail, result, error, prob)
-
-#endif
-
-	if( fail .gt. 0 ) then
-	  print *, "Failed to reach the desired accuracy."
-	  print *, "Results thus obtained:"
-100	  format(I2, G24.15, " +- ", G24.15, "  p = ", F8.3)
-	  print 100, (c, result(c), error(c), prob(c), c = 1, NCOMP)
-	else if( fail .lt. 0 ) then
-	  print *, "integration error"
-	endif
-
-	print *, neval, " evaluations, ", nregions, " regions"
-	end
-

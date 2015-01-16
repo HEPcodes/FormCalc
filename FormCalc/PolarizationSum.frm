@@ -1,7 +1,7 @@
 * PolarizationSum.frm
 * the FORM part of the PolarizationSum function
 * this file is part of FormCalc
-* last modified 4 Nov 04 th
+* last modified 8 Dec 05 th
 
 
 #procedure PolSum(i, m)
@@ -13,10 +13,11 @@ keep brackets;
 id e`i' = E(?);
 id ec`i' = EC(?);
 
-multiply 2;
+#if `m' == "0"
+* massless case
 
+multiply 2;
 id E([mu]?) * EC([nu]?) = 1/2*( -d_([mu], [nu])
-#if "`m'" == "0"
 #if `GaugeTerms' == 1
 * Note: we really ought to use new vectors eta here,
 * the e are re-used for convenience only.
@@ -26,10 +27,16 @@ id E([mu]?) * EC([nu]?) = 1/2*( -d_([mu], [nu])
     - k`i'([mu])*k`i'([nu])*(e`i'.e`i')*inv(k`i'.e`i')^2
     + (e`i'([mu])*k`i'([nu]) + e`i'([nu])*k`i'([mu]))*inv(k`i'.e`i')
 #endif
-#else
-    + k`i'([mu])*k`i'([nu])/(`m')^2
-#endif
   );
+
+#else
+* massive case
+
+multiply 3;
+id E([mu]?) * EC([nu]?) = 1/3*( -d_([mu], [nu]) +
+  k`i'([mu])*k`i'([nu])/(`m')^2 );
+
+#endif
 
 .sort
 #endprocedure

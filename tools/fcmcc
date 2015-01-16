@@ -1,0 +1,25 @@
+#! /bin/sh
+# a workaround for Mathematica's mcc, which despite several
+# postings to support@wolfram.com is still unable to order
+# object files and library options correctly
+# this file is part of FormCalc
+# last modified 7 Mar 05 th
+
+
+linkopt=""
+otheropt=""
+
+for opt in $* ; do
+  case $opt in
+  -[Ll]* | *.a)
+    linkopt="$linkopt $opt"
+    ;;
+  *)
+    otheropt="$otheropt $opt"
+    ;;
+  esac
+done
+
+set -x
+${REALCC:-cc} $otheropt $linkopt -lpthread
+

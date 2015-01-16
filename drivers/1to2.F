@@ -1,7 +1,7 @@
 * 1to2.F
 * the kinematics for a 1 -> 2 process
 * this file is part of FormCalc
-* last modified 18 Nov 04 th
+* last modified 7 Feb 05 th
 
 
 * some definitions for main.F
@@ -169,8 +169,8 @@
 
 	costhcut = cos(dble(THETACUT))
 	call Patterson(NCOMP, -costhcut, costhcut, DifferentialCS,
-     &    dble(ABSACCURACY), dble(RELACCURACY), result, error,
-     &    neval, fail)
+     &    dble(ABSACCURACY), dble(RELACCURACY),
+     &    neval, fail, result, error)
 
 	if( fail .ne. 0 )
      &    print *, "Failed to reach the desired accuracy."

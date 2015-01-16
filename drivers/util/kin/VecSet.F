@@ -2,7 +2,7 @@
 * construct the CMS representation of a momentum and the
 * three corresponding polarization vectors
 * this file is part of FormCalc
-* last modified 15 Jun 04 th
+* last modified 2 Mar 05 th
 
 
 * i: the index of the momentum
@@ -92,9 +92,9 @@
 	EpsTR(1,2) = dconjg(EpsTL(2,1))
 
 * this is E^(I fi) cos(th/2) = 1/sqrt2*sqrt(1 + ez)*expIfi:
-	expIfi = 1/sqrt2*sqrt(1 + ez)*expIfi
+	expIfi = 1/sqrt2*sqrt(dim(1D0, -ez))*expIfi
 * this is sin(th/2):
-	sinth = 1/sqrt2*sqrt(1 - ez)
+	sinth = 1/sqrt2*sqrt(dim(1D0, ez))
 	sump = sqrt(p0 + p)
 	deltap = sqrt(deltap)
 

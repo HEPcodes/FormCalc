@@ -2,7 +2,7 @@
 * all parameters for the THDM are initialized here
 * this file is part of FormCalc
 * Abdesslam Arhrib, 2 Jun 03
-* last modified 13 Sep 04 th
+* last modified 7 Feb 05 th
 
 
 * The input parameters for thdm_ini are:
@@ -33,11 +33,9 @@
 
 #define ModelDefaults SMDefaults
 #define ModelConstIni SMConstIni
-#define ModelDigest SMDigest
 #include "sm_ini.F"
 #undef ModelDefaults
 #undef ModelConstIni
-#undef ModelDigest
 
 
 ************************************************************************
@@ -138,22 +136,9 @@
 	  endif
 	endif
 #endif
-	return
 
-999	return 1
-	end
-
-
-************************************************************************
-
-	subroutine ModelDigest
-	implicit none
-
-#include "model.h"
-
-	integer i, j
-
-	call SMDigest
+	if( thdm_digest ) return
+	thdm_digest = .TRUE.
 
 	print *, "THDM parameters"
 	print *, "----------------------------"
@@ -170,4 +155,8 @@
 	print *, "MHp =", MHp
 	print *, "Lambda5 =", Lambda5
 	print *, "============================"
+	return
+
+999	return 1
 	end
+

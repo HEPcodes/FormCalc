@@ -2,7 +2,7 @@
 * all parameters for the MSSM are initialized here
 * this file is part of FormCalc
 * Christian Schappacher, 17 Feb 99
-* last modified 25 Jan 05 th
+* last modified 4 May 06 th
 
 
 * The input parameters for mssm_ini are:
@@ -44,6 +44,10 @@
 *   If defined, reverse-engineers the mixing in the Higgs sector
 *   (alpha and beta) such that the MSSM Higgs sector looks like
 *   a SM Higgs sector.
+
+* FLAVOUR_VIOLATION
+*   If defined, initialize also the fully 6x6 mixed sfermion mass
+*   matrices with the flavour-violating parameters deltaSf.
 
 * NO_EXCLUSION_LIMITS
 *   If defined, the experimental exclusion limits are ignored.
@@ -117,12 +121,10 @@
 #define ModelDefaults SMDefaults
 #define ModelConstIni SMConstIni
 #define ModelVarIni SMVarIni
-#define ModelDigest SMDigest
 #include "sm_ini.F"
 #undef ModelDefaults
 #undef ModelConstIni
 #undef ModelVarIni
-#undef ModelDigest
 
 
 ************************************************************************
@@ -131,6 +133,14 @@
 	implicit none
 
 #include "model.h"
+
+#ifdef FLAVOUR_VIOLATION
+	integer i
+
+	do i = 1, 6*6*2
+	  deltaSf_flat(i) = 0
+	enddo
+#endif
 
 	call SMDefaults
 	end
@@ -164,10 +174,11 @@
 
 * FeynHiggs needs the gluino mass, hence we have to postpone
 * the Higgs sector to ModelVarIni.
-#if HIGGS_MASSES == FEYNHIGGS
-#else
+#if HIGGS_MASSES != FEYNHIGGS
 	call HiggsMasses(*999)
 #endif
+
+	mssm_digest = .FALSE.
 	return
 
 999	return 1
@@ -191,6 +202,15 @@
 #ifndef NO_EXCLUSION_LIMITS
 	double precision f1f2, DeltaRho
 	external f1f2
+#endif
+
+#ifdef FLAVOUR_VIOLATION
+	integer as1, as2, g2
+	double precision m, m2
+	double complex X(6,6)
+
+	double complex Xflat(6*6)
+	equivalence (X, Xflat)
 #endif
 
 	i3part = .5D0*MZ2*C2B
@@ -295,6 +315,59 @@
      &      " > DeltaRho_UPPERBOUND = ", DeltaRho_UPPERBOUND
 	  return 1
 	endif
+#endif
+
+#ifdef FLAVOUR_VIOLATION
+* Note: we compute two sets of squark masses.
+* 1) the "regular" ones with only left-right mixing,
+* 2) the fully 6x6 mixed ones.
+* The "regular" ones are needed for computing the Higgs mass.
+
+	do t = 3, 4
+	  do g = 1, 6*6
+	    Xflat(g) = 0
+	  enddo
+	  do g = 1, 3
+	    X(g,g+3) = Mf(t,g)*dconjg(Xf(t,g))
+	    X(g+3,g+3) = MSS2(2,t,g) + DSf(2,t) + Mf2(t,g)
+	    X(g,g) = MSS2(1,t,g) + DSf(1,t) + Mf2(t,g)
+	  enddo
+
+	  do g2 = 6, 1, -1
+	    if( g2 .le. 3 ) then
+	      m = X(g2,g2)
+	    else
+	      m = X(g2-3,g2-3)
+	    endif
+	    do g = g2, 1, -1
+	      if( g .le. 3 ) then
+	        m2 = X(g,g)
+	      else
+	        m2 = X(g-3,g-3)
+	      endif
+	      X(g,g2) = X(g,g2) + deltaSf(t,g,g2)*sqrt(m*m2)
+	    enddo
+	  enddo
+
+	  Af(t,1,2) = X(1,5)/Mf(t,1)
+	  Af(t,2,1) = X(2,4)/Mf(t,2)
+	  Af(t,1,3) = X(1,6)/Mf(t,1)
+	  Af(t,3,1) = X(3,4)/Mf(t,3)
+	  Af(t,2,3) = X(2,6)/Mf(t,2)
+	  Af(t,3,2) = X(3,5)/Mf(t,3)
+
+	  call Eigensystem(6, X, 6, MASf2(1,t), UASf(1,1,t), 6)
+
+	  if( MASf2(1,t) .lt. 0 ) then
+	    print *, "Negative MASf2"
+	    fail = 1
+	    return
+	  endif
+
+	  do as1 = 1, 6
+	    MASf(as1,t) = sqrt(MASf2(as1,t))
+	  enddo
+	enddo
 #endif
 	return
 
@@ -486,6 +559,7 @@
 	MHp2tree = MA02 + MW2
 
 #if HIGGS_MASSES == FEYNHIGGS
+
 	call FHSetFlags(error, mssmpart, fieldren, tanbren,
      &    higgsmix, p2approx, looplevel, tl_running_mt, tl_bot_resum)
 	if( error .ne. 0 ) return 1
@@ -752,20 +826,9 @@
 #if HIGGS_MASSES == FEYNHIGGS
 	call HiggsMasses(*999)
 #endif
-	return
 
-999	return 1
-	end
-
-
-************************************************************************
-
-	subroutine ModelDigest
-	implicit none
-
-#include "model.h"
-
-	call SMDigest
+	if( mssm_digest ) return
+	mssm_digest = .TRUE.
 
 	print *, "MSSM parameters"
 	print *, "----------------------------"
@@ -811,6 +874,14 @@
 	print *, "d-Squark   d:  ", MSf(1,4,1), MSf(2,4,1)
 	print *, "           s:  ", MSf(1,4,2), MSf(2,4,2)
 	print *, "           b:  ", MSf(1,4,3), MSf(2,4,3)
+#ifdef FLAVOUR_VIOLATION
+	print *, "u-Squark fv    ", MASf(1,3), MASf(2,3)
+	print *, "               ", MASf(3,3), MASf(4,3)
+	print *, "               ", MASf(5,3), MASf(6,3)
+	print *, "d-Squark fv    ", MASf(1,4), MASf(2,4)
+	print *, "               ", MASf(3,4), MASf(4,4)
+	print *, "               ", MASf(5,4), MASf(6,4)
+#endif
 	print *, "----------------------------"
 	print *, "Chargino masses:"
 	print *, "MCha(1) =", MCha(1)
@@ -825,4 +896,8 @@
 	print *, "Gluino mass:"
 	print *, "MGl =", MGl
 	print *, "============================"
+	return
+
+999	return 1
 	end
+
