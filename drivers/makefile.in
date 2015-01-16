@@ -1,0 +1,57 @@
+.PHONY: default force mostlyclean clean distclean
+
+default: run
+
+
+export VPATH := $(CURDIR):$(CURDIR)/renconst:$(LOOPTOOLS)/include
+
+INCLUDE := $(patsubst %,-I%,$(subst :, ,$(VPATH)))
+
+PREFIX =
+
+FFLAGS += $(INCLUDE)
+
+ifdef DEBUG
+FFLAGS += -g -DDEBUG
+endif
+
+export FC
+export FFLAGS
+export CC
+export CFLAGS
+
+
+LIBS = squaredme.a renconst.a util.a
+
+$(LIBS): force
+	$(MAKE) -C $*
+
+
+DEPS := $(wildcard *.d)
+
+
+mostlyclean:
+	$(RM) $(DEPS) $(DEPS:%.d=%.o) $(DEPS:%.d=%)
+
+clean: mostlyclean
+	for dir in $(basename $(LIBS)) ; do \
+	  $(MAKE) -C $$dir clean ; \
+	done
+
+distclean: mostlyclean
+	for dir in $(basename $(LIBS)) ; do \
+	  $(MAKE) -C $$dir distclean ; \
+	done
+
+
+MAKECMDGOALS ?= run
+
+-include $(MAKECMDGOALS:%=%.d)
+
+%.d: %.F
+	( echo "$*: $@ $(LIBS)" ; \
+	  $(CPP) -M $(INCLUDE) $< | sed 's/^.*:/$@:/' ) > $@
+
+%:: %.F %.d
+	$(FC) $(FFLAGS) -DPREFIX=$(PREFIX) -o $@ $< $(LIBS) $(LDFLAGS)
+	-$(RM) $*.o

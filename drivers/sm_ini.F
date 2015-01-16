@@ -1,35 +1,79 @@
 * sm_ini.F
 * all parameters for the Standard Model are initialized here
 * this file is part of FormCalc
-* last modified 12 Feb 03 th
+* last modified 24 Jan 05 th
 
+
+	subroutine ModelDefaults
+	implicit none
+
+#include "model.h"
+
+	Mf(1,1) = 0
+	Mf(2,1) = ME
+	Mf(3,1) = MU
+	Mf(4,1) = MD
+	Mf(1,2) = 0
+	Mf(2,2) = MM
+	Mf(3,2) = MC
+	Mf(4,2) = MS
+	Mf(1,3) = 0
+	Mf(2,3) = ML
+	Mf(3,3) = MT
+	Mf(4,3) = MB
+
+	Mf2(1,1) = 0
+	Mf2(2,1) = ME2
+	Mf2(3,1) = MU2
+	Mf2(4,1) = MD2
+	Mf2(1,2) = 0
+	Mf2(2,2) = MM2
+	Mf2(3,2) = MC2
+	Mf2(4,2) = MS2
+	Mf2(1,3) = 0
+	Mf2(2,3) = ML2
+	Mf2(3,3) = MT2
+	Mf2(4,3) = MB2
+
+* Warning: With the PDG values used here, the CKM matrix is
+* not strictly unitary.  In cases where GIM cancellations are
+* important, this parameterization may give wrong results!
+
+#ifdef NO_CKM
+	CKM(1,1) = 1
+	CKM(2,2) = 1
+	CKM(3,3) = 1
+	CKM(2,1) = 0
+	CKM(3,1) = 0
+	CKM(1,2) = 0
+	CKM(3,2) = 0
+	CKM(1,3) = 0
+	CKM(2,3) = 0
+#else
+	CKM(1,1) = .97495D0
+	CKM(2,1) = .222D0
+	CKM(3,1) = .009D0
+	CKM(1,2) = .2225D0
+	CKM(2,2) = .97415D0
+	CKM(3,2) = .039D0
+	CKM(1,3) = .0035D0
+	CKM(2,3) = .040D0
+	CKM(3,3) = .99915D0
+#endif
+	end
+
+
+************************************************************************
 
 	subroutine ModelConstIni(*)
 	implicit none
 
 #include "model.h"
 
-* Warning: With the PDG values used here, the CKM matrix is
-* not strictly unitary.  In cases where GIM cancellations are
-* important, this parametrization may give wrong results!
-
-	data CKM /
-     &    .97495D0, .2225D0,  .0035D0,
-     &    .222D0,   .97415D0, .040D0,
-     &    .009D0,   .039D0,   .99915D0 /
-
-	data MLE  / ME,  MM,  ML  /
-	data MLE2 / ME2, MM2, ML2 /
-
-	data MQU  / MU,  MC,  MT  /
-	data MQU2 / MU2, MC2, MT2 /
-
-	data MQD  / MD,  MS,  MB  /
-	data MQD2 / MD2, MS2, MB2 /
-
 	EL = sqrt(4*pi*Alfa)
-	MH2 = MH**2
 	SW = sqrt(SW2)
+
+	MH2 = MH**2
 	end
 
 
@@ -90,8 +134,8 @@
 
 ************************************************************************
 ** ALPHAS2 (same name as CERNLIB routine) computes the strong coupling
-** constant at a given scale.  Code is transcribed from I. Hinchliffe's
-** Java applet at http://www-theory.lbl.gov/~ianh/alpha/alpha.html.
+** constant at a given scale.  Code is transcribed from Java applet by
+** I. Hinchliffe at http://www-theory.lbl.gov/~ianh/alpha/alpha.html.
 
 	double precision function ALPHAS2(scale)
 	implicit none
@@ -137,43 +181,48 @@
 
 	double precision delta54_0, delta54_10, delta54_11
 	double precision delta54_20, delta54_21
-	parameter (delta54_0  =  0.040000000000000000000D0)
-	parameter (delta54_10 = -0.030817842663873271183D0)
-	parameter (delta54_11 =  0.066991304347826086957D0)
-	parameter (delta54_20 = -0.086878340429029341662D0)
-	parameter (delta54_21 =  0.044069893975507520342D0)
+	parameter (delta54_0  =  .040000000000000000000D0)
+	parameter (delta54_10 = -.030817842663873271183D0)
+	parameter (delta54_11 =  .066991304347826086957D0)
+	parameter (delta54_20 = -.086878340429029341662D0)
+	parameter (delta54_21 =  .044069893975507520342D0)
 
 	double precision delta43_0, delta43_10, delta43_11
 	double precision delta43_20, delta43_21
-	parameter (delta43_0  =  0.037037037037037037037D0)
-	parameter (delta43_10 = -0.030404361930322301228D0)
-	parameter (delta43_11 =  0.052839506172839506173D0)
-	parameter (delta43_20 = -0.057313053497942386831D0)
-	parameter (delta43_21 =  0.039058962962962962963D0)
+	parameter (delta43_0  =  .037037037037037037037D0)
+	parameter (delta43_10 = -.030404361930322301228D0)
+	parameter (delta43_11 =  .052839506172839506173D0)
+	parameter (delta43_20 = -.057313053497942386831D0)
+	parameter (delta43_21 =  .039058962962962962963D0)
 
-	double precision lambda5
-	parameter (lambda5 = 199D-3)
-* The 5-flavour scale lambda5 is chosen to reproduce the
+	double precision lam5
+	parameter (lam5 = 199D-3)
+* The 5-flavour scale lam5 is chosen to reproduce the
 * "world average" alpha_s(MZ) = .1172.  The 1-sigma interval
-* on alpha_s(MZ) corresponds to 177 MeV < lambda5 < 223 MeV.
+* on alpha_s(MZ) corresponds to 177 MeV < lam5 < 223 MeV.
 
-	double precision b0, b1, b2, lambda, t, logt, c
+	double precision b0, b1, b2, lam, t, logt, c
+
+	if( scale .lt. .5D0 ) then
+	  ALPHAS2 = 1D10
+	  return
+	endif
 
 	if( scale .gt. MT ) then
 	  b0 = beta6_0
 	  b1 = beta6_1
 	  b2 = beta6_2
-	  t = MT/lambda5
-	  lambda = lambda5*t**(-2/21D0)*(2*log(t))**(-107/1127D0)
+	  t = MT/lam5
+	  lam = lam5*t**(-2/21D0)*(2*log(t))**(-107/1127D0)
 	else if( scale .gt. MB ) then
 	  b0 = beta5_0
 	  b1 = beta5_1
 	  b2 = beta5_2
-	  lambda = lambda5
+	  lam = lam5
 	else
-	  t = 2*log(MB/lambda5)
+	  t = 2*log(MB/lam5)
 	  logt = log(t)
-	  lambda = lambda5*exp(delta54_0*t +
+	  lam = lam5*exp(delta54_0*t +
      &      delta54_11*logt + delta54_10 +
      &      (delta54_21*logt + delta54_20)/t)
 	  if( scale .gt. MC ) then
@@ -184,15 +233,15 @@
 	    b0 = beta3_0
 	    b1 = beta3_1
 	    b2 = beta3_2
-	    t = 2*log(MC/lambda)
+	    t = 2*log(MC/lam)
 	    logt = log(t)
-	    lambda = lambda*exp(delta43_0*t +
+	    lam = lam*exp(delta43_0*t +
      &        delta43_11*logt + delta43_10 +
      &        (delta43_21*logt + delta43_20)/t)
 	  endif
 	endif
 
-	t = 2*log(scale/lambda)
+	t = 2*log(scale/lam)
 	logt = log(t)
 	c = 2*b1/b0**2/t
 

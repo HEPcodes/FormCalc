@@ -1,6 +1,6 @@
 #!/bin/sh
 # compile script for the C programs used by FormCalc
-# last modified 11 Feb 03 th
+# last modified 18 Nov 04 th
 
 # If this compile script doesn't work on your system, check these things:
 #
@@ -15,37 +15,56 @@
 #    in the environment variable MCC, e.g.
 #    setenv MCC /opt/mathematica/Executables/Linux/mcc
 
-MCC=`which ${MCC:-mcc}`
+CC=${CC:-gcc}
+export CC
 
-if [ ! -x "$MCC" ] ; then
-  echo "You need mcc (the MathLink C compiler) to compile ReadForm"
+MCC=${MCC:-mcc}
+
+CFLAGS="${CFLAGS:--O3 -fomit-frame-pointer -ffast-math} $*"
+
+set -- `math -run 'Print[$SystemID]; Exit[]' < /dev/null | tail -1`
+if [ $# -ne 1 ] ; then
+  echo "Cannot determine system type"
   exit 1
 fi
 
-eval `awk '/^sysid=/ { print $0; exit; }' $MCC`
+[ -d $1 ] || mkdir $1
+if [ $? -ne 0 ] ; then
+  echo "Cannot create directory $1"
+  exit 1
+fi
 
-[ -d $sysid ] || mkdir $sysid
+echo "Compiling for system type $1"
 
-make -f - << _EOF_
-all: $sysid/ReadForm $sysid/ToForm $sysid/ToFortran $sysid/ReadData
+make -f - << _EOF_ || exit 1
+all: $1/ReadForm $1/ToForm $1/ToFortran $1/ReadData $1/reorder
 
-CC = gcc
-CFLAGS = -O3 -fomit-frame-pointer $*
+$1/ReadForm: FormCalc/ReadForm.tm
+	$MCC $CFLAGS -o $1/ReadForm FormCalc/ReadForm.tm
+	strip $1/ReadForm
 
-$sysid/ReadForm: ReadForm.tm
-	CC=\$(CC) $MCC ReadForm.tm \$(CFLAGS) -o $sysid/ReadForm
-	strip $sysid/ReadForm
+$1/ToForm: FormCalc/ToForm.c
+	$CC $CFLAGS -o $1/ToForm FormCalc/ToForm.c
+	strip $1/ToForm
 
-$sysid/ToForm: ToForm.c
-	\$(CC) \$(CFLAGS) -o $sysid/ToForm ToForm.c
-	strip $sysid/ToForm
+$1/ToFortran: FormCalc/ToFortran.c
+	$CC $CFLAGS -o $1/ToFortran FormCalc/ToFortran.c
+	strip $1/ToFortran
 
-$sysid/ToFortran: ToFortran.c
-	\$(CC) \$(CFLAGS) -o $sysid/ToFortran ToFortran.c
-	strip $sysid/ToFortran
+$1/ReadData: tools/ReadData.tm
+	$MCC $CFLAGS -o $1/ReadData tools/ReadData.tm
+	strip $1/ReadData
 
-$sysid/ReadData: tools/ReadData.tm
-	CC=\$(CC) $MCC tools/ReadData.tm \$(CFLAGS) -o $sysid/ReadData
-	strip $sysid/ReadData
+$1/reorder: tools/reorder.c
+	$CC $CFLAGS -o $1/reorder tools/reorder.c
+	strip $1/reorder
 _EOF_
+
+
+# Second, make the util library.
+
+cd drivers
+trap "rm -f makefile util.a" 0 1 2 3 9 15
+ln -s ../$1/util.a util.a
+./configure util.a
 

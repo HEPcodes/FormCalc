@@ -1,0 +1,43 @@
+#!/bin/sh
+
+logfile=`dirname $0`/log
+
+runit()
+{
+  math -run "<< $1.m ; Exit[]"
+  cd $1.fortran
+  ./configure
+  make
+  ./run $2 $3
+  ./data run.*$3/
+  cd ..
+}
+
+process()
+{
+  set -x
+  runit $* > $logfile-$1 2>&1
+  cat $1.fortran/run.*$3.compare
+  cat $1.fortran/run.*$3.data
+}
+
+
+process eett-SM    uuuu  500
+process eett-MSSM  uuuu  500
+process eettA-SM   uuuuu 500
+
+process eeWW-SM    uuuu  500
+process eeWW-SMbgf uuuu  500
+process eeWW-MSSM  uuuu  500
+process eeHH-MSSM  uuuu  1500
+
+process AAtt-SM    uuuu  500
+process AAttA-SM   uuuuu 500
+
+process AAAA-SM    uuuu  500
+process AAAA-SMbgf uuuu  500
+process WWWW-SM    uuuu  500
+process WWWW-SMbgf uuuu  500
+process ZZZZ-SM    uuuu  500
+process ZZZZ-SMbgf uuuu  500
+

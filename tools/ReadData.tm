@@ -14,7 +14,7 @@
 	ReadData.tm
 		reads data files produced by num.F into Mathematica
 		this file is part of FormCalc
-		last modified 11 Dec 02 th
+		last modified 20 Jan 05 th
 
 known shortcomings:
 - fixed memory requirements:
@@ -24,33 +24,55 @@ known shortcomings:
 
 */
 
-#include "mathlink.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "mathlink.h"
 
 #ifndef MLCONST
 #define MLCONST
 #endif
 
-
-#define MAXCOLS 5
+#define MAXCOLS 16
 #define MAXPARA 100
 #define MAXDATA 2000
+#define MAXEVAL 1000
 
-struct _para { double val; char name[32]; } para[MAXPARA];
-int npara = 0;
+typedef struct {
+  double val;
+  char name[32];
+} Para;
 
-double data[MAXDATA][MAXCOLS];
-int ncols[MAXDATA];
-int ndata = 0;
+static Para para[MAXPARA];
+static int npara;
+
+static double data[MAXDATA][MAXCOLS];
+static int ncols[MAXDATA];
+static int ndata;
+
+static int neval;
 
 
-void transmit(const char *parahead, const char *datahead, int setn)
+static inline void waitpacket()
+{
+  int pkt;
+
+  MLEndPacket(stdlink);
+
+  do {
+    pkt = MLNextPacket(stdlink);
+    MLNewPacket(stdlink);
+  } while( pkt != RETURNPKT );
+}
+
+
+static void transmit(const char *parahead, const char *datahead, int setn)
 {
   int i;
 
-  MLPutFunction(stdlink, "List", 3);
+  if( ++neval == 1 ) MLPutFunction(stdlink, "EvaluatePacket", 1);
+
+  MLPutFunction(stdlink, "List", (neval > MAXEVAL) ? 2 : 3);
 
   MLPutFunction(stdlink, "Set", 2);
 
@@ -58,8 +80,8 @@ void transmit(const char *parahead, const char *datahead, int setn)
   MLPutInteger(stdlink, setn);
 
   MLPutFunction(stdlink, "List", npara);
-  for( i = 0; i < npara; i++ ) {
-    struct _para *p = &para[i];
+  for( i = 0; i < npara; ++i ) {
+    Para *p = &para[i];
     char *s;
 
     for( s = p->name; *s; ++s )
@@ -87,26 +109,31 @@ void transmit(const char *parahead, const char *datahead, int setn)
   MLPutInteger(stdlink, setn);
 
   MLPutFunction(stdlink, "List", ndata);
-  for( i = 0; i < ndata; i++ ) {
-    double *d = data[i];
+  for( i = 0; i < ndata; ++i ) {
+    const double *d = data[i];
     int j;
 
     MLPutFunction(stdlink, "DataRow", ncols[i]);
-    for( j = 0; j < ncols[i]; j++ ) MLPutDouble(stdlink, d[j]);
+    for( j = 0; j < ncols[i]; ++j ) MLPutDouble(stdlink, d[j]);
   }
 
   npara = ndata = 0;
+
+  if( neval > MAXEVAL ) {
+    waitpacket();
+    neval = 0;
+  }
 }
 
 
-void readdata(const char *filename, int setno,
+static void readdata(const char *filename, int setno,
   const char *parahead, const char *datahead)
 {
   FILE *file = (*filename == '!') ?
     popen(filename + 1, "r") :
     fopen(filename, "r");
 
-  MLPutFunction(stdlink, "CompoundExpression", 2);
+  npara = ndata = neval = 0;
 
   if( file == NULL ) {
     MLPutFunction(stdlink, "Message", 2);
@@ -120,17 +147,15 @@ void readdata(const char *filename, int setno,
   }
 
   while( !feof(file) ) {
-    char line[512], *s;
+    char line[1024], *s;
 
     *line = 0;
     fgets(line, sizeof(line), file);
-    line[sizeof(line) - 1] = 0;
-
-    s = line + strspn(line, " \t");
 
     if( *line == '#' ) {
-      struct _para *p = &para[npara];
-      if( sscanf(line + 1, " %[^=]=%lg", p->name, &p->val) == 2 ) npara++;
+      Para *p = &para[npara];
+      if( sscanf(line + 1, " %[^= ] =%lg", p->name, &p->val) == 2 )
+        npara++;
       continue;
     }
 
@@ -155,14 +180,17 @@ void readdata(const char *filename, int setno,
 
   ((*filename == '!') ? pclose : fclose)(file);
 
-  MLPutFunction(stdlink, "List", 0);
-  MLPutInteger(stdlink, setno - 1);
+  if( neval ) {
+    MLPutFunction(stdlink, "List", 0);
+    waitpacket();
+  }
 
+  MLPutInteger(stdlink, setno - 1);
   MLEndPacket(stdlink);
 }
 
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
   return MLMain(argc, argv);
 }

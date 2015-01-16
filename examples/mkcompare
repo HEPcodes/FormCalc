@@ -1,0 +1,7 @@
+#!/bin/sh
+
+for dir in *.fortran ; do
+  set -- `ls -1 $dir/*.data`
+  mv -f $1 `basename $dir .fortran`.drivers/`basename $1 .data`.compare
+done
+

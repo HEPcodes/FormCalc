@@ -1,7 +1,7 @@
-#!/bin/sh
-# configure script for the GNUmakefile
+#! /bin/sh
+# configure script
 # this file is part of FormCalc
-# last modified 12 Feb 03 th
+# last modified 20 Jan 05 th
 # note: has nothing to do with GNU autoconf
 
 
@@ -25,10 +25,10 @@ findprog()
   echo $echo_n "looking for $1... $echo_c" 1>&2
   shift
   for prog in $* ; do
-    full=`csh -cf "which $prog"`
+    full=`which $prog`
     if [ -x "$full" ] ; then
       echo $full 1>&2
-      basename $full
+      echo $prog
       return 0
     fi
   done
@@ -44,8 +44,7 @@ findpath()
   shift 2
   for path in $* ; do
     if [ -f "$path/$file" ] ; then
-      echo $path 1>&2
-      echo $path
+      (cd $path ; pwd 1>&2 ; pwd)
       return 0
     fi
   done
@@ -54,40 +53,80 @@ findpath()
 }
 
 
-## look for some programs
+# check the arguments
+
+ARG_CERNLIB=0
+ARG_MAKEARGS=""
+
+for arg in "$@" ; do
+  case $arg in
+  --with-cernlib) ARG_CERNLIB=1 ;;
+  -*) echo "Unknown option $arg" 1>&2 ;;
+  *) ARG_MAKEARGS="$ARG_MAKEARGS $arg" ;;
+  esac
+done
+
+CONF_HOSTTYPE=`tcsh -cf 'echo $HOSTTYPE'`
+
+
+# look for some programs
 
 CONF_MAKE=`findprog make gmake Make make` || exit 1
 
-if [ -z "$FC" ] ; then
-  case $HOSTTYPE in
-  alpha)
-	FC=f77
-	FFLAGS="${FFLAGS--O -extend_source -warn truncated_source}" ;;
-  *sun*)
-	FC=f77
-	FFLAGS="${FFLAGS--e}" ;;
-  hp*)
-	FC=fort77
-	FFLAGS="${FFLAGS--O2 +es +U77}" ;;
-  *86 | *linux)
-	FC=pgf77
-	FFLAGS="${FFLAGS--fast -Mextend -g77libs}" ;;
+CONF_CC=`findprog gcc $CC gcc` || exit 1
+
+CONF_CFLAGS="${CFLAGS--O3 -fomit-frame-pointer -ffast-math}"
+
+CONF_FC=`findprog f77 $FC pgf77 ifort fort77 f77 xlf f90 g77` || exit 1
+
+if $CONF_FC -v -c 2>&1 | grep "gcc version" > /dev/null ; then
+  CONF_FFLAGS="-O0 -ffixed-line-length-none"
+else
+  CONF_FFLAGS="${FFLAGS-default}"
+  [ "$CONF_FFLAGS" = default ] && case "$CONF_FC$CONF_HOSTTYPE" in
+  *pgf77*)
+	CONF_FFLAGS="-fast -Mextend -g77libs" ;;
+  *ifort*)
+	CONF_FFLAGS="-O3 -extend_source -warn truncated_source" ;;
+  *alpha)
+	CONF_FFLAGS="-fast -extend_source -warn truncated_source" ;;
+  *sun* | *sparc*)
+	CONF_FFLAGS="-fast -e" ;;
+  *hp*)
+	CONF_FFLAGS="-O2 +es +U77" ;;
   esac
 fi
 
-CONF_FC=`findprog f77 $FC f77 fort77 xlf f90 pgf77 g77` || exit 1
-CONF_FFLAGS=$FFLAGS
 
-$CONF_FC -v -c 2>&1 | grep "gcc version" > /dev/null && \
-  CONF_FFLAGS="-O0 -ffixed-line-length-none"
+# does Fortran append underscores to symbols?
+
+echo $echo_n "does $CONF_FC append underscores... $echo_c" 1>&2
+
+test=test$$
+trap "rm -f $test*" 0 1 2 15
+
+cat > $test.f << _EOF_
+	subroutine uscore
+	end
+_EOF_
+
+$CONF_FC $CONF_FFLAGS -c $test.f > /dev/null 2>&1
+
+if nm $test.o | grep uscore_ > /dev/null 2>&1 ; then
+  echo "yes" 1>&2
+  CONF_CFLAGS="$CONF_CFLAGS -DHAVE_UNDERSCORE"
+else
+  echo "no" 1>&2
+fi
 
 
-## check for the necessary libraries
+# check for the necessary libraries
 
-LTDIR=`tcsh -c 'echo LoopTools/$HOSTTYPE'`
-CONF_LTDIR=`findpath LoopTools lib/libooptools.a ../$LTDIR ../../$LTDIR $HOME/$LTDIR /usr/local /usr` || exit 1
+LTPATH=LoopTools/$CONF_HOSTTYPE
+CONF_LOOPTOOLS=`findpath LoopTools lib/libooptools.a $LOOPTOOLS $LT \
+  ../$LTPATH ../../$LTPATH $HOME/$LTPATH /usr/local /usr` || exit 1
 
-if [ "$1" = "--with-cernlib" ] ; then
+if [ $ARG_CERNLIB = 1 ] ; then
   if [ -z "$CERN" -o -z "$CERN_LEVEL" -o ! -d $CERN/$CERN_LEVEL ] ; then
     echo ""
     echo "Warning: CERNlib is not or not properly installed on your system."
@@ -96,35 +135,39 @@ if [ "$1" = "--with-cernlib" ] ; then
     echo "in which the CERNlib libraries are installed."
     echo ""
   else
-    CONF_CERNLIB='-L$(CERN)/$(CERN_LEVEL)/lib -lpdflib -lpacklib'
+    CONF_CERNLIB='-L$(CERN)/$(CERN_LEVEL)/lib -lpdflib -lmathlib -lpacklib'
     CONF_FFLAGS="$CONF_FFLAGS -DCERNLIB"
   fi
 fi
 
 
-echo "creating GNUmakefile" 1>&2
+echo "creating makefile" 1>&2
 
-cat - GNUmakefile.in > GNUmakefile << _EOF_
+cat - makefile.in > makefile << _EOF_
 # --- variables defined by configure ---
 
-LTDIR = $CONF_LTDIR
-LIBS = -L\$(LTDIR)/lib -looptools $CONF_CERNLIB
+LOOPTOOLS = $CONF_LOOPTOOLS
+
+LDFLAGS = -L\$(LOOPTOOLS)/lib -looptools $CONF_CERNLIB
 
 FC = $CONF_FC
-FFLAGS = $CONF_FFLAGS -I. -I\$(LTDIR)/include -g
+FFLAGS = $CONF_FFLAGS
 
-ifdef DEBUG
-FFLAGS += -DDEBUG
-endif
+CC = $CONF_CC
+CFLAGS = $CONF_CFLAGS
 
 # --- end defs by configure ---
 
 
 _EOF_
 
-echo "" 1>&2
-echo "now you must run $CONF_MAKE" 1>&2
-echo "" 1>&2
+if [ -n "$ARG_MAKEARGS" ] ; then
+  $CONF_MAKE $ARG_MAKEARGS
+else
+  echo "" 1>&2
+  echo "now you must run $CONF_MAKE" 1>&2
+  echo "" 1>&2
+fi
 
 exit 0
 

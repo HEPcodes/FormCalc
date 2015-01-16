@@ -1,12 +1,13 @@
 * run.F
 * defines parameter settings for one run, then includes num.F
 * this file is part of FormCalc
-* last modified 14 Feb 03 th
+* last modified 16 Dec 04 th
 
 
 * Whether to run in debugging mode
 
 #define DEBUG
+
 
 * Uncomment the following to check UV- and IR-finiteness
 
@@ -14,17 +15,33 @@ c#define DELTA 1D7
 c#define MUDIM 1D100
 c#define LAMBDA 1D10
 
+* The following sets all ren. constants to zero for debugging
+
+c#define CalcRenConst ZeroRenConst
+
+
 * The model initialization code is included here.  Options for the
 * XXX_ini.F file (e.g. NO_SQUARK_MIXING for mssm_ini.F) must be
 * defined before the #include line.
 
+* options for sm_ini.F:
+c#define NO_CKM
+
+* options for mssm_ini.F:
 c#define NO_SQUARK_MIXING
-c#define COMPLEX_PARAMETERS
-c#define SM_ONLY
+c#define HIGGS_MASSES TREE
+c#define HIGGS_MASSES SIMPLE
+c#define HIGGS_MASSES FEYNHIGGS
+c#define SM_HIGGS
 c#define NO_EXCLUSION_LIMITS
-c#define TREE_LEVEL_MH
+
+* options for thdm_ini.F:
+c#define MODEL_TYPE_I
+c#define MODEL_TYPE_II
+c#define NO_EXCLUSION_LIMITS
 
 #include "sm_ini.F"
+
 
 * You can define LOOP[1..15] for scanning the parameter space.
 * LOOP1 will be the outermost loop.  Do not remove #defines which
@@ -34,19 +51,20 @@ c#define TREE_LEVEL_MH
 
 #define LOOP1 MH = 100
 #define LOOP2
-#define LOOP3
-#define LOOP4
-#define LOOP5
-#define LOOP6
-#define LOOP7
-#define LOOP8
-#define LOOP9
-#define LOOP10
-#define LOOP11
+#define LOOP3 TB = 5
+#define LOOP4 MA0 = 500
+#define LOOP5 MSusy = 1000
+#define LOOP6 MUE = 200
+#define LOOP7 M_2 = 200
+#define LOOP8 MGl = .8D0*MSusy
+#define LOOP9 At = MUE/TB + 2*MSusy
+#define LOOP10 Ab = At
+#define LOOP11 Atau = At
 #define LOOP12
 #define LOOP13
 #define LOOP14
 #define LOOP15
+
 
 * PRINT[1..5] defines output statements with which changes in 
 * parameters (typically the ones included in the scan) can be 
@@ -62,6 +80,7 @@ c#define TREE_LEVEL_MH
 #define PRINT4
 #define PRINT5
 
+
 * Cuts and increments.  May be defined in terms of sqrtS, the CMS energy.
 
 #define THETACUT (10*degree)
@@ -76,50 +95,41 @@ c#define TREE_LEVEL_MH
 
 #define SQRTSSTEP 10
 
-* For 2 -> 2: To compute the forward-backward asymmetry instead of
-* the total cross-section, uncomment the following line.
-
-c#define FB_ASYMMETRY
 
 * The integration parameters:
-* For 2 -> 2: the number of nodes for the Gaussian quadrature.
-
-#define GAUSSPOINTS 16
-
-* For 2 -> 3: the desired accuracy,
-* when using the adaptive Gauss-Kronrod quadrature:
-* - the MULTIGAUSS switch
-* - the number of nodes used in each dimension (must be even
-*   integers between 4 and 12, e.g. 4 = 4/9 Gauss-Kronrod rule),
-* - the maximum number of subintervals the integration interval
-*   may be split into, and
-* - the gain in accuracy from one dimension to the next, i.e. the
-*   integral in dimension (n - 1) is demanded to be GAIN times
-*   more precise than the integral in dimension n,
-* when using the Monte-Carlo integration:
-* - the VEGAS switch,
-* - the number of calls per iteration, and
-* - the maximum number of iterations for VEGAS,
-* when using the DCUHRE algorithm (default):
-* - the maximum number of integrand evaluations is NCALL*MAXITER,
-*   where NCALL and MAXITER are the VEGAS parameters.
+* - the desired relative and absolute accuracy
 
 #define RELACCURACY 1D-3
-#define ABSACCURACY 1D-7
+#define ABSACCURACY 1D-10
 
-c#define MULTIGAUSS
-#define NODES_K50 8
-#define NODES_COSTH 4
-#define NODES_K30 6
-#define NODES_ETA 4
-#define MAXINTV 25
-c#define GAIN 2
+* The multidimensional integration routines (2 -> 3) also need
 
-c#define VEGAS
-#define NCALL 1000
-#define MAXITER 50
+#define METHOD DIVONNE
+#define VERBOSE 1
+#define MINEVAL 0
+#define MAXEVAL 50000
+
+* for Vegas:
+#define NSTART 1000
+#define NINCREASE 500
+
+* for Suave:
+#define NNEW 1000
+#define FLATNESS 50
+
+* for Divonne:
+#define KEY1 47
+#define KEY2 1
+#define KEY3 1
+#define MAXPASS 5
+#define BORDER 1D-6
+#define MAXCHISQ 10
+#define MINDEVIATION .25D0
+
+* for Cuhre:
+#define KEY 0
 
 * Now go for it:
 
-#include "num.F"
+#include "main.F"
 
