@@ -1,6 +1,21 @@
 #!/bin/sh
-# compile script for ReadForm
-# last modified 22 Jul 98 th
+# compile script for the C programs used by FormCalc
+# last modified 6 Jul 99 th
+
+# If this compile script doesn't work on your system, check these things:
+#
+# a) You need gcc. If that's not installed on your system, change all
+#    "gcc"s to "cc"s, but have your fingers crossed: not all ccs will
+#    compile MathLink programs without errors. Sometimes you might need
+#    to add switches to relax strict ANSI compliance.
+#
+# b) You need mcc. mcc is a script which compiles C programs that
+#    contain MathLink code. Such programs have the extension .tm.
+#    Presumably, if you legally own Mathematica, you should also have
+#    mcc. However, some sysadmins seem to be stupid enough not to place
+#    mcc in the path, so you might have to specify the full path in the
+#    "MCC=" line below, typically something like
+#    MCC=/usr/local/mathematica/AddOns/MathLink/DevelopersKits/Linux/CompilerAdditions/mcc
 
 
 MCC=`csh -cf "which ${MCC:-mcc}"`
@@ -10,7 +25,30 @@ if [ ! -x "$MCC" ] ; then
   exit
 fi
 
-CC=gcc ; export CC
-set -x
-sed "s/ cc / gcc /g" $MCC | sh -s ReadForm.tm -O6 -o ReadForm_$HOSTTYPE
+SUNLIBS=""
+echo "$HOSTTYPE" | grep sun > /dev/null && SUNLIBS="-lnsl -lsocket"
+
+make -f - << _EOF_
+all: ReadForm_$HOSTTYPE numerics/r8_$HOSTTYPE numerics/restack_$HOSTTYPE \
+numerics/ladj_$HOSTTYPE numerics/plot_$HOSTTYPE
+
+ReadForm_$HOSTTYPE: ReadForm.tm
+	CC=gcc ; export CC ; \\
+	sed "s/ cc / gcc /g" $MCC | \\
+	sh -s ReadForm.tm -O6 $* -o ReadForm_$HOSTTYPE $SUNLIBS
+
+numerics/r8_$HOSTTYPE: numerics/r8.c
+	gcc -O6 $* -o numerics/r8_$HOSTTYPE numerics/r8.c
+
+numerics/restack_$HOSTTYPE: numerics/restack.c
+	gcc -O6 $* -o numerics/restack_$HOSTTYPE numerics/restack.c
+	(cd numerics ; ln -sf restack_$HOSTTYPE restack)
+
+numerics/ladj_$HOSTTYPE: numerics/ladj.c
+	gcc -O6 $* -o numerics/ladj_$HOSTTYPE numerics/ladj.c
+
+numerics/plot_$HOSTTYPE: numerics/plot.c
+	gcc -O6 $* -o numerics/plot_$HOSTTYPE numerics/plot.c -lm
+	(cd numerics ; ln -sf plot_$HOSTTYPE plot)
+_EOF_
 

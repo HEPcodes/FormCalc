@@ -1,4 +1,4 @@
-FormCalc 1.2 README file
+FormCalc 1.4 README file
 
 FormCalc calculates and simplifies one-loop Feynman diagrams. It reads
 amplitudes generated with FeynArts and returns the results in a way well
@@ -15,22 +15,39 @@ FormCalc combines the speed of FORM with the powerful instruction set of
 Mathematica and the latter greatly facilitates further processing of the
 results. Owing to FORM's speed, FormCalc can process, for example, the
 1000-odd one-loop diagrams of elastic W-W scattering in the Standard Model
-in about 10 minutes on an ordinary Pentium PC.
+in about 5 minutes on an ordinary Pentium PC.
+
+One important feature of FormCalc is that it automatically gathers spinor
+chains, scalar products of and epsilon tensors contracted with momenta
+and/or polarization vectors and introduces abbreviations for them. In
+calculations with non-scalar external particles where such objects are
+ubiquitous, code produced from the FormCalc output (say, in Fortran) can
+be significantly faster than without the abbreviations. For further
+evaluating spinor chains, FormCalc provides a function which calculates
+helicity matrix elements.
+
+The FormCalc distribution contains a package of programs for the
+numerical evaluation of FormCalc results and two demo calculations,
+ZZ -> ZZ and e^+e^- -> t\bar t, to show how these programs are used.
 
 
 Installation notes for the impatient:
 
-- unpack the archive FormCalc12.tar.gz in some directory
+- unpack the archive FormCalc14.tar.gz in some directory
   (presumably you did this already or else you wouldn't be reading
   this file)
 
-- run ./compile to compile the ReadForm program needed by FormCalc
+- run ./compile to compile the C programs needed by FormCalc
 
-For more detailed instructions see the manual in FCLT12Guide.ps.gz.
+- if you have Form 2.0 or 2.1, but not 2.2 (type "form /dev/null"
+  to find out), say
+	patch < patch.Form2.0
+
+For more detailed instructions see the manual in FCLTGuide.ps.gz.
 
 
 Enjoy!
 
 Thomas Hahn
-hahn@particle.physik.uni-karlsruhe.de
+hahn@particle.uni-karlsruhe.de
 

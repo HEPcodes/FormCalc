@@ -1,13 +1,16 @@
 CompilerOutput 300000
 SmallSize 5000000
 LargeSize 10000000
+WorkSpace 150000
 TermsInSmall 30000
-Expressions 600
-MaxNames 1000
+Expressions 1000
+Symbols 2000
+MaxNames 1200
 MaxStatements 200
 NameBuffer 20480
 NwriteStatistics
-MaxStatements 150
+MaxStatements 1000
+MaxLevels 5000
 Functions 100
 Vectors 40
 LineLength 255
