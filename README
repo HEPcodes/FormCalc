@@ -1,0 +1,36 @@
+FormCalc 1.2 README file
+
+FormCalc calculates and simplifies one-loop Feynman diagrams. It reads
+amplitudes generated with FeynArts and returns the results in a way well
+suited for further numerical (or analytical) evaluation.
+
+Internally, FormCalc delegates the hard work (e.g. working out fermionic
+traces) to FORM by Jos Vermaseren. Thus FormCalc is merely a driver that
+threads the FeynArts amplitudes through FORM in an appropriate way. The
+idea is rather simple: FormCalc prepares the symbolic expressions of the
+diagrams in an input file for FORM, runs FORM, and retrieves the results.
+This interaction is transparent to the user.
+
+FormCalc combines the speed of FORM with the powerful instruction set of
+Mathematica and the latter greatly facilitates further processing of the
+results. Owing to FORM's speed, FormCalc can process, for example, the
+1000-odd one-loop diagrams of elastic W-W scattering in the Standard Model
+in about 10 minutes on an ordinary Pentium PC.
+
+
+Installation notes for the impatient:
+
+- unpack the archive FormCalc12.tar.gz in some directory
+  (presumably you did this already or else you wouldn't be reading
+  this file)
+
+- run ./compile to compile the ReadForm program needed by FormCalc
+
+For more detailed instructions see the manual in FCLT12Guide.ps.gz.
+
+
+Enjoy!
+
+Thomas Hahn
+hahn@particle.physik.uni-karlsruhe.de
+

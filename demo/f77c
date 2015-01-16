@@ -1,0 +1,131 @@
+#!/bin/sh
+# f77-style shell script to compile and load fortran, C, and object files
+# originally included in f2c distribution
+# modified by Thomas Hahn 22 Jun 98
+
+#	usage:	f77c [options] files [-l library]
+#
+#	Options:
+#
+#		-o objfile	Override default executable name a.out.
+#
+#		-c		Do not call linker, leave object files
+#
+#		-C		Check that subscripts are in bounds.
+#
+#		-l library	(passed to ld).
+#
+#		-u		complain about undeclared variables
+#
+#		-w		omit all warning messages
+#
+#		-D def		passed to C compiler (for .c files)
+#				or to cpp (for .F files)
+#
+#		-I includepath	passed to C compiler (for .c files)
+#				or to cpp (for .F files), and to f2c
+#
+#		-Ntnnn		allow nnn entries in table t
+#
+#		-P		emit .P files
+#
+#		files		FORTRAN source files ending in .f
+#				FORTRAN with cpp preprocessor directives
+#				  ending in .F
+#				C source files ending in .c
+#				f2c prototype files ending in .P; such
+#				files only affect subsequent files
+
+t=/tmp/f77_$$.o
+CC=${CC:-cc}
+F2C=${F2C:-f2c}
+F2CFLAGS=${F2CFLAGS:='-ARw8 -Nn2000 -Nx400 -NC400'}
+CPP=${CPP:-/lib/cpp}
+CPPFLAGS='-DXREAL=REAL*8 -DXPREC=DBLE'
+rc=0
+trap "rm -f $t; exit \$rc" 0
+OUTF=""
+link=1
+
+while [ -n "$1" ] ; do
+  case "$1" in
+  -C | -u | -w | -P | -N* | -r8 | -f)
+	F2CFLAGS="$F2CFLAGS $1"
+	;;
+  -D*)
+	CPPFLAGS="$CPPFLAGS $1"
+	;;
+  -g)
+	CFLAGS="$CFLAGS -g"
+	F2CFLAGS="$F2CFLAGS -g"
+	;;
+  -I*)
+	CPPFLAGS="$CPPFLAGS $1"
+	F2CFLAGS="$F2CFLAGS $1"
+	;;
+  -o)
+	OUTF=$2
+	shift
+	;;
+  -c)
+	link=0
+	;;
+  -l*)
+	OFILES="$OFILES $1"
+	;;
+  -*)
+	CFLAGS="$CFLAGS $1"
+	;;
+  *.[fF])
+	echo $1: 1>&2
+	case "$1" in
+	*.f)	b=`basename $1 .f`
+		$F2C $F2CFLAGS $1
+		rc=$?
+		;;
+	*.F)	b=`basename $1 .F`
+		$CPP $CPPFLAGS $1 >$b.i
+		$F2C $F2CFLAGS <$b.i >$b.c
+		rc=$?
+		rm -f $b.i
+		;;
+	esac
+	if [ $rc -ne 0 ] ; then
+	  exit
+	fi
+	$CC -c $CFLAGS $b.c
+	rc=$?
+	if [ $rc -ne 0 ] ; then
+	  exit
+	fi
+	OFILES="$OFILES $b.o"
+	rm $b.c
+	;;
+  *.c)
+	echo $1: 1>&2
+	$CC -c $CPPFLAGS $CFLAGS $1
+	if [ $? -ne 0 ] ; then
+	  exit
+	fi
+	OFILES="$OFILES `basename $1 .c`.o"
+	;;
+  *.P)
+	F2CFLAGS="$F2CFLAGS $1"
+	;;
+  *)
+	OFILES="$OFILES $1"
+	;;
+  esac
+  shift
+done
+
+set $OFILES
+
+if [ $link -eq 1 ] ; then
+  $CC -o ${OUTF:-a.out} $CFLAGS -u MAIN__ $OFILES -lf2c -lm
+elif [ $# -eq 1 -a -n "$OUTF" ] ; then
+  mv $1 $OUTF
+fi
+rc=$?
+exit $rc
+

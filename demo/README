@@ -1,0 +1,167 @@
+This is a demonstration for the program packages FormCalc and LoopTools.
+It calculates elastic ZZ scattering (ZZ -> ZZ). The physics behind this
+process can be found in A. Denner, S. Dittmaier, and T. Hahn, Phys. Rev.
+D56 (1997) 117.
+
+
+The demo code consists of three parts:
+
+> demo_fa.m     -- Generate the diagrams with FeynArts
+
+> demo_fc.m     -- Simplify the symbolic amplitudes with FormCalc
+
+> demo_num.m    -- Prepare the Fortran program
+
+and for the numerical evaluation you need further:
+
+> demo_fa_rc.m  -- Generate the self-energy and tadpole diagrams needed
+                   for the renormalization constants
+
+> demo_fc_rc.m  -- Simplify the self-energy and tadpole diagrams
+
+> demo_num_rc.m -- Calculate the renormalization constants
+
+
+To execute these programs you need
+
+> Mathematica 2.2 or higher
+
+> Form 1 or higher
+  (Form 1 is available from ftp://ftp.nikhef.nl/pub/form, Form 2 is
+  commercial)
+
+> FeynArts 2.2
+  (available from ftp://ftp.physik.uni-wuerzburg.de/pub/hep/index.html)
+
+> LoopTools
+  (available from http://www-itp.physik.uni-karlsruhe.de/looptools)
+
+> a Fortran-77 compiler or f2c and a C compiler
+  (f2c is available from ftp://ftp.netlib.org/f2c and is generally
+  better than g77)
+
+> for plotting the results: gnuplot
+  (available from http://science.nas.nasa.gov/~woo/gnuplot/beta)
+
+
+The demo_fa.m and demo_fc.m programs are rather straightforward
+applications of FeynArts and FormCalc, respectively, and you should see
+nothing surprising there.
+
+The numerical evaluation of the FormCalc output is not fully automated.
+The reason for this is that at one-loop level already many features appear
+which must be treated differently from process to process. Two programs
+are supplied here which show how the numerical evaluation can be done:
+
+a) The FormCalc results need to be converted into a Fortran program. (The
+   amplitudes could, in principle, be calculated in Mathematica directly,
+   but this is very slow.) The program which does this is NumPrep.m. Over
+   time, this program has become rather sophisticated, and meanwhile goes
+   well beyond simple translation of FormCalc output into Fortran. For
+   example, one-loop integrals are gathered in subroutines according to
+   whether they depend on the scattering angle or not. 
+
+   If you want to take a look at the code: One of the most important
+   functions in NumPrep is Chunks; this routine slices large expressions
+   into blocks which the Fortran compiler can handle.
+
+b) The Fortran code produced by NumPrep will not run all by itself, but
+   needs a driver program to supply it with the necessary parameters,
+   kinematics, etc. This driver program is called num.F.
+
+
+To run the demo:
+(Note: "run xxx.m" means: start Mathematica and type "<< xxx.m".
+Please use a new Mathematica session for every part of the demo.)
+
+> edit demo_fa.m and demo_fa_rc.m and supply the correct path to your
+  FeynArts distribution in the line
+	<< ~/develop/HighEnergyPhysics/FeynArts.m
+  (you guessed it, that's where my FeynArts distribution is).
+
+a) Calculate the renormalization constants
+
+> run demo_fa_rc.m, this generates files like self.aa (the photon-photon
+  self-energy) in the directory rc.
+
+> run demo_fc_rc.m, this runs the self-energies through FormCalc and
+  stores the results in rc.
+
+> run demo_num_rc.m, this produces a Fortran program called rcsm.F
+  in the directory fortran which will later be included in the main
+  ZZ -> ZZ code.
+
+b) Calculate ZZ -> ZZ
+
+> run demo_fa.m, this produces files called zzzz.born.amp, zzzz.self.amp,
+  zzzz.vert.amp, zzzz.box.amp, and zzzz.counter.amp in the directory
+  fa_output.
+
+> run demo_fc.m, this simplifies the zzzz.*.amp files with FormCalc and
+  puts the results into fc_output.
+
+> edit demo_num.m. Now comes the tricky bit: you have to supply there two
+  compiler flags which are needed to properly compile the Fortran code
+  produced by NumPrep:
+  a) a flag to make all real constants double precision
+     (i.e. interpret 1.234 as 1.234D0),
+  b) a flag to ignore the 72-column restriction of Fortran-77.
+
+  Most compilers support these flags, but unfortunately under rather
+  different names. Some common choices are already coded in demo_num.m.
+  Please check out the appropriate options in your f77 man page and
+  insert them in demo_num.m.
+
+  If your f77 does not support these flags (e.g. g77 does not), replace
+  "f77" by "../f77c" in demo_num.m. f77c is a script which performs the
+  same task as f77 except that it calls first f2c and then cc. (Of course
+  you need f2c installed for this; if necessary get it from
+  ftp://ftp.netlib.org/f2c.) f2c is independent of the platform; however,
+  a native f77 compiler will almost always produce better code.
+
+> run demo_num.m, this produces Fortran code in files like self.m or
+  boxT1.m in the directory fortran. It also produces a Makefile.
+
+> change into the directory fortran and type "make MH=100" (this
+  compiles the code for a Higgs mass of 100 GeV). The resulting
+  executable will be called num100.
+
+> run num100 with the following parameters:
+	num100 <pol1> <pol2> <pol3> <pol4> <energyfrom> <energyto>
+  where the <poli> are the polarization of the Z bosons.
+  E.g. to obtain a differential cross-section for purely longitudinal Zs
+  at Sqrt[s] = 500 GeV use
+	num100 0 0 0 0 500
+  or to get an integrated cross-section for transversely polarized Zs
+  from Sqrt[s] = 500 to 600 GeV use
+	num100 t t t t 500 600
+
+> if you have gnuplot installed, plot the results with
+	../plot diff.MH=0100.pol=LLLL.E=00500
+  plot is a plotting script for making .eps plots from the data.
+  Before running it, you need to compile two helper programs with e.g.
+	gcc -O -o ladj ladj.c ; gcc -O -o max max.c
+  The script produces another script which then produces the eps file.
+  The advantage of this is that this second script can be modified by
+  the user, i.e. after "plot diff.MH=0100.pol=LLLL.E=00500" there is an
+  .eps file diff.MH=...eps, but also a diff.MH=...gpl which is a shell
+  script. This .gpl file contains among other things the gnuplot commands
+  for that plot. The user can modify these, and afterwards simply has to
+  invoke the .gpl script to obtain the .eps file.
+
+
+An example of why the numerical evaluation cannot be fully automatized:
+
+If you compile the program with a Higgs mass larger than 2 MZ (~ 182 GeV),
+and happen to run straight into s == MH^2, the program will crash with a
+division by zero error. This is because the s-channel Higgs resonance is
+not treated. NumPrep can treat the resonance if $Resonance = True is set.
+However, ambiguities remain (see $ModifyingFunction in NumPrep.m) and it
+is quite clear that the user should have leverage over this.
+
+
+Send bug reports, omissions, fan mail etc to
+Thomas Hahn <hahn@particle.physik.uni-karlsruhe.de>
+
+Have fun!
+

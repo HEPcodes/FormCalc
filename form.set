@@ -1,0 +1,14 @@
+CompilerOutput 300000
+SmallSize 5000000
+LargeSize 10000000
+TermsInSmall 30000
+Expressions 600
+MaxNames 1000
+MaxStatements 200
+NameBuffer 20480
+NwriteStatistics
+MaxStatements 150
+Functions 100
+Vectors 40
+LineLength 255
+TempDir /tmp

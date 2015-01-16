@@ -1,0 +1,16 @@
+#!/bin/sh
+# compile script for ReadForm
+# last modified 22 Jul 98 th
+
+
+MCC=`csh -cf "which ${MCC:-mcc}"`
+
+if [ ! -x "$MCC" ] ; then
+  echo "You need mcc (the MathLink C compiler) to compile TopEdit"
+  exit
+fi
+
+CC=gcc ; export CC
+set -x
+sed "s/ cc / gcc /g" $MCC | sh -s ReadForm.tm -O6 -o ReadForm_$HOSTTYPE
+
