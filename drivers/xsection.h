@@ -1,10 +1,10 @@
 * xsection.h
 * common blocks for xsection.F
 * this file is part of FormCalc
-* last modified 6 Feb 07 th
+* last modified 18 Jan 08 th
 
 
-#include "model.h"
+#include "decl.h"
 
 #ifndef SQRTS
 #define SQRTS 0

@@ -1,0 +1,18 @@
+#! /bin/sh
+# download the FORM executables
+# invoke as "getform t" to download tform instead of form
+# last modified 23 Nov 07 th
+
+download()
+{
+  wget http://www.nikhef.nl/~form/maindir/binaries/$1
+  mv -f `basename $1` $2.gz
+  gunzip $2.gz
+  chmod 755 $2
+}
+
+download linux32/$1form.gz form_Linux
+download opteron/$1formi.gz form_Linux-x86-64
+download ppc/$1form.gz form_Darwin
+download apentium/$1form.gz form_MacOSX-x86
+

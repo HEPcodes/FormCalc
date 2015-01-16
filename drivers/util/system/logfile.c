@@ -2,7 +2,7 @@
 	logfile.c
 		I/O redirection for logfiles
 		this file is part of FormCalc
-		last modified 20 Sep 06 th
+		last modified 26 Feb 08 th
 */
 
 
@@ -16,12 +16,10 @@
 #ifdef UNDERSCORE
 #define openlog openlog_
 #define closelog closelog_
-#define flush flush_
 #endif
 
-extern void flush(const int *);
-
 static int prevstdout;
+
 
 int openlog(const char *dir, const int *serial, const int len)
 {
@@ -60,7 +58,6 @@ int openlog(const char *dir, const int *serial, const int len)
     exit(1);
   }
 
-  { const int fortranstdout = 6; flush(&fortranstdout); }
   puts(filename);
   fflush(stdout);
 
@@ -72,9 +69,8 @@ int openlog(const char *dir, const int *serial, const int len)
 }
 
 
-void closelog()
+void closelog(void)
 {
-  { const int fortranstdout = 6; flush(&fortranstdout); }
   if( prevstdout ) {
     fchmod(1, 0644);
     dup2(prevstdout, 1);

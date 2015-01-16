@@ -1,12 +1,12 @@
 * HelicityME.frm
 * the FORM part of the HelicityME function
 * this file is part of FormCalc
-* last modified 16 Oct 05 th
+* last modified 16 Jul 07 th
 
 
-#procedure Shortest(foo)
+#procedure Fewest(foo)
 argument `foo';
-#call Small
+#call Neglect
 endargument;
 id `foo'([x]?, [y]?) = `foo'([x], nterms_([x]), [y], nterms_([y]));
 symm `foo' (2,1), (4,3);
@@ -41,7 +41,7 @@ id k`i' = `k`i'';
 #call eiki
 #call kikj
 
-#call Small
+#call Neglect
 
 .sort
 

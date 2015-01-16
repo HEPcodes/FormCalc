@@ -43,7 +43,7 @@
 	subroutine ModelDefaults
 	implicit none
 
-#include "model.h"
+#include "decl.h"
 
 	call SMDefaults
 	end
@@ -55,7 +55,7 @@
 	implicit none
 	integer fail
 
-#include "model.h"
+#include "decl.h"
 
 	double precision Lambda1, Lambda2, Lambda3, Lambda4, Lambda6
 	double precision DeltaRho

@@ -29,7 +29,7 @@
 	ReadForm.tm
 		reads FORM output back into Mathematica
 		this file is part of FormCalc
-		last modified 25 Mar 07 th
+		last modified 9 Aug 07 th
 
 Note: FORM code must have
 	1. #- (no listing),
@@ -129,8 +129,8 @@ static inline void MLEmitMessage(MLINK mlp, cstring tag, cstring arg)
 
   MLPutFunction(mlp, "EvaluatePacket", 1);
 
-  MLPutFunction(mlp, "Message", 2);
-  MLPutFunction(mlp, "MessageName", (arg) ? 2 : 1);
+  MLPutFunction(mlp, "Message", (arg) ? 2 : 1);
+  MLPutFunction(mlp, "MessageName", 2);
   MLPutSymbol(mlp, "ReadForm");
   MLPutString(mlp, tag);
   if( arg ) MLPutString(mlp, arg);
@@ -144,7 +144,7 @@ static string GetAbbr(cstring expr)
 {
   BTREE *lp, **node = &root;
   const unsigned char *abbr;
-  long exprlen, abbrlen;
+  int exprlen, abbrlen;
   int pkt;
 
   while( (lp = *node) ) {

@@ -1,7 +1,7 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 22 Feb 07 th
+* last modified 29 Nov 07 th
 
 
 #procedure DotSimplify
@@ -36,7 +36,7 @@ b `Patterns', Times, NoExpand, Den, GA, Spinor,
 
 #do i = 1, `Legs'
 #ifdef `k`i''
-b GA, Spinor;
+b `Tensors';
 .sort
 
 keep brackets;
@@ -120,6 +120,86 @@ id ifmatch->1 TAG = 1;
 
 ***********************************************************************
 
+#procedure FierzPre
+id Spinor(?a) * GA(?g) * Spinor(?b) =
+  CH(Spinor(?a) * GA(?g) * Spinor(?b));
+
+* these relations are obtained by Fierzing twice
+
+id CH(Spinor(?a) * GA(6, [mu]?, [nu]?) * Spinor(?b)) *
+   CH(Spinor(?c) * GA(7, [mu]?, [nu]?) * Spinor(?d)) =
+  4*CH(Spinor(?a) * GA(6) * Spinor(?b)) *
+    CH(Spinor(?c) * GA(7) * Spinor(?d));
+
+id CH(Spinor(?a) * GA([om]?, [mu]?, [nu]?) * Spinor(?b)) *
+   CH(Spinor(?c) * GA([om]?, [rho]?, [mu]?, [nu]?) * Spinor(?d)) =
+  4*CH(Spinor(?a) * GA([om]) * Spinor(?b)) *
+    CH(Spinor(?c) * GA([om], [rho]) * Spinor(?d));
+also CH(Spinor(?a) * GA([omA]?, [mu]?, [nu]?) * Spinor(?b)) *
+   CH(Spinor(?c) * GA([omB]?, [rho]?, [mu]?, [nu]?) * Spinor(?d)) =
+  4*CH(Spinor(?a) * GA([omA], [rho], [mu]) * Spinor(?b)) *
+    CH(Spinor(?c) * GA([omB], [mu]) * Spinor(?d));
+
+id CH(Spinor(?a) * GA(6, [rho]?, [mu]?, [nu]?) * Spinor(?b)) *
+   CH(Spinor(?c) * GA(7, [sig]?, [mu]?, [nu]?) * Spinor(?d)) =
+  4*CH(Spinor(?a) * GA(6, [rho]) * Spinor(?b)) *
+    CH(Spinor(?c) * GA(7, [sig]) * Spinor(?d));
+
+id CH(Spinor(?a) * GA([om]?, [mu]?, [nu]?, [rho]?) * Spinor(?b)) *
+   CH(Spinor(?c) * GA([om]?, [mu]?, [nu]?, [rho]?) * Spinor(?d)) =
+  16*CH(Spinor(?a) * GA([om], [mu]) * Spinor(?b)) *
+     CH(Spinor(?c) * GA([om], [mu]) * Spinor(?d));
+also CH(Spinor(?a) * GA([omA]?, [mu]?, [nu]?, [rho]?) * Spinor(?b)) *
+   CH(Spinor(?c) * GA([omB]?, [mu]?, [nu]?, [rho]?) * Spinor(?d)) =
+  4*CH(Spinor(?a) * GA([omA], [mu]) * Spinor(?b)) *
+    CH(Spinor(?c) * GA([omB], [mu]) * Spinor(?d));
+
+* The following general Fierz identity is from hep-ph/0412245.
+repeat;
+  once CH(Spinor([p1]?, ?a) * GA([omA]?, ?A) * Spinor([p4]?, ?d)) *
+       CH(Spinor([p3]?, ?c) * GA([omB]?, ?B) * Spinor([p2]?, ?b)) =
+    sum_([c], 1, 5, sum_([d], 1, 5,
+      DUAL([d], MUD, NUD) * CHI([omA])*g_(1, ?A) *
+      DUAL([c], MUC, NUC) * CHI([omB])*g_(1, ?B) *
+      Spinor([p1], ?a) * BASIS([d], MUD, NUD) * Spinor([p2], ?b) *
+      Spinor([p3], ?c) * BASIS([c], MUC, NUC) * Spinor([p4], ?d) ));
+  trace4, 1;
+  sum MUC, NUC, MUD, NUD;
+endrepeat;
+#endprocedure
+
+***********************************************************************
+
+#procedure FierzPost
+id CH([x]?) = [x];
+
+repeat;
+  once GA([om]?, [mu]?, [nu]?, [rho]?, ?a) =
+    sum_([c], 1, 5,
+      DUAL([c], MUC, NUC) * CHI([om])*g_(1, [mu], [nu], [rho], ?a) *
+      BASIS([c], MUC, NUC) );
+  trace4, 1;
+  sum MUC, NUC;
+endrepeat;
+
+contract 0;
+
+* Chisholm's identity backwards to get rid of all Eps
+repeat;
+  once GA([om]?, ?a, [LA]?, ?b) * e_([mu]?, [nu]?, [rho]?, [LA]?) =
+    sign_([om]) * sign_(nargs_(?a)) * (
+      GA([om], ?a, [mu], [nu], [rho], ?b) -
+      d_([mu], [nu]) * GA([om], ?a, [rho], ?b) +
+      d_([mu], [rho]) * GA([om], ?a, [nu], ?b) -
+      d_([nu], [rho]) * GA([om], ?a, [mu], ?b) );
+endrepeat;
+
+#call DiracSimplify
+id D = 4;
+#endprocedure
+
+***********************************************************************
+
 #procedure MomSquare
 #ifdef `MomSum'
 * Apply momentum conservation to generate as few terms as possible
@@ -137,9 +217,9 @@ id MOM([p1]?, ?a) = [p1].[p1];
 
 ***********************************************************************
 
-#procedure Shortest(foo)
+#procedure Fewest(foo)
 argument `foo';
-#call Small
+#call Neglect
 endargument;
 id `foo'([x]?, [y]?) = `foo'([x], nterms_([x]), [y], nterms_([y]));
 symm `foo' (2,1), (4,3);
@@ -151,30 +231,35 @@ id `foo'([x]?, ?a) = `foo'([x]);
 
 #procedure Factor(foo)
 factarg `foo';
-repeat id `foo'([x]?, [y]?, ?a) = `foo'([x]) * `foo'([y], ?a);
+chainout `foo';
 id `foo'([x]?number_) = [x];
 id `foo'([x]?symbol_) = [x];
+#endprocedure
+
+***********************************************************************
+
+#procedure DoInsertions
+.store
+
+#call Insertions
+#call FillIns
+#call Neglect
+
+.sort
+
+argument;
+#call FillIns
+endargument;
 #endprocedure
 
 
 ***********************************************************************
 *** the main program starts here
 
-#if `InsertBefore' == 1
-
-.store
-
-#call Insertions
-#call FillIns
-#call Small
-argument;
-#call FillIns
-endargument;
-
+#if "`InsertAt'" == "Begin"
+#call DoInsertions
 #else
-
-#call Small
-
+#call Neglect
 #endif
 
 #call Const
@@ -186,34 +271,58 @@ endargument;
 
 #define SUNObjs "SUNSum, SUNT, SUNTSum, SUNF, SUNEps"
 
+#define Tensors "Spinor, GA, Sigma, e_, eT1,...,eT`Legs', eTc1,...,eTc`Legs'"
+
 * variables appearing in the CalcFeynAmp input and output
-s I, Renumber;
+s I, D, Renumber;
 cf Mat, Eps, DiracChain, WeylChain, SumOver, IndexDelta, IndexEps;
 cf NoExpand, Times, Simplify, Den, `LoopInt', `SUNObjs';
 f Spinor, DottedSpinor;
 i Ind1,...,Ind10;
+nt Sigma;
 
 * variables that make it into Mma but don't appear in the output
 cf abb, pave, fme, sun;
 
-* variables internal to FORM
-s TAG;
-i DUMMY;
-cf TMP, MOM;
-t NUM, EQ, NEQ, EPS(antisymm);
-nt GA, GB, GC, GD;
-f WC;
-auto s FC;
-set LOOPINT: `LoopInt';
-
 * patterns
 s [x], [y], [z], [s1], [s2];
 s [k1], [k2], [k1k2], [m1], [m2], [m3];
-i [mu], [nu], [rho], [sig], [om], [LA];
+i [mu], [nu], [rho], [sig], [om], [omA], [omB], [LA];
 i [i], [j], [k], [l], [I], [J], [K];
 i [a], [b], [c], [d];
 v [p1], [p2], [p3], [p4], [p5], [p6];
 cf [f];
+t [t];
+
+* variables internal to FORM
+s TAG;
+i DUMMY, MUC, NUC, MUD, NUD;
+cf TMP, MOM, ABB, ORD, ORD1, ORD2, CH;
+t NUM, EQ, NEQ, EPS(antisymm);
+nt GA, GB, GC, GD;
+f WC, GR;
+auto s FC;
+set LOOPINT: `LoopInt';
+
+ntable BASIS(1:5, [mu]?, [nu]?);
+ntable DUAL(1:5, [mu]?, [nu]?);
+ntable CHI(6:7);
+
+fill BASIS(1) = GA(6);
+fill BASIS(2) = GA(7);
+fill BASIS(3) = GA(6, [mu]);
+fill BASIS(4) = GA(7, [mu]);
+fill BASIS(5) = i_/2*(GA(6, [mu], [nu]) + GA(7, [mu], [nu]) -
+                      (GA(6) + GA(7))*d_([mu], [nu]));
+
+fill DUAL(1) = g_(1, 6_)/4;
+fill DUAL(2) = g_(1, 7_)/4;
+fill DUAL(3) = g_(1, 7_, [mu])/4;
+fill DUAL(4) = g_(1, 6_, [mu])/4;
+fill DUAL(5) = i_/4*(g_(1, [mu], [nu]) - d_([mu], [nu]));
+
+fill CHI(6) = g6_(1)/2;
+fill CHI(7) = g7_(1)/2;
 
 .global
 
@@ -250,14 +359,14 @@ id `loopf'(<[p1]?>,...,<[p`loopn']?>, ?a) = replace_(q1, 2*q1 - [p1]) *
 
 #if `HaveFermions' == 1
 
-b g_, Spinor;
+b g_, `Tensors';
 .sort
 
 keep brackets;
 
-id g6_([om]?) = 2*GA(6);
-id g7_([om]?) = 2*GA(7);
-repeat id GA(?a) * g_([om]?, [mu]?) = GA(?a, [mu]);
+id g6_([i]?) = 2*GA(6);
+id g7_([i]?) = 2*GA(7);
+repeat id GA(?g) * g_([i]?, [mu]?) = GA(?g, [mu]);
 
 #call DiracSimplify
 
@@ -294,7 +403,7 @@ id A0i(0) = 0;
 
 totensor q1, NUM;
 
-b NUM, GA, e_, `LoopInt';
+b NUM, `LoopInt', `Tensors';
 .sort
 
 keep brackets;
@@ -372,7 +481,7 @@ b pave, `LoopInt';
 keep brackets;
 
 if( count(pave, 1) );
-  repeat id pave(?a) * pave(?b) = pave(?a, ?b);
+  chainin pave;
   id pave(?b) * [f]?LOOPINT(?a) = pave([f](?b), ?a);
 else;
   symm B0i 2, 3;
@@ -388,11 +497,15 @@ endargument;
 #if `HaveFermions' == 1
 * Dirac algebra on open fermion chains again
 
-#if `Weyl' == 1
+#if "`FermionChains'" == "Weyl"
 
 .sort
 
 * Chisholm's identity backwards to get rid of all Eps
+*repeat id GA([om]?, ?a, [LA]?, ?b) * e_([mu]?, [nu]?, [rho]?, [LA]?) =
+*  1/4 * sign_([om]) * sign_(nargs_(?a)) * (
+*    GA([om], ?a, [mu], [nu], [rho], ?b) -
+*    GA([om], ?a, [rho], [nu], [mu], ?b) );
 repeat;
   once GA([om]?, ?a, [LA]?, ?b) * e_([mu]?, [nu]?, [rho]?, [LA]?) =
     sign_([om]) * sign_(nargs_(?a)) * (
@@ -420,8 +533,10 @@ contract 0;
 
 #endif
 
-b GA, Spinor;
+b `Tensors';
 .sort
+
+keep brackets;
 
 #call DiracSimplify
 
@@ -475,12 +590,12 @@ endargument;
 
 #if `HaveFermions' == 1
 
-#if `Weyl' == 1
+#if "`FermionChains'" == "Weyl"
 
-id Spinor(?a) * GA(?b) * Spinor(?c) =
-  WeylChain(DottedSpinor(?a), ?b, Spinor(?c));
+id Spinor(?a) * GA(?g) * Spinor(?b) =
+  WeylChain(DottedSpinor(?a), ?g, Spinor(?b));
 
-id GA(?a) = WeylChain(DottedSpinor(), ?a, Spinor());
+id GA(?g) = WeylChain(DottedSpinor(), ?g, Spinor());
 
 repeat;
   once WeylChain([s1]?, [x]?, ?a, [LA]?, ?b) *
@@ -514,47 +629,139 @@ id WeylChain([s1]?, ?g, [s2]?) = abb(fme(WeylChain([s1], ?g, [s2])))
 
 #else
 
-repeat;
-  once e_([LA]?, [mu]?, [nu]?, [rho]?) * GA(?a, [LA]?, ?b) =
-    GA(?a, DUMMY, ?b) * fme(Eps(DUMMY, [mu], [nu], [rho])) *
-    EQ([mu]) * EQ([nu]) * EQ([rho]);
-  sum DUMMY;
-endrepeat;
+*----------------------------------------------------------------------
 
-b GA, Spinor, fme, EQ;
+#if "`FermionOrder'" != "None"
+
+* apply 4D Fierz identities
+
+#redefine Dim "4"
+
+#if "`FermionOrder'" != "Fierz"
+
+b `Tensors';
 .sort
 
 keep brackets;
 
-id GA([om]?, ?a) = GA([om], ?a) * EQ(?a);
-repeat id EQ([mu]?, [nu]?, ?a) = EQ([mu]) * EQ([nu], ?a);
-repeat;
-  once EQ([mu]?) * EQ([mu]?) = replace_([mu], DUMMY);
-  sum DUMMY;
-endrepeat;
-id EQ(?a) = 1;
+#if "`FermionOrder'" == "Automatic"
 
-#if `VA' == 1
-id GA([om]?, ?a) = GA(1, ?a)/2 + sign_([om]) * GA(5, ?a)/2;
+* use lexicographical ordering
+id Spinor([p1]?, ?a) = ORD([p1]) * Spinor([p1], ?a);
+chainin ORD;
+
+#else
+
+#define order "0"
+#do i = {`FermionOrder'}
+#redefine order "`order',k{`i'}"
+#enddo
+
+multiply ORD(`order');
+id ORD([i]?, ?r) = ORD(?r);
+
 #endif
 
 id Spinor(?a) * GA(?g) * Spinor(?b) =
-  fme(DiracChain(Spinor(?a), ?g, Spinor(?b)))
-#if "`Scale'" != "1"
-  * MOM(?g)
-#endif
-  ;
+  CH(Spinor(?a) * GA(?g) * Spinor(?b));
 
-id GA(?g) = fme(DiracChain(?g))
-#if "`Scale'" != "1"
-  * MOM(?g)
+while( count(ORD, 1) );
+* charge conjugation to get first spinor in front
+  once ORD([p1]?, ?r) * CH(Spinor([p2]?, [m2]?, [s2]?) *
+                           GA([om]?, ?g) *
+                           Spinor([p1]?, [m1]?, [s1]?)) =
+    sign_(nargs_(?g)) * ORD([p1], ?r) *
+      CH(Spinor([p1], [m1], -[s1]) *
+         GR(sign_(nargs_(?g)), [om], reverse_(?g)) *
+         Spinor([p2], [m2], -[s2]));
+
+* charge conjugation to get second spinor in back
+  once ORD([p3]?, [p2]?, ?r) * CH(Spinor([p2]?, [m2]?, [s2]?) *
+                                  GA([om]?, ?g) *
+                                  Spinor([p1]?, [m1]?, [s1]?)) =
+    sign_(nargs_(?g)) * ORD([p3], [p2], ?r) *
+      CH(Spinor([p1], [m1], -[s1]) *
+         GR(sign_(nargs_(?g)), [om], reverse_(?g)) *
+         Spinor([p2], [m2], -[s2]));
+
+  argument CH;
+    id GR(-1, [om]?{6,7}[[x]], ?g) = GA({7,6}[[x]], ?g);
+    id GR(1, ?g) = GA(?g);
+  endargument;
+
+* Fierz to get second spinor together with first
+  once ORD([p1]?, [p2]?, ?r) *
+    CH(Spinor([p1]?, ?a) * GA([omA]?, ?A) * Spinor([p4]?, ?d)) *
+    CH(Spinor([p3]?, ?c) * GA([omB]?, ?B) * Spinor([p2]?, ?b)) =
+    ORD([p2], [p4], ?r) * sum_([c], 1, 5, sum_([d], 1, 5,
+      DUAL([d], MUD, NUD) * CHI([omA])*g_(1, ?A) *
+      DUAL([c], MUC, NUC) * CHI([omB])*g_(1, ?B) *
+      CH(Spinor([p1], ?a) * BASIS([d], MUD, NUD) * Spinor([p2], ?b)) *
+      CH(Spinor([p3], ?c) * BASIS([c], MUC, NUC) * Spinor([p4], ?d)) ));
+  trace4, 1;
+  sum MUC, NUC, MUD, NUD;
+
+  id ORD([p1]?, [p2]?, ?r) = ORD(?r);
+  id ORD() = 1;
+endwhile;
+
+#call FierzPost
+
+#else
+
+b `Tensors';
+.sort
+
+keep brackets;
+
+#call FierzPre
+#call FierzPost
+
+b `Tensors';
+.sort
+
+keep brackets;
+
+#call FierzPre
+#call FierzPost
+
 #endif
-  ;
+
+.sort
+
+#endif
+
+id GA([om]?, [mu]?, [nu]?) =
+  GA([om]) * (d_([mu], [nu]) + Sigma([mu], [nu]));
+
+antisymm Sigma;
+
+#call DiracOrder
+#call kikj
+
+id D = 4;
+
+b `Tensors';
+.sort
+
+keep brackets;
+
+#if "`FermionChains'" == "VA"
+id GA([om]?, ?a) = GA(1, ?a)/2 + sign_([om]) * GA(5, ?a)/2;
+#endif
+
+id Spinor(?a) * GA(?g) * Sigma(?s) * Spinor(?b) =
+  ABB(1, DiracChain(Spinor(?a), ?g, Sigma(?s), Spinor(?b)), ?g, ?s);
+
+id Spinor(?a) * GA(?g) * Spinor(?b) =
+  ABB(1, DiracChain(Spinor(?a), ?g, Spinor(?b)), ?g);
+
+id GA(?g) * Sigma(?s) = ABB(1, DiracChain(?g, Sigma(?s)), ?g, ?s);
+
+id GA(?g) = ABB(1, DiracChain(?g), ?g);
 
 id Spinor(?a) * Spinor(?b) =
-  fme(DiracChain(Spinor(?a), Spinor(?b)));
-
-repeat id fme([x]?) * fme([y]?) = fme([x] * [y]);
+  ABB(1, DiracChain(Spinor(?a), Spinor(?b)));
 
 #endif
 
@@ -564,12 +771,36 @@ repeat id fme([x]?) * fme([y]?) = fme([x] * [y]);
 
 .sort
 
-id [p1]?.[p2]? = abb([p1].[p2]);
-id e_([mu]?, [nu]?, [rho]?, [sig]?) = abb(e_([mu], [nu], [rho], [sig]));
+id [p1]?.[p2]? = ABB(0, [p1].[p2], [p1], [p2]);
+
+id e_([mu]?, [nu]?, [rho]?, [sig]?) =
+  ABB(0, e_([mu], [nu], [rho], [sig]), [mu], [nu], [rho], [sig]);
+
+id [t]?(?a) = ABB(0, [t](?a), ?a);
+
+repeat;
+  once ABB([s1]?, [x]?, ?a, [mu]?!fixed_, ?b) *
+       ABB([s2]?, [y]?, ?c, [mu]?, ?d) =
+    ABB([s1] + [s2], [x]*[y], ?a, ?b, ?c, ?d) * replace_([mu], DUMMY);
+  also ABB([s1]?, [x]?, ?a, [mu]?!fixed_, ?b, [mu]?, ?c) =
+    ABB([s1], [x], ?a, ?b, ?c) * replace_([mu], DUMMY);
+  sum DUMMY;
+endrepeat;
+
+id ABB(0, [x]?, ?a) = abb([x])
+#if "`Scale'" != "1"
+  * MOM(?a)
+#endif
+  ;
+id ABB([i]?, [x]?, ?a) = fme([x])
+#if "`Scale'" != "1"
+  * MOM(?a)
+#endif
+  ;
 
 #if "`Scale'" != "1"
 $pow = 0;
-argument abb, MOM;
+argument MOM;
   $pow = $pow + count_(<k1,1>,...,<k`Legs',1>);
 endargument;
 id MOM(?a) = 1;
@@ -579,20 +810,10 @@ if( $pow != 0 ) multiply pow(`Scale', $pow/2);
 b Times, NoExpand;
 moduleoption polyfun=abb;
 
-#if `InsertBefore' == 1
-
-.sort
-
+#if "`InsertAt'" == "Default"
+#call DoInsertions
 #else
-
-.store
-
-#call Insertions
-#call FillIns
-argument;
-#call FillIns
-endargument;
-
+.sort
 #endif
 
 #call Const
@@ -601,7 +822,7 @@ endargument;
 collect Times;
 
 argument Times;
-#call Small
+#call Neglect
 endargument;
 
 argument;
@@ -796,7 +1017,8 @@ id abb(1) = 1;
 * comes before), i.e. the amplitude is of the form Sum[c[i] Mat[i], i]
 * -> need this for the calculation of the squared amplitude
 
-#if `Weyl' != 1
+#if "`FermionChains'" != "Weyl"
+repeat id fme([x]?) * fme([y]?) = fme([x] * [y]);
 id fme([x]?) = Mat(fme([x]));
 #endif
 

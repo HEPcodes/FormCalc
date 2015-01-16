@@ -2,17 +2,20 @@
 * this is the main program for the generated Fortran code,
 * it scans the command line and then invokes ParameterScan
 * this file is part of FormCalc
-* last modified 6 Dec 05 th
+* last modified 26 Feb 08 th
 
 
 #include "xsection.F"
 
+#ifndef MMA
 
 	program main
 	implicit none
 
+#if U77EXT
 	integer iargc, lnblnk
 	external iargc, lnblnk
+#endif
 
 	double precision sqrtSfrom, sqrtSto, sqrtSstep
 	integer serialfrom, serialto, serialstep
@@ -20,15 +23,18 @@
 	character*200 argv
 	character*512 dir
 
+	call setfpu
+
 	argc = iargc()
 	if( argc .lt. 2 .or. argc .gt. 3 ) goto 999
 
-	sqrtSfrom = 0
+	sqrtSfrom = -1
 	sqrtSto = 0
 	sqrtSstep = SQRTSSTEP
 	call getarg(2, argv)
-	read(argv, *, iostat=fail, err=999)
+	read(argv, *, iostat=fail, end=991, err=999)
      &    sqrtSfrom, sqrtSto, sqrtSstep
+991	if( sqrtSfrom .eq. -1 ) goto 999
 
 	call getarg(1, argv)
 
@@ -51,8 +57,10 @@
 	serialstep = 1
 	if( argc .gt. 2 ) then
 	  call getarg(3, argv)
-	  read(argv, *, iostat=fail, err=999)
+	  serialfrom = -1
+	  read(argv, *, iostat=fail, end=992, err=999)
      &      serialfrom, serialto, serialstep
+992	  if( serialfrom .eq. -1 ) goto 999
 	endif
 
 	call ParameterScan(dir, serialfrom, serialto, serialstep)
@@ -60,7 +68,7 @@
 	call ffexi
 	goto 1
 
-99      format (/"USAGE:  ", A, " p1...p", I1,
+99	format (/"USAGE:  ", A, " p1...p", I1,
      &    " sqrtSfrom[,to[,step]] [serialfrom[,to[,step]]]"
      &    //"p1..", I1, " = +  for right-circular polarization"
      &    /"        -  for left-circular       ''"
@@ -77,4 +85,6 @@
 
 1	continue
 	end
+
+#endif
 

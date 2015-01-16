@@ -1,7 +1,7 @@
 * run.F
 * defines parameter settings for one run, then includes main.F
 * this file is part of FormCalc
-* last modified 10 Jan 07 th
+* last modified 11 Feb 08 th
 
 
 * Whether to run in debugging mode
@@ -45,11 +45,11 @@ c#define NO_EXCLUSION_LIMITS
 #define MODEL "model_sm.F"
 
 
-* You can define LOOP[1..15] for scanning the parameter space.
-* LOOP1 will be the outermost loop.  Do not remove #defines which
-* are not needed.  Note that all loops terminate at label 1, e.g.
-*	#define LOOP1 do 1 MH = 100, 500, 200
-* For a fixed parameter, use something like #define LOOP1 MH = 300.
+* The LOOPn set up the model parameters for the calculation, either
+* - as fixed declarations, e.g.
+*       MH = 115
+* - or as do-loops terminating on label 1, e.g.
+*       do 1 MH = 100, 500, 10
 
 #define LOOP1 MH = 120
 #define LOOP2
@@ -66,15 +66,18 @@ c#define NO_EXCLUSION_LIMITS
 #define LOOP13
 #define LOOP14
 #define LOOP15
+#define LOOP16
+#define LOOP17
+#define LOOP18
+#define LOOP19
+#define LOOP20
 
 
-* PRINT[1..15] defines output statements with which changes in 
-* parameters (typically the ones included in the scan) can be 
+* The PRINTn definitions contain output statements with which changes
+* in parameters (typically the ones included in the scan) can be
 * written to the output file and screen.  For example,
-*	SHOW "MH", MH
+*       SHOW "MH", MH
 * writes out the values of MH and MT in each pass of the loop.
-* Only real parameters are allowed (use DBLE and DIMAG for complex
-* ones) and a string identifier must be given as in the example above.
 
 #define PRINT1 SHOW "MH", MH
 #define PRINT2
@@ -91,6 +94,11 @@ c#define NO_EXCLUSION_LIMITS
 #define PRINT13
 #define PRINT14
 #define PRINT15
+#define PRINT16
+#define PRINT17
+#define PRINT18
+#define PRINT19
+#define PRINT20
 
 
 * Cuts and increments.  May be defined in terms of sqrtS, the CMS energy.

@@ -3,7 +3,7 @@
 		reorders data from main.F-output for easier access
 		e.g. with gnuplot
 		this file is part of FormCalc
-		last modified 29 Oct 04 th
+		last modified 2 May 07 th
 
 Syntax: reorder var1 var2 var3... < infile > outfile
 
@@ -116,6 +116,7 @@ int main(int argc, char **argv)
           }
 
         c = memccpy(c, line, '\n', sizeof(line));
+        *c = 0;
       }
       continue;
     }

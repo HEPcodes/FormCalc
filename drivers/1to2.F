@@ -1,7 +1,7 @@
 * 1to2.F
 * the kinematics for a 1 -> 2 process
 * this file is part of FormCalc
-* last modified 31 Jan 06 th
+* last modified 18 Jan 08 th
 
 
 * some definitions for xsection.F
@@ -44,7 +44,7 @@
 	subroutine InitialState
 	implicit none
 
-#include "model.h"
+#include "xsection.h"
 
 	call VecSet(1, DBLE(MASS1), 0D0, 0D0, 0D0, 1D0)
 	end
@@ -56,7 +56,6 @@
 	implicit none
 	double precision fac
 
-#include "util.h"
 #include "xsection.h"
 
 	double precision p, ex,ey,ez, msum, minv

@@ -1,7 +1,7 @@
 * model.h
 * common blocks for the model parameters
 * this file is part of FormCalc
-* last modified 16 Nov 06 th
+* last modified 21 Feb 08 th
 
 
 	double precision pi, degree, sqrt2, hbar_c2
@@ -27,6 +27,7 @@
 #define INFO print *,
 #define Digit(i) char(i+48)
 #define Polar(r,theta) r*exp(cI*degree*theta)
+#define Sq(c) DBLE((c)*DCONJG(c))
 #endif
 
 	double precision Divergence
@@ -35,17 +36,24 @@
 
 * SM parameters
 
+	double precision sin12, sin23, sin13, delta13
+	parameter (sin12 = .2243D0)
+	parameter (sin23 = .0413D0)
+	parameter (sin13 = .0037D0)
+	parameter (delta13 = 60*degree)
+
 	double precision MZ, MZ2, MW, MW2, CW, CW2, SW2
 	parameter (MZ = 91.1875D0, MZ2 = MZ**2)
 	parameter (MW = 80.450D0, MW2 = MW**2)
 	parameter (CW = MW/MZ, CW2 = CW**2)
 	parameter (SW2 = 1 - CW2)
 
-	double precision GF, Alfa, Alfa2, AlfaMZ
+	double precision GF, Alfa, Alfa2, AlfaMZ, AlfasMZ
 	parameter (GF = 1.16639D-5)
 	parameter (Alfa = 1/137.0359895D0, Alfa2 = Alfa**2)
 c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 	parameter (AlfaMZ = 1/127.934D0)
+	parameter (AlfasMZ = .118D0)
 
 	double precision ME, ME2, MM, MM2, ML, ML2
 	parameter (ME = .51099907D-3, ME2 = ME**2)
@@ -55,7 +63,7 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 	double precision MU, MU2, MC, MC2, MT, MT2
 	parameter (MU = 53.8D-3, MU2 = MU**2)
 	parameter (MC = 1.50D0, MC2 = MC**2)
-	parameter (MT = 171.4D0, MT2 = MT**2)
+	parameter (MT = 170.9D0, MT2 = MT**2)
 
 	double precision MD, MD2, MS, MS2, MB, MB2, MBatMB
 	parameter (MD = 53.8D-3, MD2 = MD**2)
@@ -75,34 +83,56 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 	common /sm_para/ EL, GS, Alfas, Alfas2, AlfasMT, SW
 	common /sm_para/ sm_digest
 
+#ifndef CKMC
+#define CKMC(i,j) DCONJG(CKM(i,j))
+#endif
+
 
 * MSSM parameters
 
 	double complex UCha(2,2), VCha(2,2), ZNeu(4,4)
-	double complex USf(2,2,4,3), Af(2:4,3,3), Xf(2:4,3,3)
-	double complex Atau, At, Ab, MUE, M_1, M_2, M_3
+	double complex USf(2,2,4,3), UCSf(3,4,2:4,3), UUSf(3,4,2:4,3)
+	double complex XHiggs(3,3,2)
+	double complex Af(2:4,3,3), Xf(2:4,3,3)
+	double complex Atau, At, Ab, MUE, M_1, M_2, M_3, SqrtEGl
 	double precision MCha(2), MCha2(2), MNeu(4), MNeu2(4)
 	double precision MSS(2,2:4,3), MSS2(2,2:4,3), DSf(2,4)
 	double precision MSf(2,4,3), MSf2(2,4,3), MSusy, MGl, MGl2
-	double precision Mh0, Mh02, MHH, MHH2, MA0, MA02, MHp, MHp2
-	double precision Mh02tree, MHH2tree, MHp2tree
+	double precision MHiggs(4), MHiggs2(4), MHiggstree2(4)
 	double precision CB, SB, TB, CB2, SB2, TB2, C2B, S2B
 	double precision CA, SA, CA2, SA2, C2A, S2A
 	double precision CAB, SAB, CBA, SBA
 	logical mssm_digest
 
 	common /mssm_para/ UCha, VCha, ZNeu
-	common /mssm_para/ USf, Af, Xf
-	common /mssm_para/ Atau, At, Ab, MUE, M_1, M_2, M_3
+	common /mssm_para/ USf, UCSf, UUSf
+	common /mssm_para/ XHiggs
+	common /mssm_para/ Af, Xf
+	common /mssm_para/ Atau, At, Ab, MUE, M_1, M_2, M_3, SqrtEGl
 	common /mssm_para/ MCha, MCha2, MNeu, MNeu2
 	common /mssm_para/ MSS, MSS2, DSf
 	common /mssm_para/ MSf, MSf2, MSusy, MGl, MGl2
-	common /mssm_para/ Mh0, Mh02, MHH, MHH2, MA0, MA02, MHp, MHp2
-	common /mssm_para/ Mh02tree, MHH2tree, MHp2tree
+	common /mssm_para/ MHiggs, MHiggs2, MHiggstree2
 	common /mssm_para/ CB, SB, TB, CB2, SB2, TB2, C2B, S2B
 	common /mssm_para/ CA, SA, CA2, SA2, C2A, S2A
 	common /mssm_para/ CAB, SAB, CBA, SBA
 	common /mssm_para/ mssm_digest
+
+	double precision Mh0, Mh02, MHH, MHH2, MA0, MA02, MHp, MHp2
+	equivalence (MHiggs(1), Mh0), (MHiggs2(1), Mh02)
+	equivalence (MHiggs(2), MHH), (MHiggs2(2), MHH2)
+	equivalence (MHiggs(3), MA0), (MHiggs2(3), MA02)
+	equivalence (MHiggs(4), MHp), (MHiggs2(4), MHp2)
+
+	double precision Mh0tree2, MHHtree2, MA0tree2, MHptree2
+	equivalence (MHiggstree2(1), Mh0tree2)
+	equivalence (MHiggstree2(2), MHHtree2)
+	equivalence (MHiggstree2(3), MA0tree2)
+	equivalence (MHiggstree2(4), MHptree2)
+
+	double complex UHiggs(3,3), ZHiggs(3,3)
+	equivalence (XHiggs(1,1,1), UHiggs)
+	equivalence (XHiggs(1,1,2), ZHiggs)
 
 	double precision Af_flat(3*3*3), Xf_flat(3*3*3)
 	equivalence (Af, Af_flat)
@@ -136,12 +166,17 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 	equivalence (M_3, ReImM_3)
 	equivalence (ReImM_3(1), ReM_3), (ReImM_3(2), ImM_3)
 
-#ifndef CKMC
-#define CKMC(a,b) DCONJG(CKM(a,b))
-#define USfC(a,b,t,g) DCONJG(USf(a,b,t,g))
-#define VChaC(a,b) DCONJG(VCha(a,b))
-#define UChaC(a,b) DCONJG(UCha(a,b))
-#define ZNeuC(a,b) DCONJG(ZNeu(a,b))
+#ifndef USfC
+#define USfC(i,j,t,g) DCONJG(USf(i,j,t,g))
+#define UCSfC(i,j,t,g) DCONJG(UCSf(i,j,t,g))
+#define UUSfC(i,j,t,g) DCONJG(UUSf(i,j,t,g))
+#define USf2(i,j,t,g) DBLE(UCSf(i,j,t,g))
+#define VChaC(i,j) DCONJG(VCha(i,j))
+#define UChaC(i,j) DCONJG(UCha(i,j))
+#define ZNeuC(i,j) DCONJG(ZNeu(i,j))
+#define AfC(t,g1,g2) DCONJG(Af(t,g1,g2))
+#define MUEC DCONJG(MUE)
+#define SqrtEGlC DCONJG(SqrtEGl)
 #endif
 
 
@@ -280,7 +315,7 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 	equivalence (ReImdeltaSf(2,4,1+3,3+3), ImdeltaRRdb)
 
 #ifndef UASfC
-#define UASfC(a,b,t) DCONJG(UASf(a,b,t))
+#define UASfC(i,j,t) DCONJG(UASf(i,j,t))
 #endif
 
 

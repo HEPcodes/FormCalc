@@ -1,12 +1,12 @@
 * process.h
 * defines all process-dependent parameters
 * this file is part of FormCalc
-* last modified 11 Sep 06 th
+* last modified 17 Jan 08 th
 
 
 * Definition of the external particles.
-* The TYPEn may be one of SCALAR, FERMION, PHOTON, or VECTOR.
-* (PHOTON is equivalent to VECTOR, except that longitudinal
+* Each TYPEn is one of SCALAR, FERMION, PHOTON (= GLUON), or VECTOR.
+* (PHOTON/GLUON is equivalent to VECTOR, except that longitudinal
 * modes are not allowed)
 
 * Note: The initial definitions for particles 2...5 are of course

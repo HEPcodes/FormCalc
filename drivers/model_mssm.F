@@ -2,7 +2,7 @@
 * all parameters for the MSSM are initialized here
 * this file is part of FormCalc
 * Christian Schappacher, 17 Feb 99
-* last modified 15 Feb 07 th
+* last modified 26 Feb 08 th
 
 
 * The input parameters for model_mssm are:
@@ -147,7 +147,7 @@
 	subroutine ModelDefaults
 	implicit none
 
-#include "model.h"
+#include "decl.h"
 
 	integer i
 
@@ -172,7 +172,7 @@
 	implicit none
 	integer fail
 
-#include "model.h"
+#include "decl.h"
 
 	double precision alphasPDF
 	external alphasPDF
@@ -217,7 +217,7 @@
 	implicit none
 	integer fail
 
-#include "model.h"
+#include "decl.h"
 
 	integer t, g
 	double precision i3part, qpart
@@ -226,7 +226,7 @@
 	parameter (Qe = -1, Qu = 2/3D0, Qd = -1/3D0)
 
 #ifndef NO_EXCLUSION_LIMITS
-	double precision USf2(2,2,3:4), DeltaRho, f1f2
+	double precision DeltaRho, f1f2
 	external f1f2
 #endif
 
@@ -291,6 +291,30 @@
      &        MSS2(2,t,g) + DSf(2,t) + Mf2(t,g),
      &        Mf(t,g)*DCONJG(Xf(t,g,g)))
 	    if( fail .ne. 0 ) return
+
+	    UCSf(1,1,t,g) = Sq(USf(1,1,t,g))
+	    UCSf(2,1,t,g) = Sq(USf(2,1,t,g))
+	    UCSf(1,2,t,g) = Sq(USf(1,2,t,g))
+	    UCSf(2,2,t,g) = Sq(USf(2,2,t,g))
+
+	    UCSf(3,1,t,g) = USf(1,1,t,g)*USfC(2,1,t,g)
+	    UCSf(3,2,t,g) = USf(1,2,t,g)*USfC(2,2,t,g)
+	    UCSf(1,3,t,g) = USf(1,1,t,g)*USfC(1,2,t,g)
+	    UCSf(2,3,t,g) = USf(2,1,t,g)*USfC(2,2,t,g)
+	    UCSf(3,3,t,g) = USf(1,1,t,g)*USfC(2,2,t,g)
+	    UCSf(3,4,t,g) = USf(1,2,t,g)*USfC(2,1,t,g)
+
+	    UUSf(1,1,t,g) = USf(1,1,t,g)**2
+	    UUSf(2,1,t,g) = USf(2,1,t,g)**2
+	    UUSf(1,2,t,g) = USf(1,2,t,g)**2
+	    UUSf(2,2,t,g) = USf(2,2,t,g)**2
+
+	    UUSf(3,1,t,g) = USf(1,1,t,g)*USf(2,1,t,g)
+	    UUSf(3,2,t,g) = USf(1,2,t,g)*USf(2,2,t,g)
+	    UUSf(1,3,t,g) = USf(1,1,t,g)*USf(1,2,t,g)
+	    UUSf(2,3,t,g) = USf(2,1,t,g)*USf(2,2,t,g)
+	    UUSf(3,3,t,g) = USf(1,1,t,g)*USf(2,2,t,g)
+	    UUSf(3,4,t,g) = USf(1,2,t,g)*USf(2,1,t,g)
 	  enddo
 	enddo
 
@@ -323,20 +347,13 @@
 	  return
 	endif
 
-	do t = 3, 4
-	  USf2(1,1,t) = DBLE(USf(1,1,t,3)*DCONJG(USf(1,1,t,3)))
-	  USf2(2,1,t) = DBLE(USf(2,1,t,3)*DCONJG(USf(2,1,t,3)))
-	  USf2(1,2,t) = DBLE(USf(1,2,t,3)*DCONJG(USf(1,2,t,3)))
-	  USf2(2,2,t) = DBLE(USf(2,2,t,3)*DCONJG(USf(2,2,t,3)))
-	enddo
-
 	DeltaRho =
-     &    USf2(1,1,3)*USf2(1,1,4)*f1f2(MSf2(1,3,3), MSf2(1,4,3)) +
-     &    USf2(1,1,3)*USf2(2,1,4)*f1f2(MSf2(1,3,3), MSf2(2,4,3)) +
-     &    USf2(2,1,3)*USf2(1,1,4)*f1f2(MSf2(2,3,3), MSf2(1,4,3)) +
-     &    USf2(2,1,3)*USf2(2,1,4)*f1f2(MSf2(2,3,3), MSf2(2,4,3)) -
-     &    USf2(1,2,3)*USf2(2,2,3)*f1f2(MSf2(1,3,3), MSf2(2,3,3)) -
-     &    USf2(1,2,4)*USf2(2,2,4)*f1f2(MSf2(1,4,3), MSf2(2,4,3))
+     &    USf2(1,1,3,3)*USf2(1,1,4,3)*f1f2(MSf2(1,3,3), MSf2(1,4,3)) +
+     &    USf2(1,1,3,3)*USf2(2,1,4,3)*f1f2(MSf2(1,3,3), MSf2(2,4,3)) +
+     &    USf2(2,1,3,3)*USf2(1,1,4,3)*f1f2(MSf2(2,3,3), MSf2(1,4,3)) +
+     &    USf2(2,1,3,3)*USf2(2,1,4,3)*f1f2(MSf2(2,3,3), MSf2(2,4,3)) -
+     &    USf2(1,2,3,3)*USf2(2,2,3,3)*f1f2(MSf2(1,3,3), MSf2(2,3,3)) -
+     &    USf2(1,2,4,3)*USf2(2,2,4,3)*f1f2(MSf2(1,4,3), MSf2(2,4,3))
 
 	if( DeltaRho .gt. DeltaRho_UPPERBOUND ) then
 	  WARN "model_mssm: DeltaRho = ", DeltaRho,
@@ -403,12 +420,9 @@
 	implicit none
 	double precision m1, m2
 
-#include "model.h"
+#include "decl.h"
 
 	double precision f1, f2, logm1m2, c1
-
-	double complex Li2
-	external Li2
 
 	logm1m2 = log(m1/m2)
 	c1 = 2*m1*m2/(m1 - m2)*logm1m2
@@ -428,7 +442,7 @@
 	implicit none
 	integer fail
 
-#include "model.h"
+#include "decl.h"
 
 	double complex X(2,2)
 
@@ -462,12 +476,12 @@
 	implicit none
 	integer fail
 
-#include "model.h"
+#include "decl.h"
 
 	double complex Y(4,4)
 
 #ifndef NO_GUT_RELATION
-* GUT relation (Higgs Hunter's Guide p. 287)
+* GUT relation (Higgs Hunters Guide p. 287)
 	M_1 = 5/3D0*SW2/CW2*M_2
 #endif
 
@@ -515,32 +529,31 @@
 	implicit none
 	integer fail
 
-#include "model.h"
+#include "decl.h"
 
 	double precision avgMH2, deltaMH2
 
 #if HIGGS_MASSES == FEYNHIGGS
 	integer mssmpart, fieldren, tanbren, higgsmix, p2approx
-	integer looplevel, tl_running_mt, tl_bot_resum
+	integer looplevel, tlRunningMT, tlBotResum, tlCplxApprox
 	parameter (mssmpart = 4)
 	parameter (fieldren = 0)
 	parameter (tanbren = 0)
 	parameter (higgsmix = 2)
 	parameter (p2approx = 0)
 	parameter (looplevel = 2)
-	parameter (tl_running_mt = 1)
-	parameter (tl_bot_resum = 1)
+	parameter (tlRunningMT = 1)
+	parameter (tlBotResum = 1)
+	parameter (tlCplxApprox = 3)
 
 	double precision scalefactor
 	double precision Qtau, Qt, Qb
 	parameter (scalefactor = 1)
-	parameter (AlfasMZ = -1)
 	parameter (Qtau = 0)
 	parameter (Qt = 0)
 	parameter (Qb = 0)
 
-	double precision MHiggs(4)
-	double complex SAeff, UHiggs(3,3), ZHiggs(3,3)
+	double complex SAeff
 #else
 	double precision sig11, sig12, sig22
 	double precision MTr2, Qsusy, Lambda
@@ -558,23 +571,30 @@
 #endif
 
 	MA02 = MA0**2
+	MA0tree2 = MA02
 
 	avgMH2 = .5D0*(MA02 + MZ2)
 	deltaMH2 = MA0*MZ*C2B
 	deltaMH2 = sqrt((avgMH2 - deltaMH2)*(avgMH2 + deltaMH2))
-	Mh02tree = avgMH2 - deltaMH2
-	MHH2tree = avgMH2 + deltaMH2
+	Mh0tree2 = avgMH2 - deltaMH2
+	MHHtree2 = avgMH2 + deltaMH2
 
-	MHp2tree = MA02 + MW2
+	MHptree2 = MA02 + MW2
 
 #if HIGGS_MASSES == FEYNHIGGS
 
-	call FHSetFlags(fail, mssmpart, fieldren, tanbren,
-     &    higgsmix, p2approx, looplevel, tl_running_mt, tl_bot_resum)
+	call FHSetFlags(fail, mssmpart, fieldren, tanbren, higgsmix,
+     &    p2approx, looplevel, tlRunningMT, tlBotResum, tlCplxApprox)
+	if( fail .ne. 0 ) return
+
+	call FHSetSMPara(fail,
+     &    1/Alfa, AlfasMZ, GF,
+     &    MS, MC, MBatMB, MW, MZ,
+     &    theta12, theta23, theta13, delta13)
 	if( fail .ne. 0 ) return
 
 	call FHSetPara(fail, scalefactor,
-     &    AlfasMZ, MC, MT, MB, MW, MZ, TB, MA0, -1D0,
+     &    MT, TB, MA0, -1D0,
      &    MSS(1,2,3), MSS(2,2,3), MSS(1,3,3), MSS(2,3,3), MSS(2,4,3),
      &    MSS(1,2,2), MSS(2,2,2), MSS(1,3,2), MSS(2,3,2), MSS(2,4,2),
      &    MSS(1,2,1), MSS(2,2,1), MSS(1,3,1), MSS(2,3,1), MSS(2,4,1),
@@ -589,17 +609,10 @@
 	call FHHiggsCorr(fail, MHiggs, SAeff, UHiggs, ZHiggs)
 	if( fail .ne. 0 ) return
 
-        Mh0 = MHiggs(1)
-	Mh02 = Mh0**2
-
-	MHH = MHiggs(2)
-	MHH2 = MHH**2
-
-	MA0 = MHiggs(3)
-	MA02 = MA0**2
-
-	MHp = MHiggs(4)
-	MHp2 = MHp**2
+	MHiggs2(1) = MHiggs(1)**2
+	MHiggs2(2) = MHiggs(2)**2
+	MHiggs2(3) = MHiggs(3)**2
+	MHiggs2(4) = MHiggs(4)**2
 
 	SA = DBLE(SAeff)
 	SA2 = SA**2
@@ -609,7 +622,7 @@
 #else
 * no FeynHiggs
 
-	MHp2 = MHp2tree
+	MHp2 = MHptree2
 
 #if HIGGS_MASSES == TREE
 
@@ -768,7 +781,7 @@
 
 #ifdef SM_HIGGS
 * With SM_HIGGS defined, the values of the MSSM parameters are set
-* such that the SM is reproduced.  See Higgs Hunter's Guide p. 356.
+* such that the SM is reproduced.  See Higgs Hunters Guide p. 356.
 * Note one tricky thing: the Higgs mass Mh0 is first calculated as
 * it would be in the MSSM (to get the same value when comparing
 * MSSM <-> SM), but then beta is reverse-engineered to be consistent
@@ -821,7 +834,7 @@
 	integer fail
 	double precision scale
 
-#include "model.h"
+#include "decl.h"
 
 	call SMVarIni(fail, scale)
 	if( fail .ne. 0 ) return
@@ -832,7 +845,7 @@
 	M_3 = Alfas*(1/AlfaMZ - 40/(9*pi)*log(scale/MZ))*SW2*M_2
 #endif
 
-	MGl = DBLE(M_3)
+	MGl = abs(M_3)
 #ifndef NO_EXCLUSION_LIMITS
 	if( MGl .lt. MGl_LOWERBOUND ) then
 	  WARN "model_mssm: MGl = ", MGl,
@@ -842,6 +855,9 @@
 	endif
 #endif
 	MGl2 = MGl**2
+
+	SqrtEGl = M_3
+	if( MGl .gt. 1D-14 ) SqrtEGl = sqrt(SqrtEGl/MGl)
 
 #if HIGGS_MASSES == FEYNHIGGS
 	call HiggsMasses(fail)

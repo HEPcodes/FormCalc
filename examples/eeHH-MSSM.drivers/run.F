@@ -1,7 +1,7 @@
 * run.F
 * defines parameter settings for one run, then includes main.F
 * this file is part of FormCalc
-* last modified 2 Feb 06 th
+* last modified 8 Nov 07 th
 
 
 * Whether to run in debugging mode
@@ -35,6 +35,7 @@ c#define HIGGS_MASSES FEYNHIGGS
 c#define SM_HIGGS
 c#define FLAVOUR_VIOLATION
 c#define NO_EXCLUSION_LIMITS
+c#define NO_GUT_RELATION
 
 * options for model_thdm.F:
 c#define MODEL_TYPE_I
@@ -44,11 +45,37 @@ c#define NO_EXCLUSION_LIMITS
 #define MODEL "model_mssm.F"
 
 
-* You can define LOOP[1..15] for scanning the parameter space.
-* LOOP1 will be the outermost loop.  Do not remove #defines which
-* are not needed.  Note that all loops terminate at label 1, e.g.
-*	#define LOOP1 do 1 MH = 100, 500, 200
-* For a fixed parameter, use something like #define LOOP1 MH = 300.
+* The DECLn are declaration statements for local variables needed
+* by the LOOPn statements (see below).  Parameters declared in
+* model.h need not be re-declared here.
+
+#define DECL1
+#define DECL2
+#define DECL3
+#define DECL4
+#define DECL5
+#define DECL6
+#define DECL7
+#define DECL8
+#define DECL9
+#define DECL10
+#define DECL11
+#define DECL12
+#define DECL13
+#define DECL14
+#define DECL15
+#define DECL16
+#define DECL17
+#define DECL18
+#define DECL19
+#define DECL20
+
+
+* The LOOPn set up the model parameters for the calculation, either
+* - as fixed declarations, e.g.
+*       MH = 115
+* - or as do-loops terminating on label 1, e.g.
+*       do 1 MH = 100, 500, 10
 
 #define LOOP1 TB = 1.5D0
 #define LOOP2 MA0 = 700
@@ -65,15 +92,18 @@ c#define NO_EXCLUSION_LIMITS
 #define LOOP13
 #define LOOP14
 #define LOOP15
+#define LOOP16
+#define LOOP17
+#define LOOP18
+#define LOOP19
+#define LOOP20
 
 
-* PRINT[1..5] defines output statements with which changes in 
-* parameters (typically the ones included in the scan) can be 
+* The PRINTn definitions contain output statements with which changes
+* in parameters (typically the ones included in the scan) can be
 * written to the output file and screen.  For example,
-*	PRINT "MH=", MH, "MT=", MT
+*       SHOW "MH", MH
 * writes out the values of MH and MT in each pass of the loop.
-* Only real parameters are allowed (use DBLE and DIMAG for complex
-* ones) and a string identifier must be given as in the example above.
 
 #define PRINT1 SHOW "TB", TB
 #define PRINT2 SHOW "MA0", MA0
@@ -90,6 +120,11 @@ c#define NO_EXCLUSION_LIMITS
 #define PRINT13
 #define PRINT14
 #define PRINT15
+#define PRINT16
+#define PRINT17
+#define PRINT18
+#define PRINT19
+#define PRINT20
 
 
 * Cuts and increments.  May be defined in terms of sqrtS, the CMS energy.

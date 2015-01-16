@@ -1,0 +1,38 @@
+#! /bin/sh
+# script to compile C programs that are linked 
+# against Fortran libraries
+# last modified 11 Oct 07 th
+
+args=""
+ldflags=""
+libs="-lpthread"
+
+case "$*" in
+*-m32*)
+	set -- "${@/-x86-64/}" ;;
+esac
+
+while [ $# -gt 0 ] ; do
+  case "$1" in
+  -arch)
+	shift
+	;;
+  -[Ll]* | -Wl* | *.a)
+	ldflags="$ldflags \"$1\""
+	;;
+  -Wno-long-double)
+	# mcc adds this on Macs & gcc 4 doesn't like it
+	;;
+  *.cc)
+	args="$args \"$1\""
+	libs="-lstdc++ $libs"
+	;;
+  *)
+	args="$args \"$1\""
+	;;
+  esac
+  shift
+done
+
+eval "set -x ; ${REALCC:-cc} $args $ldflags $libs"
+

@@ -1,17 +1,26 @@
+# makefile.in
+# makefile template used by configure
+# this file is part of FormCalc
+# last modified 18 Jan 08 th
+
 # Note: make permanent changes only in makefile.in,
 # changes in makefile will be overwritten by configure.
 
 
-.PHONY: default force mostlyclean clean distclean
+.PHONY: all force clean distclean
 
-default: run
+MAKECMDGOALS ?= run
+
+MAKECMDGOALS := $(MAKECMDGOALS:%=%$(EXE))
+
+all: $(MAKECMDGOALS)
 
 
-export VPATH := $(CURDIR):$(CURDIR)/renconst:$(LT)/../include
+VPATH := $(SRC):$(SRC)/renconst:$(LT)/../include
 
 INCLUDE := $(patsubst %,-I%,$(subst :, ,$(VPATH)))
 
-PREFIX =
+PREFIX :=
 
 FFLAGS += $(INCLUDE)
 
@@ -25,47 +34,51 @@ export CC
 export CFLAGS
 
 
-LIBS = squaredme.a renconst.a util.a
+DECL_H = decl.h model.h util.h looptools.h renconst.h user.h
 
-$(LIBS): force
-	$(MAKE) -C $*
+
+DIR = $(SRC)/$(FOLDER)
+LIB = $(FOLDER).a
+
+LIBS :=
+
+FOLDER := squaredme
+-include $(DIR)/makefile
+
+FOLDER := renconst
+-include $(DIR)/makefile
+
+CLEANLIBS := $(LIBS)
+
+FOLDER := util
+-include $(DIR)/makefile
 
 
 DEPS := $(wildcard *.d)
 
+clean:
+	$(RM) $(DEPS) $(DEPS:%.d=%.o) $(DEPS:%.d=%$(EXE)) $(CLEANLIBS)
 
-mostlyclean:
-	$(RM) $(DEPS) $(DEPS:%.d=%.o) $(DEPS:%.d=%)
-
-clean: mostlyclean
-	for dir in $(basename $(LIBS)) ; do \
-	  $(MAKE) -C $$dir clean ; \
-	done
-
-distclean: mostlyclean
-	for dir in $(basename $(LIBS)) ; do \
-	  $(MAKE) -C $$dir distclean ; \
-	done
+distclean:
+	$(RM) $(DEPS) $(DEPS:%.d=%.o) $(DEPS:%.d=%$(EXE)) $(LIBS) makefile
 
 
-MAKECMDGOALS ?= run
+-include $(SRC)/$(MAKECMDGOALS:%$(EXE)=%.d)
 
--include $(MAKECMDGOALS:%=%.d)
-
-%.d: %.F
+%.d: $(SRC)/%.F
 	( grep Mma $< >/dev/null 2>&1 ; \
 	  echo "MMA = $$?" ; \
-	  echo "$*: $@ $(LIBS)" ; \
-	  $(CPP) -M $(INCLUDE) $< | sed 's/^.*:/$@:/' ) > $@
+	  echo "$*$(EXE): $@ $(LIBS)" ; \
+	  $(CPP) -M $(INCLUDE) -x c $< | sed 's/^.*:/$@:/' ) > $@
 
 ifeq ($(MMA), 0)
-%:: %.F %.d mktm
-	./mktm $<
+%$(EXE):: $(SRC)/%.F %.d $(SRC)/mktm
+	$(SRC)/mktm $<
 	$(FC) $(FFLAGS) $(DEF)MMA $(DEF)PREFIX=$(PREFIX) -c $<
-	CC="$(CC)" mcc $(CFLAGS) -o $@ $*.tm $*.o $(LIBS) $(STDLIBS) $(LDFLAGS)
+	PATH="$(PATH):$(SRC)/tools" CC="$(SRC)/tools/fcc" REALCC="$(CC)" mcc $(CFLAGS) -o $@ $*.tm $*.o $(LIBS) $(STDLIBS) $(LDFLAGS)
 	-$(RM) $*.o $*.tm $*.tm.c
 else
-%:: %.F %.d
+%$(EXE):: $(SRC)/%.F %.d
 	$(FC) $(FFLAGS) $(DEF)PREFIX=$(PREFIX) -o $@ $< $(LIBS) $(STDLIBS)
 	-$(RM) $*.o
 endif

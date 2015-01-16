@@ -3,9 +3,9 @@
 * code adapted from the "Handbook" routines for complex A
 * (Wilkinson, Reinsch: Handbook for Automatic Computation, p. 202)
 * this file is part of the Diag library
-* last modified 22 Dec 06 th
+* last modified 27 Sep 07 th
 
-#include "config.h"
+#include "diag.h"
 
 
 ************************************************************************
@@ -19,11 +19,18 @@
 	integer n, ldA, ldU, sort
 	double complex A(ldA,*), U(ldU,*), d(*)
 
-	integer sweep, p, q, j
-	double precision test, threshold, absA, absB, absX
+	integer p, q, j
+	double precision red, off, thresh
 	double complex delta, t, invc, sx, sy, tx, ty
 	double complex x, y
 	double complex ev(2,MAXDIM)
+
+	integer sweep
+	common /nsweeps/ sweep
+
+	double precision sq
+	double complex c
+	sq(c) = DBLE(c*DCONJG(c))
 
 	if( n .gt. MAXDIM ) then
 	  print *, "Dimension too large"
@@ -33,44 +40,41 @@
 
 	do p = 1, n
 	  ev(1,p) = 0
-	  ev(2,p) = Element(A,p,p)
+	  ev(2,p) = A(p,p)
 	  d(p) = ev(2,p)
 	enddo
 
 	do p = 1, n
 	  do q = 1, n
-	    Element(U,q,p) = 0
+	    U(q,p) = 0
 	  enddo
-	  Element(U,p,p) = 1
+	  U(p,p) = 1
 	enddo
 
+	red = .01D0/n**4
+
 	do sweep = 1, 50
-	  test = 0
+	  off = 0
 	  do q = 2, n
 	    do p = 1, q - 1
-	      test = test + abs(Element(A,p,q)) + abs(Element(A,q,p))
+	      off = off + sq(A(p,q)) + sq(A(q,p))
 	    enddo
 	  enddo
-	  test = .5D0*test
-	  if( test .lt. EPS ) goto 1
+	  if( off .lt. EPS ) goto 1
 
-	  threshold = 0
-	  if( sweep .lt. 4 ) threshold = test/(5*n**2)
+	  thresh = 0
+	  if( sweep .lt. 4 ) thresh = off*red
 
 	  do q = 2, n
 	    do p = 1, q - 1
-	      absA = abs(ev(2,p))
-	      absB = abs(ev(2,q))
-	      absX = .5D0*(abs(Element(A,p,q)) + abs(Element(A,q,p)))
-	      test = 100*absX
-	      if( sweep .gt. 4 .and.
-     &            absA + test .eq. absA .and.
-     &            absB + test .eq. absB ) then
-	        Element(A,p,q) = 0
-	        Element(A,q,p) = 0
+	      off = sq(A(p,q)) + sq(A(q,p))
+	      if( sweep .gt. 4 .and. off .lt.
+     &              EPS*max(sq(ev(2,p)), sq(ev(2,q))) ) then
+	        A(p,q) = 0
+	        A(q,p) = 0
 	      else
-	        if( absX .gt. threshold ) then
-	          delta = Element(A,p,q)*Element(A,q,p)
+	        if( off .gt. thresh ) then
+	          delta = A(p,q)*A(q,p)
 	          x = .5D0*(ev(2,p) - ev(2,q))
 	          y = sqrt(x**2 + delta)
 	          t = x - y
@@ -103,15 +107,15 @@
 	            Element(A,q,j) = y - sy*(x + ty*y)
 	          enddo
 
+	          A(p,q) = 0
+	          A(q,p) = 0
+
 	          do j = 1, n
 	            x = Element(U,p,j)
 	            y = Element(U,q,j)
 	            Element(U,p,j) = x + sx*(y - tx*x)
 	            Element(U,q,j) = y - sy*(x + ty*y)
 	          enddo
-
-	          Element(A,p,q) = 0
-	          Element(A,q,p) = 0
 	        endif
 	      endif
 	    enddo
@@ -131,17 +135,17 @@
 
 	do p = 1, n - 1
 	  j = p
-	  x = d(p)
+	  t = d(p)
 	  do q = p + 1, n
-	    if( sort*(DBLE(x) - DBLE(d(q))) .gt. 0 ) then
+	    if( sort*(DBLE(t) - DBLE(d(q))) .gt. 0 ) then
 	      j = q
-	      x = d(q)
+	      t = d(q)
 	    endif
 	  enddo
 
 	  if( j .ne. p ) then
 	    d(j) = d(p)
-	    d(p) = x
+	    d(p) = t
 	    do q = 1, n
 	      x = Element(U,p,q)
 	      Element(U,p,q) = Element(U,j,q)

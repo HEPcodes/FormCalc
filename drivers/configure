@@ -1,15 +1,15 @@
 #! /bin/sh
-# configure script
-# this file is part of FormCalc
-# last modified 14 Feb 07 th
+# configure script for FormCalc
 # note: has nothing to do with GNU autoconf
+# this file is part of FormCalc
+# last modified 25 Jan 08 th
 
 
 LC_ALL=C
 export LC_ALL
 
 test=test$$
-trap "rm -f $test*" 0 1 2 15
+trap "rm -f $test*" 0 1 2 3 15
 
 if (echo "test\c"; echo 1,2,3) | grep c > /dev/null ; then
   if (echo -n test; echo 1,2,3) | grep n > /dev/null ; then
@@ -56,7 +56,8 @@ findlib()
       "$base/src"
     do
       if [ -f "$path/$file" ] ; then
-        (cd "$path" ; pwd 1>&2 ; pwd)
+        echo "$path" 1>&2
+        echo "$path"
         return 0
       fi
     done
@@ -76,7 +77,7 @@ ldflags()
     set -- `echo $line | tr ':,()' '    '`
     while [ $# -gt 0 ] ; do
       case $1 in
-      */collect2 | */ld | ld)
+      */collect2$CONF_EXE | */ld$CONF_EXE | ld$CONF_EXE)
         ld=1 ;;
       *.o)
         ;;
@@ -89,6 +90,8 @@ ldflags()
       -rpath*)
         [ $ld -eq 1 ] && LDFLAGS="$LDFLAGS -Wl,$1,$2"
         shift ;;
+      -dynamic-linker)
+        shift ;;
       esac
       shift
     done
@@ -98,11 +101,13 @@ ldflags()
 }
 
 
-# check the arguments
-
 CONF_HOSTTYPE=`tcsh -cf 'echo $HOSTTYPE'`
 
-CONF_MAKEARGS=""
+case $CONF_HOSTTYPE in
+*cyg*) CONF_EXE=.exe ;;
+esac
+
+CONF_MAKEARGS=0
 
 for arg in "$@" ; do
   case "$arg" in
@@ -117,6 +122,10 @@ for arg in "$@" ; do
 	esac ;;
   --quad)
 	CONF_QUAD=1 ;;
+  --debug)
+	CONF_DEBUG="-O0 -g" ;;
+  --make*)
+	CONF_MAKEARGS="`expr "$arg" : "--make=\(.*\)"`" ;;
   --help)
 	cat << _EOF_ 1>&2
 $0 configures FormCalc-generated Fortran code, i.e. determines
@@ -124,11 +133,13 @@ or guesses the compiler and flags and writes out a makefile.
 
 $0 understands the following options:
 
---prefix=DIR        use DIR as installation directory,
-
 --static            link the executables statically,
 
---quad              compiles with quadruple precision (ifort and xlf only).
+--quad              compiles with quadruple precision (ifort and xlf only),
+
+--debug             compiles with optimization disabled,
+
+--make[=ARGS]       immediately continue with "make ARGS" after configure.
 
 _EOF_
 	exit 1 ;;
@@ -137,7 +148,7 @@ _EOF_
   *=*)
 	eval `echo $arg\" | sed 's/=/="/'` ;;
   *)
-	CONF_MAKEARGS="$CONF_MAKEARGS $arg" ;;
+	echo "Warning: $arg is not a valid argument." 1>&2 ;;
   esac
 done
 
@@ -148,7 +159,7 @@ CONF_MAKE=`findprog make gmake Make make` || exit 1
 
 CONF_CC=`findprog gcc $CC gcc` || exit 1
 
-CONF_CFLAGS="${CFLAGS--O3 -fomit-frame-pointer -ffast-math -g} $CONF_STATIC"
+CONF_CFLAGS="${CFLAGS-${CONF_DEBUG--O3 -g} -fomit-frame-pointer -ffast-math} $CONF_STATIC"
 
 CONF_FC=`findprog f77 $FC ${CONF_QUAD+ifort} pgf77 ifort xlf fort77 f77 f90 g77 g95 gfortran` || exit 1
 
@@ -156,24 +167,28 @@ CONF_DEF="-D"
 
 if $CONF_FC --version -c 2>&1 | grep GNU > /dev/null ; then
   CONF_FFLAGS="-O0 -ffixed-line-length-none -g $CONF_STATIC"
+#  case $CONF_HOSTTYPE in
+#  *cyg*) CONF_FFLAGS="$CONF_FFLAGS -mno-cygwin"
+#         CONF_CFLAGS="$CONF_CFLAGS -mno-cygwin" ;;
+#  esac
 else
   CONF_FFLAGS="${FFLAGS-default}"
   [ "$CONF_FFLAGS" = default ] && case "$CONF_FC$CONF_HOSTTYPE" in
   *pgf77*)
-	CONF_FFLAGS="-fast -g -Mextend -g77libs -Ktrap=fp ${CONF_STATIC+-Bstatic}" ;;
+	CONF_FFLAGS="${CONF_DEBUG--fast -g} -Mextend -g77libs -Ktrap=fp ${CONF_STATIC+-Bstatic}" ;;
   *ifort*)
-	CONF_FFLAGS="-O3 -g -extend_source -warn truncated_source -assume bscc -fpe0 $CONF_STATIC ${CONF_QUAD+-r16 -DDBLE=QEXT -DDIMAG=QIMAG -DDCONJG=QCONJG -DDCMPLX=QCMPLX}" ;;
+	CONF_FFLAGS="${CONF_DEBUG--O3 -g} -extend_source -warn truncated_source -assume bscc -fpe0 $CONF_STATIC ${CONF_QUAD+-r16 -DDBLE=QEXT -DDIMAG=QIMAG -DDCONJG=QCONJG -DDCMPLX=QCMPLX}" ;;
   *alpha)
-	CONF_FFLAGS="-fast -g3 -extend_source -warn truncated_source -fpe0 $CONF_STATIC" ;;
+	CONF_FFLAGS="-old_f77 ${CONF_DEBUG--fast -g3} -extend_source -warn truncated_source -fpe0 $CONF_STATIC" ;;
   *sun* | *sparc*)
-	CONF_FFLAGS="-fast -g -e -ftrap=common ${CONF_STATIC+-Bstatic}" ;;
+	CONF_FFLAGS="${CONF_DEBUG--fast -g} -e -ftrap=common ${CONF_STATIC+-Bstatic}" ;;
   *hp*)
-	CONF_FFLAGS="-O2 -g +es +U77 +FPVZO ${CONF_STATIC+-Wl,-noshared}" ;;
+	CONF_FFLAGS="${CONF_DEBUG--O2 -g} +es +U77 +FPVZO ${CONF_STATIC+-Wl,-noshared}" ;;
   *xlf*)
-	CONF_FFLAGS="-O2 -g -qfixed=132 -qmaxmem=-1 -qextname -qflttrap=enable:invalid:overflow:zerodivide ${CONF_QUAD+-qautodbl=dbl}"
+	CONF_FFLAGS="${CONF_DEBUG--O2 -g} -qfixed=132 -qmaxmem=-1 -qextname -qflttrap=enable:invalid:overflow:zerodivide ${CONF_QUAD+-qautodbl=dbl}"
 	CONF_DEF="-WF,-D" ;;
   *)
-	CONF_FFLAGS="-O -g" ;;
+	CONF_FFLAGS="${CONF_DEBUG--O -g}" ;;
   esac
 fi
 
@@ -203,6 +218,30 @@ esac
 echo $CONF_LDFLAGS 1>&2
 
 
+## does Fortran need externals for U77 routines?
+
+echo $echo_n "does $CONF_FC need externals for U77 routines... $echo_c" 1>&2
+
+rm -f $test*
+
+cat > $test.f << _EOF_
+	program test
+	implicit none
+	print *, iargc(), lnblnk("Hi")
+	end
+_EOF_
+
+if $CONF_FC $CONF_FFLAGS -c $test.f > /dev/null 2>&1 ; then
+  echo "no" 1>&2
+  CONF_U77EXT=0
+else
+  echo "yes" 1>&2
+  CONF_U77EXT=1
+fi
+
+CONF_FFLAGS="$CONF_FFLAGS ${CONF_DEF}U77EXT=$CONF_U77EXT"
+
+
 ## does Fortran append underscores to symbols?
 
 echo $echo_n "does $CONF_FC append underscores... $echo_c" 1>&2
@@ -223,13 +262,21 @@ else
   echo "no" 1>&2
 fi
 
+case "`uname -m`" in
+*86*)	mach=32
+	case "`file $test.o`" in
+	*64*) mach=64 ;;
+	esac
+	CONF_CFLAGS="$CONF_CFLAGS -m$mach" ;;
+esac
+
 
 # check for the necessary libraries
 
 CONF_LT="`findlib LoopTools libooptools.a \
   $LT ../LoopTools ../../LoopTools ../../../LoopTools $HOME/LoopTools \
-  /usr/local/LoopTools /usr/LoopTools /usr/local /usr`" || exit 1
-CONF_STDLIBS="$CONF_STDLIBS -L\$(LT) -looptools${CONF_QUAD+-quad}"
+  /usr/local/LoopTools /usr/LoopTools /usr/local /usr`" && \
+  CONF_STDLIBS="$CONF_STDLIBS -L\$(LT) -looptools${CONF_QUAD+-quad}"
 
 CONF_FH="`findlib FeynHiggs libFH.a \
   $FH ../FeynHiggs* ../../FeynHiggs* ../../../FeynHiggs* $HOME/FeynHiggs* \
@@ -249,6 +296,7 @@ cat - `dirname $0`/makefile.in > makefile << _EOF_
 
 SRC = `dirname $0`
 
+EXE = $CONF_EXE
 DEF = $CONF_DEF
 
 LT = $CONF_LT
@@ -266,12 +314,12 @@ CFLAGS = $CONF_CFLAGS
 
 _EOF_
 
-if [ -n "$CONF_MAKEARGS" ] ; then
-  $CONF_MAKE $CONF_MAKEARGS
-else
+if [ "$CONF_MAKEARGS" = 0 ] ; then
   echo "" 1>&2
   echo "now you must run $CONF_MAKE" 1>&2
   echo "" 1>&2
+else
+  $CONF_MAKE $CONF_MAKEARGS
 fi
 
 exit 0

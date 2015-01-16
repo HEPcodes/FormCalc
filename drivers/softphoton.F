@@ -1,7 +1,7 @@
 * softphoton.F
 * routines for the treatment of soft-photon radiation
 * this file is part of FormCalc
-* last modified 13 Apr 05 th
+* last modified 18 Jan 08 th
 
 
 ************************************************************************
@@ -12,7 +12,6 @@
 	double precision function SoftPhotonFactor()
 	implicit none
 
-#include "looptools.h"
 #include "xsection.h"
 
 	double precision PhaseSpaceIntegral
@@ -76,9 +75,7 @@
 	implicit none
 	integer i, j
 
-#include "model.h"
-#include "util.h"
-#include "looptools.h"
+#include "xsection.h"
 
 	double precision mi, ki0, ki, kidelta, kilog
 	double precision mj, kj0, kj, kjdelta, kjlog

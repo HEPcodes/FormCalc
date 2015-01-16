@@ -4,7 +4,7 @@
 		W^+ W^- -> W^+ W^- in the electroweak SM
 		using the background-field method
 		this file is part of FormCalc
-		last modified 23 Dec 05 th
+		last modified 29 Jan 08 th
 
 Reference: A. Denner, T. Hahn,
            Nucl. Phys. B525 (1998) 27 [hep-ph/9711302].
@@ -31,8 +31,9 @@ SetOptions[InsertFields, Model -> "SMbgf", GenericModel -> "Lorentzbgf"]
 SetOptions[Paint, PaintLevel -> {Classes}, ColumnsXRows -> {4, 5}]
 
 (* take the comments out if you want the diagrams painted
-DoPaint[diags_, file_] := Paint[diags, DisplayFunction ->
-  (Display[ToFileName[MkDir[name <> ".diagrams"], file <> ".ps"], #]&)]
+$PaintSE = MkDir[name <> ".diagrams"];
+DoPaint[diags_, file_, opt___] := Paint[diags, opt,
+  DisplayFunction -> (Display[ToFileName[$PaintSE, file <> ".ps"], #]&)]
 *)
 
 

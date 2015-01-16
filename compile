@@ -1,6 +1,6 @@
 #! /bin/sh
 # compile script for the C programs used by FormCalc
-# last modified 18 Sep 06 th
+# last modified 28 Nov 07 th
 
 # If this compile script doesn't work on your system, check these things:
 #
@@ -13,67 +13,89 @@
 #    Such programs have the extension .tm.  If you have Mathematica,
 #    you should also have mcc.  If mcc is not on the path, specify it
 #    in the environment variable MCC, e.g.
-#    setenv MCC /opt/mathematica/Executables/Linux/mcc
+#    setenv MCC /opt/Wolfram/Mathematica/5.2/Executables/mcc
 
 CC=${CC:-gcc}
-export CC
 
 MCC=${MCC:-mcc}
 
-CFLAGS="${CFLAGS:--O3 -fomit-frame-pointer -ffast-math} $*"
+CFLAGS="${CFLAGS:--O3 -fomit-frame-pointer -ffast-math} $@"
 
-for dir in /Applications/Mathematica*/Contents/MacOS \
-           $HOME/Desktop/Mathematica*/Contents/MacOS ; do
-  if [ -x "$dir/MathKernel" ] ; then
-    PATH=$PATH:"$dir"
-    break
-  fi
-done
+SRC="${SRC:-`dirname $0`}"
 
-set -- `MathKernel -run 'Print[$SystemID]; Exit[]' < /dev/null | tail -1`
-if [ $# -ne 1 ] ; then
-  echo "Cannot determine system type"
-  exit 1
+mathcmd=math
+exe=
+shopt -s nullglob > /dev/null 2>&1
+set --
+case `uname -s` in
+Darwin)
+	mathcmd=MathKernel
+	set -- /Applications/Mathematica*/Contents/MacOS \
+	       $HOME/Desktop/Mathematica*/Contents/MacOS ;;
+CYG*)
+	exe=.exe
+	set -- "$PROGRAMFILES/Wolfram Research/Mathematica"/* ;;
+esac
+
+if [ -z "$DEST" ] ; then
+  for dir in "$@" ; do
+    path="$dir:$path"
+  done
+  mathcmd="`PATH=\"$PATH:$path\" which $mathcmd`"
+
+  set -- `"$mathcmd" -run 'Print[$SystemID]; Exit[]' < /dev/null | tr '\r' ' ' | tail -1`
+
+  [ $? -ne 1 ] || {
+    echo "Cannot determine Mathematica's system ID using $mathcmd" 1>&2
+    exit 1
+  }
+
+  DEST="$1"
 fi
 
-[ -d $1 ] || mkdir $1
-if [ $? -ne 0 ] ; then
-  echo "Cannot create directory $1"
-  exit 1
-fi
+[ "$DEST" = Linux-x86-64 ] && CFLAGS="$CFLAGS -m64"
 
-echo "Compiling for system type $1"
+[ -d "$DEST" ] || mkdir "$DEST" || {
+  echo "Cannot create directory $DEST"
+  exit 1
+}
+
+echo "Compiling for system type $DEST"
+
+mcc="CC=\"$SRC/drivers/tools/fcc\" PATH=\""'$$PATH'":$SRC/drivers/tools\" $MCC $CFLAGS"
+
+cc="$CC $CFLAGS"
 
 make -f - << _EOF_ || exit 1
-all: $1/ReadForm $1/ToForm $1/ToFortran $1/ReadData $1/reorder
+all: $DEST/ReadForm$exe $DEST/ToForm$exe $DEST/ToFortran$exe $DEST/ReadData$exe $DEST/reorder$exe
 
-$1/ReadForm: FormCalc/ReadForm.tm
-	CC=tools/fcmcc $MCC $CFLAGS -o $1/ReadForm FormCalc/ReadForm.tm
-	strip $1/ReadForm
+$DEST/ReadForm$exe: $SRC/FormCalc/ReadForm.tm
+	$mcc -o $DEST/ReadForm$exe $SRC/FormCalc/ReadForm.tm
+	strip $DEST/ReadForm$exe
 
-$1/ToForm: FormCalc/ToForm.c
-	$CC $CFLAGS -o $1/ToForm FormCalc/ToForm.c
-	strip $1/ToForm
+$DEST/ToForm$exe: $SRC/FormCalc/ToForm.c
+	$cc -o $DEST/ToForm$exe $SRC/FormCalc/ToForm.c
+	strip $DEST/ToForm$exe
 
-$1/ToFortran: FormCalc/ToFortran.c
-	$CC $CFLAGS -o $1/ToFortran FormCalc/ToFortran.c
-	strip $1/ToFortran
+$DEST/ToFortran$exe: $SRC/FormCalc/ToFortran.c
+	$cc -o $DEST/ToFortran$exe $SRC/FormCalc/ToFortran.c
+	strip $DEST/ToFortran$exe
 
-$1/ReadData: tools/ReadData.tm
-	CC=tools/fcmcc $MCC $CFLAGS -o $1/ReadData tools/ReadData.tm
-	strip $1/ReadData
+$DEST/ReadData$exe: $SRC/tools/ReadData.tm
+	$mcc -o $DEST/ReadData$exe $SRC/tools/ReadData.tm
+	strip $DEST/ReadData$exe
 
-$1/reorder: tools/reorder.c
-	$CC $CFLAGS -o $1/reorder tools/reorder.c
-	strip $1/reorder
+$DEST/reorder$exe: $SRC/tools/reorder.c
+	$cc -o $DEST/reorder$exe $SRC/tools/reorder.c
+	strip $DEST/reorder$exe
 _EOF_
 
 
 # Second, make the util library.
 
-cd drivers
-trap "rm -f makefile util.a" 0 1 2 3 9 15
-[ -f ../$1/util.a ] && mv -f ../$1/util.a .
-./configure util.a
-mv -f util.a ../$1/
+cd "$DEST"
+
+trap "rm -f makefile" 0 1 2 3 15
+
+"../$SRC/drivers/configure" --make=util.a
 

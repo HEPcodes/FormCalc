@@ -3,7 +3,7 @@
 #	pnuglot
 #		makes a plotting script from data files
 #		this file is part of FormCalc
-#		last modified 7 Nov 06 th
+#		last modified 13 Jul 07 th
 
 # This program works in two steps:
 #
@@ -67,7 +67,7 @@ fi
 cat << \_TEMPLATE_ > $out
 #! /bin/sh
 
-trap "rm -f tmpgpl.*" 0 1 2 3 9 15
+trap "rm -f tmpgpl.*" 0 1 2 3 15
 
 gnuplot << \_EOF_
 
@@ -85,7 +85,7 @@ set bmargin 2
 
 set size 1,1.3
 set key spacing 2
-set ticscale .6
+set tics scale .6
 
 #set title "Cross-section"
 
@@ -158,9 +158,12 @@ echo '\end{document}' >> tmpgpl.tex
 epsfile="`dirname $0`/`basename $0 .gpl`.eps"
 latex tmpgpl.tex
 dvips -Ppdf -E -o $epsfile tmpgpl.dvi
-gv --magstep=2 $epsfile &
+
+grep -q '3\.5\.8' `which gv` && eq=' ' || eq='='
+gv -scale${eq}2 $epsfile &
 
 _TEMPLATE_
 
 chmod 755 $out
 exec `dirname $out`/`basename $out`
+

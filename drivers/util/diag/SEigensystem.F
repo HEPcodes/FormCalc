@@ -4,9 +4,9 @@
 * code adapted from the "Handbook" routines for complex A
 * (Wilkinson, Reinsch: Handbook for Automatic Computation, p. 202)
 * this file is part of the Diag library
-* last modified 22 Dec 06 th
+* last modified 27 Sep 07 th
 
-#include "config.h"
+#include "diag.h"
 
 
 ************************************************************************
@@ -21,11 +21,18 @@
 	integer n, ldA, ldU, sort
 	double complex A(ldA,*), U(ldU,*), d(*)
 
-	integer sweep, p, q, j
-	double precision test, threshold, absA, absB, absX
+	integer p, q, j
+	double precision red, off, thresh
 	double complex delta, t, invc, s
 	double complex x, y
 	double complex ev(2,MAXDIM)
+
+	integer sweep
+	common /nsweeps/ sweep
+
+	double precision sq
+	double complex c
+	sq(c) = DBLE(c*DCONJG(c))
 
 	if( n .gt. MAXDIM ) then
 	  print *, "Dimension too large"
@@ -35,41 +42,39 @@
 
 	do p = 1, n
 	  ev(1,p) = 0
-	  ev(2,p) = Element(A,p,p)
+	  ev(2,p) = A(p,p)
 	  d(p) = ev(2,p)
 	enddo
 
 	do p = 1, n
 	  do q = 1, n
-	    Element(U,q,p) = 0
+	    U(q,p) = 0
 	  enddo
-	  Element(U,p,p) = 1
+	  U(p,p) = 1
 	enddo
 
+	red = .04D0/n**4
+
 	do sweep = 1, 50
-	  test = 0
+	  off = 0
 	  do q = 2, n
 	    do p = 1, q - 1
-	      test = test + abs(Element(A,p,q))
+	      off = off + sq(Element(A,p,q))
 	    enddo
 	  enddo
-	  if( test .lt. EPS ) goto 1
+	  if( off .lt. SYM_EPS ) goto 1
 
-	  threshold = 0
-	  if( sweep .lt. 4 ) threshold = test/(5*n**2)
+	  thresh = 0
+	  if( sweep .lt. 4 ) thresh = off*red
 
 	  do q = 2, n
 	    do p = 1, q - 1
-	      absA = abs(ev(2,p))
-	      absB = abs(ev(2,q))
-	      absX = abs(Element(A,p,q))
-	      test = 100*absX
-	      if( sweep .gt. 4 .and.
-     &            absA + test .eq. absA .and.
-     &            absB + test .eq. absB ) then
+	      off = sq(Element(A,p,q))
+	      if( sweep .gt. 4 .and. off .lt.
+     &              SYM_EPS*max(sq(ev(2,p)), sq(ev(2,q))) ) then
 	        Element(A,p,q) = 0
 	      else
-	        if( absX .gt. threshold ) then
+	        if( off .gt. thresh ) then
 	          x = .5D0*(ev(2,p) - ev(2,q))
 	          y = sqrt(x**2 + Element(A,p,q)**2)
 	          t = x - y
@@ -108,14 +113,14 @@
 	            Element(A,q,j) = y - s*(x + t*y)
 	          enddo
 
+	          Element(A,p,q) = 0
+
 	          do j = 1, n
 	            x = Element(U,p,j)
 	            y = Element(U,q,j)
 	            Element(U,p,j) = x + s*(y - t*x)
 	            Element(U,q,j) = y - s*(x + t*y)
 	          enddo
-
-	          Element(A,p,q) = 0
 	        endif
 	      endif
 	    enddo
@@ -135,17 +140,17 @@
 
 	do p = 1, n - 1
 	  j = p
-	  x = d(p)
+	  t = d(p)
 	  do q = p + 1, n
-	    if( sort*(DBLE(x) - DBLE(d(q))) .gt. 0 ) then
+	    if( sort*(DBLE(t) - DBLE(d(q))) .gt. 0 ) then
 	      j = q
-	      x = d(q)
+	      t = d(q)
 	    endif
 	  enddo
 
 	  if( j .ne. p ) then
 	    d(j) = d(p)
-	    d(p) = x
+	    d(p) = t
 	    do q = 1, n
 	      x = Element(U,p,q)
 	      Element(U,p,q) = Element(U,j,q)

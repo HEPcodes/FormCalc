@@ -3,9 +3,9 @@
 * code adapted from the "Handbook" routines
 * (Wilkinson, Reinsch: Handbook for Automatic Computation, p. 202)
 * this file is part of the Diag library
-* last modified 22 Dec 06 th
+* last modified 27 Sep 07 th
 
-#include "config.h"
+#include "diag.h"
 
 
 ************************************************************************
@@ -21,11 +21,18 @@
 	double complex A(ldA,*), U(ldU,*)
 	double precision d(*)
 
-	integer sweep, p, q, j
-	double precision test, threshold, absA, absB, absX
-	double precision fsq, t, invc, s
+	integer p, q, j
+	double precision red, off, thresh
+	double precision sqp, sqq, fsq, t, invc, s
 	double complex f, x, y
 	double complex ev(2,MAXDIM)
+
+	integer sweep
+	common /nsweeps/ sweep
+
+	double precision sq
+	double complex c
+	sq(c) = DBLE(c*DCONJG(c))
 
 	if( n .gt. MAXDIM ) then
 	  print *, "Dimension too large"
@@ -35,55 +42,55 @@
 
 	do p = 1, n
 	  ev(1,p) = 0
-	  ev(2,p) = Element(A,p,p)
+	  ev(2,p) = A(p,p)
 	enddo
 
 	do p = 1, n
 	  do q = 1, n
-	    Element(U,q,p) = 0
+	    U(q,p) = 0
 	  enddo
-	  Element(U,p,p) = 1
+	  U(p,p) = 1
 	enddo
 
+	red = .04D0/n**4
+
 	do sweep = 1, 50
-	  test = 0
+	  off = 0
 	  do q = 2, n
 	    do p = 1, q - 1
-	      test = test + abs(Element(A,p,q))
+	      off = off + sq(Element(A,p,q))
 	    enddo
 	  enddo
-	  if( test .lt. EPS ) goto 1
+	  if( off .lt. SYM_EPS ) goto 1
 
-	  threshold = 0
-	  if( sweep .lt. 4 ) threshold = test/(5*n**2)
+	  thresh = 0
+	  if( sweep .lt. 4 ) thresh = off*red
 
 	  do q = 2, n
 	    do p = 1, q - 1
-	      absA = abs(ev(2,p))
-	      absB = abs(ev(2,q))
-	      absX = abs(Element(A,p,q))
-	      test = 100*absX
+	      off = sq(Element(A,p,q))
+	      sqp = sq(ev(2,p))
+	      sqq = sq(ev(2,q))
 	      if( sweep .gt. 4 .and.
-     &            absA + test .eq. absA .and.
-     &            absB + test .eq. absB ) then
+     &            off .lt. SYM_EPS*max(sqp, sqq) ) then
 	        Element(A,p,q) = 0
 	      else
-	        if( absX .gt. threshold ) then
-	          f = sign(1D0, absA - absB)*
+	        if( off .gt. thresh ) then
+	          f = sign(1D0, sqp - sqq)*
      &              (ev(2,q)*DCONJG(Element(A,p,q)) +
-     &               DCONJG(ev(2,p))*Element(A,p,q))
+     &                DCONJG(ev(2,p))*Element(A,p,q))
 	          fsq = DBLE(f)**2 + DIMAG(f)**2
 	          if( fsq .eq. 0 ) then
 	            f = 1
 	            fsq = 1
 	          endif
-	          t = .5D0*abs(absA - absB)*(absA + absB)
+	          t = .5D0*abs(sqp - sqq)
 	          t = 1/(t + sqrt(t**2 + fsq))
 
 	          ev(1,p) = ev(1,p) + t*Element(A,p,q)*DCONJG(f)
-	          ev(2,p) = Element(A,p,p) + ev(1,p)
+	          ev(2,p) = A(p,p) + ev(1,p)
 	          ev(1,q) = ev(1,q) - t*Element(A,p,q)*f
-	          ev(2,q) = Element(A,q,q) + ev(1,q)
+	          ev(2,q) = A(q,q) + ev(1,q)
 
 	          invc = sqrt(fsq*t**2 + 1)
 	          s = t/invc
@@ -110,14 +117,14 @@
 	            Element(A,q,j) = y - s*(f*x + t*y)
 	          enddo
 
+	          Element(A,p,q) = 0
+
 	          do j = 1, n
 	            x = Element(U,p,j)
 	            y = Element(U,q,j)
 	            Element(U,p,j) = x + s*(f*y - t*x)
 	            Element(U,q,j) = y - s*(DCONJG(f)*x + t*y)
 	          enddo
-
-	          Element(A,p,q) = 0
 	        endif
 	      endif
 	    enddo
@@ -125,7 +132,7 @@
 
 	  do p = 1, n
 	    ev(1,p) = 0
-	    Element(A,p,p) = ev(2,p)
+	    A(p,p) = ev(2,p)
 	  enddo
 	enddo
 
@@ -136,9 +143,9 @@
 * make the diagonal elements nonnegative
 
 	do p = 1, n
-	  d(p) = abs(Element(A,p,p))
-	  if( d(p) .gt. EPS ) then
-	    f = sqrt(Element(A,p,p)/d(p))
+	  d(p) = abs(A(p,p))
+	  if( d(p) .gt. DBL_EPS .and. d(p) .ne. DBLE(A(p,p)) ) then
+	    f = sqrt(A(p,p)/d(p))
 	    do q = 1, n
 	      Element(U,p,q) = Element(U,p,q)*f
 	    enddo

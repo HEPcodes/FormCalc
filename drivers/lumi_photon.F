@@ -1,7 +1,7 @@
 * lumi_photon.F
 * parton luminosity for a photon collider
 * this file is part of FormCalc
-* last modified 13 Jul 06 th
+* last modified 13 Jul 07 th
 
 
 #define PARTON_T -1
@@ -68,7 +68,7 @@
 
 	beamenergy = .5D0*Var(SQRTS)
 
-	fac = 2*fac*Var(PARTON_T)*xrange*
+	fac = 2*fac*Var(PARTON_T)*xrange/x*
      &    CompAZ(x, beamenergy, 0)*
      &    CompAZ(tau/x, beamenergy, 0)
 	end

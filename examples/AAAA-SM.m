@@ -3,7 +3,7 @@
 		generates the Fortran code for
 		gamma gamma -> gamma gamma in the electroweak SM
 		this file is part of FormCalc
-		last modified 23 Dec 05 th
+		last modified 29 Jan 08 th
 
 Reference: M. Böhm, R. Schuster, Z. Phys. C63 (1994) 219.
 
@@ -30,8 +30,9 @@ SetOptions[InsertFields, Model -> "SM"]
 SetOptions[Paint, PaintLevel -> {Classes}, ColumnsXRows -> {4, 5}]
 
 (* take the comments out if you want the diagrams painted
-DoPaint[diags_, file_] := Paint[diags, DisplayFunction ->
-  (Display[ToFileName[MkDir[name <> ".diagrams"], file <> ".ps"], #]&)]
+$PaintSE = MkDir[name <> ".diagrams"];
+DoPaint[diags_, file_, opt___] := Paint[diags, opt,
+  DisplayFunction -> (Display[ToFileName[$PaintSE, file <> ".ps"], #]&)]
 *)
 
 

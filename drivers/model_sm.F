@@ -1,13 +1,13 @@
 * model_sm.F
 * all parameters for the Standard Model are initialized here
 * this file is part of FormCalc
-* last modified 2 Feb 06 th
+* last modified 18 Jan 08 th
 
 
 	subroutine ModelDefaults
 	implicit none
 
-#include "model.h"
+#include "decl.h"
 
 #ifdef NO_CKM
 
@@ -23,29 +23,30 @@
 
 #else
 
-	double precision s12, s23, s13, delta13
-	double precision c12, c23, c13
-	double complex s13c
+	double precision cos12, cos23, cos13
+	double complex sin13c
 
-	parameter (s12 = .2243D0)
-	parameter (s23 = .0413D0)
-	parameter (s13 = .0037D0)
-	parameter (delta13 = 60*degree)
+	sin13c = sin13*exp(cI*delta13)
 
-	c12 = sqrt((1 - s12)*(1 + s12))
-	c23 = sqrt((1 - s23)*(1 + s23))
-	c13 = sqrt((1 - s13)*(1 + s13))
-	s13c = s13*exp(cI*delta13)
+* alternative formulation with Wolfenstein parameters:
+c	sin12 = CKMlambda
+c	sin23 = CKMA*sin12**2
+c	sin13c = sin12*sin23*DCMPLX(CKMrho, CKMeta)
+c	sin13 = abs(sin13c)
 
-	CKM(1,1) = c12*c13
-	CKM(2,1) = -s12*c23 - c12*s23*s13c
-	CKM(3,1) = s12*s23 - c12*c23*s13c
-	CKM(1,2) = s12*c13
-	CKM(2,2) = c12*c23 - s12*s23*s13c
-	CKM(3,2) = -c12*s23 - s12*c23*s13c
-	CKM(1,3) = DCONJG(s13c)
-	CKM(2,3) = s23*c13
-	CKM(3,3) = c23*c13
+	cos12 = sqrt((1 - sin12)*(1 + sin12))
+	cos23 = sqrt((1 - sin23)*(1 + sin23))
+	cos13 = sqrt((1 - sin13)*(1 + sin13))
+
+	CKM(1,1) = cos12*cos13
+	CKM(2,1) = -sin12*cos23 - cos12*sin23*sin13c
+	CKM(3,1) = sin12*sin23 - cos12*cos23*sin13c
+	CKM(1,2) = sin12*cos13
+	CKM(2,2) = cos12*cos23 - sin12*sin23*sin13c
+	CKM(3,2) = -cos12*sin23 - sin12*cos23*sin13c
+	CKM(1,3) = DCONJG(sin13c)
+	CKM(2,3) = sin23*cos13
+	CKM(3,3) = cos23*cos13
 
 #endif
 
@@ -83,7 +84,7 @@
 	implicit none
 	integer fail
 
-#include "model.h"
+#include "decl.h"
 
 	EL = sqrt(4*pi*Alfa)
 	SW = sqrt(SW2)
@@ -102,7 +103,7 @@
 	integer fail
 	double precision scale
 
-#include "model.h"
+#include "decl.h"
 
 	double precision alphasPDF
 	external alphasPDF
@@ -155,7 +156,7 @@
 	implicit none
 	double precision scale
 
-#include "model.h"
+#include "decl.h"
 
 * the betas and deltas are calculated as follows:
 *
@@ -215,7 +216,7 @@
 * "world average" alpha_s(MZ) = .1172.  The 1-sigma interval
 * on alpha_s(MZ) corresponds to 177 MeV < lam5 < 223 MeV.
 
-	double precision b0, b1, b2, lam, t, logt, c
+	double precision beta0, beta1, beta2, lam, t, logt, c
 
 	if( scale .lt. .5D0 ) then
 	  alphasPDF = 1D10
@@ -223,15 +224,15 @@
 	endif
 
 	if( scale .gt. MT ) then
-	  b0 = beta6_0
-	  b1 = beta6_1
-	  b2 = beta6_2
+	  beta0 = beta6_0
+	  beta1 = beta6_1
+	  beta2 = beta6_2
 	  t = MT/lam5
 	  lam = lam5*t**(-2/21D0)*(2*log(t))**(-107/1127D0)
 	else if( scale .gt. MB ) then
-	  b0 = beta5_0
-	  b1 = beta5_1
-	  b2 = beta5_2
+	  beta0 = beta5_0
+	  beta1 = beta5_1
+	  beta2 = beta5_2
 	  lam = lam5
 	else
 	  t = 2*log(MB/lam5)
@@ -240,13 +241,13 @@
      &      delta54_11*logt + delta54_10 +
      &      (delta54_21*logt + delta54_20)/t)
 	  if( scale .gt. MC ) then
-	    b0 = beta4_0
-	    b1 = beta4_1
-	    b2 = beta4_2
+	    beta0 = beta4_0
+	    beta1 = beta4_1
+	    beta2 = beta4_2
 	  else
-	    b0 = beta3_0
-	    b1 = beta3_1
-	    b2 = beta3_2
+	    beta0 = beta3_0
+	    beta1 = beta3_1
+	    beta2 = beta3_2
 	    t = 2*log(MC/lam)
 	    logt = log(t)
 	    lam = lam*exp(delta43_0*t +
@@ -257,10 +258,10 @@
 
 	t = 2*log(scale/lam)
 	logt = log(t)
-	c = 2*b1/b0**2/t
+	c = 2*beta1/beta0**2/t
 
-	alphasPDF = 4*pi/(t*b0)*(1 - logt*c +
-     &    ((logt - .5D0)**2 + b2*b0/(8*b1**2) - 5/4D0)*c**2)
+	alphasPDF = 4*pi/(t*beta0)*(1 - logt*c +
+     &    ((logt - .5D0)**2 + beta2*beta0/(8*beta1**2) - 5/4D0)*c**2)
 	end
 
 #endif

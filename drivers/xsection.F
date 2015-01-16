@@ -1,7 +1,7 @@
 * xsection.F
 * routines to compute the cross-section
 * this file is part of FormCalc
-* last modified 6 Feb 07 th
+* last modified 11 Feb 08 th
 
 
 #include "process.h"
@@ -11,22 +11,6 @@
 #ifdef BREMSSTRAHLUNG
 #include "softphoton.F"
 #endif
-
-	block data xsection_h
-	implicit none
-
-#include "xsection.h"
-
-	data sqrtS /-1/
-	data threshold /-1/
-	data scale /-1/
-	data sqrtSinvalid /1/
-	data Var(FIXED) /0/
-	data Step(FIXED) /1/
-	data Var(TRIVIAL) /0/
-	data Step(TRIVIAL) /0/
-	end
-
 
 ************************************************************************
 ** ProcessIni translates the polarization string into bit-encoded
@@ -42,8 +26,10 @@
 
 #include "xsection.h"
 
+#if U77EXT
 	integer lnblnk
 	external lnblnk
+#endif
 
 	integer i, c, bits, df
 
@@ -112,11 +98,21 @@
 	  helicities = helicities*8 + bits
 	enddo
 
-	avgfac = 2**(LEGS)*DBLE(COLOURFACTOR)*DBLE(IDENTICALFACTOR)/df
-
 	Lower(SQRTS) = sqrtSfrom
 	Upper(SQRTS) = sqrtSto
 	Step(SQRTS) = sqrtSstep
+
+	Var(FIXED) = 0
+	Step(FIXED) = 1
+
+	Var(TRIVIAL) = 0
+	Step(TRIVIAL) = 0
+
+	avgfac = 2**(LEGS)*DBLE(COLOURFACTOR)*DBLE(IDENTICALFACTOR)/df
+	sqrtS = -1
+	threshold = -1
+	scale = -1
+	sqrtSinvalid = 1
 
 	call ffini
 	call ModelDefaults
@@ -140,6 +136,7 @@
 	double precision newthreshold, newscale
 
 	if( newsqrtS .eq. sqrtS ) then
+	  if( btest(flags, BIT_RESET) ) call ModelVarIni(fail, scale)
 	  fail = 2*sqrtSinvalid
 	  return
 	endif
@@ -171,7 +168,7 @@
 
 ************************************************************************
 ** ParameterScan performs the actual calculation.
-** It scans over the parameter loops LOOP1..15 declared in run.F.
+** It scans over the parameter loops LOOP* declared in run.F.
 
 	subroutine ParameterScan(dir,
      &    serialfrom, serialto, serialstep)
@@ -179,7 +176,6 @@
 	character*(*) dir
 	integer serialfrom, serialto, serialstep
 
-#include "util.h"
 #include "xsection.h"
 
 	integer openlog
@@ -190,55 +186,74 @@
 	next = serialfrom
 	serial = 0
 
+#ifdef LOOP1
 	LOOP1
+#endif
+#ifdef LOOP2
 	LOOP2
+#endif
+#ifdef LOOP3
 	LOOP3
+#endif
+#ifdef LOOP4
 	LOOP4
+#endif
+#ifdef LOOP5
 	LOOP5
+#endif
+#ifdef LOOP6
 	LOOP6
+#endif
+#ifdef LOOP7
 	LOOP7
+#endif
+#ifdef LOOP8
 	LOOP8
+#endif
+#ifdef LOOP9
 	LOOP9
+#endif
+#ifdef LOOP10
 	LOOP10
+#endif
+#ifdef LOOP11
 	LOOP11
+#endif
+#ifdef LOOP12
 	LOOP12
+#endif
+#ifdef LOOP13
 	LOOP13
+#endif
+#ifdef LOOP14
 	LOOP14
+#endif
+#ifdef LOOP15
 	LOOP15
+#endif
+#ifdef LOOP16
+	LOOP16
+#endif
+#ifdef LOOP17
+	LOOP17
+#endif
+#ifdef LOOP18
+	LOOP18
+#endif
+#ifdef LOOP19
+	LOOP19
+#endif
+#ifdef LOOP20
+	LOOP20
+#endif
 
 	serial = serial + 1
 	if( serial .lt. next ) goto 1
 
+	call flush(6)
 	if( openlog(dir, serial) .eq. 0 ) then
-
-#define SHOW print 100,
-100	  format("|# ", A, "=", F10.4, SP, F10.4, " I")
-
-#ifdef MMA
-	  call MmaSetPara
-#endif
-
-	  PRINT1
-	  PRINT2
-	  PRINT3
-	  PRINT4
-	  PRINT5
-	  PRINT6
-	  PRINT7
-	  PRINT8
-	  PRINT9
-	  PRINT10
-	  PRINT11
-	  PRINT12
-	  PRINT13
-	  PRINT14
-	  PRINT15
-
-#ifdef MMA
-	  call MmaEndSet
-#endif
-
 	  call IntegratedCS
+	  call flush(6)
 	  call closelog
 	endif
 
@@ -257,7 +272,6 @@
 	subroutine IntegratedCS
 	implicit none
 
-#include "looptools.h"
 #include "xsection.h"
 
 	integer nvars
@@ -267,10 +281,6 @@
 
 	double precision result(NCOMP), error(NCOMP), show(nvars)
 	integer fail, f, v, nfix, ndim, fix(nvars)
-
-#ifdef MMA
-	call MmaSetData
-#endif
 
 	call ModelConstIni(fail)
 	if( fail .ne. 0 ) goto 999
@@ -305,6 +315,79 @@
 	call LumiIni(fail)
 	if( fail .ne. 0 ) goto 999
 
+#define SHOW print 100,
+100	format("|# ", A, "=", F10.4, SP, F10.4, " I")
+
+#ifdef MMA
+	call MmaSetPara
+#endif
+
+#ifdef PRINT1
+	PRINT1
+#endif
+#ifdef PRINT2
+	PRINT2
+#endif
+#ifdef PRINT3
+	PRINT3
+#endif
+#ifdef PRINT4
+	PRINT4
+#endif
+#ifdef PRINT5
+	PRINT5
+#endif
+#ifdef PRINT6
+	PRINT6
+#endif
+#ifdef PRINT7
+	PRINT7
+#endif
+#ifdef PRINT8
+	PRINT8
+#endif
+#ifdef PRINT9
+	PRINT9
+#endif
+#ifdef PRINT10
+	PRINT10
+#endif
+#ifdef PRINT11
+	PRINT11
+#endif
+#ifdef PRINT12
+	PRINT12
+#endif
+#ifdef PRINT13
+	PRINT13
+#endif
+#ifdef PRINT14
+	PRINT14
+#endif
+#ifdef PRINT15
+	PRINT15
+#endif
+#ifdef PRINT16
+	PRINT16
+#endif
+#ifdef PRINT17
+	PRINT17
+#endif
+#ifdef PRINT18
+	PRINT18
+#endif
+#ifdef PRINT19
+	PRINT19
+#endif
+#ifdef PRINT20
+	PRINT20
+#endif
+
+#ifdef MMA
+	call MmaEndSet
+	call MmaSetData
+#endif
+
 1	call Cuba(ndim, DifferentialCS, result, error)
 
 	do f = 1, nfix
@@ -312,22 +395,17 @@
 	enddo
 
 #ifdef MMA
-
 	call MmaData(show, nfix, result, error, NCOMP)
-
 #else
-
 * Note: "real" data lines are tagged with "|" in the output.
+101	format("| ", 10(4G19.10, :, /"|+"))
+	print 101, (show(f), f = 1, nfix)
 
-100	format("| ", 10(4G19.10, :, /"|+"))
-	print 100, (show(f), f = 1, nfix)
-
-101	format("|+   ", NCOMP G24.15)
-	print 101, result
-	print 101, error
+102	format("|+   ", NCOMP G24.15)
+	print 102, result
+	print 102, error
 
 	call flush(6)
-
 #endif
 
 	do f = nfix, 1, -1
@@ -340,16 +418,11 @@
 999	continue
 
 #ifdef MMA
-
 	call MmaEndSet
-
 #else
-
-102	format("|"/"|"/)
-	print 102
-
+103	format("|"/"|"/)
+	print 103
 #endif
-
 	end
 
 
@@ -363,9 +436,7 @@
 	integer ndim, ncomp
 	double precision x(ndim), result(ncomp)
 
-#include "util.h"
 #include "xsection.h"
-#include "renconst.h"
 
 #ifdef BREMSSTRAHLUNG
 	double precision SoftPhotonFactor
@@ -414,7 +485,7 @@
 	fac = fac/((2*pi)**(3*LEGS_OUT - 4)*2*sqrtS*flux)
 
 	do c = 1, ncomp
-	  if( .not. abs(result(c)) .lt. 1D9 ) then
+	  if( .not. abs(result(c)) .lt. 1D12 ) then
 	    WARN "Got strange values from SquaredME:"
 	    WARN result
 	    WARN "(Did you compute the colour matrix elements?)"

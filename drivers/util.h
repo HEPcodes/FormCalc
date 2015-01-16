@@ -1,7 +1,7 @@
 * util.h
 * prototypes for the functions in util.a
 * this file is part of FormCalc
-* last modified 26 Jan 07 th
+* last modified 18 Jul 07 th
 
 
 	double precision ThreeMom
@@ -36,9 +36,9 @@
 #define SPEC_RAP 7
 #define SPEC_DELTAK 8
 #define SPEC_PHI 9
-#define SPEC_KX 10
-#define SPEC_KY 11
-#define SPEC_KZ 12
+#define SPEC_EX 10
+#define SPEC_EY 11
+#define SPEC_EZ 12
 
 #define k(i) (8*i+1)
 #define s(i) (8*i+3)

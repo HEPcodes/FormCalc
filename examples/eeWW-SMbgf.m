@@ -4,7 +4,7 @@
 		e^+ e^- -> W^+ W^- in the electroweak SM
 		using the background-field method
 		this file is part of FormCalc
-		last modified 23 Dec 05 th
+		last modified 29 Jan 08 th
 
 Reference: W. Beenakker, A. Denner,
            Int. J. Mod. Phys. A9 (1994) 4837.
@@ -20,7 +20,7 @@ time1 = SessionTime[]
 
 CKM = IndexDelta
 
-Small[ME] = Small[ME2] = 0
+Neglect[ME] = Neglect[ME2] = 0
 
 
 process = {-F[2, {1}], F[2, {1}]} -> {-V[30], V[30]}
@@ -35,8 +35,9 @@ SetOptions[InsertFields,
 SetOptions[Paint, PaintLevel -> {Classes}, ColumnsXRows -> {4, 5}]
 
 (* take the comments out if you want the diagrams painted
-DoPaint[diags_, file_] := Paint[diags, DisplayFunction ->
-  (Display[ToFileName[MkDir[name <> ".diagrams"], file <> ".ps"], #]&)]
+$PaintSE = MkDir[name <> ".diagrams"];
+DoPaint[diags_, file_, opt___] := Paint[diags, opt,
+  DisplayFunction -> (Display[ToFileName[$PaintSE, file <> ".ps"], #]&)]
 *)
 
 

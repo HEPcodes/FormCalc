@@ -3,7 +3,7 @@
 		generates the Fortran code for
 		e^+ e^- -> H^+ H^- in the MSSM
 		this file is part of FormCalc
-		last modified 23 Dec 05 th
+		last modified 29 Jan 08 th
 
 Reference: J. Guasch, W. Hollik, A. Kraft,
            Nucl. Phys. B596 (2001) 66 [hep-ph/9911452].
@@ -24,7 +24,7 @@ time1 = SessionTime[]
 
 CKM = IndexDelta
 
-Small[ME] = Small[ME2] = 0
+Neglect[ME] = Neglect[ME2] = 0
 
 
 process = {-F[2, {1}], F[2, {1}]} -> {-S[5], S[5]}
@@ -38,8 +38,9 @@ SetOptions[InsertFields,
 SetOptions[Paint, PaintLevel -> {Classes}, ColumnsXRows -> {4, 5}]
 
 (* take the comments out if you want the diagrams painted
-DoPaint[diags_, file_] := Paint[diags, DisplayFunction ->
-  (Display[ToFileName[MkDir[name <> ".diagrams"], file <> ".ps"], #]&)]
+$PaintSE = MkDir[name <> ".diagrams"];
+DoPaint[diags_, file_, opt___] := Paint[diags, opt,
+  DisplayFunction -> (Display[ToFileName[$PaintSE, file <> ".ps"], #]&)]
 *)
 
 
@@ -48,7 +49,7 @@ Print["Counter terms"]
 tops = CreateCTTopologies[1, 2 -> 2,
   ExcludeTopologies -> {TadpoleCTs, WFCorrectionCTs}];
 	(* this is because there are no counter terms in MSSM.mod yet: *)
-ins = InsertFields[tops, process /. S[5] -> S[3], Model -> "SMc"];
+ins = InsertFields[tops, process /. S[5] -> S[3], Model -> "SM"];
 TheLabel[S[3]] = "H";
 DoPaint[ins, "counter"];
 counter = CreateFeynAmp[ins] /. SW -> -SW

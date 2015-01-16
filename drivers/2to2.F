@@ -1,7 +1,7 @@
 * 2to2.F
 * the kinematics for a 2 -> 2 process
 * this file is part of FormCalc
-* last modified 23 Jan 06 th
+* last modified 18 Jan 08 th
 
 
 * some definitions for xsection.F
@@ -44,7 +44,6 @@
 	subroutine InitialState
 	implicit none
 
-#include "util.h"
 #include "xsection.h"
 
 	double precision p
@@ -62,7 +61,6 @@
 	implicit none
 	double precision fac
 
-#include "util.h"
 #include "xsection.h"
 
 	double precision p, ex,ey,ez, msum, minv

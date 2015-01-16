@@ -3,7 +3,7 @@
 		generates the Fortran code for
 		gamma gamma -> t-bar t gamma in the electroweak SM
 		this file is part of FormCalc
-		last modified 11 Jun 03 th
+		last modified 29 Jan 08 th
 
 Reference: W. Walter, Diploma thesis, Würzburg 1997.
 
@@ -19,14 +19,14 @@ time1 = SessionTime[]
 
 CKM = IndexDelta
 
-Small[ME] = Small[ME2] = 0
+Neglect[ME] = Neglect[ME2] = 0
 
 
 process = {V[1], V[1]} -> {-F[3, {3}], F[3, {3}], V[1]}
 
 name = "AAttA-SM"
 
-SetOptions[InsertFields, Model -> "SMc", Restrictions -> NoLightFHCoupling]
+SetOptions[InsertFields, Model -> "SM", Restrictions -> NoLightFHCoupling]
 
 SetOptions[CalcFeynAmp, Dimension -> 4]
 
@@ -34,8 +34,9 @@ SetOptions[CalcFeynAmp, Dimension -> 4]
 SetOptions[Paint, PaintLevel -> {Classes}, ColumnsXRows -> {4, 5}]
 
 (* take the comments out if you want the diagrams painted
-DoPaint[diags_, file_] := Paint[diags, DisplayFunction ->
-  (Display[ToFileName[MkDir[name <> ".diagrams"], file <> ".ps"], #]&)]
+$PaintSE = MkDir[name <> ".diagrams"];
+DoPaint[diags_, file_, opt___] := Paint[diags, opt,
+  DisplayFunction -> (Display[ToFileName[$PaintSE, file <> ".ps"], #]&)]
 *)
 
 

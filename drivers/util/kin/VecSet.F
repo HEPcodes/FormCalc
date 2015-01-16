@@ -2,7 +2,7 @@
 * construct the CMS representation of a momentum and the
 * three corresponding polarization vectors
 * this file is part of FormCalc
-* last modified 20 Nov 06 th
+* last modified 18 Jul 07 th
 
 
 * i: the index of the momentum
@@ -50,9 +50,9 @@
 #define SPEC_RAP 7
 #define SPEC_DELTAK 8
 #define SPEC_PHI 9
-#define SPEC_KX 10
-#define SPEC_KY 11
-#define SPEC_KZ 12
+#define SPEC_EX 10
+#define SPEC_EY 11
+#define SPEC_EZ 12
 
 	double precision m2, p2, p0, deltap, sump
 	double precision sinth, onePez, oneMez
@@ -76,9 +76,9 @@
 
 	momspec(SPEC_E,i) = p0
 	momspec(SPEC_DELTAK,i) = deltap
-	momspec(SPEC_KX,i) = p*ex
-	momspec(SPEC_KY,i) = p*ey
-	momspec(SPEC_KZ,i) = p*ez
+	momspec(SPEC_EX,i) = ex
+	momspec(SPEC_EY,i) = ey
+	momspec(SPEC_EZ,i) = ez
 
 	sinth = ex**2 + ey**2
 	onePez = 1 + ez
