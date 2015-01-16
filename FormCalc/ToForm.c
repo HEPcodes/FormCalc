@@ -3,7 +3,7 @@
 		rearranges Mma's InputForm output to yield
 		acceptable FORM input
 		this file is part of FormCalc
-		last modified 7 Dec 12 th
+		last modified 1 Jun 13 th
 */
 
 #include <stdio.h>
@@ -31,6 +31,7 @@ int main()
 
 
     for( s = in, d = out; *s; ++s ) {
+more:
       switch( *s & m ) {
       case '\\':
         if( s[1] == '\n' ) fgets(s, in + sizeof in - s, stdin);
@@ -70,6 +71,14 @@ int main()
       default:
         *d++ = *s;
       }
+    }
+
+	// line break not allowed inside a dot product (rare):
+    if( d > out + 2 && d[-2] == '.' ) {
+      fgets(in, sizeof in, stdin);
+      s = in + strspn(in, " \t");
+      --d;
+      goto more;
     }
 
     *d = 0;

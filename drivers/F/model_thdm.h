@@ -1,13 +1,28 @@
 * model_thdm.h
 * declarations for model_thdm.F
 * this file is part of FormCalc
-* last modified 7 Mar 13 th
+* last modified 7 Jun 13 th
 
 
 #include "model_sm.h"
 
 	RealType Lambda5
 	RealType Yuk1, Yuk2, Yuk3
+	RealType MHiggs(4), MHiggs2(4)
+	RealType CB, SB, TB, CB2, SB2, TB2, C2B, S2B
+	RealType CA, SA, CA2, SA2, C2A, S2A
+	RealType CAB, SAB, CBA, SBA, CBA2, SBA2
 
 	common /thdmpara/ Lambda5
 	common /thdmpara/ Yuk1, Yuk2, Yuk3
+	common /thdmpara/ MHiggs, MHiggs2
+	common /thdmpara/ CB, SB, TB, CB2, SB2, TB2, C2B, S2B
+	common /thdmpara/ CA, SA, CA2, SA2, C2A, S2A
+	common /thdmpara/ CAB, SAB, CBA, SBA, CBA2, SBA2
+
+	RealType Mh0, Mh02, MHH, MHH2, MA0, MA02, MHp, MHp2
+	equivalence (MHiggs(1), Mh0), (MHiggs2(1), Mh02)
+	equivalence (MHiggs(2), MHH), (MHiggs2(2), MHH2)
+	equivalence (MHiggs(3), MA0), (MHiggs2(3), MA02)
+	equivalence (MHiggs(4), MHp), (MHiggs2(4), MHp2)
+

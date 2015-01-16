@@ -1,7 +1,7 @@
 # makefile.in
 # makefile template used by configure
 # this file is part of FormCalc
-# last modified 18 Mar 13 th
+# last modified 19 Apr 13 th
 
 # Note: make permanent changes only in makefile.in,
 # changes in makefile will be overwritten by configure.
@@ -24,7 +24,7 @@ LIB = $(FOLDER).a
 
 LIBS :=
 
-VPATH := $(LT)/../include:$(LT):$(CT)/../include:$(CT):$(SAMURAI)
+VPATH := $(SRC):$(LT)/../include:$(LT):$(CT)/../include:$(CT):$(SAMURAI)
 
 FOLDER := squaredme
 -include $(DIR)/makefile
@@ -96,7 +96,7 @@ C%.d: $(SRC)/C/%.h renconst.h
 
 ifeq ($(MMA), 0)
 %$(EXE):: $(SRC)/%.F %.d $(SRC)/tools/mktm
-	$(SRC)/tools/mktm $<
+	$(FC) $(FFLAGS) $(DEF)MMA $(DEF)PREFIX=$(PREFIX) -E $< | $(SRC)/tools/mktm $*.tm
 	$(FC) $(FFLAGS) $(DEF)MMA $(DEF)PREFIX=$(PREFIX) -c $<
 	CC="$(SRC)/tools/fcc" REALCC="$(CC) $(CFLAGS)" \
 	CXX="$(SRC)/tools/f++" REALCXX="$(CXX) $(CXXFLAGS)" \

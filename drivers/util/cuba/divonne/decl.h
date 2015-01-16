@@ -2,11 +2,15 @@
 	decl.h
 		Type declarations
 		this file is part of Divonne
-		last modified 9 Jan 13 th
+		last modified 26 Jul 13 th
 */
 
 
 #include "stddecl.h"
+
+#define INIDEPTH 3
+#define DEPTH 5
+#define POSTDEPTH 15
 
 #define Tag(x) ((x) | INT_MIN)
 #define Untag(x) ((x) & INT_MAX)
@@ -25,12 +29,23 @@ typedef struct {
   real avg, spreadsq;
   real spread, secondspread;
   real nneed, maxerrsq, mindevsq;
+  real integral, sigsq, chisq;
   PhaseResult phase[2];
   int iregion;
 } Totals;
 
+enum { nrules = 5 };
+      
 typedef struct {
-  void *first, *last;
+  count n;
+  real weight[nrules], scale[nrules], norm[nrules];
+  real gen[];
+} Set;
+
+#define SetSize (sizeof(Set) + t->ndim*sizeof(real))
+
+typedef struct {
+  Set *first, *last;
   real errcoeff[3];
   count n;
 } Rule;
@@ -52,6 +67,30 @@ typedef struct {
 } Errors;
 
 typedef const Errors cErrors;
+
+typedef struct {
+  real avg, err, spread, chisq;
+  real fmin, fmax;
+  real xminmax[];
+} Result;
+
+typedef const Result cResult;
+
+#define ResultSize (sizeof(Result) + t->ndim*2*sizeof(real))
+
+typedef struct region {
+  int depth, next;
+  count isamples, cutcomp, xmajor;
+  real fmajor, fminor, vol;
+  Bounds bounds[];
+} Region;
+
+#define RegionSize (sizeof(Region) + t->ndim*sizeof(Bounds) + t->ncomp*ResultSize)
+
+#define RegionResult(r) ((Result *)(r->bounds + t->ndim))
+
+#define RegionPtr(n) ((Region *)((char *)t->region + (n)*regionsize))
+
 
 typedef int (*Integrand)(ccount *, creal *, ccount *, real *, void *, cint *);
 
@@ -82,49 +121,34 @@ typedef struct _this {
   real *xextra, *fextra;
   count ldxgiven;
   count nregions;
-  number neval, neval_opt, neval_cut;
+  cchar *statefile;
+  number neval, neval_opt, neval_cut, nrand;
   count phase;
   count selectedcomp, size;
   Samples samples[3];
   Totals *totals;
   Rule rule7, rule9, rule11, rule13;
   RNGState rng;
-  void *voidregion;
+  Region *region;
   jmp_buf abort;
 } This;
 
 typedef const This cThis;
 
-#define TYPEDEFREGION \
-  typedef struct { \
-    real avg, err, spread, chisq; \
-    real fmin, fmax; \
-    real xmin[NDIM], xmax[NDIM]; \
-  } Result; \
-  typedef const Result cResult; \
-  typedef struct region { \
-    int depth, next; \
-    count isamples, cutcomp, xmajor; \
-    real fmajor, fminor, vol; \
-    Bounds bounds[NDIM]; \
-    Result result[NCOMP]; \
-  } Region
-
-#define RegionPtr(n) (&((Region *)t->voidregion)[n])
 
 #define CHUNKSIZE 4096
 
 #define AllocRegions(t) \
-  MemAlloc((t)->voidregion, ((t)->size = CHUNKSIZE)*sizeof(Region))
+  MemAlloc((t)->region, (t)->size*regionsize)
 
 #define EnlargeRegions(t, n) if( (t)->nregions + n > (t)->size ) \
-  ReAlloc((t)->voidregion, ((t)->size += CHUNKSIZE)*sizeof(Region))
+  ReAlloc((t)->region, ((t)->size += CHUNKSIZE)*regionsize)
 
 #define SAMPLERDEFS \
-  TYPEDEFREGION; \
+  csize_t regionsize = RegionSize; \
   Region *region = RegionPtr(iregion); \
   cBounds *b = region->bounds; \
-  Result *r = region->result; \
+  Result *res = RegionResult(region); \
   cSamples *samples = &t->samples[region->isamples]; \
   real *x = samples->x, *f = samples->f; \
   cnumber n = samples->n

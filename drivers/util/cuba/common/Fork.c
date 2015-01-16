@@ -3,12 +3,12 @@
 		the parallel sampling routine
 		for the C versions of the Cuba routines
 		by Thomas Hahn
-		last modified 9 Jan 13 th
+		last modified 7 Aug 13 th
 */
 
 #define MINSLICE 10
 #define MINCORES 1
-//#define MINCORES 2
+/*#define MINCORES 2*/
 
 typedef struct {
   number n, m, i;
@@ -18,7 +18,7 @@ typedef struct {
 
 workerini cubaini;
 
-#if defined(HAVE_SHMGET) && (defined(SUAVE) || defined(DIVONNE))
+#if defined HAVE_SHMGET && (defined SUAVE || defined DIVONNE)
 #define FRAMECOPY
 #endif
 
@@ -105,8 +105,10 @@ static void DoSample(This *t, number n, creal *x, real *f
 
     for( core = 0; core < ncores; ++core ) {
       cint fd = t->child[core];
-      MASTER("sending " NUMBER " samples to core %d fd %d",
-        slice.n, core, fd);
+      MASTER("sending samples (sli:%lu[+" VES_ONLY(NUMBER "w:%lu+")
+        NUMBER "x:%lu]) to fd %d",
+        sizeof slice, VES_ONLY(slice.n, sizeof *w,)
+        slice.n, t->ndim*sizeof *x, fd);
       writesock(fd, &slice, sizeof slice);
       SHM_ONLY(if( t->shmid == -1 )) {
         VES_ONLY(writesock(fd, w, slice.n*sizeof *w);
@@ -122,10 +124,9 @@ static void DoSample(This *t, number n, creal *x, real *f
     abort = 0;
     for( core = ncores; --core >= 0; ) {
       cint fd = t->child[core];
-      MASTER("reading from core %d fd %d", core, fd);
       readsock(fd, &slice, sizeof slice);
-      MASTER("reading " NUMBER " samples from core %d fd %d",
-        slice.n, core, fd);
+      MASTER("reading samples (sli:%lu[+" NUMBER "f:%lu]) from fd %d",
+        sizeof slice, slice.n, t->ncomp*sizeof *f, fd);
       if( slice.n == -1 ) abort = 1;
       else SHM_ONLY(if( t->shmid == -1 )) readsock(fd,
         f + slice.i*t->ncomp, slice.n*t->ncomp*sizeof *f);
@@ -170,40 +171,39 @@ typedef struct {
 
 static int Explore(This *t, cint iregion)
 {
-  TYPEDEFREGION;
+  csize_t regionsize = RegionSize;
   Region *region;
   int ireg = iregion, core = t->running;
+  Vector(Totals, totals, NCOMP);
 
   if( t->ncores < MINCORES ) return ExploreSerial(t, iregion);
 
   if( t->running >= ((iregion < 0) ? 1 : t->ncores) ) {
-    Totals totals[NCOMP];
     cint fd = t->child[core = ReadyCore(t)];
     ExploreResult res;
     count comp, succ;
 
-MASTER("core=%d  t=%p  t->child=%p  fd=%d", core, t, t->child, fd);
     --t->running;
-    MASTER("reading res + 1 region (%d+1r%d) from fd %d",
-      sizeof res, sizeof(Region), fd);
+    MASTER("reading res + region (res:%lu+reg:%lu) from fd %d",
+      sizeof res, regionsize, fd);
     readsock(fd, &res, sizeof res);
     ireg = res.iregion;
     region = RegionPtr(ireg);
     succ = ireg + region->next;
-    readsock(fd, region, sizeof(Region));
+    readsock(fd, region, regionsize);
     if( --res.nregions > 0 ) {
       region->next = t->nregions - ireg;
       EnlargeRegions(t, res.nregions);
-      MASTER("reading %d regions (%dr%d) from fd %d",
-        res.nregions, res.nregions, sizeof(Region), fd);
-      readsock(fd, RegionPtr(t->nregions), res.nregions*sizeof(Region));
+      MASTER("reading regions (%dreg:%lu) from fd %d",
+        res.nregions, regionsize, fd);
+      readsock(fd, RegionPtr(t->nregions), res.nregions*regionsize);
       t->nregions += res.nregions;
 
       RegionPtr(t->nregions-1)->next = succ - t->nregions + 1;
     }
 
-    MASTER("reading totals (%dt%d) from fd %d",
-      t->ncomp, sizeof(Totals), fd);
+    MASTER("reading totals (tot:%lu) from fd %d",
+      t->ncomp*sizeof(Totals), fd);
     readsock(fd, totals, t->ncomp*sizeof(Totals));
     for( comp = 0; comp < t->ncomp; ++comp )
       t->totals[comp].secondspread =
@@ -223,11 +223,12 @@ MASTER("core=%d  t=%p  t->child=%p  fd=%d", core, t, t->child, fd);
     slice.i = iregion;
     slice.phase = t->phase;
     region = RegionPtr(iregion);
+    MASTER("writing region (sli:%lu+sam:%lu+reg:%lu+tot:%lu) to fd %d",
+      sizeof slice, sizeof(Samples), regionsize,
+      t->ncomp*sizeof(Totals), fd);
     writesock(fd, &slice, sizeof slice);
-    MASTER("writing region (%d+1r%d+%dt%d) to fd %d",
-      sizeof(Samples), sizeof(Region), t->ncomp, sizeof(Totals), fd);
     writesock(fd, &t->samples[region->isamples], sizeof(Samples));
-    writesock(fd, region, sizeof(Region));
+    writesock(fd, region, regionsize);
     writesock(fd, t->totals, t->ncomp*sizeof(Totals));
     region->depth = 0;
     ++t->running;
@@ -244,19 +245,14 @@ static void DoChild(This *t, cint fd)
   Slice slice;
 
 #ifdef DIVONNE
-  TYPEDEFREGION;
-  Totals totals[NCOMP];
+  csize_t regionsize = RegionSize;
+  Vector(Totals, totals, NCOMP);
   ExploreResult res;
 
   t->totals = totals;
   t->ncores = 0;	/* no recursive forks */
+  t->size = 2*t->ndim + 2;
   AllocRegions(t);
-  SamplesIni(&t->samples[0]);
-  t->samples[0].n = 0;
-  SamplesIni(&t->samples[1]);
-  t->samples[1].n = 0;
-  SamplesIni(&t->samples[2]);
-  t->samples[2].n = 0;
 #endif
 
 #ifdef SUAVE
@@ -271,7 +267,9 @@ static void DoChild(This *t, cint fd)
     DIV_ONLY(t->phase = slice.phase;)
     if( n > 0 ) {
       real VES_ONLY(*w,) *x, *f;
-      WORKER("read " NUMBER " samples from fd %d", n, fd);
+      WORKER("reading samples (sli:%lu[+" VES_ONLY(NUMBER "w:%lu+")
+        NUMBER "x:%lu]) from fd %d",
+        sizeof slice, VES_ONLY(n, sizeof *w,) n, t->ndim*sizeof *x, fd);
 
 #ifdef DIVONNE
       if( n > t->nframe ) {
@@ -297,7 +295,8 @@ static void DoChild(This *t, cint fd)
       }
 
       slice.n |= SampleRaw(t, n, x, f VES_ONLY(, w, slice.iter));
-      WORKER("writing " NUMBER " samples to fd %d", n, fd);
+      WORKER("writing samples (sli:%lu[+" NUMBER "f:%lu]) to fd %d",
+        sizeof slice, slice.n, t->ncomp*sizeof *f, fd);
       writesock(fd, &slice, sizeof slice);
       if( SHM_ONLY(t->shmid == -1 &&) slice.n != -1 )
         writesock(fd, f, slice.n*t->ncomp*sizeof *f);
@@ -306,10 +305,11 @@ static void DoChild(This *t, cint fd)
     else {
       Samples *samples, psamples;
 
-      WORKER("reading region (%d+1r%d+%dt%d) from fd %d",
-        sizeof(Samples), sizeof(Region), t->ncomp, sizeof(Totals), fd);
+      WORKER("reading region (sli:%lu+sam:%lu+reg:%lu+tot:%lu) from fd %d",
+        sizeof slice, sizeof(Samples), regionsize,
+        t->ncomp*sizeof(Totals), fd);
       readsock(fd, &psamples, sizeof(Samples));
-      readsock(fd, RegionPtr(0), sizeof(Region));
+      readsock(fd, t->region, regionsize);
       readsock(fd, totals, t->ncomp*sizeof(Totals));
       t->nregions = 1;
       t->neval = t->neval_opt = t->neval_cut = 0;
@@ -327,11 +327,11 @@ static void DoChild(This *t, cint fd)
       res.neval_cut = t->neval_cut;
       res.nregions = t->nregions;
       res.iregion = slice.i;
-      WORKER("writing %d regions (%d+%dr%d+%dt%d) to fd %d",
-        t->nregions, sizeof res, t->nregions, sizeof(Region),
-        t->ncomp, sizeof(Totals), fd);
+      WORKER("writing regions (res:%lu+%dreg:%lu+tot:%lu) to fd %d",
+        sizeof res, t->nregions, regionsize,
+        t->ncomp*sizeof(Totals), fd);
       writesock(fd, &res, sizeof res);
-      writesock(fd, RegionPtr(0), t->nregions*sizeof(Region));
+      writesock(fd, t->region, t->nregions*regionsize);
       writesock(fd, totals, t->ncomp*sizeof(Totals));
     }
 #endif

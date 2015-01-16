@@ -2,7 +2,7 @@
 	decl.h
 	these declarations are included "everywhere"
 	this file is part of FormCalc
-	last modified 18 Mar 13 th
+	last modified 23 Apr 13 th
 #endif
 
 
@@ -15,10 +15,12 @@
 #include <complex.h>
 #include <stdio.h>
 
+#include "distrib.h"
 #include "clooptools.h"
-typedef ComplexType HelType;
 typedef int integer;
-typedef const int cint;
+typedef const int cinteger;
+typedef long long integer8;
+typedef const integer8 cinteger8;
 
 #if NOUNDERSCORE
 #define CalcRenConst calcrenconst

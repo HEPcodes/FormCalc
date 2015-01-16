@@ -1,7 +1,7 @@
 * model_fh.h
 * declarations for model_fh.F
 * this file is part of FormCalc
-* last modified 13 Jul 12 th
+* last modified 1 Aug 13 th
 
 
 #include "FHRecord.h"
@@ -48,11 +48,11 @@
 
 	ComplexType UCha(2,2), VCha(2,2), ZNeu(4,4)
 	ComplexType XHiggs(3,3,2)
-	ComplexType deltaSf(6,6,4), UASf(6,6,4)
+	ComplexType deltaSf(6,6,4), UASf(6,6,5)
 	ComplexType MSS2(3,3,5), Afd(2:4,3), Kf(3,3,2:4)
 	ComplexType MUE, Mino1, Mino2, Mino3, SqrtEGl, Deltab
 	RealType MCha(2), MCha2(2), MNeu(4), MNeu2(4)
-	RealType MSS(5,3), MASf(6,4), MASf2(6,4)
+	RealType MSS(5,3), MASf(6,5), MASf2(6,5)
 	RealType MHiggs(4), MHiggs2(4), MHtree(4), MHtree2(4)
 	RealType MGl, MGl2
 	RealType CB, SB, TB, CB2, SB2, TB2, C2B, S2B

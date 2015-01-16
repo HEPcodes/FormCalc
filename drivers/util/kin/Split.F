@@ -2,7 +2,7 @@
 * splits a parent momentum into two child momenta
 * loosely based on code by T. Fritzsche
 * this file is part of FormCalc
-* last modified 30 Nov 11 th
+* last modified 6 May 13 th
 
 #include "types.h"
 

@@ -2,24 +2,23 @@
 # a script to set up the interface code for accessing
 # FormCalc-generated code in Mathematica
 # this file is part of FormCalc
-# last modified 29 Jul 11 th
+# last modified 23 Apr 13 th
 
 
-if [ $# -ne 1 ] ; then
-  echo "Usage:  $0 file.F   -- generates file.tm for file.F" 1>&2
+test $# -ne 1 && {
+  echo "Usage:  FC FFLAGS file.F | $0 file.tm   -- generates file.tm for file.F" 1>&2
   exit 1
-fi
+}
 
 file="$1"
-base=`basename "$file" .F`
+base=`basename "$file" .tm`
 name=`echo "$base" | sed s/[-_]//`
 
-pol=`awk '/^#include *".to.\.F"/ {
-  print substr("UUUUUUUUUU", 1, int(substr($2,2,1)) + int(substr($2,5,1)));
-  exit(0);
-}' process.h`
+prep=`cat -`
 
-set -- `sed '
+pol=`echo "$prep" | awk '/len_trim\(pol\)/ { print substr("UUUUUUUUUU", 1, $4); }'`
+
+set -- `echo "$prep" | sed '
 s/.*call MmaGetInteger(/i /
 s/.*call MmaGetIntegerList(/il /
 s/.*call MmaGetReal(/r /
@@ -28,9 +27,9 @@ s/.*call MmaGetComplex(/c /
 s/.*call MmaGetComplexList(/cl /
 y/_,)/$  /
 t
-d' $file`
+d'`
 
-while [ $# -gt 0 ] ; do
+while test $# -gt 0 ; do
   case $1 in
   i)	argsQ="$argsQ, $2_Integer"
 	argsL="$argsL, $2_"
@@ -54,7 +53,7 @@ while [ $# -gt 0 ] ; do
 	argsR="$argsR, $2"
 	argsN="$argsN, N[$2]"
 	argsT="$argsT, Real"
-	argsC="$argsC, creal $2"
+	argsC="$argsC, cRealType $2"
 	argsS="$argsS, $2"
 	;;
   rl)	argsQ="$argsQ, $2_?(rl[$3])"
@@ -62,7 +61,7 @@ while [ $# -gt 0 ] ; do
 	argsR="$argsR, $2"
 	argsN="$argsN, N[$2]"
 	argsT="$argsT, RealList"
-	argsC="$argsC, real *$2, long n_$2"
+	argsC="$argsC, RealType *$2, long n_$2"
 	argsS="$argsS, $2, n_$2"
 	shift
 	;;
@@ -71,23 +70,21 @@ while [ $# -gt 0 ] ; do
 	argsR="$argsR, $2"
 	argsN="$argsN, N[Re[$2]], N[Im[$2]]"
 	argsT="$argsT, Real, Real"
-	argsC="$argsC, creal re$2, creal im$2"
-	argsS="$argsS, (cplx){re$2, im$2}"
+	argsC="$argsC, cRealType re$2, cRealType im$2"
+	argsS="$argsS, (ComplexType){re$2, im$2}"
 	;;
   cl)	argsQ="$argsQ, $2_?(cl[$3])"
 	argsL="$argsL, $2_"
 	argsR="$argsR, $2"
 	argsN="$argsN, N[Flatten[{Re[#], Im[#]}&/@ $2]]"
 	argsT="$argsT, RealList"
-	argsC="$argsC, real *$2, long n_$2"
+	argsC="$argsC, RealType *$2, long n_$2"
 	argsS="$argsS, $2, n_$2"
 	shift
 	;;
   esac
   shift 2
 done
-
-file="`dirname $file`/$base.tm"
 
 cat << _EOF_ > $file
 :Evaluate: BeginPackage["XSection\`"]
@@ -182,10 +179,10 @@ typedef unsigned char byte;
 typedef MLCONST byte *string;
 typedef byte argstr[128];
 typedef const int cint;
-typedef double real;
-typedef const real creal;
-typedef struct { double re, im; } cplx;
-typedef const cplx ccplx;
+typedef double RealType;
+typedef const RealType cRealType;
+typedef struct { double re, im; } ComplexType;
+typedef const ComplexType cComplexType;
 
 #if NOUNDERSCORE
 #define FORTRAN(s) s
@@ -198,7 +195,7 @@ extern "C" {
 #endif
 
 extern void FORTRAN(processini)(int *fail, string pol,
-  creal *sqrtSfrom, creal *sqrtSto, creal *sqrtSstep,
+  cRealType *sqrtSfrom, cRealType *sqrtSto, cRealType *sqrtSstep,
   cint *argc, argstr argv[],
   cint pollen, cint argstrlen);
 
@@ -212,23 +209,23 @@ extern void FORTRAN(fortranflush)(void);
 
 void FORTRAN(mmagetinteger)(int *i);
 void FORTRAN(mmagetintegerlist)(int *i, cint *n);
-void FORTRAN(mmagetreal)(real *r);
-void FORTRAN(mmagetreallist)(real *r, cint *n);
-void FORTRAN(mmagetcomplex)(cplx *c);
-void FORTRAN(mmagetcomplexlist)(cplx *c, cint *n);
+void FORTRAN(mmagetreal)(RealType *r);
+void FORTRAN(mmagetreallist)(RealType *r, cint *n);
+void FORTRAN(mmagetcomplex)(ComplexType *c);
+void FORTRAN(mmagetcomplexlist)(ComplexType *c, cint *n);
 
 void FORTRAN(mmaputinteger)(string name, cint *i, cint len);
 void FORTRAN(mmaputintegerlist)(string name, int *i, cint *n, cint len);
-void FORTRAN(mmaputreal)(string name, creal *r, cint len);
-void FORTRAN(mmaputreallist)(string name, real *r, cint *n, cint len);
-void FORTRAN(mmaputcomplex)(string name, ccplx *c, cint len);
-void FORTRAN(mmaputcomplexlist)(string name, cplx *c, cint *n, cint len);
+void FORTRAN(mmaputreal)(string name, cRealType *r, cint len);
+void FORTRAN(mmaputreallist)(string name, RealType *r, cint *n, cint len);
+void FORTRAN(mmaputcomplex)(string name, cComplexType *c, cint len);
+void FORTRAN(mmaputcomplexlist)(string name, ComplexType *c, cint *n, cint len);
 
 void FORTRAN(mmasetpara)(void);
 void FORTRAN(mmasetdata)(void);
 void FORTRAN(mmaendset)(void);
-void FORTRAN(mmadata)(real *show, cint *nshow,
-  real *result, real *error, cint *ncomp);
+void FORTRAN(mmadata)(RealType *show, cint *nshow,
+  RealType *result, RealType *error, cint *ncomp);
 
 #ifdef __cplusplus
 }
@@ -329,7 +326,7 @@ static void v$name(
 
 static void m$name(cint setno, string logfile, cint logfilelen,
   string pol, cint pollen, string args, cint argslen,
-  creal sqrtSfrom, creal sqrtSto, creal sqrtSstep,
+  cRealType sqrtSfrom, cRealType sqrtSto, cRealType sqrtSstep,
   cint serialfrom, cint serialto, cint serialstep$argsC)
 {
   int fail, stdoutpipe[2], argc;
@@ -413,35 +410,35 @@ void FORTRAN(mmagetintegerlist)(int *i, cint *n)
 
 /******************************************************************/
 
-void FORTRAN(mmagetreal)(real *r)
+void FORTRAN(mmagetreal)(RealType *r)
 {
-  *r = va_arg(xsection_ap, real);
+  *r = va_arg(xsection_ap, RealType);
 }
 
 /******************************************************************/
 
-void FORTRAN(mmagetreallist)(real *r, cint *n)
+void FORTRAN(mmagetreallist)(RealType *r, cint *n)
 {
-  const real *l = va_arg(xsection_ap, real *);
+  const RealType *l = va_arg(xsection_ap, RealType *);
   const long nl = va_arg(xsection_ap, long);
-  memcpy(r, l, nl*sizeof(real));
+  memcpy(r, l, nl*sizeof(RealType));
 }
 
 /******************************************************************/
 
-void FORTRAN(mmagetcomplex)(cplx *c)
+void FORTRAN(mmagetcomplex)(ComplexType *c)
 {
-  c->re = va_arg(xsection_ap, real);
-  c->im = va_arg(xsection_ap, real);
+  c->re = va_arg(xsection_ap, RealType);
+  c->im = va_arg(xsection_ap, RealType);
 }
 
 /******************************************************************/
 
-void FORTRAN(mmagetcomplexlist)(cplx *c, cint *n)
+void FORTRAN(mmagetcomplexlist)(ComplexType *c, cint *n)
 {
-  const real *l = va_arg(xsection_ap, real *);
+  const RealType *l = va_arg(xsection_ap, RealType *);
   const long nl = va_arg(xsection_ap, long);
-  memcpy(c, l, nl*sizeof(real));
+  memcpy(c, l, nl*sizeof(RealType));
 }
 
 /******************************************************************/
@@ -495,7 +492,7 @@ void FORTRAN(mmaputintegerlist)(string name, int *i, cint *n, cint len)
 
 /******************************************************************/
 
-void FORTRAN(mmaputreal)(string name, creal *r, cint len)
+void FORTRAN(mmaputreal)(string name, cRealType *r, cint len)
 {
   MLPutFunction(stdlink, "Sequence", 2);
   MLPutRule(stdlink, name, len);
@@ -504,7 +501,7 @@ void FORTRAN(mmaputreal)(string name, creal *r, cint len)
 
 /******************************************************************/
 
-void FORTRAN(mmaputreallist)(string name, real *r, cint *n, cint len)
+void FORTRAN(mmaputreallist)(string name, RealType *r, cint *n, cint len)
 {
   MLPutFunction(stdlink, "Sequence", 2);
   MLPutRule(stdlink, name, len);
@@ -513,7 +510,7 @@ void FORTRAN(mmaputreallist)(string name, real *r, cint *n, cint len)
 
 /******************************************************************/
 
-void FORTRAN(mmaputcomplex)(string name, ccplx *c, cint len)
+void FORTRAN(mmaputcomplex)(string name, cComplexType *c, cint len)
 {
   MLPutFunction(stdlink, "Sequence", 2);
   MLPutRule(stdlink, name, len);
@@ -527,18 +524,18 @@ void FORTRAN(mmaputcomplex)(string name, ccplx *c, cint len)
 
 /******************************************************************/
 
-void FORTRAN(mmaputcomplexlist)(string name, cplx *c, cint *n, cint len)
+void FORTRAN(mmaputcomplexlist)(string name, ComplexType *c, cint *n, cint len)
 {
   MLPutFunction(stdlink, "Sequence", 2);
   MLPutRule(stdlink, name, len);
   MLPutFunction(stdlink, "XSection\`$name\`tocl", 1);
-  MLPutRealList(stdlink, (real *)c, *n*2);
+  MLPutRealList(stdlink, (RealType *)c, *n*2);
 }
 
 /******************************************************************/
 
-void FORTRAN(mmadata)(real *show, cint *nshow,
-  real *result, real *error, cint *ncomp)
+void FORTRAN(mmadata)(RealType *show, cint *nshow,
+  RealType *result, RealType *error, cint *ncomp)
 {
   MLPutFunction(stdlink, "Sequence", 2);
   MLPutFunction(stdlink, "DataRow", 3);

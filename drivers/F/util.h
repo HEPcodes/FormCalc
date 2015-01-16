@@ -1,48 +1,80 @@
 * util.h
 * prototypes for the util functions
 * this file is part of FormCalc
-* last modified 9 Mar 13 th
+* last modified 8 May 13 th
 
 
-#ifndef LEGS
-#define LEGS 1
+#ifndef UTIL_H
+#define UTIL_H
+
+#define SPEC_M 1
+#define SPEC_K 2
+#define SPEC_E 3
+#define SPEC_KT 4
+#define SPEC_ET 5
+#define SPEC_PRAP 6
+#define SPEC_RAP 7
+#define SPEC_DELTAK 8
+#define SPEC_PHI 9
+#define SPEC_EX 10
+#define SPEC_EY 11
+#define SPEC_EZ 12
+
+#define k0(i) (1+nvec*(i-1))
+#define s0(i) (3+nvec*(i-1))
+#define e0(i) (3+nvec*(i-1)+Hel(i))
+#define ec0(i) (3+nvec*(i-1)-Hel(i))
+#define Spinor0(i,af,d) (af*2+d+7+nvec*(i-1)+Hel(i))
+
+#if SIMD > 0
+
+#define HelType ComplexType, dimension(SIMD) ::
+#define HelDim(i) SIMD,i
+#define HelInd(i) :,i
+#define HelSum(x) sum(x)
+
+#define k(i) (1+nves*(i-1))
+#define s(i) (2+nves*(i-1))
+#define e(i) (3+nves*(i-1))
+#define ec(i) (4+nves*(i-1))
+#define Spinor(i,af,d) (af+d+5+nves*(i-1))
+
+#define Vec(x,y,i) ves(:,x,y,i)
+#define bVec ves(1,1,1,1)
+#define eVec ves_end
+
+#define SIMD_DECL integer v
+#define SIMD_INI v = 1
+#define SIMD_NEXT v = mod(v, SIMD) + 1
+#define SIMD_EXEC(cmd) if( v .eq. 1 ) cmd
+#define SIMD_LAST(cmd) if( v .ne. 1 ) then ; ves(v+1:SIMD,:,:,:) = 0; cmd ; endif
+#define SIMD_COPY(hel) call VecCopy(v, LEGS, hel)
+
+#else
+
+#define HelType ComplexType
+#define HelDim(i) i
+#define HelInd(i) i
+#define HelSum(x) x
+
+#define k k0
+#define s s0
+#define e e0
+#define ec ec0
+#define Spinor Spinor0
+
+#define Vec(x,y,i) vec(x,y,i)
+#define bVec vec(1,1,1)
+#define eVec vec_end
+
+#define SIMD_DECL
+#define SIMD_INI
+#define SIMD_NEXT
+#define SIMD_EXEC(cmd) cmd
+#define SIMD_LAST(cmd)
+#define SIMD_COPY(hel)
+
 #endif
-
-	integer nvec
-	parameter (nvec = 10)
-
-* vec(*,*,0) is q1 in num.h
-	ComplexType vec(2,2,0:nvec*LEGS), vec_end(0)
-	common /vectors/ vec, vec_end
-
-	RealType momspec(8*nvec,LEGS)
-	equivalence (vec(1,1,1), momspec)
-
-* encoding base for momenta
-	integer*8 JK
-	parameter (JK = 256)
-
-
-#ifndef SPEC_M
-
-#define SPEC_M 65
-#define SPEC_K 66
-#define SPEC_E 67
-#define SPEC_KT 68
-#define SPEC_ET 69
-#define SPEC_PRAP 70
-#define SPEC_RAP 71
-#define SPEC_DELTAK 72
-#define SPEC_PHI 73
-#define SPEC_EX 74
-#define SPEC_EY 75
-#define SPEC_EZ 76
-
-#define k(i) (nvec*(i-1)+1)
-#define s(i) (nvec*(i-1)+3)
-#define e(i) (nvec*(i-1)+3+Hel(i))
-#define ec(i) (nvec*(i-1)+3-Hel(i))
-#define Spinor(i,s,d) (s*Hel(i)+nvec*(i-1)+d+5)
 
 #define MomEncoding(f,i) iand(f,JK-1)*JK**(i-1)
 
@@ -68,14 +100,14 @@
 #define INI_ANGLE(seq) call markcache
 #define DEINI(seq) call restorecache
 
-#ifdef PARALLEL
-#define PREP(h,he, v,ve, a,ae, s,se) call sqmeprep(h,he, v,ve, a,ae, s,se)
-#define EXEC(f, res, flags) call sqmeexec(f, res, flags)
-#define SYNC(res) call sqmesync(res)
+#if PARALLEL
+#define PAR_PREP(s,se, a,ae, h,he) call sqmeprep(bVec,eVec, s,se, a,ae, h,he)
+#define PAR_EXEC(f, res, flags) call sqmeexec(f, res, flags)
+#define PAR_SYNC(res) call sqmesync(res)
 #else
-#define PREP(h,he, v,ve, a,ae, s,se)
-#define EXEC(f, res, flags) call f(res, flags)
-#define SYNC(res)
+#define PAR_PREP(s,se, a,ae, h,he)
+#define PAR_EXEC(f, res, flags) call f(res, flags)
+#define PAR_SYNC(res)
 #endif
 
 #define Cut(c,m) (m)*(c)
@@ -94,6 +126,34 @@
 #define CUT_MREM_KT 4097
 #define CUT_MREM_RAP 16384
 #define CUT_MREM_PRAP 16385
+
+#else
+
+#ifndef LEGS
+#define LEGS 1
+#endif
+
+	integer nvec
+	parameter (nvec = 12)
+
+* vec(...,0) is q1 in num.h
+	ComplexType vec(2,2,0:nvec*LEGS), vec_end
+	common /vec/ vec, vec_end
+
+#if SIMD > 0
+	integer nves
+	parameter (nves = 8)
+
+	HelType ves(HelDim(2),2,0:nves*LEGS), ves_end
+	common /ves/ ves, ves_end
+#endif
+
+	RealType momspec(12,LEGS)
+	common /momspec/ momspec
+
+* encoding base for momenta
+	integer*8 JK
+	parameter (JK = 256)
 
 #endif
 

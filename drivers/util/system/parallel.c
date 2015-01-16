@@ -2,12 +2,14 @@
 	parallel.c
 		parallel execution of SquaredMEHel
 		this file is part of FormCalc
-		last modified 18 Mar 13 th
+		last modified 22 Apr 13 th
 */
 
 
 #define HAVE_FORK
 //#define DEBUG
+
+#include "distrib.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -154,10 +156,12 @@ static inline void newcore(subroutine foo, const int flags)
     if( !readsock(fd[1], mem.h, mem.he - mem.h) ) exit(0);
     WORKER(core, "seq %llx  new %llx", seq, mem_seq);
     seq ^= mem_seq;
-    if( SEQ_ANGLE(seq) ) {
-      WORKER(core, "reading mem_angle(%p#%ld+%p#%ld)",
-        mem.v, mem.ve - mem.v, mem.a, mem.ae - mem.a);
+    if( SIMD > 0 || SEQ_ANGLE(seq) ) {
+      WORKER(core, "reading mem_vec(%p#%ld)", mem.v, mem.ve - mem.v);
       readsock(fd[1], mem.v, mem.ve - mem.v);
+    }
+    if( SEQ_ANGLE(seq) ) {
+      WORKER(core, "reading mem_angle(%p#%ld)",mem.a, mem.ae - mem.a);
       readsock(fd[1], mem.a, mem.ae - mem.a);
       restorecache_();
     }
@@ -210,10 +214,14 @@ static inline void oldcore(const int core)
     mem.h, mem.he - mem.h, core);
   writesock(fd, mem.h, mem.he - mem.h);
   seq ^= mem_seq;
-  if( SEQ_ANGLE(seq) ) {
-    MASTER("sending mem_angle(%p#%ld+%p#%ld) to core %d",
-      mem.v, mem.ve - mem.v, mem.a, mem.ae - mem.a, core);
+  if( SIMD > 0 || SEQ_ANGLE(seq) ) {
+    MASTER("sending mem_vec(%p#%ld) to core %d",
+      mem.v, mem.ve - mem.v, core);
     writesock(fd, mem.v, mem.ve - mem.v);
+  }
+  if( SEQ_ANGLE(seq) ) {
+    MASTER("sending mem_angle(%p#%ld) to core %d",
+      mem.a, mem.ae - mem.a, core);
     writesock(fd, mem.a, mem.ae - mem.a);
   }
   if( SEQ_S(seq) ) {
@@ -227,8 +235,8 @@ static inline void oldcore(const int core)
 
 /*********************************************************************/
 
-void sqmeprep_(char *h, char *he, char *v, char *ve,
-  char *a, char *ae, char *s, char *se)
+void sqmeprep_(void *v, void *ve,
+  void *s, void *se, void *a, void *ae, void *h, void *he)
 {
 #ifdef HAVE_FORK
   void sqmewait_(void);

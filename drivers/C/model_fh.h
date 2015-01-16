@@ -2,7 +2,7 @@
 	model_fh.h
 	declarations for model_fh.F
 	this file is part of FormCalc
-	last modified 9 Mar 13 th
+	last modified 23 Apr 13 th
 #endif
 
 
@@ -88,7 +88,7 @@ struct mssmpara_ {
   RealType CB, SB, TB, CB2, SB2, TB2, C2B, S2B;
   RealType CA, SA, CA2, SA2, C2A, S2A;
   RealType CAB, SAB, CBA, SBA, CBA2, SBA2, SAeff;
-  int nmfv;
+  integer nmfv;
 } mssmpara_;
 
 #define UCha(i,j) mssmpara_.UCha[j-1][i-1]

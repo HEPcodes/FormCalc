@@ -1,7 +1,7 @@
 * xsection.h
 * common blocks for xsection.F
 * this file is part of FormCalc
-* last modified 8 Mar 12 th
+* last modified 18 Apr 13 th
 
 
 #include "decl.h"
@@ -21,11 +21,11 @@
 
 	RealType var(8, MINVAR:TRIVIAL)
 	RealType avgfac, sqrtS
-	RealType mass_in, mass_out, threshold, scale
+	RealType mass_in, mass_out, threshold, fscale
 	integer*8 helicities
 	integer sqrtSinvalid, flags
 
 	common /xsection/ var, avgfac, sqrtS,
-     &    mass_in, mass_out, threshold, scale,
+     &    mass_in, mass_out, threshold, fscale,
      &    helicities, sqrtSinvalid, flags
 

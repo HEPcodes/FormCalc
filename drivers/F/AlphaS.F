@@ -1,14 +1,14 @@
 * AlphaS.F
 * AlphaS computes the strong coupling constant at a given scale.
-* Code is transcribed from I. Hinchliffe's Java applet at
+* Code is transcribed from Java applet by I. Hinchliffe at
 * http://www-theory.lbl.gov/~ianh/alpha/alpha.html.
 * this file is part of FormCalc
-* last modified 30 Nov 11 th
+* last modified 22 Apr 13 th
 
 
-	subroutine AlphaS(as, nf, scale)
+	subroutine AlphaS(as, nf, q)
 	implicit none
-	RealType as, scale
+	RealType as, q
 	integer nf
 
 #include "decl.h"
@@ -78,24 +78,24 @@
 	  l = c*log(t)
 	  b = c**2*(beta5_2*beta5_0/(8*beta5_1**2) - 1)
 	  asMZ = 4*pi/beta5_0/t*(1 + l*(l - c - 1) + b)
-* Newton step is (as - AlfasMZ)/as'
+* Newton step is (as - AlfasMZ)/as-prime
 	  lam5 = lam5*(1 - beta5_0/(8*pi)*t**2*(asMZ - AlfasMZ)/
      &      (1 + c*(c + 1) + l*(3*l - 5*c - 2) + 3*b))
 	enddo
 
-	if( scale .lt. .5D0 ) then
+	if( q .lt. .5D0 ) then
 	  as = 1D10
 	  return
 	endif
 
-	if( scale .gt. MT ) then
+	if( q .gt. MT ) then
 	  nf = 6
 	  beta0 = beta6_0
 	  beta1 = beta6_1
 	  beta2 = beta6_2
 	  t = MT/lam5
 	  lam = lam5*t**(-2/21D0)*(2*log(t))**(-107/1127D0)
-	else if( scale .gt. MB ) then
+	else if( q .gt. MB ) then
 	  nf = 5
 	  beta0 = beta5_0
 	  beta1 = beta5_1
@@ -107,7 +107,7 @@
 	  lam = lam5*exp(delta54_0*t +
      &      delta54_11*l + delta54_10 +
      &      (delta54_21*l + delta54_20)/t)
-	  if( scale .gt. MC ) then
+	  if( q .gt. MC ) then
 	    nf = 4
 	    beta0 = beta4_0
 	    beta1 = beta4_1
@@ -125,7 +125,7 @@
 	  endif
 	endif
 
-	t = 2*log(scale/lam)
+	t = 2*log(q/lam)
 	c = 2*beta1/(beta0**2*t)
 	l = c*log(t)
 	b = c**2*(beta2*beta0/(8*beta1**2) - 1)

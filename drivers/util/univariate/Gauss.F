@@ -1,7 +1,7 @@
 * Gauss.F
 * Gaussian integration of a vector
 * this file is part of FormCalc
-* last modified 30 Nov 11 th
+* last modified 19 Apr 13 th
 
 #include "config.h"
 
@@ -14,7 +14,7 @@
 	RealType lower, upper, result(*)
 	external integrand
 
-	RealType samples(MAXCOMP,2), mid, range, x
+	RealType samples(MAXCOMP,2), mid, span, x
 	integer c, n, p
 
 	RealType gaussdata(80)
@@ -103,18 +103,18 @@
 	p = nodes/8
 	p = (1 - 2*p)**2
 
-	range = .5D0*(upper - lower)
-	mid = lower + range
+	span = .5D0*(upper - lower)
+	mid = lower + span
 
 	do c = 1, ncomp
 	  result(c) = 0
 	enddo
 
 	do n = 1, nodes, 2
-	  x = range*gaussdata(p)
+	  x = span*gaussdata(p)
 	  call integrand(1, mid - x, ncomp, samples(1,1))
 	  call integrand(1, mid + x, ncomp, samples(1,2))
-	  x = range*gaussdata(p + 1)
+	  x = span*gaussdata(p + 1)
 	  do c = 1, ncomp
 	    result(c) = result(c) + x*(samples(c,1) + samples(c,2))
 	  enddo

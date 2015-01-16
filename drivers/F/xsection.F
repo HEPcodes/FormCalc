@@ -1,14 +1,16 @@
 * xsection.F
 * routines to compute the cross-section
 * this file is part of FormCalc
-* last modified 8 Mar 13 th
+* last modified 6 May 13 th
 
 #define DRIVER
 
 #include "decl.h"
 #include "inline.h"
+#include "contains.h"
 
 #include "process.h"
+#include KIN
 #include MODEL
 
 #ifdef BREMSSTRAHLUNG
@@ -111,7 +113,7 @@
 	avgfac = 2**(LEGS)*Re(COLOURFACTOR)*Re(IDENTICALFACTOR)/df
 	sqrtS = -1
 	threshold = -1
-	scale = -1
+	fscale = -1
 	sqrtSinvalid = 1
 
 	call ltini
@@ -153,7 +155,7 @@
 
 ************************************************************************
 ** SetEnergy sets the energy for the partonic scattering process.
-** All scale-dependent quantities are initialized at SCALE.
+** All scale-dependent quantities are initialized at FSCALE.
 
 	subroutine SetEnergy(fail, newsqrtS)
 	implicit none
@@ -162,33 +164,33 @@
 
 #include "xsection.h"
 
-	RealType oldscale, oldmass_in, oldmass_out
+	RealType oldfscale, oldmass_in, oldmass_out
 	logical reset
 	integer i
 
 	fail = 0
 	reset = abs(newsqrtS - sqrtS) .gt. 1D-9
 	sqrtS = newsqrtS
-	oldscale = max(Re(SCALE), 1D0)
+	oldfscale = max(Re(FSCALE), 1D0)
 
 	if( sqrtSinvalid .eq. 1 .or.
      &      btest(flags, BIT_RESET) .or.
-     &      abs(oldscale - scale) .gt. 1D-9 ) then
+     &      abs(oldfscale - fscale) .gt. 1D-9 ) then
 	  oldmass_in = MASS_IN
 	  oldmass_out = MASS_OUT
 
 	  do i = 1, 10
-	    call ModelVarIni(fail, oldscale)
+	    call ModelVarIni(fail, oldfscale)
 
-	    scale = max(Re(SCALE), 1D0)
+	    fscale = max(Re(FSCALE), 1D0)
 	    mass_in = MASS_IN
 	    mass_out = MASS_OUT
 
-	    if( abs(scale - oldscale) +
+	    if( abs(fscale - oldfscale) +
      &          abs(mass_in - oldmass_in) +
      &          abs(mass_out - oldmass_out) .lt. 1D-9 ) goto 1
 
-	    oldscale = scale
+	    oldfscale = fscale
 	    oldmass_in = mass_in
 	    oldmass_out = mass_out
 	  enddo
@@ -479,7 +481,7 @@
 	print 103
 #endif
 
-#ifdef PARALLEL
+#if PARALLEL
 	call cubarunexit
 #endif
 
@@ -504,17 +506,17 @@
 	external SoftPhotonFactor
 #endif
 
-	RealType fac, range, flux
+	RealType fac, span, flux
 	integer v, d, c
 
 	fac = avgfac
 	d = 0
 	do v = MINVAR, MAXVAR
 	  if( Step(v) .eq. 0 ) then
-	    range = Upper(v) - Lower(v)
+	    span = Upper(v) - Lower(v)
 	    d = d + 1
-	    Var(v) = Lower(v) + x(d)*range
-	    fac = fac*range
+	    Var(v) = Lower(v) + x(d)*span
+	    fac = fac*span
 	  endif
 	  Show(v) = Var(v)
 	enddo
@@ -647,7 +649,7 @@
 	  call suave(ndim, NCOMP, integrand, USERDATA,
      &      Re(RELACCURACY), Re(ABSACCURACY),
      &      VERBOSE + FLAGS_LAST, SEED, MINEVAL, MAXEVAL,
-     &      NNEW, Re(FLATNESS),
+     &      NNEW, Re(FLATNESS), STATEFILE,
      &      nregions, neval, fail, result, error, prob)
 	  INFO "Suave integration results:"
 
@@ -658,7 +660,7 @@
      &      VERBOSE, SEED, MINEVAL, MAXEVAL,
      &      KEY1, KEY2, KEY3, MAXPASS,
      &      Re(BORDER), Re(MAXCHISQ), Re(MINDEVIATION),
-     &      0, NDIM, 0, 0, 0,
+     &      0, NDIM, 0, 0, 0, STATEFILE,
      &      nregions, neval, fail, result, error, prob)
 	  INFO "Divonne integration results:"
 
@@ -667,7 +669,7 @@
 	  call cuhre(ndim, NCOMP, integrand, USERDATA,
      &      Re(RELACCURACY), Re(ABSACCURACY),
      &      VERBOSE + FLAGS_LAST, MINEVAL, MAXEVAL,
-     &      KEY,
+     &      KEY, STATEFILE,
      &      nregions, neval, fail, result, error, prob)
 	  INFO "Cuhre integration results:"
 

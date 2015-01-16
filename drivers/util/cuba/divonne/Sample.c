@@ -2,7 +2,7 @@
 	Sample.c
 		most of what is related to sampling
 		this file is part of Divonne
-		last modified 17 Dec 11 th
+		last modified 30 Aug 13 th
 */
 
 
@@ -18,6 +18,7 @@
 static inline void SamplesIni(Samples *samples)
 {
   samples->x = NULL;
+  samples->n = 0;
 }
 
 /*********************************************************************/
@@ -39,7 +40,8 @@ static inline void SamplesFree(cSamples *samples)
 static void SampleSobol(This *t, ccount iregion)
 {
   SAMPLERDEFS;
-  real avg[NCOMP], norm;
+  Vector(real, avg, NCOMP);
+  real norm;
   number i;
   count dim, comp;
 
@@ -48,6 +50,8 @@ static void SampleSobol(This *t, ccount iregion)
     for( dim = 0; dim < t->ndim; ++x, ++dim )
       *x = b[dim].lower + *x*(b[dim].upper - b[dim].lower);
   }
+
+  t->nrand += n;
 
   DoSample(t, n, samples->x, f);
 
@@ -59,8 +63,8 @@ static void SampleSobol(This *t, ccount iregion)
 
   norm = region->vol/samples->neff;
   for( comp = 0; comp < t->ncomp; ++comp ) {
-    r[comp].avg = norm*avg[comp];
-    r[comp].err = 0;
+    res[comp].avg = norm*avg[comp];
+    res[comp].err = 0;
   }
 }
 
@@ -70,7 +74,8 @@ static void SampleKorobov(This *t, ccount iregion)
 {
   SAMPLERDEFS;
   real *xlast = x + t->ndim, *flast = f + t->ncomp;
-  real avg[NCOMP], norm;
+  Vector(real, avg, NCOMP);
+  real norm;
   cnumber neff = samples->neff;
   number nextra = 0, i;
   real dist = 0;
@@ -120,8 +125,8 @@ static void SampleKorobov(This *t, ccount iregion)
 
   norm = region->vol/samples->neff;
   for( comp = 0; comp < t->ncomp; ++comp ) {
-    r[comp].avg = norm*(avg[comp] + avg[comp] + f[comp]);
-    r[comp].err = 0;
+    res[comp].avg = norm*(avg[comp] + avg[comp] + f[comp]);
+    res[comp].err = 0;
   }
 }
 
@@ -149,25 +154,21 @@ static count SamplesLookup(This *t, Samples *samples, cint key,
   number n;
 
   if( key == 13 && t->ndim == 2 ) {
-    if( RuleIniQ(&t->rule13) ) Rule13Alloc(t);
     samples->rule = &t->rule13;
     samples->n = n = nmin = t->rule13.n;
     samples->sampler = SampleRule;
   }
   else if( key == 11 && t->ndim == 3 ) {
-    if( RuleIniQ(&t->rule11) ) Rule11Alloc(t);
     samples->rule = &t->rule11;
     samples->n = n = nmin = t->rule11.n;
     samples->sampler = SampleRule;
   }
   else if( key == 9 ) {
-    if( RuleIniQ(&t->rule9) ) Rule9Alloc(t);
     samples->rule = &t->rule9;
     samples->n = n = nmin = t->rule9.n;
     samples->sampler = SampleRule;
   }
   else if( key == 7 ) {
-    if( RuleIniQ(&t->rule7) ) Rule7Alloc(t);
     samples->rule = &t->rule7;
     samples->n = n = nmin = t->rule7.n;
     samples->sampler = SampleRule;
@@ -224,7 +225,9 @@ static void SamplesAlloc(cThis *t, Samples *samples)
 
 static real Sample(This *t, creal *x0)
 {
-  real xtmp[2*NDIM], ftmp[2*NCOMP], *xlast = xtmp, f;
+  Vector(real, xtmp, 2*NDIM);
+  Vector(real, ftmp, 2*NCOMP);
+  real *xlast = xtmp, f;
   real dist = 0;
   count dim, comp;
   number n = 1;
@@ -252,9 +255,11 @@ static real Sample(This *t, creal *x0)
 
   DoSample(t, n, xtmp, ftmp);
 
+#define fin(x) Min(Max(x, -.5*INFTY), .5*INFTY) 
+
   comp = Untag(t->selectedcomp);
-  f = ftmp[comp];
-  if( n > 1 ) f += dist*(f - ftmp[comp + t->ncomp]);
+  f = fin(ftmp[comp]);
+  if( n > 1 ) f += dist*(f - fin(ftmp[comp + t->ncomp]));
 
   return Sign(t->selectedcomp)*f;
 }

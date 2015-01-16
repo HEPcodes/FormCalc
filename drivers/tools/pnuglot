@@ -3,7 +3,7 @@
 #	pnuglot
 #		makes a plotting script from data files
 #		this file is part of FormCalc
-#		last modified 28 Jul 11 th
+#		last modified 31 May 13 th
 
 # This program works in two steps:
 #
@@ -27,7 +27,7 @@ loop=1
 tree=1
 data=`dirname $0`/data
 
-while [ $# -gt 0 ] ; do
+while test $# -gt 0 ; do
   case $1 in
   -o)	out=`dirname $2`/`basename $2 .gpl`.gpl
 	shift
@@ -37,7 +37,7 @@ while [ $# -gt 0 ] ; do
   -3)	tree=0
 	;;
   *)	file=$1
-	if [ -d $1 ] ; then
+	if test -d $1 ; then
 	  file=`dirname $1/x`.data
 	  $data $1 || exit 1
 	fi
@@ -45,14 +45,14 @@ while [ $# -gt 0 ] ; do
 	  echo "ignored: $file"
 	else
 	  files="$files $file"
-	  [ -z "$out" ] && out=`dirname $file`/`basename $file .data`.gpl
+	  test -z "$out" && out=`dirname $file`/`basename $file .data`.gpl
 	fi
 	;;
   esac
   shift
 done
 
-if [ -z "$files" ] ; then
+if test -z "$files" ; then
   echo "Usage:  $0 [-2 -3 -o outfile] datafile(s)"
   echo ""
   echo "Plots datafile(s) with gnuplot.  The options are:"
@@ -120,8 +120,8 @@ fi
 
 specs='u 1:2 t "tree", \
   "" u 1:($2 + $3) t "loop"'
-[ $tree = 0 ] && specs='u 1:($2 + $3) t "loop"'
-[ $loop = 0 ] && specs='u 1:2 t "tree"'
+test $tree = 0 && specs='u 1:($2 + $3) t "loop"'
+test $loop = 0 && specs='u 1:2 t "tree"'
 
 delim='plot \
 '

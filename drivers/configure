@@ -2,7 +2,7 @@
 # configure script for FormCalc
 # note: has nothing to do with GNU autoconf
 # this file is part of FormCalc
-# last modified 15 Mar 13 th
+# last modified 5 Sep 13 th
 
 
 LC_ALL=C
@@ -204,11 +204,11 @@ CONF_M=${CONF_BITS:+-m$CONF_BITS}
 
 CONF_MAKE=`findprog make $MAKE gmake Make make` || exit 1
 
-CONF_CC=`findprog gcc $CC gcc` || exit 1
+CONF_CC=`findprog gcc $CC clang gcc` || exit 1
 
 CONF_CXX=`findprog g++ $CXX g++` || exit 1
 
-CONF_FC=`findprog f77 $FC ${CONF_QUAD:+ifort gfortran xlf} pgf77 ifort xlf gfortran g77 g95 f77 f90 fort77` || exit 1
+CONF_FC=`findprog fortran $FC ${CONF_QUAD:+ifort gfortran xlf} pgf90 ifort xlf gfortran g95 f90` || exit 1
 
 CONF_AR=`findprog ar $AR ar`
 
@@ -237,7 +237,7 @@ case "`$CONF_FC --version -c 2>&1`" in
   *ifort*)
 	CONF_FFLAGS="${CONF_DEBUG:--O3 -g} -extend_source -warn nouncalled -warn truncated_source -assume bscc $CONF_STATIC ${CONF_STATIC_EXT:+-static-intel} ${CONF_QUAD:+-r16 -DDBLE=QEXT -DDIMAG=QIMAG -DDCONJG=QCONJG -DDCMPLX=QCMPLX} $CONF_M" ;;
   *alpha)
-	CONF_FFLAGS="-old_f77 ${CONF_DEBUG:--O3 -g3} ${CONF_DEBUG:+-fpe0} -extend_source -warn truncated_source ${CONF_STATIC:+-non_shared}" ;;
+	CONF_FFLAGS="${CONF_DEBUG:--O3 -g3} ${CONF_DEBUG:+-fpe0} -extend_source -warn truncated_source ${CONF_STATIC:+-non_shared}" ;;
   *sun* | *sparc*)
 	CONF_FFLAGS="${CONF_DEBUG:--O3 -g} ${CONF_DEBUG:+-ftrap=common} -e ${CONF_STATIC:+-Bstatic}" ;;
   *hp*)

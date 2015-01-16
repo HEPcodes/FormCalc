@@ -1,7 +1,7 @@
 * num.h
 * headers for the computation of the numerators
 * this file is part of FormCalc
-* last modified 17 Jul 12 th
+* last modified 8 May 13 th
 
 
 #ifndef NUM_H
@@ -17,25 +17,31 @@
 #define Result(f) res
 #endif
 
-#else
+#elif ! defined NUM_DECL
+#define NUM_DECL
 
 #ifdef SAMURAI
 	integer ncut
 	ComplexType q1in(4)
 	RealType MuTildeSq
-#include "inline.h"
-	vec(1,1,q1) = q1in(4) + q1in(3)
-	vec(2,2,q1) = q1in(4) - q1in(3)
-	vec(2,1,q1) = q1in(1) + cI*q1in(2)
-	vec(1,2,q1) = q1in(1) - cI*q1in(2)
-	muscale = MuTildeSq
 #else
 	ComplexType q1in(0:3)
-#include "inline.h"
-	vec(1,1,q1) = q1in(0) + q1in(3)
-	vec(2,2,q1) = q1in(0) - q1in(3)
-	vec(2,1,q1) = q1in(1) + cI*q1in(2)
-	vec(1,2,q1) = q1in(1) - cI*q1in(2)
+#endif
+
+#else
+#undef NUM_DECL
+
+#ifdef SAMURAI
+	Vec(1,1,q1) = q1in(4) + q1in(3)
+	Vec(2,2,q1) = q1in(4) - q1in(3)
+	Vec(2,1,q1) = q1in(1) + cI*q1in(2)
+	Vec(1,2,q1) = q1in(1) - cI*q1in(2)
+	muscale = MuTildeSq
+#else
+	Vec(1,1,q1) = q1in(0) + q1in(3)
+	Vec(2,2,q1) = q1in(0) - q1in(3)
+	Vec(2,1,q1) = q1in(1) + cI*q1in(2)
+	Vec(1,2,q1) = q1in(1) - cI*q1in(2)
 #endif
 
 #endif

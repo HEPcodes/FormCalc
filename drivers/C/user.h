@@ -3,7 +3,7 @@
 	the model declarations should be inserted here
 	as well as any kind of user definition
 	this file is part of FormCalc
-	last modified 7 Mar 13 th
+	last modified 11 Apr 13 th
 #endif
 
 
@@ -11,7 +11,6 @@
 #define USER_H
 // declarations for the whole file (e.g. preprocessor defs)
 
-//#define PARALLEL
 //#define SAMURAI
 
 #include "model_mssm.h"

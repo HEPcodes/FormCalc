@@ -1,13 +1,13 @@
 * lumi_hadron.F
 * parton luminosity for a hadron collider
 * this file is part of FormCalc
-* last modified 30 Nov 11 th
+* last modified 9 Sep 13 th
 
 * This code links to the LHAPDF library.
 * The following preprocessor variables are used:
 *
 * - PARTON1, PARTON2 are the PDG parton codes,
-* - SCALE determines the factorization scale,
+* - FSCALE determines the factorization scale,
 * - PDFSET specifies the file name of the PDF-set to be used.
 
 
@@ -30,12 +30,14 @@
 	integer partonsign
 	common /hadron/ partonsign
 
-	if( Lower(SQRTS) .ne. Upper(SQRTS) )
+	if( Upper(SQRTS) .gt. 0 .and.
+     &      Lower(SQRTS) .ne. Upper(SQRTS) )
      &    stop "Cannot handle a range of beam energies"
 
 	if( Lower(SQRTS) .eq. 2000 ) then
 	  partonsign = -1
-	else if( Lower(SQRTS) .eq. 14000 ) then
+	else if( Lower(SQRTS) .ge. 7000 .and.
+     &           Lower(SQRTS) .lt. 14000 ) then
 	  partonsign = 1
 	else
 	  stop "Unknown collider"
@@ -97,8 +99,8 @@
 	  return
 	endif
 
-	call evolvePDF(x, scale, xPDF)
-	call evolvePDF(tau/x, scale, tPDF)
+	call evolvePDF(x, fscale, xPDF)
+	call evolvePDF(tau/x, fscale, tPDF)
 
 	fac = fac*xrange/(Var(PARTON_T)*x)*
      &    ( tPDF(partonsign*PARTON1)*xPDF(PARTON2) +

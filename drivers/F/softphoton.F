@@ -1,7 +1,7 @@
 * softphoton.F
 * routines for the treatment of soft-photon radiation
 * this file is part of FormCalc
-* last modified 13 Sep 12 th
+* last modified 28 Apr 13 th
 
 
 ************************************************************************
@@ -30,24 +30,24 @@
 #if LEGS == 3
 #define CHARGES ch1, ch2, ch3
 	RealType CHARGES
-	parameter (ch1 = CHARGE1)
-	parameter (ch2 = CHARGE2)
-	parameter (ch3 = CHARGE3)
+	parameter (ch1 = Charge1)
+	parameter (ch2 = Charge2)
+	parameter (ch3 = Charge3)
 #elif LEGS == 4
 #define CHARGES ch1, ch2, ch3, ch4
 	RealType CHARGES
-	parameter (ch1 = CHARGE1)
-	parameter (ch2 = CHARGE2)
-	parameter (ch3 = CHARGE3)
-	parameter (ch4 = CHARGE4)
+	parameter (ch1 = Charge1)
+	parameter (ch2 = Charge2)
+	parameter (ch3 = Charge3)
+	parameter (ch4 = Charge4)
 #elif LEGS == 5
 #define CHARGES ch1, ch2, ch3, ch4, ch5
 	RealType CHARGES
-	parameter (ch1 = CHARGE1)
-	parameter (ch2 = CHARGE2)
-	parameter (ch3 = CHARGE3)
-	parameter (ch4 = CHARGE4)
-	parameter (ch5 = CHARGE5)
+	parameter (ch1 = Charge1)
+	parameter (ch2 = Charge2)
+	parameter (ch3 = Charge3)
+	parameter (ch4 = Charge4)
+	parameter (ch5 = Charge5)
 #else
 #error No definition for LEGS external legs
 #endif
@@ -122,5 +122,8 @@
      &    .25D0*(kilog - kjlog)*(kilog + kjlog) +
      &    Li2omx((ki0 + ki)*alpha*vi) + Li2omx(kidelta*alpha*vi) -
      &    Li2omx((kj0 + kj)*vi) - Li2omx(kjdelta*vi) )
+
+#include "contains.h"
+
 	end
 

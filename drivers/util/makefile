@@ -1,4 +1,4 @@
-parent := $(DIR)/../F
+parent := $(DIR)/..
 system := $(DIR)/system
 kin := $(DIR)/kin
 cuttools := $(DIR)/cuttools
@@ -55,6 +55,7 @@ OBJS := \
   $(system)/fortranflush.o \
   $(system)/parallel.o \
   $(kin)/VecSet.o \
+  $(kin)/VecCopy.o \
   $(kin)/Split.o \
   $(kin)/PrintVec.o \
   $(cuttools)/CTMomDecode.o \
@@ -85,19 +86,26 @@ OBJS := \
 $(LIB): $(LIB)($(OBJS))
 
 
-$(LIB)($(univariate)/Gauss.o $(univariate)/Patterson.o): $(univariate)/config.h
+$(LIB)( $(univariate)/Gauss.o $(univariate)/Patterson.o ): \
+  $(univariate)/config.h $(parent)/F/types.h
 
-$(LIB)($(diag)/HEigensystem.o $(diag)/SEigensystem.o $(diag)/CEigensystem.o \
-  $(diag)/TakagiFactor.o $(diag)/SVD.o): $(diag)/diag-f.h
+$(LIB)( $(diag)/HEigensystem.o $(diag)/SEigensystem.o \
+  $(diag)/CEigensystem.o $(diag)/TakagiFactor.o $(diag)/SVD.o ): \
+  $(diag)/diag-f.h $(parent)/F/types.h
 
-$(LIB)($(samurai)/SABcut.o $(samurai)/SACcut.o $(samurai)/SADcut.o \
-  $(samurai)/SAEcut.o $(samurai)/SAFcut.o): $(samurai)/SA.h
+$(LIB)( $(samurai)/SABcut.o $(samurai)/SACcut.o $(samurai)/SADcut.o \
+  $(samurai)/SAEcut.o $(samurai)/SAFcut.o ): \
+  $(samurai)/SA.h $(parent)/F/types.h
 
-$(LIB)($(cuttools)/CTBcut.o $(cuttools)/CTCcut.o $(cuttools)/CTDcut.o \
-  $(cuttools)/CTEcut.o $(cuttools)/CTFcut.o): $(cuttools)/CT.h
+$(LIB)( $(cuttools)/CTBcut.o $(cuttools)/CTCcut.o $(cuttools)/CTDcut.o \
+  $(cuttools)/CTEcut.o $(cuttools)/CTFcut.o ): \
+  $(cuttools)/CT.h $(parent)/F/types.h
 
-$(LIB)($(kin)/VecSet.o $(samurai)/SAMomDecode.o $(cuttools)/CTMomDecode.o): \
-  $(parent)/util.h
+$(LIB)( $(samurai)/SAMomDecode.o $(cuttools)/CTMomDecode.o ): \
+  $(parent)/F/types.h $(parent)/F/util.h
+
+$(LIB)( $(kin)/VecCopy.o $(system)/parallel.o ): \
+  $(parent)/distrib.h $(parent)/F/types.h $(parent)/F/util.h
 
 $(LIB)($(VEGAS_C:.c=.o)): $(VEGAS_C) $(VEGAS_DEPS)
 $(LIB)($(SUAVE_C:.c=.o)): $(SUAVE_C) $(SUAVE_DEPS)

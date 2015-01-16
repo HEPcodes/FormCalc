@@ -2,7 +2,7 @@
 * all parameters for the MSSM are initialized here
 * this file is part of FormCalc
 * Christian Schappacher, 17 Feb 99
-* last modified 30 Nov 11 th
+* last modified 18 Apr 13 th
 
 
 * The input parameters for model_mssm are:
@@ -212,20 +212,20 @@
 
 ************************************************************************
 
-	subroutine ModelVarIni(fail, scale)
+	subroutine ModelVarIni(fail, fscale)
 	implicit none
 	integer fail
-	RealType scale
+	RealType fscale
 
 #include "decl.h"
 
-	call SMVarIni(fail, scale)
+	call SMVarIni(fail, fscale)
 	if( fail .ne. 0 ) return
 
 #ifndef NO_GUT_RELATION
 * Gluino mass: GUT relation
 * we use 1/Alfa(s) approx 1/Alfa(MZ2) - 20/(9*pi)*log(s/MZ2)
-	Mino3 = Alfas*(1/AlfaMZ - 40/(9*pi)*log(scale/MZ))*SW2*Mino2
+	Mino3 = Alfas*(1/AlfaMZ - 40/(9*pi)*log(fscale/MZ))*SW2*Mino2
 #endif
 
 	MGl = abs(Mino3)

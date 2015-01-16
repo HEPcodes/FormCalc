@@ -1,36 +1,7 @@
 * process.h
 * defines all process-dependent parameters
 * this file is part of FormCalc
-* last modified 12 May 09 th
-
-
-* Definition of the external particles.
-* Each TYPEn is one of SCALAR, FERMION, PHOTON (= GLUON), or VECTOR.
-* (PHOTON/GLUON is equivalent to VECTOR, except that longitudinal
-* modes are not allowed)
-
-* Note: The initial definitions for particles 2...5 are of course
-* sample entries for demonstration purposes.
-
-#define TYPE1 process_h_not_updated_yet
-#define MASS1 process_h_not_updated_yet
-#define CHARGE1 process_h_not_updated_yet
-
-#define TYPE2 FERMION
-#define MASS2 ME
-#define CHARGE2 -1
-
-#define TYPE3 FERMION
-#define MASS3 MT
-#define CHARGE3 -2/3D0
-
-#define TYPE4 FERMION
-#define MASS4 MT
-#define CHARGE4 2/3D0
-
-#define TYPE5 PHOTON
-#define MASS5 0
-#define CHARGE5 0
+* last modified 18 Apr 13 th
 
 
 * When using Dirac fermions (FermionChains -> Chiral|VA) and
@@ -64,7 +35,7 @@ c#define DIRACFERMIONS
 * The scale at which the interaction takes place
 * (= the factorization scale for an hadronic process).
 
-#define SCALE sqrtS
+#define FSCALE sqrtS
 
 
 * Whether to include soft-photon bremsstrahlung.
@@ -112,7 +83,7 @@ c#define FORCE_ONSHELL 1D-9
 #define PDFMEM 0
 
 
-* Include the kinematics-dependent part.
+* Include process specifications
 
-#include "2to2.F"
+#include "squaredme/specs.h"
 

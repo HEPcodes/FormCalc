@@ -1,7 +1,7 @@
 * PolarizationSum.frm
 * the FORM part of the PolarizationSum function
 * this file is part of FormCalc
-* last modified 13 Feb 13 th
+* last modified 17 Apr 13 th
 
 
 #procedure Fewest(foo)
@@ -346,6 +346,7 @@ s D, Dminus4, Dminus4Eps, `Invariants';
 s DF, TAG, ETAG;
 t ET, ETC;
 cf TMP, NOW;
+auto s ARG;
 set LOOPINT: `LoopInt';
 set INVS: `Invariants';
 

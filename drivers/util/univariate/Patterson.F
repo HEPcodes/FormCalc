@@ -2,7 +2,7 @@
 * non-adaptive 1D Gauss-Kronrod-Patterson integration
 * adapted from Quadpack's dqng.f for vector integrands
 * this file is part of FormCalc
-* last modified 30 Nov 11 th
+* last modified 6 May 13 th
 
 #include "config.h"
 
@@ -16,7 +16,7 @@
 	external integrand
 
 	RealType samples(MAXCOMP,2,0:43)
-	RealType range, mid, h
+	RealType span, mid, h
 	RealType estimate, integral, fluct
 	RealType err
 	integer j, c
@@ -164,14 +164,14 @@
      &    .037120549269832576114119958413599D0,
      &    .037334228751935040321235449094698D0 /
 
-	range = .5D0*(upper - lower)
-	mid = lower + range
+	span = .5D0*(upper - lower)
+	mid = lower + span
 
 * compute the integral using the 10- and 21-point formula
 
 	call integrand(1, mid, ncomp, samples(1,1,0))
 	do j = 1, 10
-	  h = range*x(j)
+	  h = span*x(j)
 	  call integrand(1, mid + h, ncomp, samples(1,1,j))
 	  call integrand(1, mid - h, ncomp, samples(1,2,j))
 	enddo
@@ -194,9 +194,9 @@
      &                              abs(samples(c,2,j) - h))
 	  enddo
 
-	  integral = integral*range
-	  err = abs(integral - range*estimate)
-	  fluct = fluct*range
+	  integral = integral*span
+	  err = abs(integral - span*estimate)
+	  fluct = fluct*span
 	  samples(c,2,0) = fluct
 	  if( fluct .gt. 1D-13 )
      &      err = fluct*min(1D0, (200*err/fluct)**1.5D0)
@@ -214,7 +214,7 @@
 * compute the integral using the 43-point formula
 
 	do j = 11, 21
-	  h = range*x(j)
+	  h = span*x(j)
 	  call integrand(1, mid + h, ncomp, samples(1,1,j))
 	  call integrand(1, mid - h, ncomp, samples(1,2,j))
 	enddo
@@ -228,7 +228,7 @@
      &                                    samples(c,2,j))
 	  enddo
 
-	  integral = integral*range
+	  integral = integral*span
 	  err = abs(integral - result(c))
 	  fluct = samples(c,2,0)
 	  if( fluct .gt. 1D-13 )
@@ -247,7 +247,7 @@
 * compute the integral using the 87-point formula
 
 	do j = 22, 43
-	  h = range*x(j)
+	  h = span*x(j)
 	  call integrand(1, mid + h, ncomp, samples(1,1,j))
 	  call integrand(1, mid - h, ncomp, samples(1,2,j))
 	enddo
@@ -261,7 +261,7 @@
      &                                    samples(c,2,j))
 	  enddo
 
-	  integral = integral*range
+	  integral = integral*span
 	  err = abs(integral - result(c))
 	  fluct = samples(c,2,0)
 	  if( fluct .gt. 1D-13 )

@@ -4,9 +4,10 @@
 * the momenta's (integer*1) prefactors are encoded as the
 * bytes of an integer*8
 * this file is part of FormCalc
-* last modified 20 Jul 12 th
+* last modified 8 May 13 th
 
 #include "types.h"
+#include "util.h"
 
 
 	subroutine CTMomDecode(code, p)
@@ -15,6 +16,8 @@
 	RealType p(0:3)
 
 #include "util.h"
+
+#define K(x,y, i) vec(x,y, k0(i))
 
 	integer i
 	ComplexType a(2,2)
@@ -33,10 +36,10 @@
 	do while( c .ne. 0 )
 	  i = i + 1
 	  f = iand(c, 255)
-	  a(1,1) = a(1,1) + f*vec(1,1,k(i))
-	  a(2,1) = a(2,1) + f*vec(2,1,k(i))
-	  a(1,2) = a(1,2) + f*vec(1,2,k(i))
-	  a(2,2) = a(2,2) + f*vec(2,2,k(i))
+	  a(1,1) = a(1,1) + f*K(1,1,i)
+	  a(2,1) = a(2,1) + f*K(2,1,i)
+	  a(1,2) = a(1,2) + f*K(1,2,i)
+	  a(2,2) = a(2,2) + f*K(2,2,i)
 	  c = ishft(c, -8)
 	enddo
 

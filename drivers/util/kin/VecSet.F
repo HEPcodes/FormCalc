@@ -2,12 +2,14 @@
 * construct the CMS representation of a momentum and the
 * three corresponding polarization vectors
 * this file is part of FormCalc
-* last modified 9 Nov 12 th
+* last modified 8 May 13 th
 
 #include "types.h"
+#include "util.h"
 
 
 * i: the index of the momentum
+* a: antiparticle sign
 * m, p: mass and three-momentum of the particle
 * ex,ey,ez: the unit three-vector of the momentum
 
@@ -18,16 +20,12 @@
 
 #include "util.h"
 
-	ComplexType vec_(2,2, nvec, 1)
+#define K(x,y)     vec(x,y, 1+nvec*(i-1))
+#define EpsTR(x,y) vec(x,y, 2+nvec*(i-1))
+#define EpsL(x,y)  vec(x,y, 3+nvec*(i-1))
+#define EpsTL(x,y) vec(x,y, 4+nvec*(i-1))
 
-#define K(x,y)     vec_(x,y, 1, i)
-#define EpsTR(x,y) vec_(x,y, 2, i)
-#define EpsL(x,y)  vec_(x,y, 3, i)
-#define EpsTL(x,y) vec_(x,y, 4, i)
-
-	ComplexType spi_(2, 6:7, nvec, 1)
-
-#define Spi(hel,om,d,x) spi_(x, om, hel+d+5, i)
+#define Spi(af,hel,om,d,x) vec(x, om-5, af*2+(hel)+d+7+nvec*(i-1))
 
 * i.e., spi(x, 6, 5, i) = left-handed,  undotted, upper
 *       spi(x, 7, 5, i) = left-handed,  undotted, lower
@@ -38,11 +36,9 @@
 *       spi(x, 6, 8, i) = right-handed, dotted,   upper
 *       spi(x, 7, 8, i) = right-handed, dotted,   lower
 
-	equivalence (momspec, vec_, spi_)
-
 	RealType m2, p2, p0, deltap, sump
-	RealType sinth, onePez, oneMez
-	ComplexType expIphi
+	RealType sinth, onePez, oneMez, r
+	ComplexType expIphi, c
 
 	RealType sqrt2
 	parameter (sqrt2 = 1.4142135623730950488016887242096981D0)
@@ -120,27 +116,47 @@
 * 'big' components go as
 	sump = sqrt(p0 + p)
 
-	Spi(-1,7,1, 1) = sump*sinth
-	Spi(-1,7,2, 1) = Spi(-1,7,1, 1)
-	Spi(-1,7,1, 2) = -sump*expIphi
-	Spi(-1,7,2, 2) = Conjugate(Spi(-1,7,1, 2))
+	r = sump*sinth
+	Spi(-1,+1,7,1, 1) = r
+	Spi(-1,+1,7,2, 1) = r
+	Spi(+1,-1,7,1, 1) = r
+	Spi(+1,-1,7,2, 1) = r
+	Spi(+1,+1,6,1, 2) = r
+	Spi(+1,+1,6,2, 2) = r
+	Spi(-1,-1,6,1, 2) = -r
+	Spi(-1,-1,6,2, 2) = -r
 
-	Spi(+1,6,2, 1) = sump*expIphi
-	Spi(+1,6,1, 1) = Conjugate(Spi(+1,6,2, 1))
-	Spi(+1,6,2, 2) = sump*sinth
-	Spi(+1,6,1, 2) = Spi(+1,6,2, 2)
+	c = -sump*expIphi
+	Spi(-1,+1,7,1, 2) = c
+	Spi(+1,-1,7,1, 2) = c
+	Spi(-1,-1,6,2, 1) = c
+	Spi(-1,-1,6,1, 1) = Conjugate(c)
+	Spi(-1,+1,7,2, 2) = Conjugate(c)
+	Spi(+1,-1,7,2, 2) = Conjugate(c)
+	Spi(+1,+1,6,2, 1) = -c
+	Spi(+1,+1,6,1, 1) = Conjugate(-c)
 
 * 'small' components go as
 	deltap = sqrt(deltap)
 
-	Spi(-1,6,1, 1) = deltap*sinth
-	Spi(-1,6,2, 1) = Spi(-1,6,1, 1)
-	Spi(-1,6,1, 2) = -deltap*expIphi
-	Spi(-1,6,2, 2) = Conjugate(Spi(-1,6,1, 2))
+	r = deltap*sinth
+	Spi(-1,+1,6,1, 1) = r
+	Spi(-1,+1,6,2, 1) = r
+	Spi(+1,-1,6,1, 1) = r
+	Spi(+1,-1,6,2, 1) = r
+	Spi(+1,+1,7,1, 2) = r
+	Spi(+1,+1,7,2, 2) = r
+	Spi(-1,-1,7,1, 2) = -r
+	Spi(-1,-1,7,2, 2) = -r
 
-	Spi(+1,7,2, 1) = deltap*expIphi
-	Spi(+1,7,1, 1) = Conjugate(Spi(+1,7,2, 1))
-	Spi(+1,7,2, 2) = deltap*sinth
-	Spi(+1,7,1, 2) = Spi(+1,7,2, 2)
+	c = -deltap*expIphi
+	Spi(-1,+1,6,1, 2) = c
+	Spi(+1,-1,6,1, 2) = c
+	Spi(-1,-1,7,2, 1) = c
+	Spi(-1,-1,7,1, 1) = Conjugate(c)
+	Spi(-1,+1,6,2, 2) = Conjugate(c)
+	Spi(+1,-1,6,2, 2) = Conjugate(c)
+	Spi(+1,+1,7,2, 1) = -c
+	Spi(+1,+1,7,1, 1) = Conjugate(-c)
 	end
 

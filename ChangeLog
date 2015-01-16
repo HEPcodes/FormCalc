@@ -1,3 +1,83 @@
+9 Sep 13:
+
+- Fixed detection of LHC energies in lumi_hadron.F.
+
+
+8 Sep 13:
+
+- Fixed another problem with categorization of abbreviations
+  (MoveDepsRight this time).
+
+
+5 Sep 13:
+
+- Upgraded to Cuba 3.2.  Compilation with clang possible now.
+
+
+1 Sep 13:
+
+- Fixed problem with categorization of abbreviations (MoveDepsLeft).
+
+
+2 Jul 13:
+
+- Fixed generation of specs.h for particles with missing quantum numbers.
+
+- Fixed minor issues in 2to4.F.
+
+
+23 May 13:
+
+- Improved simplification of OPP numerators.
+
+
+8 May 13:
+
+- Fixed technical problems in compiling OPP code with SIMD > 0.
+  Current versions of Samurai or CutTools allow only SIMD = 1,
+  however.
+
+- Fixed some compiler issues in C code related to modification of
+  spinors of May 6.
+
+
+7 May 13:
+
+- Fixed FORM hiccup with Truncated -> True.
+
+
+6 May 13:
+
+- Fixed problem with spinors in the presence of self-conjugate fermions.
+
+- Upgraded to Cuba 3.1.
+
+
+23 Apr 13:
+
+- Vectorization for helicity loop added in Fortran and C, in C uses
+  SSE3 (for SIMD = 1) or AVX (for SIMD = 2).  Due to vectorization,
+  the fixed-format Fortran output is effectively Fortran 90 now. 
+  Fortran 77 can still be forced if SIMD = 0 in distrib.h.
+  Thanks to Jean-Nicolas Lang for the SIMD implementation in C and
+  extensive testing.
+
+- For the moment, Mac users need to ./configure CC=clang for SIMD > 0,
+  due to the availability of immintrin.h.  Caveat: the Cuba part of
+  util.a does not (yet) compile with clang because of clang restrictions
+  on C99 language features.
+
+- Parallelization (#define PARALLEL 1 in distrib.h) extended to C.
+
+- New file distrib.h controls vectorization and parallelization for
+  both Fortran and C.
+
+- The properties of the external particles, which so far had to be
+  hand-coded in process.h, are now generated (squaredme/specs.h).
+  Old process.h files have to be rewritten to include this file
+  instead of the direct definitions.
+
+
 27 Mar 13:
 
 - Fixed a bottleneck in CalcRenConst.

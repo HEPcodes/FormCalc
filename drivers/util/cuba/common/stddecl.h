@@ -1,7 +1,7 @@
 /*
 	stddecl.h
 		declarations common to all Cuba routines
-		last modified 6 Sep 12 th
+		last modified 7 Aug 13 th
 */
 
 
@@ -38,9 +38,16 @@
 
 #ifndef NDIM
 #define NDIM t->ndim
+#define MAXDIM 1024
+#else
+#define MAXDIM NDIM
 #endif
+
 #ifndef NCOMP
 #define NCOMP t->ncomp
+#define MAXCOMP 1024
+#else
+#define MAXCOMP NCOMP
 #endif
 
 #if defined(VEGAS) || defined(SUAVE)
@@ -68,7 +75,13 @@
 
 #define INFTY DBL_MAX
 
-#define NOTZERO 0x1p-104
+#if __STDC_VERSION__ >= 199901L
+#define POW2(n) 0x1p-##n
+#else
+#define POW2(n) ldexp(1., -n)
+#endif
+
+#define NOTZERO POW2(104)
 
 #define ABORT -999
 
@@ -110,6 +123,15 @@
 #define ReAlloc(p, n) Die(reallocset(p, n))
 #define Alloc(p, n) MemAlloc(p, (n)*sizeof(*p))
 
+#if __STDC_VERSION__ >= 199901L
+#define Sized(type, var, size) char var##_[size]; type *var = (type *)var##_
+#define Vector(type, var, n1) type var[n1]
+#define Array(type, var, n1, n2) type var[n1][n2]
+#else
+#define Sized(type, var, size) type *var = alloca(size)
+#define Vector(type, var, n1) type *var = alloca((n1)*sizeof(type))
+#define Array(type, var, n1, n2) type (*var)[n2] = alloca((n1)*(n2)*sizeof(type))
+#endif
 
 #define FORK_ONLY(...)
 #define SHM_ONLY(...)
@@ -162,6 +184,86 @@
 }
 
 
+#define StateDecl \
+char *statefile_tmp = NULL, *statefile_XXXXXX = NULL; \
+int statemsg = VERBOSE; \
+ssize_t ini = 1; \
+struct stat st
+
+#define StateSetup(t) if( (t)->statefile ) { \
+  if( *(t)->statefile == 0 ) (t)->statefile = NULL; \
+  else { \
+    ccount len = strlen((t)->statefile); \
+    statefile_tmp = alloca(len + 8); \
+    strcpy(statefile_tmp, (t)->statefile); \
+    statefile_XXXXXX = statefile_tmp + len; \
+  } \
+}
+
+typedef long long int signature_t;
+
+#define StateSignature(t, i) (0x41425543 + \
+  ((signature_t)(i) << 60) + \
+  ((signature_t)(t)->ncomp << 48) + \
+  ((signature_t)(t)->ndim << 32))
+
+#define StateReadTest(t) (t)->statefile && \
+  stat((t)->statefile, &st) == 0 && (st.st_mode & 0400)
+
+#define StateReadOpen(t, fd) do { \
+  int fd; \
+  if( (fd = open((t)->statefile, O_RDONLY)) != -1 ) { \
+    do
+
+#define StateRead(fd, buf, size) \
+  ini += size - read(fd, buf, size)
+
+#define StateReadClose(t, fd) \
+    while( (--ini, 0) ); \
+    close(fd); \
+  } \
+  if( ini | statemsg ) { \
+    char s[512]; \
+    sprintf(s, ini ? \
+      "\nError restoring state from %s, starting from scratch." : \
+      "\nRestored state from %s.", (t)->statefile); \
+    Print(s); \
+  } \
+} while( 0 )
+
+
+#define StateWriteTest(t) ((t)->statefile)
+
+#define StateWriteOpen(t, fd) do { \
+  ssize_t fail = 1; \
+  int fd; \
+  strcpy(statefile_XXXXXX, "-XXXXXX"); \
+  if( (fd = mkstemp(statefile_tmp)) != -1 ) { \
+    do
+
+#define StateWrite(fd, buf, size) \
+  fail += size - write(fd, buf, size)
+
+#define StateWriteClose(t, fd) \
+    while( (--fail, 0) ); \
+    close(fd); \
+    if( fail == 0 ) fail |= rename(statefile_tmp, (t)->statefile); \
+  } \
+  if( fail | statemsg ) { \
+    char s[512]; \
+    sprintf(s, fail ? \
+      "\nError saving state to %s." : \
+      "\nSaved state to %s.", (t)->statefile); \
+    Print(s); \
+    statemsg &= fail & -2; \
+  } \
+} while( 0 )
+
+
+#define StateRemove(t) \
+if( fail == 0 && (t)->statefile && KEEPFILE == 0 ) unlink((t)->statefile)
+
+
 #ifdef __cplusplus
 #define Extern extern "C"
 #else
@@ -176,6 +278,8 @@ typedef const bool cbool;
 typedef const int cint;
 
 typedef const long clong;
+
+typedef const size_t csize_t;
 
 #define COUNT "%d"
 typedef /*unsigned*/ int count;
@@ -260,23 +364,32 @@ typedef struct {
 #define EXPORT_(s) SUFFIX(s)
 
 
-static inline real Sq(creal x)
-{
+#define CString(s, len) ({ \
+  char *_s = NULL; \
+  if( s ) { \
+    int _l = len; \
+    while( _l > 0 && s[_l - 1] == ' ' ) --_l; \
+    if( _l > 0 && (_s = alloca(_l + 1)) ) { \
+      memcpy(_s, s, _l); \
+      _s[_l] = 0; \
+    } \
+  } \
+  _s; \
+})
+
+static inline real Sq(creal x) {
   return x*x;
 }
 
-static inline real Min(creal a, creal b)
-{
+static inline real Min(creal a, creal b) {
   return (a < b) ? a : b;
 }
 
-static inline real Max(creal a, creal b)
-{
+static inline real Max(creal a, creal b) {
   return (a > b) ? a : b;
 }
 
-static inline real Weight(creal sum, creal sqsum, cnumber n)
-{
+static inline real Weight(creal sum, creal sqsum, cnumber n) {
   creal w = sqrt(sqsum*n);
   return (n - 1)/Max((w + sum)*(w - sum), NOTZERO);
 }

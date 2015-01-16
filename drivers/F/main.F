@@ -2,7 +2,7 @@
 * this is the main program for the generated Fortran code,
 * it scans the command line and then invokes ParameterScan
 * this file is part of FormCalc
-* last modified 30 Nov 11 th
+* last modified 31 May 13 th
 
 
 #include "xsection.F"
@@ -20,7 +20,7 @@
 	RealType sqrtSfrom, sqrtSto, sqrtSstep
 	integer serialfrom, serialto, serialstep
 	integer argc, next, fail
-	character*LEGS pol
+	character*16 pol
 	character*128 argv(5), tmp
 	character*512 dir
 
@@ -57,10 +57,10 @@ c	call setfpu
 
 	if( sqrtSto .eq. 0 ) then
 100	  format(".", A, ".", I5.5)
-	  write(dir(next:), 100) pol, int(sqrtSfrom)
+	  write(dir(next:), 100) pol(1:LEGS), int(sqrtSfrom)
 	else
 101	  format(".", A, ".", I5.5, ",", I5.5, ",", I5.5)
-	  write(dir(next:), 101) pol,
+	  write(dir(next:), 101) pol(1:LEGS),
      &      int(sqrtSfrom), int(sqrtSto), int(sqrtSstep)
 	endif
 

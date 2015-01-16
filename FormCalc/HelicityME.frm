@@ -1,7 +1,7 @@
 * HelicityME.frm
 * the FORM part of the HelicityME function
 * this file is part of FormCalc
-* last modified 13 Feb 13 th
+* last modified 17 Apr 13 th
 
 
 #procedure Fewest(foo)
@@ -342,6 +342,7 @@ t DD;
 nt GD;
 f RHO, RHOC, GM;
 cf TMP, NOW;
+auto s ARG;
 s TAG, ETAG, `Invariants';
 set MOMS: k1,...,k`Legs';
 set EPSS: e1,...,e`Legs';

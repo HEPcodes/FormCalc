@@ -1,13 +1,10 @@
 * 2to2.F
 * the kinematics for a 2 -> 2 process
 * this file is part of FormCalc
-* last modified 20 Jul 12 th
+* last modified 6 May 13 th
 
 
 * some definitions for xsection.F
-#define LEGS 4
-#define LEGS_IN 2
-#define LEGS_OUT 2
 #define MASS_IN MASS1 + MASS2
 #define MASS_OUT MASS3 + MASS4
 #define TYPES TYPE1, TYPE2, TYPE3, TYPE4

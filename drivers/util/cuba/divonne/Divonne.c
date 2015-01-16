@@ -4,7 +4,7 @@
 		originally by J.H. Friedman and M.H. Wright
 		(CERNLIB subroutine D151)
 		this version by Thomas Hahn
-		last modified 19 Dec 11 th
+		last modified 2 May 13 th
 */
 
 #define DIVONNE
@@ -24,6 +24,7 @@ Extern void EXPORT(Divonne)(ccount ndim, ccount ncomp,
   creal border, creal maxchisq, creal mindeviation,
   cnumber ngiven, ccount ldxgiven, real *xgiven,
   cnumber nextra, PeakFinder peakfinder,
+  cchar *statefile,
   int *pnregions, number *pneval, int *pfail,
   real *integral, real *error, real *prob)
 {
@@ -50,8 +51,7 @@ Extern void EXPORT(Divonne)(ccount ndim, ccount ncomp,
   t.ldxgiven = ldxgiven;
   t.nextra = nextra;
   t.peakfinder = peakfinder;
-  t.nregions = 0;
-  t.neval = 0;
+  t.statefile = statefile;
 
   *pfail = Integrate(&t, integral, error, prob);
   *pnregions = t.nregions;
@@ -69,8 +69,9 @@ Extern void EXPORT(divonne)(ccount *pndim, ccount *pncomp,
   creal *pborder, creal *pmaxchisq, creal *pmindeviation,
   cnumber *pngiven, ccount *pldxgiven, real *xgiven,
   cnumber *pnextra, PeakFinder peakfinder,
+  cchar *statefile,
   int *pnregions, number *pneval, int *pfail,
-  real *integral, real *error, real *prob)
+  real *integral, real *error, real *prob, cint statefilelen)
 {
   This t;
   t.ndim = *pndim;
@@ -95,8 +96,7 @@ Extern void EXPORT(divonne)(ccount *pndim, ccount *pncomp,
   t.ldxgiven = *pldxgiven;
   t.nextra = *pnextra;
   t.peakfinder = peakfinder;
-  t.nregions = 0;
-  t.neval = 0;
+  t.statefile = CString(statefile, statefilelen);
 
   *pfail = Integrate(&t, integral, error, prob);
   *pnregions = t.nregions;

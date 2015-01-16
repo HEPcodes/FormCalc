@@ -2,7 +2,7 @@
 	const.h
 	model-independent constants
 	this file is part of FormCalc
-	last modified 8 Mar 13 th
+	last modified 23 Apr 13 th
 #endif
 
 
@@ -16,7 +16,7 @@
 
 struct renorm_ {
   RealType Divergence, mudim, lambda, muscale;
-  int epscoeff, Finite;
+  integer epscoeff, Finite;
 } renorm_;
 
 #define Divergence renorm_.Divergence

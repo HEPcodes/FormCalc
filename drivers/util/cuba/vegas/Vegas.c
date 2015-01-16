@@ -2,7 +2,7 @@
 	Vegas.c
 		Vegas Monte-Carlo integration
 		by Thomas Hahn
-		last modified 19 Dec 11 th
+		last modified 2 May 13 th
 */
 
 
@@ -39,7 +39,6 @@ Extern void EXPORT(Vegas)(ccount ndim, ccount ncomp,
   t.nbatch = nbatch;
   t.gridno = gridno;
   t.statefile = statefile;
-  t.neval = 0;
 
   *pfail = Integrate(&t, integral, error, prob);
   *pneval = t.neval;
@@ -54,9 +53,8 @@ Extern void EXPORT(vegas)(ccount *pndim, ccount *pncomp,
   cnumber *pnstart, cnumber *pnincrease, 
   cnumber *pnbatch, cint *pgridno, cchar *statefile,
   number *pneval, int *pfail,
-  real *integral, real *error, real *prob, int statefilelen)
+  real *integral, real *error, real *prob, cint statefilelen)
 {
-  char *s = NULL;
   This t;
   t.ndim = *pndim;
   t.ncomp = *pncomp;
@@ -72,22 +70,9 @@ Extern void EXPORT(vegas)(ccount *pndim, ccount *pncomp,
   t.nincrease = *pnincrease;
   t.nbatch = *pnbatch;
   t.gridno = *pgridno;
-  t.neval = 0;
-
-  if( statefile ) {
-	/* strip trailing spaces */
-    while( statefilelen > 0 && statefile[statefilelen - 1] == ' ' )
-      --statefilelen;
-    if( statefilelen > 0 && (s = malloc(statefilelen + 1)) ) {
-      memcpy(s, statefile, statefilelen);
-      s[statefilelen] = 0;
-    }
-  }
-  t.statefile = s;
+  t.statefile = CString(statefile, statefilelen);
 
   *pfail = Integrate(&t, integral, error, prob);
   *pneval = t.neval;
-
-  free(s);
 }
 

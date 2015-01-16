@@ -1,7 +1,7 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 25 Mar 13 th
+* last modified 16 Jul 13 th
 
 
 #procedure Contract
@@ -510,9 +510,9 @@ endif;
 id [p1]?.[p2]? = ABB(0, [p1].[p2], [p1], [p2]);
 
 id e_([mu]?, [nu]?, [ro]?, [si]?) =
-  ABB(0, e_([mu], [nu], [ro], [si]), [mu], [nu], [ro], [si]);
+  ABB(0, Eps([mu], [nu], [ro], [si]), [mu], [nu], [ro], [si]);
 
-id d_([mu]?, [nu]?) = ABB(0, d_([mu], [nu]), [mu], [nu]);
+id d_([mu]?, [nu]?) = ABB(0, MetricTensor([mu], [nu]), [mu], [nu]);
 
 id [t]?(?a) = ABB(0, [t](?a), ?a);
 
@@ -533,7 +533,6 @@ id ABB([i]?, [x]?, ?a) = fermM([x]);
 #if "`FermionChains'" != "Weyl"
 repeat id fermM([x]?) * fermM([y]?) = fermM([x] * [y]);
 argument fermM;
-id e_([mu]?, [nu]?, [ro]?, [si]?) = Eps([mu], [nu], [ro], [si]);
 toPolynomial;
 endargument;
 id fermM([x]?) = Mat(fermM([x]));
@@ -783,14 +782,14 @@ hide;
 #define Fermionic "Spinor, GA, e_, `Tensors'"
 
 * variables appearing in the CalcFeynAmp input and output
-s I, Pi, D, Dminus4, `Invariants';
+s I, Pi, D, Dminus4, `Invariants', tnin;
 s Gamma5Test, Finite, MuTilde, MuTildeSq, Renumber;
 cf SumOver, PowerOf, Mat, Den, A0, IGram, List;
-cf Eps, DiracChain, WeylChain, Evanescent;
+cf MetricTensor, Eps, DiracChain, WeylChain, Evanescent;
 cf IndexDelta, IndexEps, `SUNObjs', SUNTr(c);
 f Spinor, g5M, g6M, g7M;
 i Col1,...,Col`Legs', Ind1,...,Ind10;
-v nul;
+v nul, q1b, q1c, q1v;
 
 * variables that make it into Mma but don't appear in the output
 extrasymbols array subM;
@@ -940,8 +939,7 @@ id intM(?a) = intM(?a) * NN(nargs_(?a));
 
 #if `HaveFermions' == 1
 
-id NN([n]?{>=`OPP'}) * g_([i]?, q1) =
-  NN([n]) * (g_([i], q1) + i_*g5_([i]) * MuTilde);
+id MuTilde * NN([n]?{<`OPP'}) = 0;
 id MuTilde^2 = qfM(MuTildeSq);
 id MuTilde = 0;
 
@@ -1018,7 +1016,7 @@ keep brackets;
 id intM(?d) = intM(nargs_(?d), ?d);
 id intM([n]?{<`OPP'}, ?d) = intM(?d);
 also intM([n]?, ?d) = cutM(?d)
-#if `OPPRat' == 1
+#if `OPPMethod' == 2
   + CUTRAT * intM(?d)
 #endif
   ;
@@ -1386,10 +1384,10 @@ id D = Dminus4 + 4;
 
 #if "`Dim'" == "D"
 
-#if `OPPRat' == 0
-id Dminus4 * cutM(?d) = dm4M * cutM(?d);
-#else
+#if `OPPMethod' == 2
 id Dminus4 * cutM(?d) = 0;
+#else
+id Dminus4 * cutM(?d) = dm4M * cutM(?d);
 #endif
 
 * add local terms for dimreg
@@ -1747,14 +1745,14 @@ b cutM, extM, A0, paveM, qfM, Dminus4, dm4M,
 
 collect qcM;
 
-if( count(cutM,1) );
+*if( count(cutM,1) );
 
 makeinteger qcM;
 argument qcM;
 toPolynomial;
 endargument;
 
-endif;
+*endif;
 
 argument qfM;
 id WeylChain([s1]?, ?g, [s2]?) = [s1] * GA(?g) * [s2];
@@ -1881,10 +1879,6 @@ id Den([p1]?, [m1]?) = MOM([p1]) - [m1];
 #call MomSquare
 endargument;
 
-argument qfM, extM;
-id q1.q1 = q1.q1 - MuTildeSq;
-endargument;
-
 b qfM;
 .sort
 
@@ -1898,38 +1892,42 @@ id qfM([x]?) = [x];
 
 #call DotSimplify
 
-b ABB;
-.sort
-
-collect qfM;
-id qfM(1) = 1;
-argument qfM;
+id MuTildeSq = qfM(MuTildeSq);
+id q1.[p1]? = qfM(q1.[p1]);
+id e_(q1, [p1]?, [p2]?, [p3]?) = qfM(e_(q1, [p1], [p2], [p3]));
 id Spinor(?s1) * GA(?g) * Spinor(?s2) =
   abbM(fermM(WeylChain(Spinor(?s1), ?g, Spinor(?s2))));
-id abbM(fermM(WeylChain(?a, q1, ?b))) = WeylChain(?a, q1, ?b);
+id abbM(fermM(WeylChain(?a, q1, ?b))) = qfM(WeylChain(?a, q1, ?b));
+
 argument abbM;
 toPolynomial;
 endargument;
-endargument;
 
-id qfM([x]?) = qfM([x]) * TMP([x]);
-argument TMP;
-id q1 = 0;
-id MuTildeSq = 0;
-id WeylChain(?x) = 0;
-endargument;
-id qfM([x]?) * TMP([y]?) = qfM([x] - [y], [y]);
+b ABB, qfM;
+.sort
 
-argument qfM;
-toPolynomial;
-endargument;
-id qfM([x]?, [y]?) = qfM([x] + dotM([y]));
-argument qfM;
-makeinteger dotM;
-toPolynomial;
-endargument;
+collect qcM;
+
+moduleoption polyfun=qfM;
+.sort
+
+factarg qfM;
+chainout qfM;
+makeinteger qfM;
+id qfM(1) = 1;
 
 id ABB([x]?) = [x];
+
+moduleoption polyfun=qcM;
+.sort
+
+on oldfactarg;
+
+factarg qcM;
+chainout qcM;
+makeinteger qcM;
+id qcM(1) = 1;
+chainin qcM;
 
 id extM(?a) = qfM(?a);
 chainout qfM;
@@ -1938,6 +1936,8 @@ chainout qfM;
 
 moduleoption polyfun=HDEL;
 .sort
+
+off oldfactarg;
 
 makeinteger HDEL;
 
@@ -1952,11 +1952,11 @@ if( count(cutM,1) );
 
 id SumOver([i]?, ?a) = SumOver([i], ?a) * ORD([i]);
 chainin ORD;
-id qcM([x]?) * ORD(?i) = qcM([x], List(?i)) * ORD(?i);
+id qcM(?a) * ORD(?i) = qcM(?a, List(?i)) * ORD(?i);
 
 else;
 
-id qcM([x]?) = [x];
+id qcM(?a) = mulM(?a);
 
 endif;
 
@@ -1972,6 +1972,20 @@ collect numM, numM;
 if( count(cutM,1) );
 
 makeinteger numM;
+
+#if `OPPMethod' == 3
+argument numM;
+argument qfM;
+id WeylChain([s1]?, ?g, [s2]?) = [s1] * GA(?g) * [s2];
+id q1 = q1 + tnin*q1b + q1c/tnin + tnin*q1v;
+id MuTildeSq = MuTildeSq + tnin*q1v.q1v;
+id q1b.q1b = 0;
+id q1c.q1c = 0;
+id Spinor(?s1) * GA(?g) * Spinor(?s2) =
+  WeylChain(Spinor(?s1), ?g, Spinor(?s2));
+endargument;
+endargument;
+#endif
 
 id numM(qcM(?a)) = TMP(qcM(?a)) * numM(1);
 also numM([x]?) * ORD(?i) = numM([x], List(?i));

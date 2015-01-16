@@ -1,13 +1,10 @@
 * 2to4.F
 * the kinematics for a 2 -> 4 process
 * this file is part of FormCalc
-* last modified 20 Jul 12 th
+* last modified 2 Jul 13 th
 
 
 * some definitions for xsection.F
-#define LEGS 6
-#define LEGS_IN 2
-#define LEGS_OUT 4
 #define MASS_IN MASS1 + MASS2
 #define MASS_OUT MASS3 + MASS4 + MASS5 + MASS6
 #define TYPES TYPE1, TYPE2, TYPE3, TYPE4, TYPE5, TYPE6
@@ -44,6 +41,10 @@
 	Lower(XMREM2) = 0
 	Upper(XMREM2) = 1
 	Step(XMREM2) = 0
+
+	Lower(XCOSTH1) = 0
+	Upper(XCOSTH1) = 1
+	Step(XCOSTH1) = 0
 
 	Lower(XCOSTH2) = 0
 	Upper(XCOSTH2) = 1
@@ -118,7 +119,7 @@
 	if( fac .eq. 0 ) return
 
 	call Split(5, Re(MASS5), p, ex,ey,ez, minv, msum,
-     &    fac, key, Var(XMREM2), Var(XCOSTH2), Var(XPHI2))
+     &    fac, 0, Var(XMREM2), Var(XCOSTH2), Var(XPHI2))
 	Show(XMREM2) = momspec(SPEC_E, 5)
 	if( fac .eq. 0 ) return
 
