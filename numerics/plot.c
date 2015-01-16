@@ -1,7 +1,8 @@
 /*
-	plot.c
-		make plots of files produced by num.F
-		last modified 6 Jul 99 th
+plot.c
+make plots of files produced by num.F
+this file is part of FormCalc
+last modified 21 Jun 00 th
 
 This program works in two steps:
 
@@ -29,8 +30,7 @@ Options:
   -o outname	write output to outname
   -tot		use conventions for total cs plot
   -diff		use conventions for diff cs plot
-  -lny		use log y scale regardless of diff/tot cs
-  -nolny	same for linear scale
+  -lny		use log y scale
 
 */
 
@@ -114,7 +114,7 @@ void max(char *file, double *max)
 main(int argc, char **argv)
 {
   PARA filez[20], *fp = filez, *fp2;
-  int flag_lny = -1, flag_o = 0, flag_born = 0;
+  int flag_lny = 0, flag_o = 0, flag_born = 0;
   enum PLOTTYPE thetype = NONE;
   char **argp = argv, outname[128], title[256];
   char theunit[30], thru[30];
@@ -127,7 +127,6 @@ main(int argc, char **argv)
   while(--argc) {
     if(**++argp == '-') {
       if(strcmp(*argp, "-lny") == 0) flag_lny = 1;
-      else if(strcmp(*argp, "-nolny") == 0) flag_lny = 0;
       else if(strcmp(*argp, "-o") == 0) flag_o = 1;
       else if(strcmp(*argp, "-born") == 0) flag_born = 1;
       else if(strcmp(*argp, "-diff") == 0) thetype = DIFF;
@@ -147,15 +146,12 @@ main(int argc, char **argv)
     }
   }
   if(fp == filez) {
-    fprintf(stderr, "usage: %s [-lny] [-nolny] [-tot] [-diff] "
+    fprintf(stderr, "usage: %s [-lny] [-tot] [-diff] "
       "[-born] [-o outputfile] files...\n", *argv);
     exit(1);
   }
 
-  if(thetype == NONE) {
-    thetype = filez->type;
-    if(flag_lny == -1) flag_lny = thetype == TOT;
-  }
+  if(thetype == NONE) thetype = filez->type;
 
   if(*outname == 0) {
     strcpy(outname, filez->file);
@@ -196,17 +192,26 @@ main(int argc, char **argv)
     "trap \"rm -f v$$.*\" 0 1 2 3 9 15\n\n"
     "gnuplot << _EOF_\n\n"
     "# ----- The gnuplot commands start here -----\n\n"
-    "set term pslatex norotate\n"
+    "set term pslatex color solid norotate\n"
+    "# If you want black lines in different dash styles rather than\n"
+    "# solid lines in different colours, remove the "
+      "\"color solid\" above.\n\n"
     "set output \"v$$.plot\"\n"
-    "set key\n"
-    "set title \"%s\" 0,-.5\n"
     "set lmargin 11\n"
-    "set rmargin 15\n",
+    "set rmargin 15\n\n"
+    "set key\n"
+    "set title \"%s\" 0,-.5\n",
     title);
 
   *thru = 0;
   strcpy(theunit, "&mathrm{pb}");
-  if(!flag_lny) {
+
+  if(flag_lny)
+    fprintf(out,
+      "set logscale y\n"
+      "set format y \"?10^{%%L}?\"\n");
+  else {
+    fprintf(out, "set format y \"?%%g?\"\n");
     ymax = 0.;
     for(fp2 = filez; fp2 < fp; ++fp2)
       if(fp2->type != NONE) max(fp2->file, &ymax);
@@ -227,15 +232,12 @@ main(int argc, char **argv)
       }
     fprintf(out,
       "set size 1,1.3\n"
-      "set logscale x%s\n"
-      "set xtics (200,500,1000,2000,5000,10000,20000,50000)\n"
       "set xrange [%d:%d]\n"
       "set xlabel \"?&sqrt s/?GeV\" 32,1.5\n"
-      "set ylabel \"?&dfrac{&stot}{%s}?\" 0,14\n",
-      flag_lny ? "y" : "", Efrom, Eto, theunit);
+      "set ylabel \"?&dfrac{&sigma}{%s}?\" 0,14\n",
+      Efrom, Eto, theunit);
   }
   else {
-    if(flag_lny) fprintf(out, "set logscale y\n");
     fprintf(out,
       "set size .8,1\n"
       "set xtics (\"&small ?0^&circ?\" 0, \"\" pi/4, \\\n"
@@ -243,13 +245,11 @@ main(int argc, char **argv)
       "  \"&small ?180^&circ?\" pi)\n"
       "set xrange [0:pi]\n"
       "set xlabel \"?&theta?\" 21,1.5\n"
-      "set ylabel \"?&dfrac{&dsdO}{%s}?\" 0,9\n",
+      "set ylabel \"?&dfrac{&d&sigma/&d&Omega}{%s}?\" 0,9\n",
       theunit);
   }
-  fprintf(out,
-    "set format y \"?%s?\"\n"
-    "plot \\\n",
-    flag_lny ? "10^{%L}" : "%g");
+
+  fprintf(out, "plot \\\n");
 
   for(start = 1, fp2 = filez; ; ++start) {
     printf("> %s\n", fp2->file);
@@ -283,16 +283,14 @@ main(int argc, char **argv)
     "_EOF_\n\n"
     "cat << _EOF_ > v$$.tex\n"
     "\\\\documentclass[11pt]{article}\n"
+    "\\\\usepackage{amsmath}\n"
     "\\\\oddsidemargin=0pt\n"
     "\\\\evensidemargin=0pt\n"
     "\\\\parindent=0pt\n"
     "\\\\pagestyle{empty}\n"
-    "\\\\def\\\\dfrac#1#2{{\\\\displaystyle{#1\\\\over #2}}}\n"
-    "\\\\def\\\\d{\\\\mathrm{d}}\n"
-    "\\\\def\\\\dsdO{\\\\d\\\\sigma/\\\\d\\\\Omega}\n"
-    "\\\\def\\\\stot{\\\\sigma_{\\\\mathrm{tot}}}\n\n"
+    "\\\\def\\\\d{\\\\mathrm{d}}\n\n"
     "%% it's a good idea to use PostScript fonts here since the figures\n"
-    "%% will likely be expanded or shrunk to fit the final size:\n\n"
+    "%% will likely be expanded or shrunk to fit the final size:\n"
     "\\\\renewcommand{\\\\rmdefault}{ppl}\n"
     "\\\\DeclareSymbolFont{operators}{OT1}{pplcm}{m}{n}\n"
     "\\\\DeclareSymbolFont{letters}{OML}{pplcm}{m}{it}\n"

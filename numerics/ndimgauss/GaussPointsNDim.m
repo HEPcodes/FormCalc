@@ -1,7 +1,8 @@
 (*
 	GaussPointsNDim.m
 		calculate the abscissas & weigths for n-dim Gauss int
-		last modified 26 Apr 99 th
+		this file is part of FormCalc
+		last modified 28 Feb 00 th
 *)
 
 

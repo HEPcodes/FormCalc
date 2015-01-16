@@ -9,6 +9,7 @@
 	end
 
 ************************************************************************
+
 	double precision function integrand(X)
 	implicit none
 	double precision X(10)
@@ -17,5 +18,6 @@
 	end
 
 ************************************************************************
+
 	include "ndimgauss_scalar.f"
 

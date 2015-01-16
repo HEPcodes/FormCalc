@@ -1,7 +1,8 @@
 (*
 	gausspoints.m
-		calculate the abscissas & weigths for Gauss int
-		last modified 30 Aug 99 th
+		calculate the abscissas & weigths for Gaussian int.
+		this file is part of FormCalc
+		last modified 29 Feb 00 th
 *)
 
 
@@ -23,19 +24,21 @@ dif2[n_, x_] := D[LegendreP[n, y], y]^2 /. y -> x
 
 Weights[n_] := 2/((1 - #^2) dif2[n, #])&/@ SamplingPoints[n]
 
-ff = OpenWrite["!./r8_" <> Environment["HOSTTYPE"] <>
-               " > fortran/gauss.F"];
-c = 0
+hh = OpenWrite["!./r8_" <> Environment["HOSTTYPE"] <>
+               " > drivers/gauss.F"];
 
-WriteString[ff,
-  delim = Prepend[Table[",\n     +    ", {#/2 - 1}], {}];
-  If[++c === 1, "#if", "#elif"], " GAUSSPOINTS == ", #,
-  "\n\tdata gauss_x /\n     +    ",
-  Transpose[{delim, SamplingPoints[#]}] /. List -> Sequence,
-  " /\n\tdata gauss_w /\n     +    ",
-  Transpose[{delim, Weights[#]}] /. List -> Sequence,
-  " /\n" ]&/@ Points;
-WriteString[ff, "#endif\n\n"]
+theif := (theif = "#elif"; "#if")
 
-Close[ff];
+( delim = Prepend[Table[",\n     +    ", {#/2 - 1}], {}];
+  WriteString[hh,
+    theif <> " GAUSSPOINTS == " <> ToString[#] <>
+    "\n\tdata gauss_x /\n     +    " <>
+    Transpose[{delim, ToString/@ SamplingPoints[#]}] <>
+    " /\n\tdata gauss_w /\n     +    " <>
+    Transpose[{delim, ToString/@ Weights[#]}] <> " /\n" ]
+)&/@ Points;
+
+WriteString[hh, "#endif\n\n"]
+
+Close[hh];
 

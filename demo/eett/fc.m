@@ -27,7 +27,7 @@ ProcessFile["fa/box.amp", "fc/box"]
 
 	(* calculate unpolarized matrix elements only *)
 Hel[_] = 0;
-HelicityME[All, << fc/bornF.m] >> fc/mat;
+Flatten[Through[ {HelicityME, ColourME}[All, << fc/bornF.m] ]] >> fc/mat;
 Abbreviations[] >> fc/abbr
 
 Print["time used: ", SessionTime[] - time1];

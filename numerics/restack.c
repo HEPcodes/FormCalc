@@ -1,8 +1,8 @@
 /*
-	restack.c
-		restacks data from num.F-output for
-		easier access e.g. with gnuplot
-		last modified 25 Feb 99 th
+restack.c
+restacks data from num.F-output for easier access e.g. with gnuplot
+this file is part of FormCalc
+last modified 28 Feb 00 th
 
 Syntax: restack var1 var2 var3... < infile > outfile
 

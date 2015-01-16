@@ -3,7 +3,7 @@
 CKM = IndexDelta
 
 SetOptions[ InsertFields,
-  Model -> "SM",
+  Model -> "SMc",
   InsertionLevel -> {Generic, Particles},
   Restrictions -> {NoQuarkMixing, NoLightFHCoupling} ]
 

@@ -1,15 +1,17 @@
-* this is OneLoop.h2, the Form part of FormCalc
-* last modified 4 Oct 99 th
+* OneLoop.h2
+* contains most simplifications done in FORM 2
+* this file is part of FormCalc
+* last modified 27 Apr 00 th
 
 * Note: this program runs only with the (commercial) version 2 of
-* Form. It should be much better than the Form 1 code in pavered.h1.
+* FORM. It should be much better than the FORM 1 code in OneLoop.h1.
 
 .sort
 
-s r2, CW, SW, C4, S4, C2, S2, EL, GS, a2, as2;
-cf abb, Mat, fme, sun, IndexDelta, DEN;
-cf A0, B0m, B1m, B00m, B11m;
-cf pave1, pave2, pave3, pave4, pave5;
+s sqrt2, CW, SW, CW2, SW2;
+s EL, Alfa, Alfa2, GS, Alfas, Alfas2;
+cf abb, Mat, Eps, fme, sun, IndexDelta, DEN, pave;
+cf SUNT, SUNTSum, SUNF;
 
 .global
 
@@ -17,7 +19,7 @@ i J1, J2, J3, J4, C, IND1, IND2, IND3, IND4;
 s M1, M2, M3, M4, M5, X1, X2;
 v P1, P2, P3, P4;
 f fc, ncm;
-cf eq, neq, repl, PP, pid, a0, b0, c0, d0, e0;
+cf eq, neq, repl, PP, a0, b0, c0, d0, e0;
 set oma: omp, omm;
 set opa: omm, omp;
 NT chp;
@@ -25,16 +27,20 @@ T QQ, dd, eps, pivot;
 
 
 #procedure TrivialSubst()
-id r2^2 = 2;
-id r2^-2 = 1/2;
-id CW^-4 = C4;
-id SW^-4 = S4;
-id CW^-2 = C2;
-id SW^-2 = S2;
-id EL^4 = 16 * Pi^2 * a2;
-id GS^4 = 16 * Pi^2 * as2;
+id sqrt2^2 = 2;
+id sqrt2^-2 = 1/2;
+id CW^2 = CW2;
+id CW^-2 = CW2^-1;
+id SW^2 = SW2; 
+id SW^-2 = SW2^-1;
+id EL^2 = 4*Pi*Alfa;
+id Alfa^2 = Alfa2;
+id GS^2 = 4*Pi*Alfas;
+id Alfas^2 = Alfas2;
 #endprocedure
 
+
+id a0(0) = 0;
 
 #call TrivialSubst{}
 
@@ -53,34 +59,42 @@ keep brackets;
   repeat;
     id ga(C?, P1?) * ga(C?, P1?) = P1.P1;
     id ga(C?, J1?) * ga(C?, J1?) = d_(J1, J1);
+
     id,disorder, ga(C?, J1?) * ga(C?, J2?) =
-      2 * d_(J1, J2) - ga(C, J2) * ga(C, J1);
+      2*d_(J1, J2) - ga(C, J2) * ga(C, J1);
   endrepeat;
 #endprocedure
 
 #procedure DiracEquation()
   repeat;
     repeat;
-      id ga(C?, P1?) * Spinor(P1?, M1?, X1?) = X1 * M1 * Spinor(P1, M1, X1);
+      id ga(C?, P1?) * Spinor(P1?, M1?, X1?) = X1*M1 * Spinor(P1, M1, X1);
+
       id ga(C?, P1?) * ga(C?, J1?) * Spinor(P1?, M1?, X1?) =
-        (2 * d_(P1, J1) - X1 * M1 * ga(C, J1)) * Spinor(P1, M1, X1);
+        (2*d_(P1, J1) - X1*M1 * ga(C,J1)) * Spinor(P1, M1, X1);
+
       id ga(C?, P2?) * ga(C?, J1?) * pivot(C?, P1?, P2?) =
-        (2 * d_(P2, J1) - ga(C, J1) * ga(C, P2)) * pivot(C, P1, P2);
+        (2*d_(P2, J1) - ga(C, J1) * ga(C, P2)) * pivot(C, P1, P2);
     endrepeat;
+
     repeat;
 * since we deal with helicity ME, there's always an omp or omm after the
 * left spinor, that's why the immediate "Spinor pslash" is commented out:
-*      id Spinor(P1?, M1?, X1?) * ga(C?, P1?) = X1 * M1 * Spinor(P1, M1, X1);
+*      id Spinor(P1?, M1?, X1?) * ga(C?, P1?) = X1*M1 * Spinor(P1, M1, X1);
+
       id Spinor(P1?, M1?, X1?) * chp?oma?opa(C?) * ga(C?, P1?) =
-        X1 * M1 * Spinor(P1, M1, X1) * chp(C);
+        X1*M1 * Spinor(P1, M1, X1) * chp(C);
+
       id Spinor(P1?, M1?, X1?) * omp(C?) * ga(C?, J1?) * ga(C?, P1?) =
         Spinor(P1, M1, X1) *
-          (2 * d_(P1, J1) * omp(C) - X1 * M1 * omm(C) * ga(C, J1));
+          (2*d_(P1, J1) * omp(C) - X1*M1 * omm(C) * ga(C, J1));
+
       id Spinor(P1?, M1?, X1?) * omm(C?) * ga(C?, J1?) * ga(C?, P1?) =
         Spinor(P1, M1, X1) *
-          (2 * d_(P1, J1) * omm(C) - X1 * M1 * omp(C) * ga(C, J1));
+          (2*d_(P1, J1) * omm(C) - X1*M1 * omp(C) * ga(C, J1));
+
       id ga(C?, J2?) * ga(C?, P1?) * pivot(C?, P1?, P2?) =
-        (2 * d_(P1, J2) - ga(C, P1) * ga(C, J2)) * pivot(C, P1, P2);
+        (2*d_(P1, J2) - ga(C, P1) * ga(C, J2)) * pivot(C, P1, P2);
     endrepeat;
 #call DiracOrder{}
   endrepeat;
@@ -121,15 +135,15 @@ id chp?oma(C?) * Spinor(P2?, ?) * pivot(C?, P1?, P2?) =
 repeat;
   if( match(q1.q1) );
     id,once, q1.q1 * b0(P1?, M1?, ?) =
-      repl(q1 - P1) * a0(.) + M1 * b0(P1, M1, .);
+      repl(q1 - P1) * a0(.) + M1*b0(P1, M1, .);
     id,once, q1.q1 * c0(P1?, P2?, M1?, ?) =
-      repl(q1 - P1) * b0(P2 - P1, .) + M1 * c0(P1, P2, M1, .);
+      repl(q1 - P1) * b0(P2 - P1, .) + M1*c0(P1, P2, M1, .);
     id,once, q1.q1 * d0(P1?, P2?, P3?, M1?, ?) =
       repl(q1 - P1) * c0(P2 - P1, P3 - P1, .) +
-        M1 * d0(P1, P2, P3, M1, .);
+        M1*d0(P1, P2, P3, M1, .);
     id,once, q1.q1 * e0(P1?, P2?, P3?, P4?, M1?, ?) =
       repl(q1 - P1) * d0(P2 - P1, P3 - P1, P4 - P1, .) +
-        M1 * e0(P1, P2, P3, P4, M1, .);
+        M1*e0(P1, P2, P3, P4, M1, .);
     if( count(repl, 1) > 0 );
       id q1 = QQ(?);
       repeat id QQ(J1?) * repl(P1?) = d_(P1, J1) * repl(P1);
@@ -165,7 +179,7 @@ id eq(?) = 0;
 
 id QQ(J1?, J1?) * c0(?) = QQ(J1, J1) * c0(.) - 1/2;
 
-id QQ(J1?, J1?) * b0(P1?, M1?, M2?) = a0(M2) + M1 * b0(P1, M1, M2);
+id QQ(J1?, J1?) * b0(P1?, M1?, M2?) = a0(M2) + M1*b0(P1, M1, M2);
 
 #endif
 
@@ -173,16 +187,16 @@ id QQ(J1?, J1?) * b0(P1?, M1?, M2?) = a0(M2) + M1 * b0(P1, M1, M2);
 * decompose into Lorentz-covariant tensors
 
 id QQ(??) = sum_(X1, 0, nargs_(..), 2,
-  pid(0, 0)^(X1/2) * distrib_(1, X1, dd, QQ, ..));
+  pave(0, 0)^(X1/2) * distrib_(1, X1, dd, QQ, ..));
 
 id dd(?) = dd_(.);
 
-id b0(P1?, ?) = PP(pid(1) * P1) * b0(P1, .);
-id c0(P1?, P2?, ?) = PP(pid(1) * P1 + pid(2) * P2) * c0(P1, P2, .);
+id b0(P1?, ?) = PP(pave(1)*P1) * b0(P1, .);
+id c0(P1?, P2?, ?) = PP(pave(1)*P1 + pave(2)*P2) * c0(P1, P2, .);
 id d0(P1?, P2?, P3?, ?) =
-  PP(pid(1) * P1 + pid(2) * P2 + pid(3) * P3) * d0(P1, P2, P3, .);
+  PP(pave(1)*P1 + pave(2)*P2 + pave(3)*P3) * d0(P1, P2, P3, .);
 id e0(P1?, P2?, P3?, P4?, ?) =
-  PP(pid(1) * P1 + pid(2) * P2 + pid(3) * P3 + pid(4) * P4) *
+  PP(pave(1)*P1 + pave(2)*P2 + pave(3)*P3 + pave(4)*P4) *
     e0(P1, P2, P3, P4, .);
 
 repeat id PP(P1?) * QQ(J1?, ?) = d_(P1, J1) * QQ(.) * PP(P1);
@@ -190,19 +204,13 @@ repeat id PP(P1?) * QQ(J1?, ?) = d_(P1, J1) * QQ(.) * PP(P1);
 id PP(?) = 1;
 id QQ = 1;
 
-repeat id pid(?) * pid(??) = pid(., ..);
-id pid(?) * PP?{a0,b0,c0,d0,e0}?{pave1,pave2,pave3,pave4,pave5}(??) =
-  PP(., ..);
-id PP?{c0,d0,e0}?{pave3,pave4,pave5}(??) = PP(0, ..);
-
-id a0(0) = 0;
-id a0(M1?) = A0(M1);
-
-symm b0 2, 3;
-id b0(?) = B0m(.);
-id pave2(1, P1?, M1?, M2?) = B1m(P1, M1, M2);
-id pave2(0, 0, P1?, M1?, M2?) = B00m(P1, M1, M2);
-id pave2(1, 1, P1?, M1?, M2?) = B11m(P1, M1, M2);
+if(count(pave, 1) == 0);
+  symm b0 2, 3;
+  id PP?{a0,b0,c0,d0,e0}(?) = pave(PP(0), .);
+else;
+  repeat id pave(?) * pave(??) = pave(., ..);
+  id pave(??) * PP?{a0,b0,c0,d0,e0}(?) = pave(PP(..), .);
+endif;
 
 
 #if 'ExtFermions' == 1
@@ -258,7 +266,7 @@ id ga(C?, P1?) = fc(C, ga(P1));
 repeat id fc(C?, ?) * fc(C?, ??) = fc(C, ., ..);
 
 id e_(J1?, J2?, J3?, J4?{IND1,IND2,IND3,IND4}) =
-  fme(e_(J1, J2, J3, J4));
+  fme(Eps(J1, J2, J3, J4));
 id Spinor(?) * fc(C?, ??) * Spinor(???) =
   fme(ncm(Spinor(.), .., Spinor(...)));
 id Spinor(?) * Spinor(??) =
@@ -267,22 +275,6 @@ id fc(C?, ?) = fme(ncm(.));
 repeat id fme(X1?) * fme(X2?) = fme(X1 * X2);
 
 #endif
-
-
-#if 'SUNStuff' == 1
-
-.sort
-cf SUNT, SUNF, SUNFSum, SUND;
-set SUNobjs: SUNT, SUNF, SUNFSum, SUND;
-
-repeat id PP?SUNobjs(?, J1?, ??) * SumOver(J1?, ???) =
-  PP(., J1, ..) * sun(SumOver(J1, ...));
-id PP?SUNobjs(?) = sun(PP(.));
-
-repeat id sun(X1?) * sun(X2?) = sun(X1 * X2);
-
-#endif
-
 
 .sort
 
@@ -293,18 +285,16 @@ repeat id sun(X1?) * sun(X2?) = sun(X1 * X2);
 * add local terms for dimreg
 
 repeat;
-  id,once, D * A0(M1?) = 4 * A0(M1) - 2 * M1;
-  id,once, D * B0m(?) = 4 * B0m(.) - 2;
-  id,once, D * B11m(?) = 4 * B11m(.) - 2/3;
-  id,once, D * B1m(?) = 4 * B1m(.) + 1;
-  id,once, D * B00m(P1?, M1?, M2?) =
-    4 * B00m(P1, M1, M2) + 1/6 * P1.P1 - 1/2 * M1 - 1/2 * M2;
-  id,once, D * pave3(0, 0, P1?, P2?, M1?, M2?, M3?) =
-    4 * pave3(0, 0, P1, P2, M1, M2, M3) - 1/2;
-  id,once, D * pave3(0, 0, J1?, P1?, P2?, M1?, M2?, M3?) =
-    4 * pave3(0, 0, J1, P1, P2, M1, M2, M3) + 1/6;
-  id,once, D * pave4(0, 0, 0, 0, P1?, P2?, P3?, M1?, M2?, M3?, M4?) =
-    4 * pave4(0, 0, 0, 0, P1, P2, P3, M1, M2, M3, M4) - 1/12;
+  id,once, D*pave(a0(0), M1?) = 4*pave(a0(0), M1) - 2*M1;
+  id,once, D*pave(b0(0), ?) = 4*pave(b0(0), .) - 2;
+  id,once, D*pave(b0(1), ?) = 4*pave(b0(1), .) + 1;
+  id,once, D*pave(b0(0,0), P1?, M1?, M2?) =
+    4*pave(b0(0,0), P1, M1, M2) + P1.P1/6 - M1/2 - M2/2;
+  id,once, D*pave(b0(1,1), ?) = 4*pave(b0(1,1), .) - 2/3;
+  id,once, D*pave(c0(0,0), ?) = 4*pave(c0(0,0), .) - 1/2;
+  id,once, D*pave(c0(0,0,1), ?) = 4*pave(c0(0,0,1), .) + 1/6;
+  id,once, D*pave(c0(0,0,2), ?) = 4*pave(c0(0,0,2), .) + 1/6;
+  id,once, D*pave(d0(0,0,0,0), ?) = 4*pave(d0(0,0,0,0), .) - 1/12;
 endrepeat;
 id D = 4;
 
@@ -318,9 +308,6 @@ id D = 4;
 * -> need this for the calculation of the squared amplitude
 
 id fme(X1?) = Mat(fme(X1));
-id sun(X1?) = Mat(sun(X1));
-
-repeat id Mat(X1?) * Mat(X2?) = Mat(X1 * X2);
 
 * in contrast, abb(...) remain at the innermost level because they'll
 * be abbreviated anyway.

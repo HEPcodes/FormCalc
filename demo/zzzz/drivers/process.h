@@ -1,44 +1,49 @@
-*	process.h
-*	defines all process-dependent parameters for num.F
-*	last modified 23 Feb 99 th
+* process.h
+* defines all process-dependent parameters for num.F
+* this file is part of FormCalc
+* last modified 30 Mar 00 th
 
-* whether to run in debugging mode:
-
-#define DEBUG
-
-* the types of the external particles:
-* SCALAR, FERMION, PHOTON, or VECTOR (PHOTON is equivalent to VECTOR,
-* except that longitudinal modes are not allowed)
+* Definition of the external particles.
+* The TYPEn may be one of SCALAR, FERMION, PHOTON, or VECTOR.
+* (PHOTON is equivalent to VECTOR, except that longitudinal
+* modes are not allowed)
 
 #define TYPE1 VECTOR
-#define TYPE2 VECTOR
-#define TYPE3 VECTOR
-#define TYPE4 VECTOR
-
-* and their masses:
-
 #define MASS1 MZ
-#define MASS2 MZ
-#define MASS3 MZ
-#define MASS4 MZ
+#define CHARGE1 0
 
-* the combinatorical factor for identical particles in the final state:
-* 1/2 for identical particles, 1 otherwise
+#define TYPE2 VECTOR
+#define MASS2 MZ
+#define CHARGE2 0
+
+#define TYPE3 VECTOR
+#define MASS3 MZ
+#define CHARGE3 0
+
+#define TYPE4 VECTOR
+#define MASS4 MZ
+#define CHARGE4 0
+
+* The combinatorical factor for identical particles in the final state:
+* .5D0 for identical particles, 1 otherwise
 
 #define IDENTICALFACTOR .5D0
 
-* possibly a color factor if there are quarks in the final state:
+* Possibly a colour factor if there are quarks in the final state
+* (SM.mod only, SMc.mod gets the factor right by its colour indices)
 
-#define COLORFACTOR 1D0
+#define COLOURFACTOR 1
 
-* whether to include soft-photon bremsstrahlung:
+* Whether to include soft-photon bremsstrahlung
 
 *#define BREMSSTRAHLUNG
-*#include "softphot.F"
+#define ESOFTMAX .1D0*Ecms
 
-* This following line can be used to initialize model parameters
-* (or call a subroutine to do so)
+* Possibly some wave-function renormalization
 
-#define MODELINI call sm_ini
+*#define WF_RENORMALIZATION (nW*dWFW1 + nZ*dWFZ1)
+
+* Include the model initialization routine (model_ini)
+
 #include "sm_ini.F"
 

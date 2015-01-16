@@ -1,40 +1,49 @@
-*	process.h
-*	defines all process-dependent parameters for num.F
-*	last modified 20 Feb 99 th
+* process.h
+* defines all process-dependent parameters for num.F
+* this file is part of FormCalc
+* last modified 30 Mar 00 th
 
-* The types of the external particles:
-* SCALAR, FERMION, PHOTON, or VECTOR (PHOTON is equivalent to VECTOR,
-* except that longitudinal modes are not allowed)
+* Definition of the external particles.
+* The TYPEn may be one of SCALAR, FERMION, PHOTON, or VECTOR.
+* (PHOTON is equivalent to VECTOR, except that longitudinal
+* modes are not allowed)
 
 #define TYPE1 FERMION
-#define TYPE2 FERMION
-#define TYPE3 FERMION
-#define TYPE4 FERMION
-
-* and their masses
-
 #define MASS1 ME
+#define CHARGE1 1
+
+#define TYPE2 FERMION
 #define MASS2 ME
+#define CHARGE2 -1
+
+#define TYPE3 FERMION
 #define MASS3 MT
+#define CHARGE3 -2/3D0
+
+#define TYPE4 FERMION
 #define MASS4 MT
+#define CHARGE4 2/3D0
 
 * The combinatorical factor for identical particles in the final state:
-* 1/2 for identical particles, 1 otherwise
+* .5D0 for identical particles, 1 otherwise
 
-#define IDENTICALFACTOR 1D0
+#define IDENTICALFACTOR 1
 
-* Possibly a color factor if there are quarks in the final state
+* Possibly a colour factor if there are quarks in the final state
+* (SM.mod only, SMc.mod gets the factor right by its colour indices)
 
-#define COLORFACTOR 3D0
+#define COLOURFACTOR 1
 
 * Whether to include soft-photon bremsstrahlung
 
 *#define BREMSSTRAHLUNG
-*#include "softphot.F"
+#define ESOFTMAX .1D0*Ecms
 
-* This following line can be used to initialize model parameters
-* (or call a subroutine to do so)
+* Possibly some wave-function renormalization
 
-#define MODELINI call sm_ini
+*#define WF_RENORMALIZATION (nW*dWFW1 + nZ*dWFZ1)
+
+* Include the model initialization routine (model_ini)
+
 #include "sm_ini.F"
 

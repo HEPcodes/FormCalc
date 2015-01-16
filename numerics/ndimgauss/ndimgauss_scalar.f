@@ -1,5 +1,6 @@
 * ndimgauss_scalar.f
-* last revision: 26 Apr 99 Thomas Hahn
+* this file is part of FormCalc
+* last revision: 28 Feb 00 Thomas Hahn
 *
 * n-dimensional Gaussian integration for a vector of functions.
 *	Note: this file works only with compilers that accept
@@ -56,7 +57,7 @@
 	if(dim .eq. 0) then
 	  result = func(intvar)
 	else 
-	  result = 0D0
+	  result = 0
 	  do j = 1, points(dim)
 	    dx = .5D0*gauss_x(dim, j)
 

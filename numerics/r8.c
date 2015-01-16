@@ -1,9 +1,9 @@
 /*
-	r8.c
-		replaces all real constants by Fortran-style
-		double precision numbers (1.234D0) in Mma
-		FortranForm output
-		last modified 14 Sep 99 th
+r8.c
+replaces all real constants by Fortran-style double precision
+numbers (1.234D0) in Mma FortranForm output
+this file is part of FormCalc
+last modified 28 Feb 00 th
 */
 
 #include <stdio.h>
@@ -63,11 +63,12 @@ main(int argc, char **argv)
       }
     }
     if(*s != '#') {
-      for(si = di = s; ; ) {
+      for(si = di = s; ; ++si) {
         if(*si != '"') *di++ = *si;
         if(*si == 0) break;
-        if(*si++ == '=') while(*(si + 1) == ' ') ++si;
+/*        if(*si++ == '=') while(*(si + 1) == ' ') ++si; */
       }
+      if(*s >= 'A') putchar('\t');
     }
     puts(s);
   } /* eof */

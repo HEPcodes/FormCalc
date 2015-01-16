@@ -1,21 +1,21 @@
 FeynAmpList[Model -> "SM", GenericModel -> "Lorentz", 
   InsertionLevel -> Classes, ExcludeParticles -> V[1], LastSelections -> {}, 
   ExcludeFieldPoints -> {}, Restrictions -> ExcludeFieldPoints -> 
-    {FieldPoint[0][-F[4, {1}], F[3, {2}], S[3]], FieldPoint[0][-F[4, {1}], 
-      F[3, {2}], V[3]], FieldPoint[0][-F[4, {1}], F[3, {3}], S[3]], 
-     FieldPoint[0][-F[4, {1}], F[3, {3}], V[3]], FieldPoint[0][-F[4, {2}], 
-      F[3, {1}], S[3]], FieldPoint[0][-F[4, {2}], F[3, {1}], V[3]], 
-     FieldPoint[0][-F[4, {2}], F[3, {3}], S[3]], FieldPoint[0][-F[4, {2}], 
-      F[3, {3}], V[3]], FieldPoint[0][-F[4, {3}], F[3, {1}], S[3]], 
-     FieldPoint[0][-F[4, {3}], F[3, {1}], V[3]], FieldPoint[0][-F[4, {3}], 
-      F[3, {2}], S[3]], FieldPoint[0][-F[4, {3}], F[3, {2}], V[3]]}, 
+    {FieldPoint[_][-F[4, {1}], F[3, {2}], S[3]], FieldPoint[_][-F[4, {1}], 
+      F[3, {2}], V[3]], FieldPoint[_][-F[4, {1}], F[3, {3}], S[3]], 
+     FieldPoint[_][-F[4, {1}], F[3, {3}], V[3]], FieldPoint[_][-F[4, {2}], 
+      F[3, {1}], S[3]], FieldPoint[_][-F[4, {2}], F[3, {1}], V[3]], 
+     FieldPoint[_][-F[4, {2}], F[3, {3}], S[3]], FieldPoint[_][-F[4, {2}], 
+      F[3, {3}], V[3]], FieldPoint[_][-F[4, {3}], F[3, {1}], S[3]], 
+     FieldPoint[_][-F[4, {3}], F[3, {1}], V[3]], FieldPoint[_][-F[4, {3}], 
+      F[3, {2}], S[3]], FieldPoint[_][-F[4, {3}], F[3, {2}], V[3]]}, 
   VertexFunctions -> False, ProcessName -> "F3F3", 
-  Process -> {{F[3, {g1}], p1, MQU[g1]}} -> {{F[3, {g2}], k1, MQU[g2]}}][
+  Process -> {{F[3, {g1}], p1, MQU[g1]}} -> {{F[3, {g1}], k1, MQU[g1]}}][
  FeynAmp[GraphName["F3F3", T1, I1], q1, 
   (I/16*RelativeCF*(ChiralityProjector[-1]*
-       G[1][0][-F[3, {g2}], F[Index[Generic, 3]], S[Index[Generic, 4]]][
+       G[1][0][-F[3, {g1}], F[Index[Generic, 3]], S[Index[Generic, 4]]][
         ChiralityProjector[-1]] + ChiralityProjector[1]*
-       G[1][0][-F[3, {g2}], F[Index[Generic, 3]], S[Index[Generic, 4]]][
+       G[1][0][-F[3, {g1}], F[Index[Generic, 3]], S[Index[Generic, 4]]][
         ChiralityProjector[1]]) . (DiracSlash[q1] + 
       Mass[F[Index[Generic, 3]]]) . (ChiralityProjector[-1]*
        G[1][0][-F[Index[Generic, 3]], F[3, {g1}], -S[Index[Generic, 4]]][
@@ -28,8 +28,8 @@ FeynAmpList[Model -> "SM", GenericModel -> "Lorentz",
     G[1][0][-F[Index[Generic, 3]], F[3, {g1}], -S[Index[Generic, 4]]][
      ChiralityProjector[-1]], G[1][0][-F[Index[Generic, 3]], F[3, {g1}], 
       -S[Index[Generic, 4]]][ChiralityProjector[1]], 
-    G[1][0][-F[3, {g2}], F[Index[Generic, 3]], S[Index[Generic, 4]]][
-     ChiralityProjector[-1]], G[1][0][-F[3, {g2}], F[Index[Generic, 3]], 
+    G[1][0][-F[3, {g1}], F[Index[Generic, 3]], S[Index[Generic, 4]]][
+     ChiralityProjector[-1]], G[1][0][-F[3, {g1}], F[Index[Generic, 3]], 
       S[Index[Generic, 4]]][ChiralityProjector[1]], RelativeCF} -> 
    Insertions[Classes][{MQU[g1], MH, (-I/2*EL*MQU[g1])/(MW*SW), 
      (-I/2*EL*MQU[g1])/(MW*SW), (-I/2*EL*MQU[g1])/(MW*SW), 
@@ -40,10 +40,10 @@ FeynAmpList[Model -> "SM", GenericModel -> "Lorentz",
      (I*EL*MQU[g1])/(Sqrt[2]*MW*SW), (-I*EL*MQD[g1])/(Sqrt[2]*MW*SW), 1}]], 
  FeynAmp[GraphName["F3F3", T1, I2], q1, 
   (-I/16*RelativeCF*(DiracMatrix[li2] . ChiralityProjector[-1]*
-       G[-1][0][-F[3, {g2}], F[Index[Generic, 3]], V[Index[Generic, 4]]][
+       G[-1][0][-F[3, {g1}], F[Index[Generic, 3]], V[Index[Generic, 4]]][
         DiracMatrix[KI1[3]] . ChiralityProjector[-1]] + 
       DiracMatrix[li2] . ChiralityProjector[1]*
-       G[-1][0][-F[3, {g2}], F[Index[Generic, 3]], V[Index[Generic, 4]]][
+       G[-1][0][-F[3, {g1}], F[Index[Generic, 3]], V[Index[Generic, 4]]][
         DiracMatrix[KI1[3]] . ChiralityProjector[1]]) . 
      (DiracSlash[q1] + Mass[F[Index[Generic, 3]]]) . 
      (DiracMatrix[li1] . ChiralityProjector[-1]*
@@ -60,9 +60,9 @@ FeynAmpList[Model -> "SM", GenericModel -> "Lorentz",
      DiracMatrix[KI1[3]] . ChiralityProjector[-1]], 
     G[-1][0][-F[Index[Generic, 3]], F[3, {g1}], -V[Index[Generic, 4]]][
      DiracMatrix[KI1[3]] . ChiralityProjector[1]], 
-    G[-1][0][-F[3, {g2}], F[Index[Generic, 3]], V[Index[Generic, 4]]][
+    G[-1][0][-F[3, {g1}], F[Index[Generic, 3]], V[Index[Generic, 4]]][
      DiracMatrix[KI1[3]] . ChiralityProjector[-1]], 
-    G[-1][0][-F[3, {g2}], F[Index[Generic, 3]], V[Index[Generic, 4]]][
+    G[-1][0][-F[3, {g1}], F[Index[Generic, 3]], V[Index[Generic, 4]]][
      DiracMatrix[KI1[3]] . ChiralityProjector[1]], RelativeCF} -> 
    Insertions[Classes][{MQU[g1], MZ, (I*EL*(1/2 - (2*SW^2)/3))/(CW*SW), 
      ((-2*I)/3*EL*SW)/CW, (I*EL*(1/2 - (2*SW^2)/3))/(CW*SW), 

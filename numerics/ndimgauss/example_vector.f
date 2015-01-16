@@ -9,6 +9,7 @@
 	end
 
 ************************************************************************
+
 	subroutine integrand(res, X)
 	implicit none
 	double precision res, X(10)
@@ -17,5 +18,6 @@
 	end
 
 ************************************************************************
+
 	include "ndimgauss_vector.f"
 

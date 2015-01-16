@@ -1,14 +1,11 @@
 /*
-   ladj.c     2aug96 th
-   adjusts the legend in gnuplot's pslatex output so that
-   the labels don't stick together.
-
-   usage: ladj [spacing] < infile > outfile
-
-   where <spacing> is optional and defaults to 60
-
-   [12aug97 th] patched up rel labels + gpl-3.6 adaptation
-   [25sep97 th] patched for multiple legends
+ladj.c
+adjusts the legend in gnuplot's pslatex output so that
+the labels don't stick together
+usage:	ladj [spacing] < infile > outfile
+where <spacing> is optional and defaults to 60
+this file is part of FormCalc
+last modified 28 Feb 00 th
 */
 
 #include <stdio.h>

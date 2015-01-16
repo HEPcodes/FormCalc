@@ -2,6 +2,8 @@
 
 $Scale = Sqrt[S]
 
+o1 = Simplify
+
 time1 = SessionTime[]
 
 counter = << fa/counter.amp

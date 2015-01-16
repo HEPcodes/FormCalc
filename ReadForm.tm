@@ -14,7 +14,7 @@
 :ReturnType:	Manual
 :End:
 
-:Evaluate:	ReadForm::notfound = "File not found."
+:Evaluate:	ReadForm::noopen = "Cannot open `1`."
 :Evaluate:	ReadForm::nooutput =
 		"Something went wrong, there was no output from FORM."
 :Evaluate:	ReadForm::unknown =
@@ -28,7 +28,7 @@
 	ReadForm.tm
 		reads FORM output back into Mathematica
 		this file is part of FormCalc
-		last modified 12 Jan 00 th
+		last modified 14 May 00 th
 
 Note: This is the fancy version which performs some simplifications
       while sending the FORM output to Mma. Also in other respects
@@ -42,7 +42,7 @@ Note: This is the fancy version which performs some simplifications
 #include <string.h>
 
 static char copyleft[] =
-  "@(#) ReadForm utility for FormCalc, 12 Jan 00 Thomas Hahn";
+  "@(#) ReadForm utility for FormCalc, 14 May 00 Thomas Hahn";
 
 #define MAXEXPR 2000
 #define STRINGSIZE 32767
@@ -57,9 +57,9 @@ static char copyleft[] =
 A term in the FORM output is organized into the MATHOBJ structure
 in the following way:
 
- ____5_____     __4___     __3___     _____0______     _2_
-/          \   /      \   /      \   /            \   /   \
-SumOver(...) * Mat(...) * DEN(...) * A0/B0/...(...) * ..... * (
+ ____5_____     __4___     __3___     ___0___     _2_
+/          \   /      \   /      \   /       \   /   \
+SumOver(...) * Mat(...) * DEN(...) * pave(...) * ..... * (
                                                  _
     + 3/16*EL^2 * abb(...) [ * $Scale^n ]         |
       \_     _/   \_   __/ \_         __/         | 1
@@ -76,7 +76,7 @@ Hierarchy of collecting:
 3. DEN
 2. [coefficient]
 1. [factor]
-0. [integral]
+0. pave
 
 */
 
@@ -95,14 +95,7 @@ COLL collecttable[] = {
   {"SumOver", 5},
   {"Mat", LEVEL_MAT},
   {"DEN", 3},
-  {"A0", LEVEL_INTEGRAL},
-  {"B0m", LEVEL_INTEGRAL},
-  {"B1m", LEVEL_INTEGRAL},
-  {"B00m", LEVEL_INTEGRAL},
-  {"B11m", LEVEL_INTEGRAL},
-  {"pave3", LEVEL_INTEGRAL},
-  {"pave4", LEVEL_INTEGRAL},
-  {"pave5", LEVEL_INTEGRAL}
+  {"pave", LEVEL_INTEGRAL}
 };
 
 
@@ -584,7 +577,7 @@ void readform(const char *filename)
   file = *filename == '!' ?
     popen(filename + 1, "r") : fopen(filename, "r");
   if(file == NULL) {
-    report_error("notfound", NULL);
+    report_error("noopen", filename);
     return;
   }
 

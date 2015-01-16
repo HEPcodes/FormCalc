@@ -1,5 +1,6 @@
 * ndimgauss_vector.f
-* last revision: 26 Apr 99 Thomas Hahn
+* this file is part of FormCalc
+* last revision: 28 Feb 00 Thomas Hahn
 *
 * n-dimensional Gaussian integration for a vector of functions.
 *	Note: this file works only with compilers that accept
@@ -72,7 +73,7 @@
 	  call func(result, intvar, from, to)
 	else 
 	  do k = from, to
-	    result(k) = 0D0
+	    result(k) = 0
 	  enddo
 	  do j = 1, points(dim)
 	    dx = .5D0*gauss_x(dim, j)

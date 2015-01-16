@@ -36,16 +36,14 @@ To execute these programs you need
   IMPORTANT: you need a version newer than 22 Feb 99.
 
 > LoopTools
-  (available from http://www-itp.physik.uni-karlsruhe.de/looptools)
+  (available from http://www.feynarts.de/looptools)
 
 > GNU's make
   (available from any GNU ftp site, e.g. prep.ai.mit.edu)
 
-> a Fortran-77 compiler or f2c and a C compiler
-  (f2c is available from ftp://ftp.netlib.org/f2c and is generally
-  better than g77)
+> a Fortran-77 compiler (g77 if you don't have any other)
 
-> for plotting the results: gnuplot 3.6
+> for plotting the results: gnuplot 3.6 or higher
   (available from ftp://cmpc1.phys.soton.ac.uk/pub)
 
 
@@ -76,10 +74,12 @@ Please use a new Mathematica session for every part of the demo.)
   boxT1.m in the directory fortran. It also produces a GNUmakefile.
 
   Note: NumPrep by default writes instructions for linking with the
-  CERNlib into the makefile. This is not necessary for Standard Model
-  processes. If you don't have the CERNlib installed, simply remove
-  the flags "-L$(CERN)/$(CERN_LEVEL)/lib -lpdflib -lmathlib -lpacklib"
-  from the makefile.
+  CERNlib into the makefile. The CERNlib is needed for computing alpha_s,
+  and is hence not necessary for purely electroweak processes. If you
+  don't have the CERNlib installed, simply remove the flags
+  "-L$(CERN)/$(CERN_LEVEL)/lib -lpdflib -lmathlib -lpacklib" from the
+  makefile and comment out the following statement in sm_ini.F:
+  Alfas = ALPHAS2(Ecms).
 
 > Change into the directory fortran/ and type "gmake". You may want to
   look in run.F for changing parameters. The resulting executable will
@@ -126,7 +126,7 @@ thing that must be taken care of by the user.
 
 
 Send bug reports, omissions, fan mail etc to
-Thomas Hahn <hahn@particle.uni-karlsruhe.de>
+Thomas Hahn <hahn@feynarts.de>
 
 Have fun!
 

@@ -1,6 +1,6 @@
 #!/bin/sh
 # compile script for the C programs used by FormCalc
-# last modified 6 Jul 99 th
+# last modified 13 May 00 th
 
 # If this compile script doesn't work on your system, check these things:
 #
@@ -29,14 +29,21 @@ SUNLIBS=""
 echo "$HOSTTYPE" | grep sun > /dev/null && SUNLIBS="-lnsl -lsocket"
 
 make -f - << _EOF_
-all: ReadForm_$HOSTTYPE numerics/r8_$HOSTTYPE numerics/restack_$HOSTTYPE \
-numerics/ladj_$HOSTTYPE numerics/plot_$HOSTTYPE
+all: ReadForm_$HOSTTYPE numerics/ReadData_$HOSTTYPE numerics/r8_$HOSTTYPE \
+numerics/restack_$HOSTTYPE numerics/ladj_$HOSTTYPE numerics/plot_$HOSTTYPE
 
 ReadForm_$HOSTTYPE: ReadForm.tm
 	CC=gcc ; export CC ; \\
-	sed "s/ cc / gcc /g" $MCC | \\
-	sh -s ReadForm.tm -O6 $* -o ReadForm_$HOSTTYPE $SUNLIBS
+	  sed "s/ cc / gcc /g" $MCC | \\
+	  sh -s ReadForm.tm -O6 $* -o ReadForm_$HOSTTYPE $SUNLIBS
 	strip ReadForm_$HOSTTYPE
+
+numerics/ReadData_$HOSTTYPE: numerics/ReadData.tm
+	cd numerics ; CC=gcc ; export CC ; \\
+	  sed "s/ cc / gcc /g" $MCC | \\
+	  sh -s ReadData.tm -O6 $* -o ReadData_$HOSTTYPE $SUNLIBS
+	strip numerics/ReadData_$HOSTTYPE
+	cd numerics ; ln -sf ReadData_$HOSTTYPE ReadData
 
 numerics/r8_$HOSTTYPE: numerics/r8.c
 	gcc -O6 $* -o numerics/r8_$HOSTTYPE numerics/r8.c
@@ -45,7 +52,7 @@ numerics/r8_$HOSTTYPE: numerics/r8.c
 numerics/restack_$HOSTTYPE: numerics/restack.c
 	gcc -O6 $* -o numerics/restack_$HOSTTYPE numerics/restack.c
 	strip numerics/restack_$HOSTTYPE
-	(cd numerics ; ln -sf restack_$HOSTTYPE restack)
+	cd numerics ; ln -sf restack_$HOSTTYPE restack
 
 numerics/ladj_$HOSTTYPE: numerics/ladj.c
 	gcc -O6 $* -o numerics/ladj_$HOSTTYPE numerics/ladj.c
@@ -54,6 +61,6 @@ numerics/ladj_$HOSTTYPE: numerics/ladj.c
 numerics/plot_$HOSTTYPE: numerics/plot.c
 	gcc -O6 $* -o numerics/plot_$HOSTTYPE numerics/plot.c -lm
 	strip numerics/plot_$HOSTTYPE
-	(cd numerics ; ln -sf plot_$HOSTTYPE plot)
+	cd numerics ; ln -sf plot_$HOSTTYPE plot
 _EOF_
 
