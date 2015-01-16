@@ -1,7 +1,7 @@
 * run.F
 * defines parameter settings for one run, then includes num.F
 * this file is part of FormCalc
-* last modified 19 Jun 01 th
+* last modified 23 Jul 01 th
 
 
 * Whether to run in debugging mode
@@ -22,6 +22,7 @@
 *#define COMPLEX_PARAMETERS
 *#define SM_ONLY
 *#define NO_EXCLUSION_LIMITS
+*#define TREE_LEVEL_MH
 
 #include "mssm_ini.F"
 
@@ -61,17 +62,17 @@
 #define PRINT4
 #define PRINT5
 
-* The angular cutoff
+* Cuts and increments. May be defined in terms of Ecms, the CMS energy.
 
-#define CUTOFF (10*degree)
-
-* The increment in angle and energy
-
+#define THETACUT (10*degree)
 #ifdef DEBUG
 #define THETASTEP (125*degree)
 #else
 #define THETASTEP (1*degree)
 #endif
+
+#define K50CUT ESOFTMAX
+#define K50STEP .05D0*Ecms
 
 #define ECMSSTEP 10
 

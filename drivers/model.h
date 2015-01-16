@@ -1,15 +1,18 @@
 * model.h
 * common blocks for the model parameters
 * this file is part of FormCalc
-* last modified 11 Jun 01 th
+* last modified 30 Oct 01 th
 
 
-	double precision pi, degree, sqrt2
-	double complex cI
+	double precision pi, degree, sqrt2, hbar_c2
 	parameter (pi = 3.1415926535897932384626433832795029D0)
 	parameter (degree = pi/180D0)
 	parameter (sqrt2 = 1.41421356237309504880168872421D0)
-	parameter (cI = dcmplx(0, 1))
+	parameter (hbar_c2 = 3.8937966D8)
+*         = hbar c^2 in picobarn
+
+	double complex cI
+	parameter (cI = (0D0, 1D0))
 
 #ifndef polar
 #define polar(r, theta) r*exp(theta*degree*cI)

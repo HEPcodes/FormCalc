@@ -1,7 +1,7 @@
 #!/bin/sh
 # configure script for the GNUmakefile
 # this file is part of FormCalc
-# last modified 8 Jun 01 th
+# last modified 4 Feb 02 th
 # note: has _nothing_ to do with GNU autoconf
 
 
@@ -78,7 +78,7 @@ else
   CONF_F77=`findprog f77 $CONF_F77 f77 fort77 xlf f90 pgf77 g77` || exit 1
 fi
 
-[ "$CONF_F77" = "g77" ] && CONF_FFLAGS="-O0"
+[ "$CONF_F77" = "g77" ] && CONF_FFLAGS="-O0 -ffixed-line-length-none"
 
 
 ## check out the necessary libraries
@@ -92,7 +92,8 @@ if [ -z "$CERN" -o -z "$CERN_LEVEL" -o ! -d $CERN/$CERN_LEVEL ] ; then
   echo ""
 fi
 
-CONF_LTDIR=`findpath LoopTools lib/libooptools.a $HOME/LoopTools/$HOSTTYPE /usr/local /usr` || exit 1
+LTDIR=`tcsh -c 'echo LoopTools/$HOSTTYPE'`
+CONF_LTDIR=`findpath LoopTools lib/libooptools.a ../$LTDIR ../../$LTDIR $HOME/$LTDIR /usr/local /usr` || exit 1
 
 
 echo "creating GNUmakefile" 1>&2
@@ -107,6 +108,10 @@ LIBS = \$(LOOPTOOLS) \$(CERNLIB)
 
 FFLAGS = $CONF_FFLAGS
 FC = $CONF_F77 \$(FFLAGS) -I. -I\$(LTDIR)include -g
+
+ifdef DEBUG
+FC += -DDEBUG
+endif
 
 # --- end defs by configure ---
 

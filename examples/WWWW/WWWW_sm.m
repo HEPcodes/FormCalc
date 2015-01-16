@@ -3,7 +3,7 @@
 		generates the Fortran code for
 		W^+ W^- -> W^+ W^- in the electroweak Standard Model
 		this file is part of FormCalc
-		last modified 21 Jun 01 th
+		last modified 20 Jul 01 th
 
 Reference: A. Denner, T. Hahn,
            Nucl. Phys. B525 (1998) 27 (hep-ph/9711302).
@@ -67,7 +67,9 @@ box = CalcFeynAmp[
   CreateFeynAmp[ins],
   Select[counter, DiagramType[#] == 0 &]]
 
-WriteSquaredME[born, {self, vert, box}, Abbr[], "fortran_sm",
+abbr = OptimizeAbbr[Abbr[]]
+
+WriteSquaredME[born, {self, vert, box}, abbr, "fortran_sm",
   Drivers -> "drivers_sm"]
 
 WriteRenConst[counter, "fortran_sm"]

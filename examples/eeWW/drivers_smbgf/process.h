@@ -35,6 +35,8 @@
 #define COLOURFACTOR 1
 
 * Whether to include soft-photon bremsstrahlung
+* ESOFTMAX is the maximum energy a soft photon may have and may be
+* defined in terms of Ecms, the CMS energy.
 
 #define BREMSSTRAHLUNG
 #define ESOFTMAX .1D0*Ecms
@@ -43,4 +45,8 @@
 * (if calculating in the background-field method)
 
 #define WF_RENORMALIZATION (2*dWFW1)
+
+* Include the kinematics-dependent part of the code
+
+#include "2to2.F"
 

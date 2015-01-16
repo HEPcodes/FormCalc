@@ -15,7 +15,7 @@
 	ReadData.tm
 		reads data files produced by num.F into Mathematica
 		this file is part of FormCalc
-		last modified 1 Jun 00 th
+		last modified 16 Oct 01 th
 */
 
 #include "mathlink.h"
@@ -24,7 +24,7 @@
 #include <string.h>
 
 static char copyleft[] =
-  "@(#) ReadData utility for FormCalc, 1 Jun 00 Thomas Hahn";
+  "@(#) ReadData utility for FormCalc, 16 Oct 01 Thomas Hahn";
 
 #ifndef MLCONST
 #define MLCONST
@@ -126,7 +126,7 @@ void readdata(const char *filename, int setn,
   const char *para, const char *data)
 {
   FILE *file;
-  char line[512], *s, *dataline[1024], **stor = dataline;
+  char line[512], *s, *dataline[2048], **stor = dataline;
   int xmit = 0, p;
 
   file = fopen(filename, "r");

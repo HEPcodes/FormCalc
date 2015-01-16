@@ -1,6 +1,6 @@
 #!/bin/sh
 # compile script for the C programs used by FormCalc
-# last modified 23 Mar 01 th
+# last modified 25 Jul 01 th
 
 # If this compile script doesn't work on your system, check these things:
 #
@@ -30,8 +30,7 @@ echo "$HOSTTYPE" | grep sun > /dev/null && SUNLIBS="-lnsl -lsocket"
 
 make -f - << _EOF_
 all: ReadForm_$HOSTTYPE ToForm_$HOSTTYPE ToFortran_$HOSTTYPE \
-tools/ReadData_$HOSTTYPE tools/restack_$HOSTTYPE \
-tools/ladj_$HOSTTYPE tools/plot_$HOSTTYPE
+tools/ReadData_$HOSTTYPE
 
 CFLAGS = -O6 $*
 
@@ -55,20 +54,6 @@ tools/ReadData_$HOSTTYPE: tools/ReadData.tm
 	  sh -s ReadData.tm \$(CFLAGS) -o ReadData_$HOSTTYPE $SUNLIBS
 	strip tools/ReadData_$HOSTTYPE
 	cd tools ; ln -sf ReadData_$HOSTTYPE ReadData
-
-tools/restack_$HOSTTYPE: tools/restack.c
-	gcc \$(CFLAGS) -o tools/restack_$HOSTTYPE tools/restack.c
-	strip tools/restack_$HOSTTYPE
-	cd tools ; ln -sf restack_$HOSTTYPE restack
-
-tools/ladj_$HOSTTYPE: tools/ladj.c
-	gcc \$(CFLAGS) -o tools/ladj_$HOSTTYPE tools/ladj.c
-	strip tools/ladj_$HOSTTYPE
-
-tools/plot_$HOSTTYPE: tools/plot.c
-	gcc \$(CFLAGS) -o tools/plot_$HOSTTYPE tools/plot.c -lm
-	strip tools/plot_$HOSTTYPE
-	cd tools ; ln -sf plot_$HOSTTYPE plot
 
 _EOF_
 

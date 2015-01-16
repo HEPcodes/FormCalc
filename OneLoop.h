@@ -1,7 +1,7 @@
 * OneLoop.h
 * the main simplification of FormCalc amplitudes in FORM 3
 * this file is part of FormCalc
-* last modified 12 Jun 01 th
+* last modified 12 Dec 01 th
 
 
 #procedure DotSimplify(momsubst, moresimp)
@@ -180,8 +180,6 @@ id abb(X1?) = X1;
 
 totensor q1, QQ;
 
-id A0i(M1?) * QQ(J1?) = 0;
-
 b QQ, A0i, B0i, C0i, D0i, E0i;
 .sort
 keep brackets;
@@ -217,6 +215,8 @@ id QQ(J1?, J1?) * B0i(P1?, M1?, M2?) = A0i(M2) + M1*B0i(P1, M1, M2);
 
 id QQ(?b) = sum_(X1, 0, nargs_(?b), 2,
   pave(0, 0)^(X1/2) * distrib_(1, X1, dd_, QQ, ?b));
+
+id A0i(M1?) * QQ(?a) = 0;
 
 id B0i(P1?, ?a) = PP(pave(1)*P1) * B0i(sq(P1), ?a);
 
@@ -266,8 +266,8 @@ endargument;
 #if `Dim' == 4
 * this is Chisholm's identity:
   repeat;
-    once ga(OM?{6,7}[X2], J1?, J2?, J3?, ?a) =
-      {1,-1}[X2] * ga(OM, LA, ?a) * e_(J1, J2, J3, LA) +
+    once ga(OM?, J1?, J2?, J3?, ?a) =
+      sign_(OM) * ga(OM, LA, ?a) * e_(J1, J2, J3, LA) +
       d_(J1, J2) * ga(OM, J3, ?a) -
       d_(J1, J3) * ga(OM, J2, ?a) +
       d_(J2, J3) * ga(OM, J1, ?a);
@@ -328,11 +328,11 @@ id abb(X1?) = X1;
 
 repeat;
   once e_(J1?, J2?, J3?, J4?) * ga(?a, J1?, ?b) =
-    ga(?a, LA, ?b) * fme(Eps(LA, J2, J3, J4));
+    ga(?a, LA, ?b) * fme(Eps(LA, J2, J3, J4)) * eq(J2) * eq(J3) * eq(J4);
   sum LA;
 endrepeat;
 
-b ga, Spinor, fme;
+b ga, Spinor, fme, eq;
 .sort
 keep brackets;
 
@@ -345,7 +345,7 @@ endrepeat;
 id eq(?a) = 1;
 
 #if `VADecompose' == 1
-id ga(OM?{6,7}[X2], ?a) = ga(1, ?a)/2 + {1,-1}[X2] * ga(5, ?a)/2;
+id ga(OM?, ?a) = ga(1, ?a)/2 + sign_(OM) * ga(5, ?a)/2;
 #endif
 
 id Spinor(?a) * ga(?b) * Spinor(?c) =

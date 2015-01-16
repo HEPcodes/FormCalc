@@ -1,8 +1,9 @@
 (*
 	GaussPoints.m
-		calculate the abscissas & weigths for Gaussian int.
+		calculate the abscissas and weights for the
+		Gaussian quadrature in 2to2.F
 		this file is part of FormCalc
-		last modified 1 Mar 01 th
+		last modified 10 Sep 01 th
 *)
 
 
@@ -30,16 +31,23 @@ hh = OpenFortran[ToFileName[$DriversDir, "gauss.F"]];
 
 theif := (theif = "#elif"; "#if")
 
+
+WriteString[hh, "\
+\tdouble precision gauss_x(GAUSSPOINTS/2)\n\
+\tdouble precision gauss_w(GAUSSPOINTS/2)\n\n"]
+
 ( delim = Prepend[Table[",\n     +    ", {#/2 - 1}], {}];
   WriteString[hh,
     theif <> " GAUSSPOINTS == " <> ToString[#] <>
     "\n\tdata gauss_x /\n     +    " <>
-    Transpose[{delim, ToString/@ SamplingPoints[#]}] <>
+    Transpose[{delim,
+      ToString/@ SetPrecision[SamplingPoints[#], 35]}] <>
     " /\n\tdata gauss_w /\n     +    " <>
-    Transpose[{delim, ToString/@ Weights[#]}] <> " /\n" ]
+    Transpose[{delim,
+      ToString/@ SetPrecision[Weights[#], 35]}] <> " /\n" ]
 )&/@ Points;
 
-WriteString[hh, "#endif\n\n"]
+WriteString[hh, "#endif\n"]
 
-Close[hh];
+Close[hh]
 

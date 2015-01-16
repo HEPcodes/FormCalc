@@ -2,7 +2,7 @@
 * all parameters for the MSSM are initialized here
 * this file is part of FormCalc
 * Christian Schappacher, 17 Feb 99
-* last modified 15 Jun 01 th
+* last modified 19 Jul 01 th
 
 
 * The input parameters for mssm_ini are:
@@ -45,6 +45,9 @@
 
 * NO_EXCLUSION_LIMITS
 *   If defined, the experimental exclusion limits are ignored.
+
+* TREE_LEVEL_MH
+*   If defined, uses only the tree-level Higgs masses.
 
 
 #ifndef MSQ
@@ -567,6 +570,16 @@
 
 	MA02 = MA0**2
 
+#ifdef TREE_LEVEL_MH
+
+	sig1 = 0
+	sig12 = 0
+	sig2 = 0
+
+	MHp2 = MA02 + MW2
+
+#else
+
 * this is the running top quark mass:
 	MTr2 = MT2/(1 + 4/(3*pi)*Alfas_MT)**2
 
@@ -662,6 +675,20 @@
 
 #endif COMPLEX_PARAMETERS
 
+	if(MA0 .le. 250 .and. MSQ .ge. 250) then
+	  MHp2 = MA02 + MW2
+     &      + Alfa*MW2/(12*pi*SW2)
+     &        *(Nc*(Ng - 1) + Ng - 9 + 15*SW2/CW2)*log(MSQ2/MW2)
+     &      + Nc*Alfa/(8*pi*SW2*MW2)
+     &        *(2*MTr2*MB2/(SB2*CB2)
+     &          - MW2*(MTr2/SB2 + MB2/CB2 - 2/3D0*MW2))
+     &        *log(MSQ2/MTr2)
+	else
+	  MHp2 = MA02 + MW2
+	endif
+
+#endif TREE_LEVEL_MH
+
 	tmp = (MA02 + MZ2 - sig2 - sig1)/2D0
 	tmp2 = sqrt(((MA02 + MZ2)**2 + (sig1 - sig2)**2)/4D0
      &    + (.5D0*(MA02 - MZ2)*(sig1 - sig2) - MA02*MZ2*C2B)*C2B
@@ -674,6 +701,9 @@
 	endif
 	Mh0 = sqrt(Mh02)
 
+	MH = Mh0
+	MH2 = Mh02
+
 #ifndef NO_EXCLUSION_LIMITS
 	if(Mh0 .lt. Mh0_LOWERBOUND) then
 	  print *, "mssm_ini: Mh0 = ", Mh0,
@@ -685,17 +715,6 @@
 	MHH2 = tmp + tmp2
 	MHH = sqrt(MHH2)
 
-	if(MA0 .le. 250 .and. MSQ .ge. 250) then
-	  MHp2 = MA02 + MW2
-     &      + Alfa*MW2/(12*pi*SW2)
-     &        *(Nc*(Ng - 1) + Ng - 9 + 15*SW2/CW2)*log(MSQ2/MW2)
-     &      + Nc*Alfa/(8*pi*SW2*MW2)
-     &        *(2*MTr2*MB2/(SB2*CB2)
-     &          - MW2*(MTr2/SB2 + MB2/CB2 - 2/3D0*MW2))
-     &        *log(MSQ2/MTr2)
-	else
-	  MHp2 = MA02 + MW2
-	endif
 	MHp = sqrt(MHp2)
 	end
 

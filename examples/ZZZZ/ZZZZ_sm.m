@@ -3,7 +3,7 @@
 		generates the Fortran code for
 		Z Z -> Z Z in the electroweak Standard Model
 		this file is part of FormCalc
-		last modified 21 Jun 01 th
+		last modified 20 Jul 01 th
 
 Reference: A. Denner, S. Dittmaier, T. Hahn,
            Phys. Rev. D56 (1997) 117 (hep-ph/9612390).
@@ -67,7 +67,9 @@ box = CalcFeynAmp[
   CreateFeynAmp[ins],
   Select[counter, DiagramType[#] == 0 &]]
 
-WriteSquaredME[born, {self, vert, box}, Abbr[], "fortran_sm",
+abbr = OptimizeAbbr[Abbr[]]
+
+WriteSquaredME[born, {self, vert, box}, abbr, "fortran_sm",
   Drivers -> "drivers_sm"]
 
 WriteRenConst[counter, "fortran_sm"]

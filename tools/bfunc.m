@@ -3,7 +3,7 @@
 		explicit formulas for the one- and two-point
 		functions and their derivatives
 		this file is part of FormCalc
-		last modified 2 Mar 00 th
+		last modified 3 Dec 01 th
 
 The formulas are more or less directly from the Passarino-Veltman
 paper. The regularization parameters are
@@ -34,18 +34,28 @@ A0[0] = 0
 A0[m_] = m (1 - Log[m/Mudim] + Delta)
 
 
+B0[0, 0, 0] = 0
+
+B0[p_, 0, 0] = 2 - Log[-p/Mudim - I eps] + Delta
+
 B0[p_, m1_, 0] := B0[p, 0, m1]
 
-B0[0, m1_, m2_] = -Log[m2/Mudim] - F[1, m1/(m1 - m2)] + Delta
+B0[0, m_, m_] = -Log[m/Mudim] + Delta
 
-B0[p_, m1_, m2_] = -Log[m2/Mudim] - F[1, x1] - F[1, x2] + Delta
+B0[0, m1_, m2_] = -Log[m2/Mudim] - Simplify[F[1, m1/(m1 - m2)]] + Delta
 
+B0[p_, m1_, m2_] = -Log[m2/Mudim] - Simplify[F[1, x1] + F[1, x2]] + Delta
+
+
+B1[p_, 0, 0] := -1/2 B0[p, 0, 0];
 
 B1[p_, m1_, 0] := -B1[p, 0, m1] - B0[p, 0, m1]
 
-B1[0, m1_, m2_] = (Log[m2/Mudim] + F[2, m1/(m1 - m2)] - Delta)/2
+B1[0, m_, m_] = (Log[m/Mudim] - Delta)/2
 
-B1[p_, m1_, m2_] = (Log[m2/Mudim] + F[2, x1] + F[2, x2] - Delta)/2
+B1[0, m1_, m2_] = (Log[m2/Mudim] + Simplify[F[2, m1/(m1 - m2)]] - Delta)/2
+
+B1[p_, m1_, m2_] = (Log[m2/Mudim] + Simplify[F[2, x1] + F[2, x2]] - Delta)/2
 
 
 B11[p_, m1_, 0] := B11[p, 0, m1] -
@@ -53,7 +63,7 @@ B11[p_, m1_, 0] := B11[p, 0, m1] -
 
 B11[0, m1_, m2_] = (-Log[m2/Mudim] - F[3, m1/(m1 - m2)] + Delta)/3
 
-B11[p_, m1_, m2_] = (-Log[m2/Mudim] - F[3, x1] - F[3, x2] + Delta)/3
+B11[p_, m1_, m2_] = (-Log[m2/Mudim] - Simplify[F[3, x1] + F[3, x2]] + Delta)/3
 
 
 B00[p_, m1_, m2_] :=
@@ -94,7 +104,7 @@ DB00[p_, m1_, m2_] := -1/18 + m1 DB0[p, m1, m2]/3 +
  (B1[p, m1, m2] + (p + m1 - m2) DB1[p, m1, m2])/6
 
 (* note: DB00 looks like it could be IR divergent --
-   it's not: the lambda-dependence cancels out :-) *)
+   it's not: the lambda-dependence cancels :-) *)
 
 
 Null

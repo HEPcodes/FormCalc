@@ -1,0 +1,15 @@
+13 Sep 01: Added adaptive Gauss-Kronrod integration for 2 -> 3
+           (multigauss.F), algorithm can be tuned using the
+           NODES_var preprocessor defines in run.F and may be
+           significantly faster for some applications, though also
+           worse for nasty integrands.
+           Added special cases of B1[0, ...] to tools/btensor.m.
+
+30 Aug 01: Largely rewritten the internal FormCalc functions
+           for optimization and pre-output ordering:
+           OptimizeAbbr, Dependencies, and OnePassOrder,
+           yields some 30% in speed.
+
+27 Aug 01: Switched 2 -> 3 code from (fixed-point) multiple Gaussian
+           integration to VEGAS, added the adaptive ACM-algorithm
+           DCUHRE for checking.

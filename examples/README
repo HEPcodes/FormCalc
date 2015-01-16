@@ -3,13 +3,15 @@ FeynArts and FormCalc.
 
 The following scattering processes are calculated:
 
-directory | process             | model(s)
-----------+---------------------+-----------------
-eett      | e^+ e^- -> \bar t t | SM, SMbgf, MSSM
-eeWW      | e^+ e^- -> W^+ W^-  | SM, SMbgf, MSSM
-eeHH      | e^+ e^- -> H^+ H^-  | MSSM
-WWWW      | W^+ W^- -> W^+ W^-  | SM, SMbgf
-ZZZZ      | Z Z -> Z Z          | SM, SMbgf
+directory | process                        | model(s)
+----------+--------------------------------+-----------------
+eett      | e^+ e^- -> \bar t t            | SM, SMbgf, MSSM
+eeWW      | e^+ e^- -> W^+ W^-             | SM, SMbgf, MSSM
+eeHH      | e^+ e^- -> H^+ H^-             | MSSM
+AAAA      | \gamma \gamma -> \gamma \gamma | SM, SMbgf
+AAtt      | \gamma \gamma -> \bar t t      | SM, SMbgf
+WWWW      | W^+ W^- -> W^+ W^-             | SM, SMbgf
+ZZZZ      | Z Z -> Z Z                     | SM, SMbgf
 
 where SM is the electroweak Standard Model,
 SMbgf the same in the background-field formulation,

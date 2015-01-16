@@ -4,7 +4,7 @@
 		Z Z -> Z Z in the electroweak Standard Model
 		using the background-field method
 		this file is part of FormCalc
-		last modified 21 Jun 01 th
+		last modified 20 Jul 01 th
 
 Reference: A. Denner, S. Dittmaier, T. Hahn,
            Phys. Rev. D56 (1997) 117 (hep-ph/9612390).
@@ -69,7 +69,9 @@ box = CalcFeynAmp[
   CreateFeynAmp[ins],
   Select[counter, DiagramType[#] == 0 &]]
 
-WriteSquaredME[born, {self, vert, box}, Abbr[], "fortran_smbgf",
+abbr = OptimizeAbbr[Abbr[]]
+
+WriteSquaredME[born, {self, vert, box}, abbr, "fortran_smbgf",
   Drivers -> "drivers_smbgf"]
 
 WriteRenConst[{counter, dWFZ1}, "fortran_smbgf"]

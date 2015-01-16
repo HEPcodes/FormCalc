@@ -1,7 +1,7 @@
 * sm_ini.F
 * all parameters for the Standard Model are initialized here
 * this file is part of FormCalc
-* last modified 14 Jun 01 th
+* last modified 19 Jul 01 th
 
 
 	subroutine model_ini(Ecms, reset, *)
@@ -51,8 +51,8 @@
 	print *, "============================"
 	print *, "SM parameters"
 	print *, "----------------------------"
-	print *, "1/alpha =", 1/Alfa
-	print *, "alpha_s(s) =", Alfas
+	print *, "1/Alfa =", 1/Alfa
+	print *, "Alfas(s) =", Alfas
 	print *, "GF =", GF
 	print *, "SW2 =", SW2
 	print *, "----------------------------"

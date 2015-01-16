@@ -1,7 +1,7 @@
 * process.h
 * defines all process-dependent parameters for num.F
 * this file is part of FormCalc
-* last modified 19 Jun 01 th
+* last modified 23 Jul 01 th
 
 * Definition of the external particles.
 * The TYPEn may be one of SCALAR, FERMION, PHOTON, or VECTOR.
@@ -35,6 +35,8 @@
 #define COLOURFACTOR 1
 
 * Whether to include soft-photon bremsstrahlung
+* ESOFTMAX is the maximum energy a soft photon may have and may be
+* defined in terms of Ecms, the CMS energy.
 
 *#define BREMSSTRAHLUNG
 #define ESOFTMAX .1D0*Ecms
@@ -43,4 +45,8 @@
 * (if calculating in the background-field method)
 
 *#define WF_RENORMALIZATION (nW*dWFW1 + nZ*dWFZ1)
+
+* Include the kinematics-dependent part of the code
+
+#include "2to2.F"
 
