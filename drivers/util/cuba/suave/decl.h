@@ -2,7 +2,7 @@
 	decl.h
 		Type declarations
 		this file is part of Suave
-		last modified 4 Oct 11 th
+		last modified 21 Dec 11 th
 */
 
 
@@ -42,7 +42,11 @@ typedef struct _this {
 #ifndef MLVERSION
   Integrand integrand;
   void *userdata;
+#ifdef HAVE_FORK
   int ncores, *child;
+  real *frame;
+  SHM_ONLY(int shmid;)
+#endif
 #endif
   real epsrel, epsabs;
   int flags, seed;
@@ -54,6 +58,8 @@ typedef struct _this {
   RNGState rng;  
   jmp_buf abort;
 } This;
+
+#define nframe nnew
 
 typedef const This cThis;
 

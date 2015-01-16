@@ -1,24 +1,26 @@
 * CTFcut.F
 * the FormCalc wrapper for the CutTools six-point function
 * this file is part of FormCalc
-* last modified 4 Aug 11 th
+* last modified 14 Feb 12 th
+
+#include "types.h"
 
 
-	double complex function CTFcut(rank, num, numeps,
+	ComplexType function CTFcut(rank, num, numeps, heldelta,
      &    p1, p2, p3, p4, p5, m1, m2, m3, m4, m5, m6)
 	implicit none
-	integer rank
+	integer rank, heldelta
 	external num, numeps
 	integer*8 p1, p2, p3, p4, p5
-	double precision m1, m2, m3, m4, m5, m6
+	RealType m1, m2, m3, m4, m5, m6
 
-	double precision pj(0:3,6), mj(6)
-	logical stable, forcemp
-	double complex res(0:2), res1
+#include "CT.h"
+
+	RealType pj(0:3,6)
+	ComplexType mj(6)
+	logical stable
+	ComplexType res(0:2)
 	external CTmpnum
-
-	double precision rootsvalue, muscale
-	common /cuttools_para/ rootsvalue, muscale
 
 	pj(0,1) = 0
 	pj(1,1) = 0
@@ -37,9 +39,16 @@
 	mj(5) = m5
 	mj(6) = m6
 
-	call ctsxcut(rootsvalue, muscale, 6, num, CTmpnum,
-     &    rank, pj, mj, res, res1, stable, forcemp)
-	CTFcut = res(0)
-	PRINT *, "CTFcut=", CTFcut
+	call ctsxcut(imode, rootsvalue, muscale, 6, num, CTmpnum,
+     &    rank, pj, mj, res(0), res(1), res(2), stable)
+	CTFcut = res(epscoeff)
+	if( epscoeff .eq. 0 ) then
+	  call setscaloop(4)
+	  call ctsxcut(imode, rootsvalue, muscale, 6, numeps, CTmpnum,
+     &      rank, pj, mj, res(0), res(1), res(2), stable)
+	  CTFcut = CTFcut - 2*res(0)
+	  call setscaloop(1)
+	endif
+c	PRINT *, "CTFcut=", CTFcut
 	end
 

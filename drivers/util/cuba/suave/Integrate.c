@@ -2,7 +2,7 @@
 	Integrate.c
 		integrate over the unit hypercube
 		this file is part of Suave
-		last modified 25 Nov 11 th
+		last modified 19 Dec 11 th
 */
 
 
@@ -34,6 +34,9 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
   if( BadComponent(t) ) return -2;
   if( BadDimension(t) ) return -1;
 
+  ShmAlloc(t, ShmRm(t));
+  ForkCores(t);
+
   if( (fail = setjmp(t->abort)) ) goto abort;
 
   t->epsabs = Max(t->epsabs, NOTZERO);
@@ -62,7 +65,7 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
     anchor->w + t->nnew,
     anchor->w + t->nnew + t->ndim*t->nnew);
   df = anchor->df;
-  ResCopy(totals, anchor->result);
+  FCopy(totals, anchor->result);
 
   for( t->nregions = 1; ; ++t->nregions ) {
     Var var[NDIM][2], *vLR;
@@ -164,19 +167,19 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
     while( n-- ) {
       cbool final = (*w < 0);
       if( x[bisectdim] < mid ) {
-        if( final && wR > regionR->w ) *(wR - 1) = -fabs(*(wR - 1));
+        if( final && wR > regionR->w ) wR[-1] = -fabs(wR[-1]);
         *wL++ = *w++;
-        VecCopy(xL, x);
+        XCopy(xL, x);
         xL += t->ndim;
-        ResCopy(fL, f);
+        FCopy(fL, f);
         fL += t->ncomp;
       }
       else {
-        if( final && wL > regionL->w ) *(wL - 1) = -fabs(*(wL - 1));
+        if( final && wL > regionL->w ) wL[-1] = -fabs(wL[-1]);
         *wR++ = *w++;
-        VecCopy(xR, x);
+        XCopy(xR, x);
         xR += t->ndim;
-        ResCopy(fR, f);
+        FCopy(fR, f);
         fR += t->ncomp;
       }
       x += t->ndim;
@@ -185,8 +188,8 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
     }
 
     Reweight(t, region->bounds, wlast, flast, f, totals);
-    VecCopy(regionL->bounds, region->bounds);
-    VecCopy(regionR->bounds, region->bounds);
+    XCopy(regionL->bounds, region->bounds);
+    XCopy(regionR->bounds, region->bounds);
 
     boundsL = &regionL->bounds[bisectdim];
     boundsR = &regionR->bounds[bisectdim];
@@ -267,11 +270,12 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
 
 abort:
   free(region);
-
   while( (region = anchor) ) {
     anchor = anchor->next;
     free(region);
   }
+  WaitCores(t);
+  ShmFree(t);
 
   return fail;
 }

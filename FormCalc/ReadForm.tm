@@ -49,7 +49,7 @@
 	ReadForm.tm
 		reads FORM output back into Mathematica
 		this file is part of FormCalc
-		last modified 23 Dec 11 th
+		last modified 16 Mar 12 th
 
 Note: FORM code must have
 	1. #- (no listing),
@@ -104,7 +104,7 @@ in the following way:
 SumOver(...) * Mat(...) * Den(...) * paveM(...) * ..... * (...)
 
 Hierarchy of collecting:
-4. SumOver
+4. SumOver, PowerOf
 3. Mat
 2. Den
 1. [coefficient]
@@ -131,6 +131,7 @@ typedef struct {
 
 static const FUN funtab[] = {
   {(cstring)"SumOver", LEVEL_SUMOVER},
+  {(cstring)"PowerOf", LEVEL_SUMOVER},
   {(cstring)"Mat",     LEVEL_MAT},
   {(cstring)"Den",     LEVEL_DEN},
   {(cstring)"paveM",   LEVEL_PAVE},

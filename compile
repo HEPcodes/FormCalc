@@ -1,6 +1,6 @@
 #! /bin/sh
 # compile script for the C programs used by FormCalc
-# last modified 17 Nov 11 th
+# last modified 16 Jan 12 th
 
 # If this compile script doesn't work on your system, check these things:
 #
@@ -93,7 +93,9 @@ PATH=\""'$$PATH'":$t\" $MCC $MCFLAGS $CFLAGS"
 cc="$CC $CFLAGS"
 
 make -f - << _EOF_ || exit 1
-all: $DEST/ReadForm$exe $DEST/ToForm$exe $DEST/ToFortran$exe $DEST/ReadData$exe $DEST/reorder$exe
+all: $DEST/ReadForm$exe $DEST/ToForm$exe \
+  $DEST/ToFortran$exe $DEST/ToC$exe \
+  $DEST/ReadData$exe $DEST/reorder$exe
 
 $DEST/ReadForm$exe: $SRC/FormCalc/ReadForm.tm
 	$mcc -o $DEST/ReadForm$exe $SRC/FormCalc/ReadForm.tm
@@ -106,6 +108,10 @@ $DEST/ToForm$exe: $SRC/FormCalc/ToForm.c
 $DEST/ToFortran$exe: $SRC/FormCalc/ToFortran.c
 	$cc -o $DEST/ToFortran$exe $SRC/FormCalc/ToFortran.c
 	-strip $DEST/ToFortran$exe
+
+$DEST/ToC$exe: $SRC/FormCalc/ToC.c
+	$cc -o $DEST/ToC$exe $SRC/FormCalc/ToC.c
+	-strip $DEST/ToC$exe
 
 $DEST/ReadData$exe: $SRC/tools/ReadData.tm
 	$mcc -o $DEST/ReadData$exe $SRC/tools/ReadData.tm

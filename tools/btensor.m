@@ -135,6 +135,8 @@ DB00[p_, m1_, m2_] :=
 
 DB11[p_, m1_, m2_] = D[B11[p, m1, m2], p]//Simplify
 
+DB001[p_, m1_, m2_] := D[B001[p, m1, m2], p]//Simplify
+
 
 B0[p_, m1_, m2_] := B0[p, m2, m1] /; !OrderedQ[{m1, m2}];
 DB0[p_, m1_, m2_] := DB0[p, m2, m1] /; !OrderedQ[{m1, m2}]

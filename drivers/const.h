@@ -1,7 +1,7 @@
 * const.h
 * model-independent constants
 * this file is part of FormCalc
-* last modified 30 Nov 11 th
+* last modified 13 Feb 12 th
 
 
 	RealType pi, degree, sqrt2, hbar_c2
@@ -22,7 +22,11 @@
 
 	parameter (cI = (0D0, 1D0))
 
-	RealType Divergence, mudim, lambda
+	RealType Divergence, mudim, lambda, muscale
 	integer epscoeff, Finite
-	common /renorm/ Divergence, mudim, lambda, epscoeff, Finite
+	common /renorm/ Divergence, mudim, lambda, muscale
+	common /renorm/ epscoeff, Finite
+
+	RealType rootsvalue, imode
+	common /cuttools_para/ rootsvalue, imode
 

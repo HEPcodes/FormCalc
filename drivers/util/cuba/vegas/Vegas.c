@@ -2,22 +2,17 @@
 	Vegas.c
 		Vegas Monte-Carlo integration
 		by Thomas Hahn
-		last modified 27 Sep 11 th
+		last modified 19 Dec 11 th
 */
 
 
-#include "decl.h"
-
-#define Print(s) puts(s); fflush(stdout)
-
-/*********************************************************************/
-
 #define VEGAS
-#include "DoSample.c"
+#define ROUTINE "Vegas"
+
+#include "decl.h"
+#include "CSample.c"
 
 /*********************************************************************/
-
-#include "common.c"
 
 Extern void EXPORT(Vegas)(ccount ndim, ccount ncomp,
   Integrand integrand, void *userdata,
@@ -46,12 +41,8 @@ Extern void EXPORT(Vegas)(ccount ndim, ccount ncomp,
   t.statefile = statefile;
   t.neval = 0;
 
-  ForkCores(&t);
-
   *pfail = Integrate(&t, integral, error, prob);
   *pneval = t.neval;
-
-  WaitCores(&t);
 }
 
 /*********************************************************************/
@@ -94,12 +85,9 @@ Extern void EXPORT(vegas)(ccount *pndim, ccount *pncomp,
   }
   t.statefile = s;
 
-  ForkCores(&t);
-
   *pfail = Integrate(&t, integral, error, prob);
   *pneval = t.neval;
 
   free(s);
-  WaitCores(&t);
 }
 

@@ -3,7 +3,7 @@
 		calculate the abscissas and weights for the
 		Gaussian quadrature in gauss.F
 		this file is part of FormCalc
-		last modified 5 Mar 03 th
+		last modified 13 Feb 12 th
 *)
 
 
@@ -23,7 +23,7 @@ delim := (delim = ","; "\tdata gaussdata /")
 hh = OpenFortran["gaussdata.F"];
 
 WriteString[hh,
-  "\tdouble precision gaussdata(" <> ToFortran[Length[gaussdata]] <> ")\n" <>
+  "\tRealType gaussdata(" <> ToFortran[Length[gaussdata]] <> ")\n" <>
   ({delim, "\n     &    ", ToFortran[#]}&)/@ gaussdata <>
   " /\n"
 ]

@@ -2,7 +2,7 @@
 	Sample.c
 		most of what is related to sampling
 		this file is part of Divonne
-		last modified 7 Nov 11 th
+		last modified 17 Dec 11 th
 */
 
 
@@ -49,9 +49,9 @@ static void SampleSobol(This *t, ccount iregion)
       *x = b[dim].lower + *x*(b[dim].upper - b[dim].lower);
   }
 
-  DoSample(t, n, samples->x, f, t->ndim);
+  DoSample(t, n, samples->x, f);
 
-  ResCopy(avg, f);
+  FCopy(avg, f);
   f += t->ncomp;
   for( i = 2; i < n; ++i )
     for( comp = 0; comp < t->ncomp; ++comp )
@@ -103,9 +103,9 @@ static void SampleKorobov(This *t, ccount iregion)
     nextra = 1;
   }
 
-  DoSample(t, n + nextra, x, f, t->ndim);
+  DoSample(t, n + nextra, x, f);
 
-  ResCopy(avg, flast);
+  FCopy(avg, flast);
   flast += t->ncomp;
   for( i = 2; i < n; ++i )
     for( comp = 0; comp < t->ncomp; ++comp )
@@ -250,7 +250,7 @@ static real Sample(This *t, creal *x0)
     n = 2;
   }
 
-  DoSample(t, n, xtmp, ftmp, t->ndim);
+  DoSample(t, n, xtmp, ftmp);
 
   comp = Untag(t->selectedcomp);
   f = ftmp[comp];

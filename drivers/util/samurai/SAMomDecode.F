@@ -4,23 +4,24 @@
 * the momenta's (integer*1) prefactors are encoded as the
 * bytes of an integer*8
 * this file is part of FormCalc
-* last modified 7 Dec 10 th
+* last modified 14 Feb 12 th
+
+#include "types.h"
 
 
 	subroutine SAMomDecode(code, p,ldp)
 	implicit none
 	integer*8 code
 	integer ldp
-	double precision p(ldp,4)
+	RealType p(ldp,4)
 
 	integer i
-	double complex a(2,2)
+	ComplexType a(2,2)
 
 	integer*8 c
 	integer*1 f
-	equivalence (f, c)
 
-	double complex vec(2,2, 1)
+	ComplexType vec(2,2, 1)
 	common /vectors/ vec
 
 	a(1,1) = 0
@@ -33,6 +34,7 @@
 
 	do while( c .ne. 0 )
 	  i = i + 8
+	  f = iand(c, 255)
 	  a(1,1) = a(1,1) + f*vec(1,1,i)
 	  a(2,1) = a(2,1) + f*vec(2,1,i)
 	  a(1,2) = a(1,2) + f*vec(1,2,i)
@@ -40,9 +42,9 @@
 	  c = ishft(c, -8)
 	enddo
 
-	p(1,4) = .5D0*DBLE(a(1,1) + a(2,2))
-	p(1,3) = .5D0*DBLE(a(1,1) - a(2,2))
-	p(1,1) = .5D0*DBLE(a(2,1) + a(1,2))
-	p(1,2) = .5D0*DIMAG(a(2,1) - a(1,2))
+	p(1,4) = .5D0*Re(a(1,1) + a(2,2))
+	p(1,3) = .5D0*Re(a(1,1) - a(2,2))
+	p(1,1) = .5D0*Re(a(2,1) + a(1,2))
+	p(1,2) = .5D0*Im(a(2,1) - a(1,2))
 	end
 

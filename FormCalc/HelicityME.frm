@@ -1,7 +1,7 @@
 * HelicityME.frm
 * the FORM part of the HelicityME function
 * this file is part of FormCalc
-* last modified 6 Apr 11 th
+* last modified 6 Apr 12 th
 
 
 #procedure Fewest(foo)
@@ -32,11 +32,11 @@ id DiracChain(Spinor(?p), [x]?pos_, ?g, Spinor(?q)) =
 
 * un-antisymmetrize the Dirac chains if necessary
 also DiracChain(Spinor(?p), [x]?, ?g, Spinor(?q)) =
-  Spinor(?p) * GM(-[x]) * ( GD(?g) -
-    sum_(KK, 2, nargs_(?g), 2, distrib_(-1, KK, DD, GD, ?g)) ) *
-  Spinor(?q);
+  Spinor(?p) * GM(-[x]) * sum_(KK, 0, nargs_(?g), 2,
+    sign_(KK/2) * distrib_(-1, KK, DD, GD, ?g)) * Spinor(?q);
 
 id DD() = 1;
+id DD([mu]?, [nu]?) = d_([mu], [nu]);
 repeat;
   once DD(?a) = g_(1, ?a)/4;
   trace4, 1;
@@ -57,7 +57,7 @@ repeat;
 * If the spinors at the ends don't match directly, i.e.
 *   <s2| g1 g2... |s1> <s2| ... |>,
 * we use charge conjugation to reverse the first chain to have the
-* |s1>'s side by side for substituting the projector (|s2><s2|).
+* |s2>'s side by side for substituting the projector (|s2><s2|).
 * Inserting 1 = C C^-1 results in
 *   <s2|C (C^-1 g1 C) (C^-1 g2 C) ... C^-1|s1>
 *   = <anti-s2| (-g1)^T (-g2)^T ... |anti-s1>
@@ -197,7 +197,7 @@ v [p1], [p2];
 s [m1], [m2], [s1], [s2], [x], [y];
 t [t];
 
-i KK, DUMMY;
+i KK;
 t DD;
 nt GD;
 f RHO, RHOC, GM;

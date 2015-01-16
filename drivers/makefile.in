@@ -1,7 +1,7 @@
 # makefile.in
 # makefile template used by configure
 # this file is part of FormCalc
-# last modified 22 Jul 11 th
+# last modified 4 Jun 12 th
 
 # Note: make permanent changes only in makefile.in,
 # changes in makefile will be overwritten by configure.
@@ -23,9 +23,11 @@ INCLUDE := $(patsubst %,-I%,$(subst :, ,$(VPATH)))
 PREFIX :=
 
 FFLAGS += $(INCLUDE)
+CFLAGS += $(INCLUDE) -DLANG_C
 
 ifdef DEBUG
 FFLAGS += -g $(DEF)DEBUG
+CFLAGS += -g -DDEBUG
 endif
 
 export FC
@@ -80,7 +82,7 @@ ifeq ($(MMA), 0)
 	$(SRC)/mktm $<
 	$(FC) $(FFLAGS) $(DEF)MMA $(DEF)PREFIX=$(PREFIX) -c $<
 	CC="$(SRC)/tools/fcc" REALCC="$(CC) $(CFLAGS)" \
-	CXX="$(SRC)/tools/f++" REALCC="$(CXX) $(CXXFLAGS)" \
+	CXX="$(SRC)/tools/f++" REALCXX="$(CXX) $(CXXFLAGS)" \
 	  PATH="$(PATH):$(SRC)/tools" \
 	  mcc $(MCFLAGS) -o $@ $*.tm $*.o $(LIBS) $(STDLIBS) $(LDFLAGS)
 	-$(RM) $*.o $*.tm.c

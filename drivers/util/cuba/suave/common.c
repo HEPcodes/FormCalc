@@ -2,13 +2,13 @@
 	common.c
 		includes most of the modules
 		this file is part of Suave
-		last modified 25 Nov 11 th
+		last modified 21 Dec 11 th
 */
 
 
 #define RegionAlloc(t, p, n, nnew) MemAlloc(p, \
   sizeof(Region) + \
-  (n)*(t->ndim + t->ncomp + 1)*sizeof(real) + \
+  (n)*SAMPLESIZE + \
   (nnew)*t->ndim*sizeof(bin_t))
 
 static inline bool BadDimension(cThis *t)
@@ -29,5 +29,4 @@ static inline bool BadComponent(cThis *t)
 #include "Grid.c"
 #include "Sample.c"
 #include "Fluct.c"
-#include "Integrate.c"
 

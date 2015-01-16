@@ -1,24 +1,29 @@
 * CTEcut.F
 * the FormCalc wrapper for the CutTools five-point function
 * this file is part of FormCalc
-* last modified 4 Aug 11 th
+* last modified 14 Feb 12 th
+
+#include "types.h"
 
 
-	double complex function CTEcut(rank, num, numeps,
+	ComplexType function CTEcut(rank, num, numeps, heldelta,
      &    p1, p2, p3, p4, m1, m2, m3, m4, m5)
 	implicit none
-	integer rank
+	integer rank, heldelta
 	external num, numeps
 	integer*8 p1, p2, p3, p4
-	double precision m1, m2, m3, m4, m5
+	RealType m1, m2, m3, m4, m5
 
-	double precision pj(0:3,5), mj(5)
-	logical stable, forcemp
-	double complex res(0:2), res1
+#include "CT.h"
+
+	RealType pj(0:3,5)
+	ComplexType mj(5)
+	logical stable
+	ComplexType res(0:2)
 	external CTmpnum
 
-	double precision rootsvalue, muscale
-	common /cuttools_para/ rootsvalue, muscale
+	CTEcut = 0
+	if( heldelta .eq. 0 ) return
 
 	pj(0,1) = 0
 	pj(1,1) = 0
@@ -35,9 +40,16 @@
 	mj(4) = m4
 	mj(5) = m5
 
-	call ctsxcut(rootsvalue, muscale, 5, num, CTmpnum,
-     &    rank, pj, mj, res, res1, stable, forcemp)
-	CTEcut = res(0)
+	call ctsxcut(imode, rootsvalue, muscale, 5, num, CTmpnum,
+     &    rank, pj, mj, res(0), res(1), res(2), stable)
+	CTEcut = res(epscoeff)
+	if( epscoeff .eq. 0 ) then
+	  call setscaloop(4)
+	  call ctsxcut(imode, rootsvalue, muscale, 5, numeps, CTmpnum,
+     &      rank, pj, mj, res(0), res(1), res(2), stable)
+	  CTEcut = CTEcut - 2*res(1)
+	  call setscaloop(1)
+	endif
 	PRINT *, "CTEcut=", CTEcut
 	end
 

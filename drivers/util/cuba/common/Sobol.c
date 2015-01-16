@@ -2,7 +2,7 @@
 	Sobol.c
 		Sobol quasi-random-number generator
 		adapted from ACM TOMS algorithm 659
-		last modified 17 Jan 05 th
+		last modified 17 Dec 11 th
 */
 
 
@@ -103,7 +103,7 @@ static void IniRandom(cnumber n, cint flags)
   }
 
   sobol_.seq = 0;
-  VecClear(sobol_.prev);
+  XClear(sobol_.prev);
 }
 
 

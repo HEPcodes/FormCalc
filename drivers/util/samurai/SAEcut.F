@@ -1,23 +1,28 @@
 * SAEcut.F
 * the FormCalc wrapper for the Samurai five-point function
 * this file is part of FormCalc
-* last modified 31 Mar 11 th
+* last modified 13 Feb 12 th
+
+#include "types.h"
 
 
-	double complex function SAEcut(rank, num, numeps,
+	ComplexType function SAEcut(rank, num, numeps, heldelta,
      &    p1, p2, p3, p4, m1, m2, m3, m4, m5)
 	implicit none
-	integer rank
-	double complex num, numeps
+	integer rank, heldelta
+	ComplexType num, numeps
 	external num, numeps
 	integer*8 p1, p2, p3, p4
-	double precision m1, m2, m3, m4, m5
+	RealType m1, m2, m3, m4, m5
 
 #include "SA.h"
 
-	double precision pj(5,4), mj(5)
-	double complex tot(-2:0), totr
+	RealType pj(5,4), mj(5)
+	ComplexType tot(-2:0), totr
 	logical ok
+
+	SAEcut = 0
+	if( heldelta .eq. 0 ) return
 
 	pj(1,1) = 0
 	pj(1,2) = 0
@@ -36,5 +41,11 @@
 
 	call samurai(num, tot, totr, pj, mj, 5, rank, 1, mudim, ok)
 	SAEcut = tot(epscoeff)
+	if( epscoeff .eq. 0 ) then
+	  call setisca(5)
+	  call samurai(numeps, tot, totr, pj, mj, 5, rank, 1, mudim, ok)
+	  SAEcut = SAEcut - 2*tot(-1)
+	  call setisca(4)
+	endif
 	end
 

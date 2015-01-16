@@ -1,20 +1,16 @@
 * util.h
 * prototypes for the functions in util.a
 * this file is part of FormCalc
-* last modified 30 Nov 11 th
+* last modified 16 Mar 12 th
 
 
 	RealType ThreeMom
 	RealType SInvariant, TInvariant
-	ComplexType Pair, Eps
-	ComplexType SxS, SeS
-	integer VxS, VeS, BxS, BeS
+	ComplexType Pair, Eps, Chain
 
 	external ThreeMom
 	external SInvariant, TInvariant
-	external Pair, Eps
-	external SxS, SeS
-	external VxS, VeS, BxS, BeS
+	external Pair, Eps, Chain
 
 #ifndef LEGS
 #define LEGS 1
@@ -29,11 +25,10 @@
 	RealType momspec(16,LEGS)
 	common /momenta/ momspec
 
-	RealType rootsvalue, muscale
-	common /cuttools_para/ rootsvalue, muscale
-
-	integer*8 by
-	parameter (by = 256)
+* encoding base for spinor chains (JC) and momenta (JK)
+	integer*8 JC, JK
+	parameter (JC = 256)
+	parameter (JK = 256)
 
 
 #ifndef SPEC_M
@@ -55,10 +50,12 @@
 #define s(i) (8*i+3)
 #define e(i) (8*i+3+Hel(i))
 #define ec(i) (8*i+3-Hel(i))
-#define Spinor(i,s,om) (s*2*Hel(i)+16*i+om+5)
-#define DottedSpinor(i,s,om) (s*2*Hel(i)+16*i+om+7)
+#define Spinor(i,s,d) (s*Hel(i)+8*i+d+5)
 
-#define MomEncoding(f,i) iand(f,255)*by**(i-1)
+#define EpsL 8
+#define EpsR 16
+
+#define MomEncoding(f,i) iand(f,JK-1)*JK**(i-1)
 
 #define signbit(i) ibits(i,31,1)
 #define IndexDelta(i,j) signbit(ieor(i,j)-1)
@@ -68,7 +65,17 @@
 #define Error(err,msg) call m_(err, __LINE__, __FILE__, msg)
 #define Warning(msg) call m_(0, 0, __FILE__, msg)
 #define INFO print *,
-#define DEB print *,
+#define DEB(a,x) print *, a, x
+#define LOOP(var,from,to,step) do var = from, to, step
+#define ENDLOOP(var) enddo
+#define TEST(i,b) if( btest(i,b) ) then
+#define ENDTEST(i,b) endif
+
+#define BIT_RESET 0
+#define BIT_LOOP 1
+#define BIT_HEL(i) (5*(LEGS-i)+Hel(i)+2)
+#define LOOP_HEL(h) do h = -2, 2
+#define ENDLOOP_HEL(h) enddo
 
 #define Cut(c,m) (m)*(c)
 

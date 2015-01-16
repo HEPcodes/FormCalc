@@ -1,39 +1,24 @@
 /*
-	DoSample.c
-		the actual sampling routine, serial and parallel,
+	Fork.c
+		the parallel sampling routine
 		for the C versions of the Cuba routines
 		by Thomas Hahn
-		last modified 30 Nov 11 th
+		last modified 23 Dec 11 th
 */
 
 #define MINSLICE 10
-//#define MINCORES 1
-#define MINCORES 2
-
-#if defined(VEGAS) || defined(SUAVE)
-#define VEG_ONLY(...) __VA_ARGS__
-#else
-#define VEG_ONLY(...)
-#endif
-
-#ifdef DIVONNE
-#define DIV_ONLY(...) __VA_ARGS__
-#define LDX(ldx) ldx
-#else
-#define DIV_ONLY(...)
-#define LDX(ldx) t->ndim
-#endif
+#define MINCORES 1
+//#define MINCORES 2
 
 typedef struct {
-  real *f;
-  number n;
-  VEG_ONLY(count iter;)
-  DIV_ONLY(number neval_opt, neval_cut;
-           count ldx, phase, iregion;)
-#define NREGIONS ldx
-#define NEVAL n
-#define RETVAL phase
+  number n, m, i;
+  VES_ONLY(count iter;)
+  DIV_ONLY(int phase SHM_ONLY(, shmid);)
 } Slice;
+
+#if defined(HAVE_SHMGET) && (defined(SUAVE) || defined(DIVONNE))
+#define FRAMECOPY
+#endif
 
 /*********************************************************************/
 
@@ -62,69 +47,57 @@ static inline int writesock(int fd, const void *data, size_t n)
 
 /*********************************************************************/
 
-static inline bool SampleSerial(cThis *t, number n, creal *x, real *f
-  VEG_ONLY(, creal *w, ccount iter)
-  DIV_ONLY(, ccount ldx))
-{
-  while( n-- ) {
-    if( t->integrand(&t->ndim, x, &t->ncomp, f, t->userdata
-          VEG_ONLY(, w++, &iter)
-          DIV_ONLY(, &t->phase)) == ABORT ) return true;
-    x += LDX(ldx);
-    f += t->ncomp;
-  }
-  return false;
-}
-
-/*********************************************************************/
-
 static void DoSample(This *t, number n, creal *x, real *f
-  VEG_ONLY(, creal *w, ccount iter)
-  DIV_ONLY(, ccount ldx))
+  VES_ONLY(, creal *w, ccount iter))
 {
-  char s[128];
-  Slice slice;
-  int ncores;
+  cint ncores = IMin(t->ncores, n/MINSLICE);
 
-  t->neval += n;
-
-  ncores = IMin(t->ncores, n/MINSLICE);
-
-  if( ncores < MINCORES ) {
-    if( VERBOSE > 2 ) {
-      sprintf(s, "sampling " NUMBER " points serially", n);
-      Print(s);
-    }
-
-    if( SampleSerial(t, n, x, f
-          VEG_ONLY(, w, iter)
-          DIV_ONLY(, ldx)) ) longjmp(t->abort, -99);
-  }
+  if( ncores < MINCORES ) DoSampleSerial(t, n, x, f VES_ONLY(, w, iter));
   else {
+    Slice slice;
     int core, abort;
+    char s[128];
 
-    slice.n = (n + ncores - 1)/ncores;
+    t->neval += n;
 
+    slice.m = slice.n = (n + ncores - 1)/ncores;
     if( VERBOSE > 2 ) {
       sprintf(s, "sampling " NUMBER " points each on %d cores",
         slice.n, ncores);
       Print(s);
     }
 
-    slice.f = f;
-    VEG_ONLY(slice.iter = iter;)
-    DIV_ONLY(slice.ldx = ldx;)
+    slice.i = 0;
+    VES_ONLY(slice.iter = iter;)
     DIV_ONLY(slice.phase = t->phase;)
+
+#ifdef DIVONNE
+    if( n > t->nframe ) {
+      FrameFree(t, ShmRm(t));
+      t->nframe = n;
+      FrameAlloc(t);
+    }
+    SHM_ONLY(slice.shmid = t->shmid;)
+#endif
+
+    SHM_ONLY(if( t->shmid != -1 ) {
+      slice.m = n;
+#ifdef FRAMECOPY
+      VES_ONLY(Copy(t->frame, w, n);)
+      Copy(t->frame + n*NW, x, n*t->ndim);
+#endif
+    })
 
     for( core = 0; core < ncores; ++core ) {
       cint fd = t->child[core];
       writesock(fd, &slice, sizeof slice);
-      VEG_ONLY(writesock(fd, w, slice.n*sizeof *w);)
-      writesock(fd, x, slice.n*LDX(ldx)*sizeof *x);
-
-      VEG_ONLY(w += n;)
-      x += slice.n*LDX(ldx);
-      slice.f += slice.n*t->ncomp;
+      SHM_ONLY(if( t->shmid == -1 )) {
+        VES_ONLY(writesock(fd, w, slice.n*sizeof *w);
+                 w += slice.n;)
+        writesock(fd, x, slice.n*t->ndim*sizeof *x);
+        x += slice.n*t->ndim;
+      }
+      slice.i += slice.n;
       n -= slice.n;
       slice.n = IMin(slice.n, n);
     }
@@ -133,16 +106,23 @@ static void DoSample(This *t, number n, creal *x, real *f
     for( core = ncores; --core >= 0; ) {
       cint fd = t->child[core];
       readsock(fd, &slice, sizeof slice);
-      if( slice.n == 0 ) abort = 1;
-      else readsock(fd, slice.f, slice.n*t->ncomp*sizeof *f);
+      if( slice.n == -1 ) abort = 1;
+      else SHM_ONLY(if( t->shmid == -1 )) readsock(fd,
+        f + slice.i*t->ncomp, slice.n*t->ncomp*sizeof *f);
     }
     if( abort ) longjmp(t->abort, -99);
+
+#ifdef FRAMECOPY
+    if( t->shmid != -1 )
+      Copy(f, t->frame + slice.m*(NW + t->ndim), slice.m*t->ncomp);
+#endif
   }
 }
 
 /*********************************************************************/
 
 #ifdef DIVONNE
+
 static inline int ReadyCore(cThis *t)
 {
   int core;
@@ -159,32 +139,36 @@ static inline int ReadyCore(cThis *t)
 
 /*********************************************************************/
 
-static int ExploreParent(This *t, cint iregion)
+typedef struct {
+  number neval, neval_opt, neval_cut;
+  count nregions, iregion, retval;
+} ExploreResult;
+
+static int Explore(This *t, cint iregion)
 {
   TYPEDEFREGION;
   Region *region;
-  Slice slice;
   int ireg = iregion, core = t->running;
 
-  if( t->ncores < MINCORES ) return Explore(t, iregion);
+  if( t->ncores < MINCORES ) return ExploreSerial(t, iregion);
 
   if( t->running >= ((iregion < 0) ? 1 : t->ncores) ) {
     Totals totals[t->ncomp];
-    count comp, succ;
     cint fd = t->child[core = ReadyCore(t)];
+    ExploreResult res;
+    count comp, succ;
 
     --t->running;
-    readsock(fd, &slice, sizeof slice);
-//DEBSLICE("parent read", fd, slice);
-    ireg = slice.iregion;
+    readsock(fd, &res, sizeof res);
+    ireg = res.iregion;
     region = RegionPtr(ireg);
     succ = ireg + region->next;
     readsock(fd, region, sizeof(Region));
-    if( --slice.NREGIONS > 0 ) {
+    if( --res.nregions > 0 ) {
       region->next = t->nregions - ireg;
-      EnlargeRegions(t, slice.NREGIONS);
-      readsock(fd, RegionPtr(t->nregions), slice.NREGIONS*sizeof(Region));
-      t->nregions += slice.NREGIONS;
+      EnlargeRegions(t, res.nregions);
+      readsock(fd, RegionPtr(t->nregions), res.nregions*sizeof(Region));
+      t->nregions += res.nregions;
       RegionPtr(t->nregions-1)->next = succ - t->nregions + 1;
     }
 
@@ -193,20 +177,20 @@ static int ExploreParent(This *t, cint iregion)
       t->totals[comp].secondspread =
         Max(t->totals[comp].secondspread, totals[comp].secondspread);
 
-    t->neval += slice.NEVAL;
-    t->neval_opt += slice.neval_opt;
-    t->neval_cut += slice.neval_cut;
+    t->neval += res.neval;
+    t->neval_opt += res.neval_opt;
+    t->neval_cut += res.neval_cut;
 
-    if( slice.RETVAL == -1 ) return -1;
+    if( res.retval == -1 ) return -1;
   }
 
   if( iregion >= 0 ) {
-    region = RegionPtr(iregion);
+    Slice slice;
     cint fd = t->child[core];
     slice.n = 0;
+    slice.i = iregion;
     slice.phase = t->phase;
-    slice.iregion = iregion;
-//DEBSLICE("  parent write", fd, slice);
+    region = RegionPtr(iregion);
     writesock(fd, &slice, sizeof slice);
     writesock(fd, &t->samples[region->isamples], sizeof(Samples));
     writesock(fd, region, sizeof *region);
@@ -221,13 +205,14 @@ static int ExploreParent(This *t, cint iregion)
 
 /*********************************************************************/
 
-static inline void DoChild(This *t, cint fd)
+static void DoChild(This *t, cint fd)
 {
   Slice slice;
 
 #ifdef DIVONNE
   TYPEDEFREGION;
   Totals totals[t->ncomp];
+  ExploreResult res;
 
   t->totals = totals;
   t->ncores = 0;	/* no recursive forks */
@@ -240,23 +225,44 @@ static inline void DoChild(This *t, cint fd)
   t->samples[2].n = 0;
 #endif
 
+#ifdef SUAVE
+  SHM_ONLY(if( t->shmid == -1 ))
+    MemAlloc(t->frame, t->nframe*SAMPLESIZE);
+#endif
+
   while( readsock(fd, &slice, sizeof slice) ) {
     number n = slice.n;
     DIV_ONLY(t->phase = slice.phase;)
-//DEBSLICE("  child read", fd, slice);
     if( n > 0 ) {
-      VEG_ONLY(real w[n];)
-      real x[n*LDX(slice.ldx)];
-      real f[n*t->ncomp];
+      real VES_ONLY(*w,) *x, *f;
 
-      VEG_ONLY(readsock(fd, w, sizeof w);)
-      readsock(fd, x, sizeof x);
+#ifdef DIVONNE
+      if( n > t->nframe ) {
+        FrameFree(t);
+        t->nframe = n;
+        SHM_ONLY(t->shmid = slice.shmid; ShmMap(t) else)
+        MemAlloc(t->frame, t->nframe*SAMPLESIZE);
+      }
+#endif
 
-      if( SampleSerial(t, n, x, f
-            VEG_ONLY(, w, slice.iter)
-            DIV_ONLY(, slice.ldx)) ) slice.n = 0;
+      VES_ONLY(w = t->frame;)
+      x = t->frame + slice.m*NW;
+      f = x + slice.m*t->ndim;
+
+      SHM_ONLY(if( t->shmid != -1 ) {
+        VES_ONLY(w += slice.i;)
+        x += slice.i*t->ndim;
+        f += slice.i*t->ncomp;
+      }
+      else) {
+        VES_ONLY(readsock(fd, w, n*sizeof *w);)
+        readsock(fd, x, n*t->ndim*sizeof *x);
+      }
+
+      slice.n |= SampleRaw(t, n, x, f VES_ONLY(, w, slice.iter));
       writesock(fd, &slice, sizeof slice);
-      if( slice.n ) writesock(fd, f, sizeof f);
+      if( SHM_ONLY(t->shmid == -1 &&) slice.n != -1 )
+        writesock(fd, f, slice.n*t->ncomp*sizeof *f);
     }
 #ifdef DIVONNE
     else {
@@ -275,13 +281,13 @@ static inline void DoChild(This *t, cint fd)
         SamplesAlloc(t, samples);
       }
 
-      slice.RETVAL = Explore(t, 0);
-      slice.NREGIONS = t->nregions;
-      slice.NEVAL = t->neval;
-      slice.neval_opt = t->neval_opt;
-      slice.neval_cut = t->neval_cut;
-//DEBSLICE("child write", fd, slice);
-      writesock(fd, &slice, sizeof slice);
+      res.retval = ExploreSerial(t, 0);
+      res.neval = t->neval;
+      res.neval_opt = t->neval_opt;
+      res.neval_cut = t->neval_cut;
+      res.nregions = t->nregions;
+      res.iregion = slice.i;
+      writesock(fd, &res, sizeof res);
       writesock(fd, RegionPtr(0), t->nregions*sizeof(Region));
       writesock(fd, totals, sizeof totals);
     }
@@ -293,27 +299,37 @@ static inline void DoChild(This *t, cint fd)
 
 /*********************************************************************/
 
+#ifdef HAVE_GETLOADAVG
+double cubaloadavg_;
+#endif
+
 static inline void ForkCores(This *t)
 {
   int core;
+  char s[128];
   cchar *env = getenv("CUBACORES");
 
   t->ncores = env ? atoi(env) : sysconf(_SC_NPROCESSORS_ONLN);
 #ifdef HAVE_GETLOADAVG
   if( env == NULL || t->ncores < 0 ) {
-    double load = 0;
-    getloadavg(&load, 1);
-    t->ncores = abs(t->ncores) - floor(load);
+    if( cubaloadavg_ < 0 ) getloadavg(&cubaloadavg_, 1);
+    t->ncores = abs(t->ncores) - floor(cubaloadavg_);
   }
 #endif
 
-#ifdef DIVONNE
-  t->nchildren = t->running = 0;
-#endif
+  DIV_ONLY(t->nchildren = t->running = 0;)
 
   if( t->ncores < MINCORES ) return;
-  if( VERBOSE ) printf("using %d cores\n", t->ncores);
-  fflush(stdout);
+  if( VERBOSE ) {
+    sprintf(s, "using %d cores via "
+#ifdef HAVE_SHMGET
+      "shared memory",
+#else
+      "pipes",
+#endif
+      t->ncores);
+    Print(s);
+  }
 
   Alloc(t->child, t->ncores);
   for( core = 0; core < t->ncores; ++core ) {
@@ -328,10 +344,8 @@ static inline void ForkCores(This *t)
     }
     close(fd[1]);
     t->child[core] = fd[0];
-#ifdef DIVONNE
-    FD_SET(fd[0], &t->children);
-    t->nchildren = IMax(t->nchildren, fd[0] + 1);
-#endif
+    DIV_ONLY(FD_SET(fd[0], &t->children);
+             t->nchildren = IMax(t->nchildren, fd[0] + 1);)
   }
 }
 

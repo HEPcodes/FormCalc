@@ -1,13 +1,15 @@
 * CTmpnum.F
 * a dummy multiprecision numerator function
 * this file is part of FormCalc
-* last modified 2 Dec 10 th
+* last modified 13 Feb 12 th
+
+#include "types.h"
 
 
 	subroutine CTmpnum(q1in, res)
 	implicit none
-	double precision q1in(0:3)
-	double complex res
+	RealType q1in(0:3)
+	ComplexType res
 
 	integer ini
 	data ini /0/

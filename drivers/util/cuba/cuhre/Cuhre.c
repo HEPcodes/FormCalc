@@ -2,22 +2,17 @@
 	Cuhre.c
 		Adaptive integration using cubature rules
 		by Thomas Hahn
-		last modified 27 Sep 11 th
+		last modified 19 Dec 11 th
 */
 
 
-#include "decl.h"
-
-#define Print(s) puts(s); fflush(stdout)
-
-/*********************************************************************/
-
 #define CUHRE
-#include "DoSample.c"
+#define ROUTINE "Cuhre"
+
+#include "decl.h"
+#include "CSample.c"
 
 /*********************************************************************/
-
-#include "common.c"
 
 Extern void EXPORT(Cuhre)(ccount ndim, ccount ncomp,
   Integrand integrand, void *userdata,
@@ -41,13 +36,9 @@ Extern void EXPORT(Cuhre)(ccount ndim, ccount ncomp,
   t.nregions = 0;
   t.neval = 0;
  
-  ForkCores(&t);
-
   *pfail = Integrate(&t, integral, error, prob);
   *pnregions = t.nregions;
   *pneval = t.neval;
-
-  WaitCores(&t);
 }
 
 /*********************************************************************/
@@ -74,12 +65,8 @@ Extern void EXPORT(cuhre)(ccount *pndim, ccount *pncomp,
   t.nregions = 0;
   t.neval = 0;
  
-  ForkCores(&t);
-
   *pfail = Integrate(&t, integral, error, prob);
   *pnregions = t.nregions;
   *pneval = t.neval;
-
-  WaitCores(&t);
 }
 

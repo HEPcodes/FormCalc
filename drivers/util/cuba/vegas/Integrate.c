@@ -2,13 +2,13 @@
 	Integrate.c
 		integrate over the unit hypercube
 		this file is part of Vegas
-		last modified 25 Nov 11 th
+		last modified 17 Apr 12 th
 */
 
 
 static int Integrate(This *t, real *integral, real *error, real *prob)
 {
-  real *sample;
+  bin_t *bins;
   count dim, comp;
   int fail;
   struct {
@@ -42,7 +42,9 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
   if( BadComponent(t) ) return -2;
   if( BadDimension(t) ) return -1;
 
-  SamplesAlloc(t, sample);
+  FrameAlloc(t, ShmRm(t));
+  ForkCores(t);
+  Alloc(bins, t->nbatch*t->ndim);
 
   if( (fail = setjmp(t->abort)) ) goto abort;
 
@@ -82,11 +84,11 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
 
     for( ; nsamples > 0; nsamples -= t->nbatch ) {
       cnumber n = IMin(t->nbatch, nsamples);
-      real *w = sample;
+      real *w = t->frame;
       real *x = w + n;
       real *f = x + n*t->ndim;
       real *lastf = f + n*t->ncomp;
-      bin_t *bin = (bin_t *)lastf;
+      bin_t *bin = bins;
 
       while( x < f ) {
         real weight = jacobian;
@@ -106,10 +108,10 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
         *w++ = weight;
       }
 
-      DoSample(t, n, w, f, sample, state.niter + 1);
+      DoSample(t, n, w, f, t->frame, state.niter + 1);
 
-      w = sample;
-      bin = (bin_t *)lastf;
+      bin = bins;
+      w = t->frame;
 
       while( f < lastf ) {
         creal weight = *w++;
@@ -175,7 +177,7 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
     }
 
     if( fail == 0 && t->neval >= t->mineval ) {
-      if( t->statefile ) unlink(t->statefile);
+      if( t->statefile && KEEPFILE == 0 ) unlink(t->statefile);
       break;
     }
 
@@ -231,8 +233,10 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
   }
 
 abort:
-  free(sample);
   PutGrid(t, state.grid);
+  free(bins);
+  WaitCores(t);
+  FrameFree(t);
 
   return fail;
 }

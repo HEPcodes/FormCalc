@@ -1,7 +1,7 @@
 * xsection.h
 * common blocks for xsection.F
 * this file is part of FormCalc
-* last modified 30 Nov 11 th
+* last modified 8 Mar 12 th
 
 
 #include "decl.h"
@@ -17,9 +17,6 @@
 #define Step(v) var(5,v)
 #define CutMin(v) var(6,v)
 #define CutMax(v) var(7,v)
-
-#define BIT_RESET 0
-#define BIT_LOOP 1
 #endif
 
 	RealType var(8, MINVAR:TRIVIAL)

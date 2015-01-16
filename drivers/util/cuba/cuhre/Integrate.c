@@ -2,7 +2,7 @@
 	Integrate.c
 		integrate over the unit hypercube
 		this file is part of Cuhre
-		last modified 21 Nov 11 th
+		last modified 20 Dec 11 th
 */
 
 
@@ -39,9 +39,12 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
   if( BadComponent(t) ) return -2;
   if( BadDimension(t) ) return -1;
 
-  RuleAlloc(t);
   t->epsabs = Max(t->epsabs, NOTZERO);
+
+  RuleAlloc(t);
   t->mineval = IMax(t->mineval, t->rule.n + 1);
+  FrameAlloc(t, ShmRm(t));
+  ForkCores(t);
 
   if( (fail = setjmp(t->abort)) ) goto abort;
 
@@ -132,8 +135,8 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
     regionR = &cur->region[ncur++];
 
     regionR->div = ++regionL->div;
-    ResCopy(result, regionL->result);
-    VecCopy(regionR->bounds, regionL->bounds);
+    FCopy(result, regionL->result);
+    XCopy(regionR->bounds, regionL->bounds);
 
     bisectdim = result[maxcomp].bisectdim;
     bL = &regionL->bounds[bisectdim];
@@ -226,6 +229,8 @@ abort:
     free(pool);
   }
 
+  WaitCores(t);
+  FrameFree(t);
   RuleFree(t);
 
   return fail;

@@ -4,7 +4,7 @@
 		code lifted with minor modifications from DCUHRE
 		by J. Berntsen, T. Espelid, and A. Genz
 		this file is part of Divonne
-		last modified 8 Jun 10 th
+		last modified 17 Dec 11 th
 */
 
 
@@ -575,15 +575,12 @@ static inline void RuleAlloc(This *t)
     else if( t->ndim == 3 ) Rule11Alloc(t);
     else Rule9Alloc(t);
   }
-  Alloc(t->rule.x, t->rule.n*(t->ndim + t->ncomp));
-  t->rule.f = t->rule.x + t->rule.n*t->ndim;
 }
 
 /*********************************************************************/
 
 static inline void RuleFree(cThis *t)
 {
-  free(t->rule.x);
   free(t->rule.first);
 }
 
@@ -646,7 +643,7 @@ static void Sample(This *t, void *voidregion)
   Region *const region = (Region *)voidregion;
   creal vol = ldexp(1., -region->div);
 
-  real *x = t->rule.x, *f = t->rule.f;
+  real *x = t->frame, *f = x + t->rule.n*t->ndim;
   Set *first = (Set *)t->rule.first, *last = (Set *)t->rule.last, *s;
   creal *errcoeff = t->rule.errcoeff;
   creal ratio = Sq(first[2].gen[0]/first[1].gen[0]);
@@ -667,7 +664,7 @@ static void Sample(This *t, void *voidregion)
   for( s = first; s <= last; ++s )
     if( s->n ) x = ExpandFS(t, region->bounds, s->gen, x);
 
-  DoSample(t, t->rule.n, t->rule.x, f);
+  DoSample(t, t->rule.n, t->frame, f);
 
   for( comp = 0; comp < t->ncomp; ++comp ) {
     Result *r = &region->result[comp];

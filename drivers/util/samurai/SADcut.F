@@ -1,23 +1,28 @@
 * SADcut.F
 * the FormCalc wrapper for the Samurai four-point function
 * this file is part of FormCalc
-* last modified 31 Mar 11 th
+* last modified 13 Feb 12 th
+
+#include "types.h"
 
 
-	double complex function SADcut(rank, num, numeps,
+	ComplexType function SADcut(rank, num, numeps, heldelta,
      &    p1, p2, p3, m1, m2, m3, m4)
 	implicit none
-	integer rank
-	double complex num, numeps
+	integer rank, heldelta
+	ComplexType num, numeps
 	external num, numeps
 	integer*8 p1, p2, p3
-	double precision m1, m2, m3, m4
+	RealType m1, m2, m3, m4
 
 #include "SA.h"
 
-	double precision pj(4,4), mj(4)
-	double complex tot(-2:0), totr
+	RealType pj(4,4), mj(4)
+	ComplexType tot(-2:0), totr
 	logical ok
+
+	SADcut = 0
+	if( heldelta .eq. 0 ) return
 
 	pj(1,1) = 0
 	pj(1,2) = 0
@@ -32,26 +37,32 @@
 	mj(3) = m3
 	mj(4) = m4
 
-	PRINT *, "SADcut:", rank
-	PRINT *, "p1=", pj(2,4)
-	PRINT *, "   ", pj(2,1)
-	PRINT *, "   ", pj(2,2)
-	PRINT *, "   ", pj(2,3)
-	PRINT *, "p2=", pj(3,4)
-	PRINT *, "   ", pj(3,1)
-	PRINT *, "   ", pj(3,2)
-	PRINT *, "   ", pj(3,3)
-	PRINT *, "p3=", pj(4,4)
-	PRINT *, "   ", pj(4,1)
-	PRINT *, "   ", pj(4,2)
-	PRINT *, "   ", pj(4,3)
-	PRINT *, "m1=", m1
-	PRINT *, "m2=", m2
-	PRINT *, "m3=", m3
-	PRINT *, "m4=", m4
+c	PRINT *, "SADcut:", rank
+c	PRINT *, "p1=", pj(2,4)
+c	PRINT *, "   ", pj(2,1)
+c	PRINT *, "   ", pj(2,2)
+c	PRINT *, "   ", pj(2,3)
+c	PRINT *, "p2=", pj(3,4)
+c	PRINT *, "   ", pj(3,1)
+c	PRINT *, "   ", pj(3,2)
+c	PRINT *, "   ", pj(3,3)
+c	PRINT *, "p3=", pj(4,4)
+c	PRINT *, "   ", pj(4,1)
+c	PRINT *, "   ", pj(4,2)
+c	PRINT *, "   ", pj(4,3)
+c	PRINT *, "m1=", m1
+c	PRINT *, "m2=", m2
+c	PRINT *, "m3=", m3
+c	PRINT *, "m4=", m4
 
 	call samurai(num, tot, totr, pj, mj, 4, rank, 1, mudim, ok)
 	SADcut = tot(epscoeff)
-	PRINT *, "SADcut=", SADcut
+	if( epscoeff .eq. 0 ) then
+	  call setisca(5)
+	  call samurai(numeps, tot, totr, pj, mj, 4, rank, 1, mudim, ok)
+	  SADcut = SADcut - 2*tot(-1)
+	  call setisca(4)
+	endif
+c	PRINT *, "SADcut=", SADcut
 	end
 

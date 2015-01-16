@@ -2,7 +2,7 @@
 	decl.h
 		Type declarations
 		this file is part of Divonne
-		last modified 14 Nov 11 th
+		last modified 21 Dec 11 th
 */
 
 
@@ -63,9 +63,14 @@ typedef struct _this {
   Integrand integrand;
   void *userdata;
   PeakFinder peakfinder;
+#ifdef HAVE_FORK
   int ncores, *child;
   int running, nchildren;
   fd_set children;
+  real *frame;
+  number nframe;
+  SHM_ONLY(int shmid;)
+#endif
 #endif
   real epsrel, epsabs;
   int flags, seed;
@@ -75,7 +80,8 @@ typedef struct _this {
   Bounds border;
   real maxchisq, mindeviation;
   number ngiven, nextra;
-  real *xgiven, *xextra, *fgiven, *fextra;
+  real *xgiven, *fgiven;
+  real *xextra, *fextra;
   count ldxgiven;
   count nregions;
   number neval, neval_opt, neval_cut;

@@ -4,7 +4,7 @@
 		code lifted with minor modifications from DCUHRE
 		by J. Berntsen, T. Espelid, and A. Genz
 		this file is part of Divonne
-		last modified 6 Nov 11 th
+		last modified 17 Dec 11 th
 */
 
 
@@ -647,7 +647,7 @@ static void SampleRule(This *t, ccount iregion)
   for( s = first; s <= last; ++s )
     if( s->n ) x = ExpandFS(t, b, s->gen, x);
 
-  DoSample(t, n, samples->x, f, t->ndim);
+  DoSample(t, n, samples->x, f);
 
   for( comp = 0; comp < t->ncomp; ++comp ) {
     real sum[nrules];

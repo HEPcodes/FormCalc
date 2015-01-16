@@ -2,7 +2,7 @@
 * calculates -I times the Levi-Civita tensor contracted with
 * four four-vectors
 * this file is part of FormCalc
-* last modified 30 Nov 11 th
+* last modified 14 Feb 12 th
 
 #include "types.h"
 
@@ -20,24 +20,12 @@
 
 #define A(x,y) vec(x,y, a)
 #define B(x,y) vec(x,y, b)
-#define C(x,y) vec(x,y, c)
-#define D(x,y) vec(x,y, d)
 
-#define diag(i,j) (i(1,1)*j(2,2) - i(2,2)*j(1,1))
-#define offdiag(i,j) (i(2,1)*j(1,2) - i(1,2)*j(2,1))
+	ComplexType diag, off, e
+	diag(a,b) = A(1,1)*B(2,2) - A(2,2)*B(1,1)
+	off(a,b) = A(2,1)*B(1,2) - A(1,2)*B(2,1)
+	e(a,b,c,d) = diag(a,b)*off(c,d) + diag(c,d)*off(a,b)
 
-	Eps = .25D0*(
-     &    diag(A,B)*
-     &      offdiag(C,D) +
-     &    diag(C,D)*
-     &      offdiag(A,B) -
-     &    diag(A,C)*
-     &      offdiag(B,D) -
-     &    diag(B,D)*
-     &      offdiag(A,C) +
-     &    diag(A,D)*
-     &      offdiag(B,C) +
-     &    diag(B,C)*
-     &      offdiag(A,D) )
+	Eps = .25D0*(e(a,b,c,d) - e(a,c,b,d) + e(a,d,b,c))
 	end
 

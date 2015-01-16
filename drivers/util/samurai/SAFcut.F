@@ -3,21 +3,26 @@
 * this file is part of FormCalc
 * last modified 31 Mar 11 th
 
+#include "types.h"
 
-	double complex function SAFcut(rank, num,
+
+	ComplexType function SAFcut(rank, num, numeps, heldelta,
      &    p1, p2, p3, p4, p5, m1, m2, m3, m4, m5, m6)
 	implicit none
-	integer rank
-	double complex num, numeps
+	integer rank, heldelta
+	ComplexType num, numeps
 	external num, numeps
 	integer*8 p1, p2, p3, p4, p5
-	double precision m1, m2, m3, m4, m5, m6
+	RealType m1, m2, m3, m4, m5, m6
 
 #include "SA.h"
 
-	double precision pj(6,4), mj(6)
-	double complex tot(-2:0), totr
+	RealType pj(6,4), mj(6)
+	ComplexType tot(-2:0), totr
 	logical ok
+
+	SAFcut = 0
+	if( heldelta .eq. 0 ) return
 
 	pj(1,1) = 0
 	pj(1,2) = 0
@@ -38,5 +43,11 @@
 
 	call samurai(num, tot, totr, pj, mj, 6, rank, 1, mudim, ok)
 	SAFcut = tot(epscoeff)
+	if( epscoeff .eq. 0 ) then
+	  call setisca(5)
+	  call samurai(numeps, tot, totr, pj, mj, 6, rank, 1, mudim, ok)
+	  SAFcut = SAFcut - 2*tot(-1)
+	  call setisca(4)
+	endif
 	end
 

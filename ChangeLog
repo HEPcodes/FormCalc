@@ -1,3 +1,38 @@
+25 May 12:
+
+- Added Cuba 3.
+
+- Added MomRules option to CalcFeynAmp.
+
+
+12 May 12:
+
+- Fixed problem with (4D) Fierz identity: now simplification of
+  fermion chains is invoked after application of each Fierz id,
+  not once at the end.
+
+- Added CalcFeynAmp option Gamma5Test.
+
+- Added CalcFeynAmp option Gamma5ToEps.
+
+- Added CalcFeynAmp option OPPQSlash.
+
+- Added CalcFeynAmp option Evanescent which keeps objects
+  of the form Evanescent[op before Fierz, op after Fierz] in
+  the amplitude, e.g. to track down D - 4 issues.
+
+
+16 Mar 12:
+
+- Added macros for better abstraction of loops and if statements.
+
+- Added PowerOf function which aids splitting of amplitude into
+  pieces of the same power in the coupling constant.
+
+- Replaced stacked assembly of elementary operations in the
+  computation of spinor chains by single function Chain.
+
+
 12 Jan 12:
 
 - Speeded up analytic tensor reduction (PaVeReduce -> True).
@@ -11,8 +46,6 @@
 
 
 2 Dec 11:
-
-- Added Cuba 3 (with parallelization).
 
 - Moved from Real|Complex to RealType|ComplexType since the former
   is understood by the compiler and does not lead to warnings.

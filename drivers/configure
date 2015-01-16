@@ -2,7 +2,7 @@
 # configure script for FormCalc
 # note: has nothing to do with GNU autoconf
 # this file is part of FormCalc
-# last modified 29 Jul 11 th
+# last modified 20 Jan 12 th
 
 
 LC_ALL=C
@@ -118,6 +118,7 @@ getldflags()
 
 CONF_SRC=`dirname $0`
 CONF_OS=`uname -s`
+CONF_OSVER=`uname -r`
 CONF_MACH=`uname -m`
 CONF_DEFPREFIX="$CONF_MACH-$CONF_OS"
 CONF_PREFIX="$CONF_DEFPREFIX"
@@ -265,7 +266,9 @@ _EOF_
 CONF_LDFLAGS=`$CONF_FC $CONF_FFLAGS -v -o $test $test.f 2>&1 | getldflags`
 
 CONF_STDLIBS="$STDLIBS"
-test "$CONF_OS" = Darwin && CONF_STDLIBS="$CONF_STDLIBS -lSystemStubs"
+case "$CONF_OS$CONF_OSVER" in
+Darwin10*) CONF_STDLIBS="$CONF_STDLIBS -lSystemStubs" ;;
+esac
 
 echo $CONF_LDFLAGS 1>&2
 

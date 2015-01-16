@@ -1,7 +1,7 @@
 * xsection.F
 * routines to compute the cross-section
 * this file is part of FormCalc
-* last modified 30 Nov 11 th
+* last modified 13 Feb 12 th
 
 #include "decl.h"
 
@@ -116,24 +116,19 @@
 
 #ifdef CUTTOOLS
 * args are:
-* 1. rootsvalue = arbitrary OPP scale of the order of the scale of the process
-* 2. limitvalue = upper limit of precision above which the mp routines activate
-* 3. idig       = max number of digits of the mp routines
-* 4. scaloop    = scalar integrals (1 is LoopTools)
-* 5. muscale    = the renormalization scale
-* 6. thrs       = internal collinear IR threshold for avh_olo
+* 1. limitvalue = upper limit of precision above which the mp routines activate
+* 2. scaloop = scalar integrals (1: LoopTools)
 	rootsvalue = sqrtSfrom
-	muscale = getmudim()
-	call ctsinit(rootsvalue, 1D-2, 0, 1, muscale, 1D-6)
+	call ctsinit(1D-2, 1)
 #endif
 
 #ifdef SAMURAI
 * args are:
 * 1. imeth = "diag" (numerators) or "tree" (products of tree amps)
-* 2. isca = 1 (QCDloop) or 2 (OneLOop)
+* 2. isca = scalar integrals (1: QCDloop, 2: OneLOop, 4: LoopTools)
 * 3. verbosity = 0, 1, 2, 3
 * 4. itest = 0 (none), 1 (powertest), 2 (nntest), 3 (lnntest)
-	call initsamurai("diag", 2, 1, 1)
+	call initsamurai("diag", 4, 3, 1)
 #endif
 
 	call ModelDefaults(argc, argv)
@@ -343,6 +338,7 @@
 #endif
 	Divergence = getdelta()
 	mudim = getmudim()
+	muscale = mudim
 	lambda = getlambda()
 	if( lambda .eq. -1 ) then
 	  epscoeff = -1

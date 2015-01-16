@@ -4,7 +4,7 @@
 		has approximately equal spread = 1/2 vol (max - min),
 		then do a main integration over all regions
 		this file is part of Divonne
-		last modified 15 Nov 11 th
+		last modified 22 Dec 11 th
 */
 
 
@@ -49,7 +49,12 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
       BadDimension(t, t->key2) ||   
       ((t->key3 & -2) && BadDimension(t, t->key3)) ) return -1;
 
+  FORK_ONLY(t->nframe = 0;)
   t->neval_opt = t->neval_cut = 0;
+
+  ForkCores(t);
+
+  AllocGiven(t);
 
   AllocRegions(t);
   for( dim = 0; dim < t->ndim; ++dim ) {
@@ -202,9 +207,9 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
       Print(s);
     }
 
-    ResClear(integral);
-    ResClear(error);
-    ResClear(prob);
+    FClear(integral);
+    FClear(error);
+    FClear(prob);
 
     nlimit = t->maxeval - t->nregions*t->samples[1].n;
     df = 0;
@@ -298,7 +303,7 @@ refine:
       switch( todo ) {
       case 1:	/* get spread right */
         region->isamples = 1;
-        Explore(t, iregion);
+        ExploreSerial(t, iregion);
         break;
 
       case 3:	/* sample region again with more points */
@@ -310,7 +315,7 @@ refine:
         t->phase = 3;
         region->isamples = 2;
         t->samples[2].sampler(t, iregion);
-        Explore(t, iregion);
+        ExploreSerial(t, iregion);
         ++region->depth;	/* misused for df here */
         ++df;
       }
@@ -446,6 +451,9 @@ abort:
   RuleFree(&t->rule7);
 
   free(t->voidregion);
+  free(t->xgiven);
+  WaitCores(t);
+  FORK_ONLY(FrameFree(t, ShmRm(t));)
 
   return fail;
 }
