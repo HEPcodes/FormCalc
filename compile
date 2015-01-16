@@ -1,6 +1,6 @@
 #! /bin/sh
 # compile script for the C programs used by FormCalc
-# last modified 16 Jan 12 th
+# last modified 6 Dec 12 th
 
 # If this compile script doesn't work on your system, check these things:
 #
@@ -60,10 +60,15 @@ test -z "$DEST" && {
 case "$DEST" in
 Please)
 	cat << _EOF_
-You have a buggy Mathematica installation.
+I can't seem to run the Mathematica Kernel.
+
+Maybe you have a buggy Mathematica installation or you're
+out of licenses.
+
 Please make sure the Mathematica Kernel can be run without
 additional flags (e.g. for the location of the Mathematica
 password file) and re-run $0.
+
 _EOF_
 	exit 1 ;;
 Linux | MacOSX-x86)
@@ -93,9 +98,13 @@ PATH=\""'$$PATH'":$t\" $MCC $MCFLAGS $CFLAGS"
 cc="$CC $CFLAGS"
 
 make -f - << _EOF_ || exit 1
-all: $DEST/ReadForm$exe $DEST/ToForm$exe \
+all: $DEST/tform \
+  $DEST/ReadForm$exe $DEST/ToForm$exe \
   $DEST/ToFortran$exe $DEST/ToC$exe \
   $DEST/ReadData$exe $DEST/reorder$exe
+
+$DEST/tform:
+	cp -p $SRC/FORM/tform_$DEST $DEST/tform
 
 $DEST/ReadForm$exe: $SRC/FormCalc/ReadForm.tm
 	$mcc -o $DEST/ReadForm$exe $SRC/FormCalc/ReadForm.tm

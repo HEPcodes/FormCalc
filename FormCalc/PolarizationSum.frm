@@ -1,17 +1,229 @@
 * PolarizationSum.frm
 * the FORM part of the PolarizationSum function
 * this file is part of FormCalc
-* last modified 6 Apr 11 th
+* last modified 13 Feb 13 th
 
 
-#procedure PolSum(i, m)
-#$dim = `Dim';
-if( count(z`i',1, zc`i',1) ) $dim = Dminus4;
+#procedure Fewest(foo)
+argument `foo';
+#call Neglect
+endargument;
+id `foo'([x]?, [y]?) = `foo'([x], nterms_([x])*2 - 1, [y], nterms_([y])*2);
+symm `foo' (2,1), (4,3);
+id `foo'([x]?, ?a) = `foo'([x]);
+#endprocedure
 
-b z`i', zc`i', e`i', ec`i', eT`i', eTc`i';
+***********************************************************************
+
+#procedure Factor(foo)
+id `foo'(?x) = mulM(`foo'(?x));
+argument mulM;
+factarg `foo';
+chainout `foo';
+makeinteger `foo';
+id `foo'([x]?) = `foo'(nterms_([x]), [x]);
+id `foo'(1, [x]?) = [x];
+id `foo'([n]?, [x]?) = `foo'([x]);
+endargument;
+makeinteger mulM;
+#endprocedure
+
+***********************************************************************
+
+#if "`MomElim'" == "Automatic"
+#define MomRange "1, `Legs'"
+#elseif `MomElim'
+#define MomRange "`MomElim', `MomElim'"
+#endif
+
+#procedure DotSimplify
+#call eiki
+
+id e_([mu]?, [nu]?, [ro]?, [si]?) =
+  e_([mu], [nu], [ro], [si]) * TMP([mu], [nu], [ro], [si]) * ETAG;
+id [t]?(?i) = [t](?i) * TMP(?i);
+chainout TMP;
+id TMP([p1]?) = 1;
+id TMP([mu]?)^2 = 1;
+id TMP([mu]?) = TAG;
+id ETAG^[n]?{>1} = ETAG;
+
+ab k1,...,k`Legs';
 .sort
-d `$dim';
+on oldFactArg;
 
+collect dotM, dotM, 50;
+makeinteger dotM;
+
+id ETAG = 1;
+
+#do rep1 = 1, 1
+b dotM;
+.sort
+keep brackets;
+
+#ifdef `MomRange'
+id dotM([x]?) = dotM(nterms_([x]), [x]);
+
+#do rep2 = 1, 2
+#do i = `MomRange'
+#ifdef `k`i''
+id dotM([n]?, [x]?) = dotM([n], [x]) * NOW([x]);
+argument NOW;
+id k`i' = `k`i'';
+#call eiki
+endargument;
+
+id NOW(0) = 0;
+id NOW([x]?) = dotM(nterms_([x]), [x]);
+once dotM(?a) = dotM(?a);
+also dotM(?a) = 1;
+#endif
+#enddo
+#enddo
+
+id dotM([n]?, [x]?) = dotM([x]);
+#endif
+
+argument dotM;
+#call kikj
+#call Square
+endargument;
+#call InvSimplify(dotM)
+id dotM(0) = 0;
+#enddo
+
+#if `DotExpand' == 1
+
+id dotM([x]?) = [x];
+
+.sort
+off oldFactArg;
+
+id TAG = 1;
+
+#else
+
+factarg dotM;
+chainout dotM;
+makeinteger dotM;
+id dotM(1) = 1;
+
+ab `Vectors', `Invariants', dotM;
+.sort
+off oldFactArg;
+
+collect dotM;
+
+#call InvSimplify(dotM)
+id dotM(0) = 0;
+
+repeat id TAG * dotM([x]?) = TAG * [x];
+id TAG = 1;
+
+makeinteger dotM;
+id dotM(dotM(?x)) = dotM(?x);
+
+argument dotM;
+id dotM([x]?) = dotM(nterms_([x]), [x]);
+id dotM(1, [x]?) = [x];
+id dotM([n]?, [x]?) = dotM([x]);
+argument dotM;
+toPolynomial;
+endargument;
+toPolynomial;
+endargument;
+
+makeinteger dotM;
+id dotM(1) = 1;
+id dotM([x]?^[n]?) = dotM([x])^[n];
+id dotM([x]?INVS) = [x];
+
+b dotM;
+.sort
+keep brackets;
+
+toPolynomial;
+
+.sort
+
+#endif
+#endprocedure
+
+***********************************************************************
+
+#procedure Abbreviate
+#call DotSimplify
+
+id [p1]?.[p2]? = abbM([p1].[p2], [p1], [p2]);
+
+id e_([mu]?, [nu]?, [ro]?, [si]?) =
+  abbM(e_([mu], [nu], [ro], [si]), [mu], [nu], [ro], [si]);
+
+id d_([mu]?, [nu]?) = abbM(d_([mu], [nu]), [mu], [nu]);
+
+id [t]?(?a) = abbM([t](?a), ?a);
+
+id [p1]?([mu]?) = abbM([p1]([mu]), [p1]);
+
+repeat;
+  once abbM([x]?, ?a, [mu]?!fixed_, ?b) *
+       abbM([y]?, ?c, [mu]?, ?d) =
+    abbM([x]*[y], ?a, ?b, ?c, ?d) * replace_([mu], N100_?);
+  also once abbM([x]?, ?a, [mu]?!fixed_, ?b, [mu]?, ?c) =
+    abbM([x], ?a, ?b, ?c) * replace_([mu], N100_?);
+  renumber;
+endrepeat;
+
+id abbM([x]?, ?a) = abbM([x]);
+
+#call Square
+
+moduleoption polyfun=abbM;
+.sort
+
+makeinteger abbM;
+id abbM(1) = 1;
+#endprocedure
+
+***********************************************************************
+
+#procedure Prepare
+#call Square
+#call eiei
+
+#call ConstBracket
+.sort
+
+collect mulM;
+
+id Conjugate([f]?LOOPINT(?x)) = Conjugate([f](?x));
+also Conjugate(?x) = mulM(Conjugate(?x));
+
+moduleoption polyfun=mulM;
+.sort
+
+#call Factor(mulM)
+
+b mulM;
+.sort
+keep brackets;
+
+argument mulM;
+toPolynomial;
+endargument;
+
+toPolynomial;
+
+.sort
+#endprocedure
+
+***********************************************************************
+
+#procedure PolSum(i, m, d)
+b e`i', ec`i', z`i', zc`i', eT`i', eTc`i';
+.sort
+d `d';
 keep brackets;
 
 id e`i' = ET(?);
@@ -33,12 +245,12 @@ id DF * ET([mu]?) * ETC([nu]?) = -d_([mu], [nu]) +
 * Instead of imposing eta.eta = 0 one can add
 * - d_(k`i', [mu])*d_(k`i', [nu])*(eta`i'.eta`i')/(eta`i'.k`i')^2
 
-id DF * eT`i'([mu]?, [nu]?) * eTc`i'([ro]?, [si]?) =
+also DF * eT`i'([mu]?, [nu]?) * eTc`i'([ro]?, [si]?) =
   d_([mu], [ro])*d_([nu], [si]) +
   d_([mu], [si])*d_([nu], [ro]) -
   d_([mu], [nu])*d_([ro], [si]);
 
-id DF = `Dim' - 2;
+also DF = `Dim' - 2;
 
 #else
 * massive case
@@ -46,8 +258,9 @@ id DF = `Dim' - 2;
 id DF * ET([mu]?) * ETC([nu]?) = -d_([mu], [nu]) +
   k`i'([mu])*k`i'([nu])/(`m')^2;
 
-id DF = `Dim' - 1;
+also DF = `Dim' - 1;
 
+#call Square
 #endif
 
 .sort
@@ -61,41 +274,22 @@ d `Dim';
 
 ***********************************************************************
 
-#procedure Fewest(foo)
-argument `foo';
-#call Neglect
-endargument;
-id `foo'([x]?, [y]?) = `foo'([x], nterms_([x]), [y], nterms_([y]));
-symm `foo' (2,1), (4,3);
-id `foo'([x]?, 1, ?a) = [x];
-id `foo'([x]?, ?a) = `foo'([x]);
-#endprocedure
-
-***********************************************************************
-
-#procedure Factor(foo)
-factarg `foo';
-repeat id `foo'([x]?, [y]?, ?a) = `foo'([x]) * `foo'([y], ?a);
-id `foo'([x]?number_) = [x];
-id `foo'([x]?symbol_) = [x];
-#endprocedure
-
-***********************************************************************
-
 #procedure Emit
+.sort
+
 id D = Dminus4 + 4;
 
 contract;
 
-#do i = 1, `Legs'
+* Cycling the momenta at this point (rather than in DotSimplify)
+* is necessary to obtain all possible terms coming from the
+* cancellation of an etaM.kN before sending the etaM to zero.
+#do i = `MomRange'
 #ifdef `k`i''
 id k`i' = `k`i'';
 .sort;
 #endif
 #enddo
-
-#call kikj
-#call Neglect
 
 #if `GaugeTerms' == 0
 #do i = 1, `Legs'
@@ -105,95 +299,62 @@ id eta`i' = 0;
 
 id D = Dminus4Eps + 4;
 
+#call Abbreviate
+
+#if 0
+b SumOver, Conjugate, Den, abbM;
 .sort
 
-id [p1]?.[p2]? = abbM([p1].[p2], [p1], [p2]);
-
-id 1/[p1]?.[p2]? = abbM(1/[p1].[p2])
-#if "`Scale'" != "1"
-  * IMOM([p1], [p2])
-#endif
-  ;
-
-id e_([mu]?, [nu]?, [ro]?, [si]?) =
-  abbM(e_([mu], [nu], [ro], [si]), [mu], [nu], [ro], [si]);
-
-id d_([mu]?, [nu]?) = abbM(d_([mu], [nu]), [mu], [nu]);
-
-id [t]?(?a) = abbM([t](?a), ?a);
-
-id [p1]?([mu]?) = abbM([p1]([mu]), [p1]);
-
-repeat;
-  once abbM([x]?, ?a, [mu]?!fixed_, ?b) *
-       abbM([y]?, ?c, [mu]?, ?d) =
-    abbM([x]*[y], ?a, ?b, ?c, ?d) * replace_([mu], N100_?);
-  also once abbM([x]?, ?a, [mu]?!fixed_, ?b, [mu]?, ?c) =
-    abbM([x], ?a, ?b, ?c) * replace_([mu], N100_?);
-  renumber;
-endrepeat;
-
-id abbM([x]?, ?a) = abbM([x])
-#if "`Scale'" != "1"
-  * MOM(?a)
-#endif
-  ;
-
-#if "`Scale'" != "1"
-chainout MOM;
-id MOM([p1]?MOMS) = SCALE;
-id MOM(?a) = 1;
-chainout IMOM;
-id IMOM([p1]?MOMS) = 1/SCALE;
-id IMOM(?a) = 1;
-id SCALE^[x]? = powM(`Scale', [x]/2);
+collect dotM;
+#call Factor(dotM)
+#call InvSimplify(dotM)
 #endif
 
-#call Square
-
-b abbM, `Bracket';
+b SumOver, Conjugate, Den;
 .sort
 
-collect FormSimplify, FormSimplify;
-normalize FormSimplify;
+collect mulM;
+makeinteger mulM;
 
-#call Factor(FormSimplify)
-#call InvSimplify(FormSimplify)
+argument mulM;
+toPolynomial;
+endargument;
 
-id FormSimplify(0) = 0;
+b Conjugate, mulM;
+.sort
+keep brackets;
+
+toPolynomial;
 
 .sort
 
-moduleoption polyfun=abbM;
-.sort
+#write "%X"
 
-normalize abbM;
-id abbM(1) = 1;
-
-b abbM, `Bracket';
-print;
+b SumOver, Den;
+print +s;
 .end
 #endprocedure
 
 ***********************************************************************
 
-#define Bracket "Den, A0, A00, B0, B1, B00, B11, B001, B111, A0i, B0i, C0i, D0i, E0i, F0i"
+#define LoopInt "A0, A00, B0, B1, B00, B11, B001, B111, A0i, B0i, C0i, D0i, E0i, F0i"
 
-i DUMMY;
-cf MOM, IMOM;
-s SCALE, DF;
-set MOMS: k1,...,k`Legs';
-auto s ARG;
+cf SumOver, Den, Conjugate;
+cf `LoopInt';
+s D, Dminus4, Dminus4Eps, `Invariants';
 
-s D, Dminus4, Dminus4Eps;
+s DF, TAG, ETAG;
+t ET, ETC;
+cf TMP, NOW;
+set LOOPINT: `LoopInt';
+set INVS: `Invariants';
+
 i [mu], [nu], [ro], [si];
 v [p1], [p2];
-s [x], [y];
+s [x], [y], [n];
 t [t];
+cf [f];
 
-cf abbM, powM, FormSimplify;
-cf `Bracket';
-t ET, ETC;
-
-.global
+extrasymbols array subM;
+cf abbM, dotM, mulM, powM;
 

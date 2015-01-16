@@ -2,7 +2,7 @@
 	decl.h
 		Type declarations
 		this file is part of Divonne
-		last modified 21 Dec 11 th
+		last modified 9 Jan 13 th
 */
 
 
@@ -64,9 +64,7 @@ typedef struct _this {
   void *userdata;
   PeakFinder peakfinder;
 #ifdef HAVE_FORK
-  int ncores, *child;
-  int running, nchildren;
-  fd_set children;
+  int ncores, running, *child;
   real *frame;
   number nframe;
   SHM_ONLY(int shmid;)

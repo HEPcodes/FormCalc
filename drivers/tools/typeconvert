@@ -1,6 +1,6 @@
 #! /bin/sh
 
-[ $# -eq 0 ] && {
+test $# -eq 0 && {
   cat << _EOF_
 Usage:  $0 <files>
 
@@ -19,7 +19,7 @@ _EOF_
 
 for f in "$@" ; do
   echo $f
-  [ -f $f.orig ] || mv $f $f.orig
+  test -f $f.orig || mv $f $f.orig
   sed '
 	s/double precision/RealType/
 	s/double complex/ComplexType/

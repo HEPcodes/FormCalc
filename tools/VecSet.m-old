@@ -3,7 +3,7 @@
 		explicit representation of external vectors
 		and derived quantities
 		this file is part of FormCalc
-		last modified 9 Nov 12 th
+		last modified 15 Jun 10 th
 *)
 
 
@@ -19,7 +19,7 @@ pol specifies the polarizations of the external particles, they are
 either given as a list of integers (-1 = left-handed, +1 = right-handed,
 0 = longitudinal) or as a string of \"+\", \"-\", \"0\"."
 
-{ VecK, VecE, MomSpec, Spi,
+{ VecK, VecE, MomSpec, Spi, DotSpi,
   SpecM, SpecK, SpecE, SpecDeltaK, SpecEx, SpecEy, SpecEz,
   SpecPhi, SpecKT, SpecET, SpecKT, SpecPRap, SpecRap }
 
@@ -99,17 +99,17 @@ Block[ {p0, deltap, eT, sinth, expIphi, phi, onePez, oneMez},
   sump = Sqrt[p0 + p];
   deltap = Sqrt[deltap];
 
-  Spi[i, -1,6,1] = deltap {sinth, -cp[expIphi]} //simp; (* undotted *)
-  Spi[i, -1,6,2] = deltap {sinth, -cm[expIphi]} //simp; (* dotted *)
+  Spi[i, -1, 6] = deltap {sinth, -cp[expIphi]} //simp;
+  DotSpi[i, -1, 6] = deltap {sinth, -cm[expIphi]} //simp;
 
-  Spi[i, -1,7,1] = sump {sinth, -cp[expIphi]} //simp;
-  Spi[i, -1,7,2] = sump {sinth, -cm[expIphi]} //simp;
+  Spi[i, -1, 7] = sump {sinth, -cp[expIphi]} //simp;
+  DotSpi[i, -1, 7] = sump {sinth, -cm[expIphi]} //simp;
 
-  Spi[i, +1,6,1] = sump {cm[expIphi], sinth} //simp;
-  Spi[i, +1,6,2] = sump {cp[expIphi], sinth} //simp;
+  Spi[i, 1, 6] = sump {cm[expIphi], sinth} //simp;
+  DotSpi[i, 1, 6] = sump {cp[expIphi], sinth} //simp;
 
-  Spi[i, +1,7,1] = deltap {cm[expIphi], sinth} //simp;
-  Spi[i, +1,7,2] = deltap {cp[expIphi], sinth} //simp;
+  Spi[i, 1, 7] = deltap {cm[expIphi], sinth} //simp;
+  DotSpi[i, 1, 7] = deltap {cp[expIphi], sinth} //simp;
 
   True
 ]
@@ -118,13 +118,13 @@ Block[ {p0, deltap, eT, sinth, expIphi, phi, onePez, oneMez},
 ToComponents[expr_, pol_String] :=
   ToComponents[expr, Characters[pol] /. {"+" -> 1, "-" -> -1, "0" -> 0}]
 
-ToComponents[expr_, pol_List] :=
-Block[ {ChainHead},
-  expr /. WeylChain -> SplitChain /.
-    Flatten[MapIndexed[vecrule, pol]] /.
-    h:_ChainHead | Pair | Eps :> rep[h] /.
-    Hel[i_] :> pol[[i]]
-]
+ToComponents[expr_, pol_List] := expr /.
+  WeylChain -> SplitChain /.
+  { Spinor[i_, s_, om_] -> Spi[i, s Hel[i], om],
+    DottedSpinor[i_, s_, om_] -> DotSpi[i, s Hel[i], om] } /.
+  Flatten[MapIndexed[vecrule, pol]] /.
+  h:SxS | SeS | VxS | VeS | BxS | BeS | Pair | Eps :> rep[h] /.
+  Hel[i_] :> pol[[i]]
 
 
 vecrule[pol_, {n_}] := {
@@ -133,42 +133,38 @@ vecrule[pol_, {n_}] := {
   ec[n] -> VecE[n, -pol] }
 
 
-Attributes[rep] = {HoldAll}
-
 rep[Pair][A_List, B_List] :=
   1/2 (A[[1,1]] B[[2,2]] + A[[2,2]] B[[1,1]] -
        A[[1,2]] B[[2,1]] - A[[2,1]] B[[1,2]])
 
-eps[A_, B_, C_, D_] :=
-  (A[[1,1]] B[[2,2]] - A[[2,2]] B[[1,1]]) *
-  (C[[2,1]] D[[1,2]] - C[[1,2]] D[[2,1]])
+diag[i_, j_] := i[[1,1]] j[[2,2]] - i[[2,2]] j[[1,1]]
+
+offdiag[i_, j_] := i[[2,1]] j[[1,2]] - i[[1,2]] j[[2,1]]
 
 rep[Eps][A_List, B_List, C_List, D_List] := 1/4 (
-  eps[A, B, C, D] + eps[C, D, A, B] -
-  eps[A, C, B, D] - eps[B, D, A, C] +
-  eps[A, D, B, C] + eps[B, C, A, D] )
+  diag[A, B] offdiag[C, D] +
+  diag[C, D] offdiag[A, B] -
+  diag[A, C] offdiag[B, D] -
+  diag[B, D] offdiag[A, C] +
+  diag[A, D] offdiag[B, C] +
+  diag[B, C] offdiag[A, D] )
 
 
-eps[0] = {}
+eps[{b1_, b2_}] := {b2, -b1}
 
-eps[1] = {{{0, 1}, {-1, 0}}}
+bar[{{A11_, A12_}, {A21_, A22_}}] := {{A22, -A12}, {-A21, A11}}
 
+rep[SxS][a_List, b_List] := a.b
 
-bar[om_][{{A11_, A12_}, {A21_, A22_}}, {n_}] :=
-  {{A22, -A12}, {-A21, A11}} /; EvenQ[om + n]
+rep[SeS][a_List, b_List] := a.eps[b]
 
-bar[_][A_, _] := A
+rep[VxS][A_List, b_List] := A.b
 
+rep[VeS][A_List, b_List] := A.eps[b]
 
-rep[ChainHead[om_, n_]][
-    Spinor[iL_, sL_, dL_], eL_, V___, eR_, Spinor[iR_, sR_, dR_] ] :=
-  Level[
-    { {Spi[iL, sL Hel[iL], 6 + BitAnd[om - 1 - eL, 1], dL]},
-      eps[eL],
-      MapIndexed[bar[om], {V}],
-      eps[eR],
-      {Spi[iR, sR Hel[iR], 6 + BitAnd[om + n + eR, 1], dR]} },
-    {2}, Dot]
+rep[BxS][A_List, b_List] := bar[A].b
+
+rep[BeS][A_List, b_List] := bar[A].eps[b]
 
 
 End[]

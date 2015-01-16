@@ -1,7 +1,7 @@
 * util.h
 * prototypes for the util functions
 * this file is part of FormCalc
-* last modified 21 Sep 12 th
+* last modified 20 Feb 13 th
 
 
 #ifndef LEGS
@@ -12,7 +12,7 @@
 	parameter (nvec = 10)
 
 * vec(*,*,0) is q1 in num.h
-	ComplexType vec(2,2,0:nvec*LEGS), vec_end
+	ComplexType vec(2,2,0:nvec*LEGS), vec_end(0)
 	common /vectors/ vec, vec_end
 
 	RealType momspec(8*nvec,LEGS)

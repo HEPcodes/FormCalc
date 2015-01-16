@@ -1,3 +1,106 @@
+22 Feb 13:
+
+- Fixed bugs in the formal arguments of the 'Fewest' procedure
+  in HelicityME.frm and PolarizationSum.frm introduced in the
+  last release of Feb 7.
+
+- Introduced wrappers RCSub, RCInt for simplification of the
+  renormalization constants (analogous to FormSub etc.).
+
+- Improved variable write-out in WriteSquaredME.  Added NameMap
+  output mode (similar to Common).
+
+- Improved numerator simplification for OPP.
+
+- Fixed two memory-allocation bugs in ReadForm which could
+  occur for large amplitudes.
+
+
+6 Feb 13:
+
+- Fixed problem with unquoted commas in preprocessor
+  statement in invariant simplification.
+
+
+5 Feb 13:
+
+- Fixed PolarizationSum for GaugeTerms -> False:
+  momentum conservation must be applied *before* dropping
+  gauge-dependent terms or else not all cancellations are
+  taken into account.
+
+
+1 Feb 13:
+
+- More optimizations on OPP denominator extension.
+
+- Fixed subtle bug that would lead to dot products
+  not being abbreviated and ultimately wrong results.
+
+- Overhauled OnSize function.
+
+- Fixed problem of neglecting masses in loop integral arguments.
+
+
+21 Dec 12:
+
+- Fixed bug in parallel Divonne (ncomp > 1).
+
+- Removed Source option in HelicityME, ColourME, and PolarizationSum.
+  Too awkward syntax with both Abbr[] and Subexpr[].
+
+- Putting the OPP integrals on a common denominator is now done in
+  Mathematica, this is both easier and works across parts of the amplitude.
+  One should start with the largest N first, e.g. the three-point OPP
+  functions will be extended to four-point ones only if the vertices are
+  computed after the boxes.
+
+
+12 Dec 12:
+
+- Split Abbreviate function into AbbrevSet and AbbrevDo, can introduce
+  subexpressions as they come from FORM with this.
+
+- Fine-tuned simplification procedures, there are now:
+  FormPre to set up things (if necessary),
+  FormSub for the subexpressions introduced by FORM (subM),
+  FormDot for expressions involving dot products (dotM),
+  FormMat for the coefficients of the Mat[...] matrix elements,
+  FormNum for the numerators in OPP.
+
+- Updated HelicityME and PolarizationSum with the FORM 4 features
+  already used in CalcFeynAmp.
+
+
+22 Nov 12:
+
+- Rewrote procedure DotSimplify in CalcFeynAmp.frm, better selection
+  of terms for simplification hence faster.
+
+- Moved to tform with $ProcessorCount workers.  Not (yet) subtracting
+  load average.
+
+
+6 Nov 12:
+
+- Improvements to the abbreviationing system.
+
+- Introduced FormSubSimplify and FormMatSimplify for finer-grained
+  simplification in Mathematica.
+
+- New TreeCoupling function.
+
+
+24 Oct 12:
+
+- Moved to FORM's ToPolynomial abbreviationing system.
+
+- Modified ReadForm quite a bit to account for abbreviations.
+  Removed MAXEXPR hassle en passant.
+
+- Optimized the position of some .sorts in CalcFeynAmp.frm.
+
+
 6 Oct 12:
 
 - Rearranged internal handling of loop integrals, FORM gives back

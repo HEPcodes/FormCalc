@@ -2,7 +2,7 @@
 * construct the CMS representation of a momentum and the
 * three corresponding polarization vectors
 * this file is part of FormCalc
-* last modified 21 Sep 12 th
+* last modified 9 Nov 12 th
 
 #include "types.h"
 
@@ -27,8 +27,7 @@
 
 	ComplexType spi_(2, 6:7, nvec, 1)
 
-#define Spi(hel,om,x) spi_(x, om, hel+6, i)
-#define DotSpi(hel,om,x) spi_(x, om, hel+7, i)
+#define Spi(hel,om,d,x) spi_(x, om, hel+d+5, i)
 
 * i.e., spi(x, 6, 5, i) = left-handed,  undotted, upper
 *       spi(x, 7, 5, i) = left-handed,  undotted, lower
@@ -117,27 +116,31 @@
 	expIphi = 1/sqrt2*sqrt(onePez)*expIphi
 * this is sin(th/2):
 	sinth = 1/sqrt2*sqrt(oneMez)
+
+* 'big' components go as
 	sump = sqrt(p0 + p)
+
+	Spi(-1,7,1, 1) = sump*sinth
+	Spi(-1,7,2, 1) = Spi(-1,7,1, 1)
+	Spi(-1,7,1, 2) = -sump*expIphi
+	Spi(-1,7,2, 2) = Conjugate(Spi(-1,7,1, 2))
+
+	Spi(+1,6,2, 1) = sump*expIphi
+	Spi(+1,6,1, 1) = Conjugate(Spi(+1,6,2, 1))
+	Spi(+1,6,2, 2) = sump*sinth
+	Spi(+1,6,1, 2) = Spi(+1,6,2, 2)
+
+* 'small' components go as
 	deltap = sqrt(deltap)
 
-	Spi(-1, 6, 1) = deltap*sinth
-	DotSpi(-1, 6, 1) = Spi(-1, 6, 1)
-	Spi(-1, 6, 2) = -deltap*expIphi
-	DotSpi(-1, 6, 2) = Conjugate(Spi(-1, 6, 2))
+	Spi(-1,6,1, 1) = deltap*sinth
+	Spi(-1,6,2, 1) = Spi(-1,6,1, 1)
+	Spi(-1,6,1, 2) = -deltap*expIphi
+	Spi(-1,6,2, 2) = Conjugate(Spi(-1,6,1, 2))
 
-	Spi(-1, 7, 1) = sump*sinth
-	DotSpi(-1, 7, 1) = Spi(-1, 7, 1)
-	Spi(-1, 7, 2) = -sump*expIphi
-	DotSpi(-1, 7, 2) = Conjugate(Spi(-1, 7, 2))
-
-	DotSpi(1, 6, 1) = sump*expIphi
-	Spi(1, 6, 1) = Conjugate(DotSpi(1, 6, 1))
-	DotSpi(1, 6, 2) = sump*sinth
-	Spi(1, 6, 2) = DotSpi(1, 6, 2)
-
-	DotSpi(1, 7, 1) = deltap*expIphi
-	Spi(1, 7, 1) = Conjugate(DotSpi(1, 7, 1))
-	DotSpi(1, 7, 2) = deltap*sinth
-	Spi(1, 7, 2) = DotSpi(1, 7, 2)
+	Spi(+1,7,2, 1) = deltap*expIphi
+	Spi(+1,7,1, 1) = Conjugate(Spi(+1,7,2, 1))
+	Spi(+1,7,2, 2) = deltap*sinth
+	Spi(+1,7,1, 2) = Spi(+1,7,2, 2)
 	end
 

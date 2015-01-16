@@ -1,7 +1,7 @@
 * run.F
 * defines parameter settings for one run, then includes main.F
 * this file is part of FormCalc
-* last modified 3 Mar 11 th
+* last modified 25 Feb 13 th
 
 
 * Whether to run in debugging mode
@@ -48,11 +48,11 @@ c#define NO_EXCLUSION_LIMITS
 
 * The LOOPn set up the model parameters for the calculation, either
 * - as fixed declarations, e.g.
-*       MH = 115
+*       MH = 125
 * - or as do-loops terminating on label 1, e.g.
 *       do 1 MH = 100, 500, 10
 
-#define LOOP1 MH = 120
+#define LOOP1 MH = 125
 #define LOOP2
 #define LOOP3 TB = 5
 #define LOOP4 MA0 = 500

@@ -7,7 +7,7 @@
 		  (i.e. does not touch preprocessor statements)
 		- replaces the continuation character (if any) by &
 		this file is part of FormCalc
-		last modified 14 Feb 12 th
+		last modified 4 Nov 12 th
 */
 
 #include <stdio.h>
@@ -25,9 +25,10 @@ int main()
                  fgets(line, sizeof line, stdin);
        puts(s) ) {
     char *si, *di, *p;
-    char *eol = line + strlen(s = line) - 1;
-    if( *eol != '\n' ) *++eol = '\n';
-    if( eol[-1] == '\\' ) {
+    char *eol = line + strlen(s = line);
+    unsigned char c = 0;
+    while( eol > s && (c = eol[-1]) < ' ' ) --eol;	/* remove \r etc. */
+    if( c == '\\' ) {
       if( fgets(next, sizeof next, stdin) == NULL ) break;
       else {
         char *p = next + 6 + strspn(next + 6, " \t");

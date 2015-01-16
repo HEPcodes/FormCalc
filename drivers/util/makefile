@@ -48,6 +48,7 @@ CUBA := $(VEGAS_C) $(SUAVE_C) $(DIVONNE_C) $(CUHRE_C) \
 
 
 OBJS := \
+  $(CUBA:.c=.o) \
   $(system)/logfile.o \
   $(system)/setfpu.o \
   $(system)/Error.o \
@@ -78,8 +79,7 @@ OBJS := \
   $(diag)/SVD.o \
   $(univariate)/Patterson.o \
   $(univariate)/Gauss.o \
-  $(compaz)/CompAZ.o \
-  $(CUBA:.c=.o)
+  $(compaz)/CompAZ.o
 
 
 $(LIB): $(LIB)($(OBJS))
@@ -103,7 +103,7 @@ $(LIB)($(VEGAS_C:.c=.o)): $(VEGAS_C) $(VEGAS_DEPS)
 $(LIB)($(SUAVE_C:.c=.o)): $(SUAVE_C) $(SUAVE_DEPS)
 $(LIB)($(DIVONNE_C:.c=.o)): $(DIVONNE_C) $(DIVONNE_DEPS)
 $(LIB)($(CUHRE_C:.c=.o)): $(CUHRE_C) $(CUHRE_DEPS)
-$(LIB)($(cuba)/WorkerIni.o): $(cuba)/stddecl.h
+$(LIB)($(common)/WorkerIni.o): $(common)/stddecl.h
 
 LIBS += $(LIB)
 

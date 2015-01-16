@@ -3,7 +3,7 @@
 		the parallel sampling routine
 		for the C versions of the Cuba routines
 		by Thomas Hahn
-		last modified 6 Sep 12 th
+		last modified 9 Jan 13 th
 */
 
 #define MINSLICE 10
@@ -145,11 +145,15 @@ static void DoSample(This *t, number n, creal *x, real *f
 
 static inline int ReadyCore(cThis *t)
 {
-  int core;
   fd_set ready;
+  int core, n = 0;
 
-  memcpy(&ready, &t->children, sizeof ready);
-  select(t->nchildren, &ready, NULL, NULL, NULL);
+  FD_ZERO(&ready);
+  for( core = 0; core < t->ncores; ++core ) {
+    FD_SET(t->child[core], &ready);
+    n = IMax(n, t->child[core]);
+  }
+  select(n + 1, &ready, NULL, NULL, NULL);
 
   for( core = 0; core < t->ncores; ++core )
     if( FD_ISSET(t->child[core], &ready) ) break;
@@ -173,12 +177,15 @@ static int Explore(This *t, cint iregion)
   if( t->ncores < MINCORES ) return ExploreSerial(t, iregion);
 
   if( t->running >= ((iregion < 0) ? 1 : t->ncores) ) {
-    Totals totals[t->ncomp];
+    Totals totals[NCOMP];
     cint fd = t->child[core = ReadyCore(t)];
     ExploreResult res;
     count comp, succ;
 
+MASTER("core=%d  t=%p  t->child=%p  fd=%d", core, t, t->child, fd);
     --t->running;
+    MASTER("reading res + 1 region (%d+1r%d) from fd %d",
+      sizeof res, sizeof(Region), fd);
     readsock(fd, &res, sizeof res);
     ireg = res.iregion;
     region = RegionPtr(ireg);
@@ -187,12 +194,17 @@ static int Explore(This *t, cint iregion)
     if( --res.nregions > 0 ) {
       region->next = t->nregions - ireg;
       EnlargeRegions(t, res.nregions);
+      MASTER("reading %d regions (%dr%d) from fd %d",
+        res.nregions, res.nregions, sizeof(Region), fd);
       readsock(fd, RegionPtr(t->nregions), res.nregions*sizeof(Region));
       t->nregions += res.nregions;
+
       RegionPtr(t->nregions-1)->next = succ - t->nregions + 1;
     }
 
-    readsock(fd, totals, sizeof totals);
+    MASTER("reading totals (%dt%d) from fd %d",
+      t->ncomp, sizeof(Totals), fd);
+    readsock(fd, totals, t->ncomp*sizeof(Totals));
     for( comp = 0; comp < t->ncomp; ++comp )
       t->totals[comp].secondspread =
         Max(t->totals[comp].secondspread, totals[comp].secondspread);
@@ -212,9 +224,11 @@ static int Explore(This *t, cint iregion)
     slice.phase = t->phase;
     region = RegionPtr(iregion);
     writesock(fd, &slice, sizeof slice);
+    MASTER("writing region (%d+1r%d+%dt%d) to fd %d",
+      sizeof(Samples), sizeof(Region), t->ncomp, sizeof(Totals), fd);
     writesock(fd, &t->samples[region->isamples], sizeof(Samples));
-    writesock(fd, region, sizeof *region);
-    writesock(fd, t->totals, sizeof *t->totals);
+    writesock(fd, region, sizeof(Region));
+    writesock(fd, t->totals, t->ncomp*sizeof(Totals));
     region->depth = 0;
     ++t->running;
   }
@@ -231,7 +245,7 @@ static void DoChild(This *t, cint fd)
 
 #ifdef DIVONNE
   TYPEDEFREGION;
-  Totals totals[t->ncomp];
+  Totals totals[NCOMP];
   ExploreResult res;
 
   t->totals = totals;
@@ -292,13 +306,13 @@ static void DoChild(This *t, cint fd)
     else {
       Samples *samples, psamples;
 
-      readsock(fd, &psamples, sizeof psamples);
+      WORKER("reading region (%d+1r%d+%dt%d) from fd %d",
+        sizeof(Samples), sizeof(Region), t->ncomp, sizeof(Totals), fd);
+      readsock(fd, &psamples, sizeof(Samples));
       readsock(fd, RegionPtr(0), sizeof(Region));
-      readsock(fd, totals, sizeof totals);
+      readsock(fd, totals, t->ncomp*sizeof(Totals));
       t->nregions = 1;
       t->neval = t->neval_opt = t->neval_cut = 0;
-
-      WORKER("read 1 region from fd %d", fd);
 
       samples = &t->samples[RegionPtr(0)->isamples];
       if( psamples.n != samples->n ) {
@@ -313,10 +327,12 @@ static void DoChild(This *t, cint fd)
       res.neval_cut = t->neval_cut;
       res.nregions = t->nregions;
       res.iregion = slice.i;
-      WORKER("writing %d regions to fd %d", res.nregions, fd);
+      WORKER("writing %d regions (%d+%dr%d+%dt%d) to fd %d",
+        t->nregions, sizeof res, t->nregions, sizeof(Region),
+        t->ncomp, sizeof(Totals), fd);
       writesock(fd, &res, sizeof res);
       writesock(fd, RegionPtr(0), t->nregions*sizeof(Region));
-      writesock(fd, totals, sizeof totals);
+      writesock(fd, totals, t->ncomp*sizeof(Totals));
     }
 #endif
   }
@@ -346,7 +362,7 @@ static inline void ForkCores(This *t)
   }
 #endif
 
-  DIV_ONLY(t->nchildren = t->running = 0;)
+  DIV_ONLY(t->running = 0;)
 
   if( t->ncores < MINCORES ) return;
   if( VERBOSE ) {
@@ -379,8 +395,6 @@ static inline void ForkCores(This *t)
       core, pid, fd[0], fd[1]);
     close(fd[1]);
     t->child[core] = fd[0];
-    DIV_ONLY(FD_SET(fd[0], &t->children);
-             t->nchildren = IMax(t->nchildren, fd[0] + 1);)
   }
 }
 

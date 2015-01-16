@@ -4,7 +4,7 @@
 		has approximately equal spread = 1/2 vol (max - min),
 		then do a main integration over all regions
 		this file is part of Divonne
-		last modified 3 Jul 12 th
+		last modified 27 Nov 12 th
 */
 
 
@@ -53,9 +53,9 @@ static int Integrate(This *t, real *integral, real *error, real *prob)
   FORK_ONLY(t->nframe = 0;)
   t->neval_opt = t->neval_cut = 0;
 
-  ForkCores(t);
-
   AllocGiven(t);
+
+  ForkCores(t);
 
   AllocRegions(t);
   for( dim = 0; dim < t->ndim; ++dim ) {

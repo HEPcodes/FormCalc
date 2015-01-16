@@ -1,0 +1,30 @@
+Linux 64-bit:
+
+./configure --build=x86_64-unknown-linux-gnu \
+  CFLAGS="-static-libgcc -O3 -fomit-frame-pointer" \
+  CXXFLAGS="-static-libgcc -O3 -fomit-frame-pointer"
+
+Linux 32-bit:
+
+./configure --build=i686-unknown-linux-gnu \
+  CFLAGS="-static-libgcc -O3 -fomit-frame-pointer -m32" \
+  CXXFLAGS="-static-libgcc -O3 -fomit-frame-pointer -m32"
+
+Mac 64-bit:
+
+./configure \
+  CC="llvm-gcc" CFLAGS="-O3 -fomit-frame-pointer -mmacosx-version-min=10.6" \
+  CXX="llvm-g++" CXXFLAGS="-O3 -fomit-frame-pointer -mmacosx-version-min=10.6"
+
+Mac 32-bit:
+
+./configure --build=i486-apple-darwin \
+  CC="llvm-gcc" CFLAGS="-O3 -fomit-frame-pointer -m32 -mmacosx-version-min=10.6" \
+  CXX="llvm-g++" CXXFLAGS="-O3 -fomit-frame-pointer -m32 -mmacosx-version-min=10.6"
+
+Cygwin 32-bit:
+
+./configure \
+  CFLAGS="-static -static-libgcc -O3 -fomit-frame-pointer" \
+  CXXFLAGS="-static -static-libgcc -O3 -fomit-frame-pointer" \
+  --with-gmp=$HOME/Desktop/form-prereq

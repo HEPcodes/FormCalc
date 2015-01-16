@@ -1,7 +1,7 @@
 * inline.h
 * inline versions of the util functions
 * this file is part of FormCalc
-* last modified 7 Sep 12 th
+* last modified 16 Nov 12 th
 
 
 	RealType SInvariant, TInvariant
@@ -104,11 +104,12 @@
 	BxVxBxS2(c_, b_, a_, r1_,r2_) =
      &    BxVxS2(c_, b_, BxS1(a_, r1_,r2_),BxS2(a_, r1_,r2_))
 
+#ifndef SpiLV
 #define SpiLV(iL,eL) (1-2*eL)*vec(1+eL,1+eL,iL), vec(2-eL,1+eL,iL)
 #define SpiLB(iL,eL) (1-2*eL)*vec(1+eL,2-eL,iL), vec(2-eL,2-eL,iL)
-
 #define SpiRV(eR,iR) vec(1+eR,1+eR,iR), (1-2*eR)*vec(2-eR,1+eR,iR)
 #define SpiRB(eR,iR) vec(1+eR,2-eR,iR), (1-2*eR)*vec(2-eR,2-eR,iR)
+#endif
 
 	ChainV0(iL_,eL_, eR_,iR_) = SxS(
      &    SpiLB(iL_,eL_),
