@@ -2,7 +2,7 @@
 # configure script for FormCalc
 # note: has nothing to do with GNU autoconf
 # this file is part of FormCalc
-# last modified 4 Oct 12 th
+# last modified 15 Mar 13 th
 
 
 LC_ALL=C
@@ -287,7 +287,7 @@ case `$CONF_CC --version 2>&1 < /dev/null` in
 *LLVM*) ;;
 *gcc*4.2* | *gcc*4.4.3*) opt=-O0 ;;
 esac
-CONF_CFLAGS="${CFLAGS-${CONF_DEBUG:-$opt} -fomit-frame-pointer -ffast-math} $CONF_M $CONF_STATIC ${CONF_STATIC_EXT:+-static-libgcc}"
+CONF_CFLAGS="${CFLAGS-${CONF_DEBUG:-$opt} -std=gnu99 -fomit-frame-pointer -ffast-math} $CONF_M $CONF_STATIC ${CONF_STATIC_EXT:+-static-libgcc}"
 
 CONF_CXXFLAGS="$CXXFLAGS $CONF_M $CONF_STATIC ${CONF_STATIC_EXT:+-static-libstdc++ -static-libgcc}"
 

@@ -1,6 +1,6 @@
 #ifndef FORMCALC
-#define FORMCALC 760
-#define FORMCALC_MAJOR 7
-#define FORMCALC_MINOR 6
+#define FORMCALC 810
+#define FORMCALC_MAJOR 8
+#define FORMCALC_MINOR 1
 #endif
 

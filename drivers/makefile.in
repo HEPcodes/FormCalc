@@ -1,7 +1,7 @@
 # makefile.in
 # makefile template used by configure
 # this file is part of FormCalc
-# last modified 4 Jun 12 th
+# last modified 18 Mar 13 th
 
 # Note: make permanent changes only in makefile.in,
 # changes in makefile will be overwritten by configure.
@@ -16,30 +16,15 @@ MAKECMDGOALS := $(MAKECMDGOALS:%=%$(EXE))
 all: $(MAKECMDGOALS)
 
 
-VPATH := $(SRC):$(SRC)/squaredme:$(SRC)/renconst:$(LT)/../include:$(LT):$(CT)/../include:$(CT):$(SAMURAI)
-
-INCLUDE := $(patsubst %,-I%,$(subst :, ,$(VPATH)))
-
 PREFIX :=
-
-FFLAGS += $(INCLUDE)
-CFLAGS += $(INCLUDE) -DLANG_C
-
-ifdef DEBUG
-FFLAGS += -g $(DEF)DEBUG
-CFLAGS += -g -DDEBUG
-endif
-
-export FC
-export FFLAGS
-export CC
-export CFLAGS
 
 
 DIR = $(SRC)/$(FOLDER)
 LIB = $(FOLDER).a
 
 LIBS :=
+
+VPATH := $(LT)/../include:$(LT):$(CT)/../include:$(CT):$(SAMURAI)
 
 FOLDER := squaredme
 -include $(DIR)/makefile
@@ -53,6 +38,24 @@ FOLDER := util
 -include $(DIR)/makefile
 
 
+INCLUDE := $(patsubst %,-I%,$(subst :, ,$(VPATH)))
+FINCLUDE = -I$(<D) -I$(SRC)/F $(INCLUDE)
+CINCLUDE = -I$(<D) -I$(SRC)/C $(INCLUDE)
+
+FFLAGS += $(FINCLUDE)
+CFLAGS += $(CINCLUDE)
+
+ifdef DEBUG
+FFLAGS += -g $(DEF)DEBUG
+CFLAGS += -g -DDEBUG
+endif
+
+export FC
+export FFLAGS
+export CC
+export CFLAGS
+
+
 DEPS := $(wildcard *.d)
 
 clean:
@@ -62,24 +65,38 @@ distclean:
 	$(RM) $(DEPS) $(DEPS:%.d=%.o) $(DEPS:%.d=%$(EXE)) $(LIBS) makefile
 
 
--include $(SRC)/decl.d
+define makedeps
+( echo '#include "$<"' ; echo '#include "$<"' ) > deps.c
+$(CPP) -M -I$(<D) $(INCLUDE) deps.c | sed 's|^.*: deps.c|$@:|' > $@
+$(RM) deps.c
+endef
 
-decl.d: $(SRC)/decl.h
-	echo '#include "decl.h"\n#include "decl.h"\n' > decl_d.c
-	$(CPP) -M $(INCLUDE) decl_d.c | sed 's/^.*: decl_d.c/$@:/' > decl.d
-	$(RM) decl_d.c
+-include Fdecl.d
+-include Finline.d
+-include Fnum.d
 
--include $(SRC)/$(MAKECMDGOALS:%$(EXE)=%.d)
+F%.d: $(SRC)/F/%.h renconst.h
+	$(makedeps)
 
+-include Cdecl.d
+-include Cinline.d
+-include Cnum.d
+
+C%.d: $(SRC)/C/%.h renconst.h
+	$(makedeps)
+
+
+-include $(MAKECMDGOALS:%$(EXE)=%.d)
 %.d: $(SRC)/%.F
-	( grep "^[^c*].*Mma" $< >/dev/null 2>&1 ; \
+	{ grep "^[^c*].*Mma" $< >/dev/null 2>&1 ; \
 	  echo "MMA = $$?" ; \
 	  echo "$*$(EXE): $@ $(LIBS)" ; \
-	  $(CPP) -M $(INCLUDE) -x c $< | sed 's/^.*:/$@:/' ) > $@
+	  $(CPP) -M $(FINCLUDE) -x c $< | sed 's|^.*:|$@:|' ; \
+	} > $@
 
 ifeq ($(MMA), 0)
-%$(EXE):: $(SRC)/%.F %.d $(SRC)/mktm
-	$(SRC)/mktm $<
+%$(EXE):: $(SRC)/%.F %.d $(SRC)/tools/mktm
+	$(SRC)/tools/mktm $<
 	$(FC) $(FFLAGS) $(DEF)MMA $(DEF)PREFIX=$(PREFIX) -c $<
 	CC="$(SRC)/tools/fcc" REALCC="$(CC) $(CFLAGS)" \
 	CXX="$(SRC)/tools/f++" REALCXX="$(CXX) $(CXXFLAGS)" \

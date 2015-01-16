@@ -1,0 +1,99 @@
+#! /bin/sh -x
+# get and build FORM for a given platform
+# last modified 6 Mar 13 th
+
+gmp=gmp-5.1.1
+zlib=zlib-1.2.7
+
+lin_cflags="-static-libgcc -O3 -fomit-frame-pointer"
+mac_cflags="$lin_cflags -mmacosx-version-min=10.6"
+win_cflags="$lin_cflags"
+
+case "$1" in
+Linux)
+	build=i686-unknown-linux-gnu
+	cflags="$lin_cflags -m32"
+	;;
+Linux-x86-64)
+	build=x86_64-unknown-linux-gnu
+	cflags="$lin_cflags"
+	;;
+MacOSX-x86)
+	build=i486-apple-darwin
+	cflags="$mac_cflags -m32"
+	;;
+MacOSX-x86-64)
+	build=x86_64-apple-darwin
+	cflags="$mac_cflags"
+	;;
+Windows)
+	build=i686-pc-cygwin
+	cflags="$win_cflags -m32"
+	;;
+Windows-x86-64)
+# no Cygwin-64 yet, hence for now:
+	ln -s Windows Windows-x86-64
+	exit 0
+	build=x86_64-w64-cygwin
+	cflags="$win_cflags -m64"
+	;;
+*)
+	cat << _EOF_
+Usage: $0 platform
+where platform is one of
+Linux
+Linux-x86-64
+MacOSX-x86
+MacOSX-x86-64
+Windows
+Windows-x86-64
+_EOF_
+	exit 1
+	;;
+esac
+
+
+make BUILD="$build" \
+     DIR="$1" \
+     ABSDIR="$PWD/$1" \
+     CFLAGS="$cflags" \
+     GMP="$gmp" \
+     ZLIB="$zlib" -f - << \_EOF_
+
+CONF1 = CFLAGS="$(CFLAGS)" CXXFLAGS="$(CFLAGS)" ./configure --prefix=$(ABSDIR)
+
+CONF2 = $(CONF1) --build="$(BUILD)"
+
+formcvs/sources/tform: $(DIR)/lib/libgmp.a $(DIR)/lib/libz.a formcvs.tar.gz
+	tar xvfz formcvs.tar.gz
+	cd formcvs && autoreconf -i
+	cd formcvs && $(CONF2) --with-gmp=$(ABSDIR) --with-zlib=$(ABSDIR)
+	sed -i \
+	  -e 's|-lz|$(ABSDIR)/lib/libz.a|' \
+	  -e 's|-lgmp|$(ABSDIR)/lib/libgmp.a|' formcvs/sources/Makefile
+	cd formcvs && $(MAKE) install
+	rm -fr formcvs
+
+formcvs.tar.gz:
+	wget -O formcvs.tar.gz 'http://www.nikhef.nl/~form/formcvs.php?dl=formcvs.tar.gz'
+
+$(DIR)/lib/libgmp.a: $(GMP).tar.bz2
+	tar xvfj $(GMP).tar.bz2
+	cd $(GMP) && $(CONF2) --disable-shared
+	cd $(GMP) && $(MAKE) install
+	rm -fr $(GMP)
+
+$(GMP).tar.bz2:
+	wget http://ftp.gnu.org/gnu/gmp/$(GMP).tar.bz2
+
+$(DIR)/lib/libz.a: $(ZLIB).tar.gz
+	tar xvfz $(ZLIB).tar.gz
+	cd $(ZLIB) && $(CONF1)
+	cd $(ZLIB) && $(MAKE) SHAREDLIBV= install
+	rm -fr $(ZLIB)
+
+$(ZLIB).tar.gz:
+	wget http://zlib.net/$(ZLIB).tar.gz
+
+_EOF_
+

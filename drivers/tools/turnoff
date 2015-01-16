@@ -1,0 +1,30 @@
+#! /bin/sh
+# a script to turn off (comment out) the calculation of certain
+# modules in SquaredME.F
+# this file is part of FormCalc
+# last modified 18 Mar 13 th
+
+# For example, "turnoff box" turns off the calculation of the box
+# corrections (provided those modules have a "box" in their name).
+
+# The original SquaredME.F is backuped once to SquaredME.F.orig,
+# i.e. running turnoff again does not overwrite the backup.
+
+
+patterns=`echo "$*" | tr ' ' '|'`
+
+for file in $(dirname $(dirname $0))/*/SquaredME.F ; do
+  test -f $file.orig || mv $file $file.orig
+  echo $file
+
+  test -z "$patterns" && {
+    echo "restoring all commented-out calls"
+    cat $file.orig > $file
+  } || {
+    echo "commenting out the following lines:"
+    awk "{ c = \"\"
+           if( /call.*($patterns)/ ) { c = \"c\"; print }
+           print c \$0 > \"$file\" }" $file.orig
+  }
+done
+

@@ -1,7 +1,7 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 25 Feb 13 th
+* last modified 25 Mar 13 th
 
 
 #procedure Contract
@@ -136,11 +136,7 @@ id dotM(1) = 1;
 id dotM([x]?^[n]?) = dotM([x])^[n];
 id dotM([x]?INVS) = [x];
 
-b dotM;
-.sort
-keep brackets;
-
-toPolynomial;
+toPolynomial onlyfunctions dotM;
 
 .sort
 
@@ -575,7 +571,7 @@ b abbM;
 off oldFactArg;
 keep brackets;
 
-toPolynomial;
+toPolynomial onlyfunctions abbM;
 #endprocedure
 
 ***********************************************************************
@@ -612,7 +608,7 @@ endargument;
 
 id mulM([x]?symbol_) = [x];
 
-toPolynomial;
+toPolynomial onlyfunctions mulM;
 #endprocedure
 
 ***********************************************************************
@@ -748,11 +744,7 @@ argument mulM;
 toPolynomial;
 endargument;
 
-b addM, powM, IndexDelta, IndexEps;
-.sort
-keep brackets;
-
-toPolynomial;
+toPolynomial onlyfunctions addM, powM, IndexDelta, IndexEps;
 #endif
 #endprocedure
 

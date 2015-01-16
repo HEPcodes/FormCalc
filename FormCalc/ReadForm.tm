@@ -38,7 +38,7 @@
 	ReadForm.tm
 		reads FORM output back into Mathematica
 		this file is part of FormCalc
-		last modified 15 Feb 13 th
+		last modified 18 Mar 13 th
 
 Note: FORM code must have
 	1. #- (no listing),
@@ -478,7 +478,7 @@ static void ReadForm(FILE *file, cstring errarg)
   if( file ) for( ; ; ) {
     string errend = errmsg;
     cstring si;
-    size_t termsize;
+    size_t termsize = 0;
     int i;
 
     *errend = 0;

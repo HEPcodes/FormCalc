@@ -1,4 +1,4 @@
-parent := $(DIR)/..
+parent := $(DIR)/../F
 system := $(DIR)/system
 kin := $(DIR)/kin
 cuttools := $(DIR)/cuttools

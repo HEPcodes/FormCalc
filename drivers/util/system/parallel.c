@@ -2,7 +2,7 @@
 	parallel.c
 		parallel execution of SquaredMEHel
 		this file is part of FormCalc
-		last modified 6 Sep 12 th
+		last modified 18 Mar 13 th
 */
 
 
@@ -32,6 +32,9 @@
 #define NCOMP 2
 
 typedef void (*subroutine)(RealType *, const int *);
+
+void restorecache_(void);
+void clearcache_(void);
 
 #ifdef HAVE_FORK
 
