@@ -1,9 +1,15 @@
 #! /bin/sh
 # configure script
 # this file is part of FormCalc
-# last modified 18 May 06 th
+# last modified 9 Jan 07 th
 # note: has nothing to do with GNU autoconf
 
+
+LC_ALL=C
+export LC_ALL
+
+test=test$$
+trap "rm -f $test*" 0 1 2 15
 
 if (echo "test\c"; echo 1,2,3) | grep c > /dev/null ; then
   if (echo -n test; echo 1,2,3) | grep n > /dev/null ; then
@@ -25,14 +31,14 @@ findprog()
   echo $echo_n "looking for $1... $echo_c" 1>&2
   shift
   for prog in "$@" ; do
-    full="`which \"$prog\"`"
+    full="`which \"$prog\" 2> /dev/null`"
     if [ -x "$full" ] ; then
       echo $full 1>&2
       echo $prog
       return 0
     fi
   done
-  echo "no $* in your path" 1>&2
+  echo "no $@ in your path" 1>&2
   return 1
 }
 
@@ -50,13 +56,43 @@ findlib()
       "$base/src"
     do
       if [ -f "$path/$file" ] ; then
-        (cd "`dirname \"$path\"`" ; pwd 1>&2 ; pwd)
+        (cd "$path" ; pwd 1>&2 ; pwd)
         return 0
       fi
     done
   done
   echo "not found" 1>&2
   return 1
+}
+
+
+ldflags()
+{
+  # Mma 5.1's mcc needs this for static linking
+  LDFLAGS="$LDFLAGS -lpthread"
+
+  while read line ; do
+    ld=0
+    set -- `echo $line | tr ':,()' '    '`
+    while [ $# -gt 0 ] ; do
+      case $1 in
+      */collect2 | */ld | ld)
+        ld=1 ;;
+      *.o)
+        ;;
+      -l* | -L* | *.a | *.ld)
+        [ $ld -eq 1 ] && LDFLAGS="$LDFLAGS $1" ;;
+      /*)
+        [ $ld -eq 1 ] && LDFLAGS="$LDFLAGS -L$1" ;;
+      -rpath*)
+        [ $ld -eq 1 ] && LDFLAGS="$LDFLAGS -Wl,$1,$2"
+        shift ;;
+      esac
+      shift
+    done
+  done
+
+  echo $LDFLAGS
 }
 
 
@@ -84,35 +120,62 @@ CONF_CC=`findprog gcc $CC gcc` || exit 1
 
 CONF_CFLAGS="${CFLAGS--O3 -fomit-frame-pointer -ffast-math -g}"
 
-CONF_FC=`findprog f77 $FC ${ARG_QUAD+ifort} pgf77 ifort fort77 f77 xlf f90 g77 g95 gfortran` || exit 1
+CONF_FC=`findprog f77 $FC ${ARG_QUAD+ifort} pgf77 ifort xlf fort77 f77 f90 g77 g95 gfortran` || exit 1
 
-if $CONF_FC -v -c 2>&1 | grep "gcc version" > /dev/null ; then
+CONF_DEF="-D"
+
+if $CONF_FC --version -c 2>&1 | grep GNU > /dev/null ; then
   CONF_FFLAGS="-O0 -ffixed-line-length-none -g"
 else
   CONF_FFLAGS="${FFLAGS-default}"
   [ "$CONF_FFLAGS" = default ] && case "$CONF_FC$CONF_HOSTTYPE" in
   *pgf77*)
-	CONF_FFLAGS="-fast -Mextend -g77libs -Ktrap=fp -g" ;;
+	CONF_FFLAGS="-fast -g -Mextend -g77libs -Ktrap=fp" ;;
   *ifort*)
-	CONF_FFLAGS="-O3 -extend_source -warn truncated_source -fpe0 -g ${ARG_QUAD+-r16 -DDBLE=QEXT -DDIMAG=QIMAG -DDCONJG=QCONJG -DDCMPLX=QCMPLX}" ;;
+	CONF_FFLAGS="-O3 -g3 -extend_source -warn truncated_source -fpe0 ${ARG_QUAD+-r16 -DDBLE=QEXT -DDIMAG=QIMAG -DDCONJG=QCONJG -DDCMPLX=QCMPLX}" ;;
   *alpha)
-	CONF_FFLAGS="-fast -extend_source -warn truncated_source -fpe0 -g3" ;;
+	CONF_FFLAGS="-fast -g3 -extend_source -warn truncated_source -fpe0" ;;
   *sun* | *sparc*)
-	CONF_FFLAGS="-fast -e -ftrap=common -g" ;;
+	CONF_FFLAGS="-fast -g -e -ftrap=common" ;;
   *hp*)
-	CONF_FFLAGS="-O2 +es +U77 +FPVZO -g" ;;
+	CONF_FFLAGS="-O2 -g +es +U77 +FPVZO" ;;
+  *xlf*) 
+	CONF_FFLAGS="-O2 -g -qfixed=132 -qmaxmem=-1 -qextname -qflttrap=enable:invalid:overflow:zerodivide ${ARG_QUAD+-qautodbl=dbl}"
+	CONF_DEF="-WF,-D" ;;
   *)
 	CONF_FFLAGS="-O -g" ;;
   esac
 fi
 
 
+## find the Fortran libraries
+
+echo $echo_n "extracting the Fortran libraries... $echo_c" 1>&2
+
+rm -f $test*
+
+cat > $test.f << _EOF_
+	program dontpanic
+	print *, "Hi"
+	end
+_EOF_
+
+CONF_LDFLAGS=`$CONF_FC $CONF_FFLAGS -v -o $test $test.f 2>&1 | ldflags`
+
+CONF_STDLIBS="$STDLIBS"
+case $CONF_HOSTTYPE in
+*mac*) CONF_STDLIBS="$CONF_STDLIBS -lSystemStubs" ;;
+# this is supposed to fix the saveFP/restFP problem on Macs
+# not needed on Tiger anymore
+#  *mac*) CONF_LDFLAGS=`echo $CONF_LDFLAGS | sed 's/-lgcc /-lcc_dynamic /g'` ;;
+esac
+
+echo $CONF_LDFLAGS 1>&2
+
+
 # does Fortran append underscores to symbols?
 
 echo $echo_n "does $CONF_FC append underscores... $echo_c" 1>&2
-
-test=test$$
-trap "rm -f $test*" 0 1 2 15
 
 cat > $test.f << _EOF_
 	subroutine uscore
@@ -123,7 +186,7 @@ $CONF_FC $CONF_FFLAGS -c $test.f > /dev/null 2>&1
 
 if nm $test.o | grep uscore_ > /dev/null 2>&1 ; then
   echo "yes" 1>&2
-  CONF_CFLAGS="$CONF_CFLAGS -DHAVE_UNDERSCORE"
+  CONF_CFLAGS="$CONF_CFLAGS -DUNDERSCORE"
 else
   echo "no" 1>&2
 fi
@@ -131,21 +194,20 @@ fi
 
 # check for the necessary libraries
 
-CONF_LT=`findlib LoopTools libooptools.a \
+CONF_LT="`findlib LoopTools libooptools.a \
   $LT ../LoopTools ../../LoopTools $HOME/LoopTools \
-  /usr/local/LoopTools /usr/LoopTools /usr/local /usr` || exit 1
+  /usr/local/LoopTools /usr/LoopTools /usr/local /usr`" || exit 1
+CONF_STDLIBS="$CONF_STDLIBS -L\$(LT) -looptools${ARG_QUAD+-quad}"
 
-CONF_LDFLAGS="-L\$(LT)/lib -looptools${ARG_QUAD+-quad}"
-
-CONF_FH=`findlib FeynHiggs libFH.a \
+CONF_FH="`findlib FeynHiggs libFH.a \
   $FH ../FeynHiggs* ../../FeynHiggs* $HOME/FeynHiggs* \
-  /usr/local/FeynHiggs* /usr/FeynHiggs* /usr/local /usr` && \
-  CONF_LDFLAGS="$CONF_LDFLAGS -L$CONF_FH -lFH"
+  /usr/local/FeynHiggs* /usr/FeynHiggs* /usr/local /usr`" && \
+  CONF_STDLIBS="$CONF_STDLIBS -L$CONF_FH -lFH"
 
-CONF_LHAPDF=`findlib LHAPDF libLHAPDF.a \
+CONF_LHAPDF="`findlib LHAPDF libLHAPDF.a \
   $LHAPDF ../lhapdf* ../../lhapdf* $HOME/lhapdf* \
-  /usr/local/lhapdf* /usr/lhapdf* /usr/local /usr` && \
-  CONF_LDFLAGS="$CONF_LDFLAGS -L$CONF_LHAPDF -lLHAPDF"
+  /usr/local/lhapdf* /usr/lhapdf* /usr/local /usr`" && \
+  CONF_STDLIBS="$CONF_STDLIBS -L$CONF_LHAPDF -lLHAPDF"
 
 
 echo "creating makefile" 1>&2
@@ -154,7 +216,7 @@ cat - makefile.in > makefile << _EOF_
 # --- variables defined by configure ---
 
 LT = $CONF_LT
-
+STDLIBS = $CONF_STDLIBS
 LDFLAGS = $CONF_LDFLAGS
 
 FC = $CONF_FC
@@ -162,6 +224,8 @@ FFLAGS = $CONF_FFLAGS
 
 CC = $CONF_CC
 CFLAGS = $CONF_CFLAGS
+
+DEF = $CONF_DEF
 
 # --- end defs by configure ---
 

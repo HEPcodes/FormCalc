@@ -1,3 +1,46 @@
+15 Jan 07:
+
+- Revamped ReadForm.tm for better C style.  Adapted the MathLink
+  string functions to the latest MathLink version.
+
+- Fixed configure to work properly with pgf77 6.2.
+
+- Fixed some problems with the Mathematica interface.
+
+
+18 Nov 06:
+
+- Added Mac OS X details to configure and makefile.in for g77 and xlf.
+
+
+30 Oct 06:
+
+- Added the six-point tensor reduction.
+
+- Fixed overflow problem in FORM due to the procedure DotSimplify
+  in CalcFeynAmp.
+
+
+24 Oct 06:
+
+- Added Mathematica interface for generated code.
+  Generalized some sections of CalcFeynAmp.frm, added
+  the F function as far as tensor reduction goes.
+
+
+11 Sep 06:
+
+- Adapted FeynHiggs interface to latest version (2.4.x).
+
+- Adapted LHAPDF invocations to latest version (5.x).
+
+
+15 Jul 06:
+
+- Revamped the entire linear algebra section.  Routines now
+  available as separate library.  Added TakagiFactor.
+
+
 10 Apr 06:
 
 - The SquaredME subroutine no longer sets the "reset" flag to

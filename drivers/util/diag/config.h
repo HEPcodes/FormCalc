@@ -1,17 +1,36 @@
 * config.h
-* limits and user preferences for the diagonalization routines
-* this file is part of FormCalc
-* last modified 14 Sep 04 th
+* global declarations for the Diag routines
+* this file is part of Diag
+* last modified 13 Dec 06 th
 
 
-* the maximum size of the matrix
+* The maximum dimension of a matrix, needed for allocating internal
+* memory, i.e. the routines handle at most MAXDIM-by-MAXDIM matrices.
 
-#define MAXMAT 8
-* i.e. the routines handle at most 8x8 matrices
+#define MAXDIM 16
 
 
-* if DESC is defined, the eigen- and singular values are sorted
-* into descending order
+* A matrix is considered diagonal if the sum of the absolute values
+* of the off-diagonal elements is less than EPS.
 
-c#define DESC
+#define EPS 5D-16
+
+
+* The transposed versions are needed for C, which has row-major
+* matrix access.
+
+#ifdef TRANSPOSE
+
+#define Element(A,i,j) A(j,i)
+#define HEigensystem HEigensystemT
+#define SEigensystem SEigensystemT
+#define CEigensystem CEigensystemT
+#define TakagiFactor TakagiFactorT
+#define SVD SVDT
+
+#else
+
+#define Element(A,i,j) A(i,j)
+
+#endif
 

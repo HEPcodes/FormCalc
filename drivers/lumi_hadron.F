@@ -1,7 +1,7 @@
 * lumi_hadron.F
 * parton luminosity for a hadron collider
 * this file is part of FormCalc
-* last modified 29 Mar 06 th
+* last modified 11 Sep 06 th
 
 * This code links to the LHAPDF library.
 * The following preprocessor variables are used:
@@ -39,7 +39,8 @@
 	  stop "Unknown collider"
 	endif
 
-	call InitPDFset(PDFSET)
+	call InitPDFsetByName(PDFSET)
+	call InitPDF(PDFMEM)
 	end
 
 

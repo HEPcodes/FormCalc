@@ -1,7 +1,7 @@
 * xsection.F
 * routines to compute the cross-section
 * this file is part of FormCalc
-* last modified 10 Apr 06 th
+* last modified 15 Jan 07 th
 
 
 #include "process.h"
@@ -210,14 +210,33 @@
 	if( serial .lt. next ) goto 1
 
 	if( openlog(dir, serial) .eq. 0 ) then
-100	  format("|# ", A, F10.4)
-#define PRINT print 100,
+
+#define SHOW print 100,
+100	  format("|# ", A, "=", F10.4, SP, F10.4, " I")
+
+#ifdef MMA
+	  call MmaSetPara
+#endif
+
 	  PRINT1
 	  PRINT2
 	  PRINT3
 	  PRINT4
 	  PRINT5
-#undef PRINT
+	  PRINT6
+	  PRINT7
+	  PRINT8
+	  PRINT9
+	  PRINT10
+	  PRINT11
+	  PRINT12
+	  PRINT13
+	  PRINT14
+	  PRINT15
+
+#ifdef MMA
+	  call MmaEndSet
+#endif
 
 	  call IntegratedCS
 	  call closelog
@@ -246,8 +265,12 @@
 
 	external DifferentialCS
 
-	double precision result(NCOMP), error(NCOMP)
+	double precision result(NCOMP), error(NCOMP), show(nvars)
 	integer fail, f, v, nfix, ndim, fix(nvars)
+
+#ifdef MMA
+	call MmaSetData
+#endif
 
 	call ModelConstIni(fail)
 	if( fail .ne. 0 ) goto 999
@@ -284,16 +307,28 @@
 
 1	call Cuba(ndim, DifferentialCS, result, error)
 
+	do f = 1, nfix
+	  show(f) = Show(fix(f))
+	enddo
+
+#ifdef MMA
+
+	call MmaData(show, nfix, result, error, NCOMP)
+
+#else
+
 * Note: "real" data lines are tagged with "|" in the output.
 
 100	format("| ", 10(4G19.10, :, /"|+"))
-	print 100, (Show(fix(f)), f = 1, nfix)
+	print 100, (show(f), f = 1, nfix)
 
 101	format("|+   ", NCOMP G24.15)
 	print 101, result
 	print 101, error
 
 	call flush(6)
+
+#endif
 
 	do f = nfix, 1, -1
 	  v = fix(f)
@@ -302,8 +337,19 @@
 	  Var(v) = Lower(v)
 	enddo
 
+999	continue
+
+#ifdef MMA
+
+	call MmaEndSet
+
+#else
+
 102	format("|"/"|"/)
-999	print 102
+	print 102
+
+#endif
+
 	end
 
 

@@ -1,28 +1,29 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 29 Sep 05 th
+* last modified 2 Nov 06 th
 
 
 #procedure DotSimplify
-term;
-
 #do i = 1, `Legs'
 #ifdef `k`i''
-argument abb;
+b `Patterns', Times, NoExpand, Den, GA, Spinor,
+  SumOver, SUNSum, SUNT, SUNTSum, SUNF,
+  pave, `LoopInt', GA, Spinor, i_;
+.sort
+
 #call eiki
 id k`i' = `k`i'';
-endargument;
-sort;
 #endif
 #enddo
 
-argument abb;
+b `Patterns', Times, NoExpand, Den, GA, Spinor,
+  SumOver, SUNSum, SUNT, SUNTSum, SUNF,
+  pave, `LoopInt', GA, Spinor, i_;
+.sort
+
 #call eiki
 #call kikj
-endargument;
-
-endterm;
 #endprocedure
 
 ***********************************************************************
@@ -181,10 +182,12 @@ endargument;
 
 *----------------------------------------------------------------------
 
+#define LoopInt "A0i, B0i, C0i, D0i, E0i, F0i"
+
 * variables appearing in the CalcFeynAmp input and output
 s I, Renumber;
 cf Mat, Eps, DiracChain, WeylChain, SumOver, Delta, NoExpand;
-cf Times, Simplify, Den, A0i, B0i, C0i, D0i, E0i;
+cf Times, Simplify, Den, `LoopInt';
 cf SUNSum, SUNT, SUNTSum, SUNF;
 f Spinor, DottedSpinor;
 i Ind1,...,Ind10;
@@ -200,6 +203,7 @@ t NUM, EQ, NEQ;
 nt GA, GB, GC, GD;
 f WC;
 auto s FC;
+set LOOPINT: `LoopInt';
 
 * patterns
 s [x], [y], [s1], [s2];
@@ -207,7 +211,7 @@ s [k1], [k2], [k1k2], [m1], [m2], [m3];
 i [mu], [nu], [rho], [sig], [om], [LA];
 i [i], [j], [k], [l];
 i [a], [b], [c], [d];
-v [p1], [p2], [p3], [p4], [p5];
+v [p1], [p2], [p3], [p4], [p5], [p6];
 cf [f];
 
 .global
@@ -232,21 +236,15 @@ normalize Times;
 
 id A0i([p1]?, ?a) = A0i(?a);
 
-symm B0i (3,1) (4,2);
-id B0i([p1]?, [p2]?, ?a) = replace_(q1, 2*q1 - [p1]) *
-  B0i([p2] - [p1], ?a);
-
-symm C0i (4,1) (5,2) (6,3);
-id C0i([p1]?, [p2]?, [p3]?, ?a) = replace_(q1, 2*q1 - [p1]) *
-  C0i([p2] - [p1], [p3] - [p1], ?a);
-
-symm D0i (5,1) (6,2) (7,3) (8,4);
-id D0i([p1]?, [p2]?, [p3]?, [p4]?, ?a) = replace_(q1, 2*q1 - [p1]) *
-  D0i([p2] - [p1], [p3] - [p1], [p4] - [p1], ?a);
-
-symm E0i (6,1) (7,2) (8,3) (9,4) (10,5);
-id E0i([p1]?, [p2]?, [p3]?, [p4]?, [p5]?, ?a) = replace_(q1, 2*q1 - [p1]) *
-  E0i([p2] - [p1], [p3] - [p1], [p4] - [p1], [p5] - [p1], ?a);
+#redefine loopn "0"
+#do loopf = {`LoopInt'}
+#redefine loopn "{`loopn'+1}"
+#if `loopn' > 1
+symm `loopf' <({`loopn'+1},1)>,...,<({`loopn'+`loopn'},`loopn')>;
+id `loopf'(<[p1]?>,...,<[p`loopn']?>, ?a) = replace_(q1, 2*q1 - [p1]) *
+  `loopf'(<[p2] - [p1]>,...,<[p`loopn'] - [p1]>, ?a);
+#endif
+#enddo
 
 
 #if `FermionChains' == 1
@@ -266,10 +264,8 @@ repeat id GA(?a) * g_([om]?, [mu]?) = GA(?a, [mu]);
 
 b `Patterns', Times, NoExpand, Den,
   SumOver, SUNSum, SUNT, SUNTSum, SUNF,
-  A0i, B0i, C0i, D0i, E0i, q1.q1, GA, Spinor, i_;
+  `LoopInt', q1.q1, GA, Spinor, i_;
 .sort
-
-collect abb, abb;
 
 * cancel q^2's in the numerator
 
@@ -279,26 +275,25 @@ while( match(q1.q1) );
   once q1.q1 * B0i([p1]?, [m1]?, ?a) =
     replace_(q1, q1 - [p1]) * A0i(?a) +
     [m1] * B0i([p1], [m1], ?a);
-  once q1.q1 * C0i([p1]?, [p2]?, [m1]?, ?a) =
-    replace_(q1, q1 - [p1]) * B0i([p2] - [p1], ?a) +
-    [m1] * C0i([p1], [p2], [m1], ?a);
-  once q1.q1 * D0i([p1]?, [p2]?, [p3]?, [m1]?, ?a) =
-    replace_(q1, q1 - [p1]) * C0i([p2] - [p1], [p3] - [p1], ?a) +
-    [m1] * D0i([p1], [p2], [p3], [m1], ?a);
-  once q1.q1 * E0i([p1]?, [p2]?, [p3]?, [p4]?, [m1]?, ?a) =
-    replace_(q1, q1 - [p1]) * D0i([p2] - [p1], [p3] - [p1], [p4] - [p1], ?a) +
-    [m1] * E0i([p1], [p2], [p3], [p4], [m1], ?a);
+#redefine loopn "0"
+#do loopf = {`LoopInt'}
+#if `loopn' > 1
+  once q1.q1 * `loopf'(<[p1]?>,...,<[p`loopn']?>, [m1]?, ?a) =
+    replace_(q1, q1 - [p1]) * `lastf'(<[p2]-[p1]>,...,<[p`loopn']-[p1]>, ?a) +
+    [m1] * `loopf'(<[p1]>,...,<[p`loopn']>, [m1], ?a);
+#endif
+#redefine loopn "{`loopn'+1}"
+#redefine lastf "`loopf'"
+#enddo
 endwhile;
 
 id A0i(0) = 0;
 
 #call DotSimplify
 
-id abb([x]?) = [x];
-
 totensor q1, NUM;
 
-b NUM, A0i, B0i, C0i, D0i, E0i;
+b NUM, `LoopInt';
 .sort
 
 keep brackets;
@@ -359,22 +354,28 @@ id E0i([p1]?, [p2]?, [p3]?, [p4]?, ?a) =
   E0i(MOM([p1]), MOM([p2] - [p1]), MOM([p3] - [p2]), MOM([p4] - [p3]), MOM([p4]),
       MOM([p2]), MOM([p3] - [p1]), MOM([p4] - [p2]), MOM([p3]), MOM([p1] - [p4]), ?a);
 
+id F0i([p1]?, [p2]?, [p3]?, [p4]?, [p5]?, ?a) =
+  TMP(pave(1)*[p1] + pave(2)*[p2] + pave(3)*[p3] + pave(4)*[p4] + pave(5)*[p5]) *
+  F0i(MOM([p1]), MOM([p2] - [p1]), MOM([p3] - [p2]), MOM([p4] - [p3]), MOM([p5] - [p4]), MOM([p5]),
+      MOM([p2]), MOM([p3] - [p1]), MOM([p4] - [p2]), MOM([p5] - [p3]), MOM([p4]), MOM([p1] - [p5]),
+      MOM([p3]), MOM([p4] - [p1]), MOM([p5] - [p2]));
+
 repeat id TMP([p1]?) * NUM([mu]?, ?a) = d_([p1], [mu]) * NUM(?a) * TMP([p1]);
 
 id TMP(?a) = 1;
 id NUM() = 1;
 
-b pave, A0i, B0i, C0i, D0i, E0i;
+b pave, `LoopInt';
 .sort
 
 keep brackets;
 
 if( count(pave, 1) );
   repeat id pave(?a) * pave(?b) = pave(?a, ?b);
-  id pave(?b) * [f]?{A0i,B0i,C0i,D0i,E0i}(?a) = pave([f](?b), ?a);
+  id pave(?b) * [f]?LOOPINT(?a) = pave([f](?b), ?a);
 else;
   symm B0i 2, 3;
-  id [f]?{A0i,B0i,C0i,D0i,E0i}(?a) = pave([f](0), ?a);
+  id [f]?LOOPINT(?a) = pave([f](0), ?a);
 endif;
 
 argument pave;
@@ -460,19 +461,14 @@ id Dminus4 = 0;
 
 *----------------------------------------------------------------------
 
-b `Patterns', Times, NoExpand, Den, SumOver, SUNSum, pave, GA, Spinor, i_;
-.sort
-
-collect abb, abb;
-
 #call DotSimplify
+
+.sort
 
 id Den([p1]?, [m1]?) = Den(MOM([p1]), [m1]);
 argument Den;
 #call MomSquare
 endargument;
-
-id abb([x]?) = [x];
 
 *----------------------------------------------------------------------
 

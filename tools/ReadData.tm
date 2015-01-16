@@ -14,7 +14,7 @@
 	ReadData.tm
 		reads data files produced by num.F into Mathematica
 		this file is part of FormCalc
-		last modified 20 Jan 05 th
+		last modified 19 Sep 06 th
 
 known shortcomings:
 - fixed memory requirements:
@@ -66,7 +66,7 @@ static inline void waitpacket()
 }
 
 
-static void transmit(const char *parahead, const char *datahead, int setn)
+static void transmit(const char *parahead, const char *datahead, int setno)
 {
   int i;
 
@@ -77,7 +77,7 @@ static void transmit(const char *parahead, const char *datahead, int setn)
   MLPutFunction(stdlink, "Set", 2);
 
   MLPutFunction(stdlink, parahead, 1);
-  MLPutInteger(stdlink, setn);
+  MLPutInteger(stdlink, setno);
 
   MLPutFunction(stdlink, "List", npara);
   for( i = 0; i < npara; ++i ) {
@@ -92,7 +92,7 @@ static void transmit(const char *parahead, const char *datahead, int setn)
       case '(':
         *s = '[';
         break;
-      case ']':
+      case ')':
         *s = ']';
         break;
       }
@@ -106,7 +106,7 @@ static void transmit(const char *parahead, const char *datahead, int setn)
   MLPutFunction(stdlink, "Set", 2);
 
   MLPutFunction(stdlink, datahead, 1);
-  MLPutInteger(stdlink, setn);
+  MLPutInteger(stdlink, setno);
 
   MLPutFunction(stdlink, "List", ndata);
   for( i = 0; i < ndata; ++i ) {

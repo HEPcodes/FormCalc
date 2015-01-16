@@ -1,7 +1,7 @@
 * lumi_photon.F
 * parton luminosity for a photon collider
 * this file is part of FormCalc
-* last modified 29 Mar 06 th
+* last modified 13 Jul 06 th
 
 
 #define PARTON_T -1
@@ -13,6 +13,8 @@
 
 	subroutine LumiDefaults
 	implicit none
+
+#include "xsection.h"
 
 	if( Lower(SQRTS) .ne. Upper(SQRTS) )
      &    stop "Cannot handle a range of beam energies"

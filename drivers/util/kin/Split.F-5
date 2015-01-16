@@ -69,7 +69,7 @@
 	double precision fxz, fyz, fxy
 	double precision fx, fy, fz
 	double precision nx, ny, nz
-	double precision ref, cut, c0, c1, c2, a, b
+	double precision ref, cut, c0, c1, c2
 	double precision r, r0, r0costh, rz, r1
 	double precision m2, mrem, k, k10, q, qe, qn
 	integer key
@@ -240,9 +240,7 @@
 	  else if( Test(CUT_MREM_ET, CUT_MIN) ) then
 	    fxy = fx**2 + fy**2
 	    c1 = r*(r0costh*fxy - sinth*fz*nz)
-	    a = sqrt((r1 - rz)*(r1 + rz))
-	    b = r0costh*fz + sinth*nz
-	    c2 = (a - b)*(a + b)
+	    c2 = (r1 - rz)*(r1 + rz) - (r0costh*fz + sinth*nz)**2
 	    ref = m*sqrt(r**2*fxy + (1 - MomQ(CUT_MIN)))
 	    if( CutMin(xmrem) .gt. ref ) then
 	      c0 = (CutMin(xmrem) - ref)*(CutMin(xmrem) + ref)
@@ -261,7 +259,7 @@
 	      cut = mremsq()
 	      if( cut .gt. 0 ) then
 	        cut = sqrt(cut)
-	        if( c2 .gt. 0 ) then
+	        if( c0 .gt. 0 ) then
 	          bmrem(1) = max(bmrem(1), cut)
 	        else
 	          bmrem(2) = min(bmrem(2), cut)
@@ -284,9 +282,7 @@
 	  else if( Test(CUT_MREM_ET, CUT_MAX) ) then
 	    fxy = fx**2 + fy**2
 	    c1 = r*(r0costh*fxy - sinth*fz*nz)
-	    a = sqrt((r1 - rz)*(r1 + rz))
-	    b = r0costh*fz + sinth*nz
-	    c2 = (a - b)*(a + b)
+	    c2 = (r1 - rz)*(r1 + rz) - (r0costh*fz + sinth*nz)**2
 	    ref = m*sqrt(r**2*fxy + (1 - MomQ(CUT_MAX)))
 	    if( CutMax(xmrem) .gt. ref ) then
 	      c0 = (CutMax(xmrem) - ref)*(CutMax(xmrem) + ref)
@@ -305,7 +301,7 @@
 	      cut = mremsq()
 	      if( cut .gt. 0 ) then
 	        cut = sqrt(cut)
-	        if( c2 .gt. 0 ) then
+	        if( c0 .gt. 0 ) then
 	          bmrem(2) = min(bmrem(2), cut)
 	        else
 	          bmrem(1) = max(bmrem(1), cut)

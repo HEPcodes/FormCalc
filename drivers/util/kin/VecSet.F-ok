@@ -40,29 +40,12 @@
 	double precision momspec(16,1)
 	common /momenta/ momspec
 
-* the following must match the definitions in util.h:
-#define SPEC_M 1
-#define SPEC_K 2
-#define SPEC_E 3
-#define SPEC_KT 4
-#define SPEC_ET 5
-#define SPEC_PRAP 6
-#define SPEC_RAP 7
-#define SPEC_DELTAK 8
-#define SPEC_PHI 9
-#define SPEC_KX 10
-#define SPEC_KY 11
-#define SPEC_KZ 12
-
 	double precision m2, p2, p0, deltap, sump
 	double precision sinth, onePez, oneMez
 	double complex expIphi
 
 	double precision sqrt2
 	parameter (sqrt2 = 1.4142135623730950488016887242096981D0)
-
-	momspec(SPEC_M,i) = m
-	momspec(SPEC_K,i) = p
 
 	m2 = m**2
 	if( m2 .lt. 1D-14 ) then
@@ -74,12 +57,6 @@
 	  deltap = m2/(p0 + p)
 	endif
 
-	momspec(SPEC_E,i) = p0
-	momspec(SPEC_DELTAK,i) = deltap
-	momspec(SPEC_KX,i) = p*ex
-	momspec(SPEC_KY,i) = p*ey
-	momspec(SPEC_KZ,i) = p*ez
-
 	sinth = ex**2 + ey**2
 	onePez = 1 + ez
 	if( onePez .lt. .5D0 ) onePez = sinth/(1 - ez)
@@ -89,11 +66,9 @@
 	if( sinth .lt. 1D-14 ) then
 * phi is irrelevant when theta = 0
 	  expIphi = 1
-	  momspec(SPEC_PHI,i) = 0
 	else
 	  sinth = sqrt(sinth)
 	  expIphi = DCMPLX(ex, ey)/sinth
-	  momspec(SPEC_PHI,i) = atan2(ey, ex)
 	endif
 
 	K(1,1) = p0*onePez - deltap*ez
@@ -119,12 +94,24 @@
 
 #define safelog(x) log(max(x, 1D-300))
 
-	momspec(SPEC_KT,i) = p*sinth
-	momspec(SPEC_ET,i) = sqrt(momspec(SPEC_KT,i)**2 + m2)
-	momspec(SPEC_PRAP,i) = safelog(onePez) -
+	momspec(1,i) = m
+	momspec(2,i) = p
+	momspec(3,i) = p0
+	momspec(4,i) = p*sinth
+	momspec(5,i) = sqrt(momspec(4,i)**2 + m2)
+	momspec(6,i) = safelog(onePez) -
      &    safelog(sinth)
-	momspec(SPEC_RAP,i) = safelog(DBLE(K(1,1))) -
-     &    safelog(momspec(SPEC_ET,i))
+	momspec(7,i) = safelog(DBLE(K(1,1))) -
+     &    safelog(momspec(5,i))
+	momspec(8,i) = deltap
+	if( ex .eq. 0 .and. ey .eq. 0 ) then
+	  momspec(9,i) = 0
+	else
+	  momspec(9,i) = atan2(ey, ex)
+	endif
+	momspec(10,i) = p*ex
+	momspec(11,i) = p*ey
+	momspec(12,i) = p*ez
 
 * this is E^(I phi) cos(th/2) = 1/sqrt2*sqrt(1 + ez)*expIphi:
 	expIphi = 1/sqrt2*sqrt(onePez)*expIphi

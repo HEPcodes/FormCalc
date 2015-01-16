@@ -1,8 +1,8 @@
 (*
 
-This is FormCalc, Version 5
+This is FormCalc, Version 5.1
 Copyright by Thomas Hahn 1996-2006
-last modified 4 May 06 by Thomas Hahn
+last modified 30 Nov 06 by Thomas Hahn
 
 Release notes:
 
@@ -43,9 +43,9 @@ Have fun!
 *)
 
 Print[""];
-Print["FormCalc 5"];
+Print["FormCalc 5.1"];
 Print["by Thomas Hahn"];
-Print["last revised 4 May 06"]
+Print["last revised 30 Nov 06"]
 
 
 (* symbols from FeynArts *)
@@ -74,7 +74,7 @@ A0i (* need this internally *)
 A0::usage = "A0[m] is the one-point one-loop scalar integral.  m is the
 mass squared."
 
-A00::usage = "A00[m] is the one-point tensor-coefficient of g_{mu nu}. 
+A00::usage = "A00[m] is the one-point tensor coefficient of g_{mu nu}. 
 m is the mass squared."
 
 B0i::usage = "B0i[id, p, m1, m2] is the generic two-point one-loop
@@ -84,7 +84,8 @@ B0i[bb0, ...] is the scalar function B_0, B0i[bb11, ...] the tensor
 coefficient function B_{11} etc.  p is the external momentum squared
 and m1 and m2 are the masses squared."
 
-Bids = { bb0, bb1, bb00, bb11, bb001, bb111, dbb0, dbb1, dbb00, dbb11 }
+{ bb0, bb1, bb00, bb11, bb001, bb111, dbb0, dbb1, dbb00, dbb11,
+  cc0, dd0, ee0, ff0 }
 
 C0i::usage = "C0i[id, p1, p2, p1p2, m1, m2, m3] is the generic
 three-point one-loop integral which includes both scalar and tensor
@@ -92,10 +93,6 @@ coefficients, specified by id.  For example, C0i[cc0, ...] is the scalar
 function C_0, C0i[cc112, ...] the tensor coefficient function C_{112}
 etc.  p1, p2, and p1p2 are the external momenta squared and m1, m2, m3
 are the masses squared."
-
-Cids = { cc0, cc1, cc2, cc00, cc11, cc12, cc22, cc001, cc002,
-  cc111, cc112, cc122, cc222, cc0000, cc0011, cc0012, cc0022,
-  cc1111, cc1112, cc1122, cc1222, cc2222 }
 
 D0i::usage = "D0i[id, p1, p2, p3, p4, p1p2, p2p3, m1, m2, m3, m4] is the
 generic four-point one-loop integral which includes both scalar and
@@ -105,17 +102,6 @@ p1...p4 are the external momenta squared, p1p2 and p2p3 are the squares
 of external momenta (1+2) and (2+3), respectively, and m1...m4 are the
 masses squared."
 
-Dids = { dd0, dd1, dd2, dd3, dd00, dd11, dd12, dd13, dd22, dd23, dd33,
-  dd001, dd002, dd003, dd111, dd112, dd113, dd122, dd123, dd133, dd222,
-  dd223, dd233, dd333, dd0000, dd0011, dd0012, dd0013, dd0022, dd0023,
-  dd0033, dd1111, dd1112, dd1113, dd1122, dd1123, dd1133, dd1222,
-  dd1223, dd1233, dd1333, dd2222, dd2223, dd2233, dd2333, dd3333,
-  dd00001, dd00002, dd00003, dd00111, dd00112, dd00113, dd00122,
-  dd00123, dd00133, dd00222, dd00223, dd00233, dd00333, dd11111,
-  dd11112, dd11113, dd11122, dd11123, dd11133, dd11222, dd11223,
-  dd11233, dd11333, dd12222, dd12223, dd12233, dd12333, dd13333,
-  dd22222, dd22223, dd22233, dd22333, dd23333, dd33333 }
-
 E0i::usage = "E0i[id, p1, p2, p3, p4, p5, p1p2, p2p3, p3p4, p4p5, p5p1,
 m1, m2, m3, m4, m5] is the generic five-point one-loop integral which
 includes both scalar and tensor coefficients, specified by id.  For
@@ -124,16 +110,16 @@ tensor function E_{1244} etc.  p1...p5 are the external momenta squared,
 p1p2...p5p1 are the squares of external momenta (1+2)...(5+1),
 respectively, and m1...m5 are the masses squared."
 
-Eids = { ee0, ee1, ee2, ee3, ee4, ee00, ee11, ee12, ee13, ee14, ee22,
-  ee23, ee24, ee33, ee34, ee44, ee001, ee002, ee003, ee004, ee111,
-  ee112, ee113, ee114, ee122, ee123, ee124, ee133, ee134, ee144,
-  ee222, ee223, ee224, ee233, ee234, ee244, ee333, ee334, ee344, ee444,
-  ee0000, ee0011, ee0012, ee0013, ee0014, ee0022, ee0023, ee0024,
-  ee0033, ee0034, ee0044, ee1111, ee1112, ee1113, ee1114, ee1122,
-  ee1123, ee1124, ee1133, ee1134, ee1144, ee1222, ee1223, ee1224,
-  ee1233, ee1234, ee1244, ee1333, ee1334, ee1344, ee1444, ee2222,
-  ee2223, ee2224, ee2233, ee2234, ee2244, ee2333, ee2334, ee2344,
-  ee2444, ee3333, ee3334, ee3344, ee3444, ee4444 }
+F0i::usage = "F0i[id, p1, p2, p3, p4, p5, p6, p1p2, p2p3, p3p4, p4p5,
+p5p6, p6p1, p1p2p3, p2p3p4, p3p4p5, m1, m2, m3, m4, m5, m6] is the
+generic six-point one-loop integral which includes both scalar and
+tensor coefficients, specified by id.  For example, F0i[ff0, ...] is the
+scalar function F_0, F0i[ff1244, ...] the tensor function F_{1244} etc. 
+p1...p6 are the external momenta squared, p1p2...p6p1 are the squares of
+external momenta (1+2)...(6+1), respectively, p1p2p3...p3p4p5 are the
+external momenta (1+2+3)...(3+4+5) squared, and m1...m6 are the masses
+squared."
+
 
 (* compatibility functions *)
 
@@ -175,9 +161,13 @@ four-point scalar one-loop integral."
 E0::usage = "E0[p1, p2, p3, p4, p5, p1p2, p2p3, p3p4, p4p5, p5p1, m1,
 m2, m3, m4, m5] is the five-point scalar one-loop integral."
 
+F0::usage = "F0[p1, p2, p3, p4, p5, p6, p1p2, p2p3, p3p4, p4p5, p5p6,
+p6p1, m1, m2, m3, m4, m5, m6] is the six-point scalar one-loop
+integral."
+
 PaVe::usage = "PaVe[ind, {pi}, {mi}] is the generalized
 Passarino-Veltman function used by FeynCalc.  It is converted to B0i,
-C0i, D0i, or E0i in FormCalc."
+C0i, D0i, E0i, or F0i in FormCalc."
 
 ToOldBRules::usage = "ToOldBRules is a list of rules for converting
 two-point functions to the old (LoopTools 2.1) conventions."
@@ -836,6 +826,12 @@ integrals in LoopTools."
 
 Eget::usage = "Eget computes all five-point coefficients in LoopTools."
 
+Fval::usage = "Fval is the array containing the cached six-point
+integrals in a future version of LoopTools."
+
+Fget::usage = "Fget computes all six-point coefficients in a future
+version of LoopTools."
+
 SxS::usage = "SxS[s1, s2] is the Fortran function which computes s1.s2,
 the direct product of the two Weyl spinors s1 and s2."
 
@@ -1098,7 +1094,7 @@ loop[a___, d_[p_, m1_], _[p_, m2_], b___] :=
   (loop[a, d[p, m1], b] - loop[a, d[p, m2], b])/Factor[m1 - m2]
 
 loop[d__] := I Pi^2 Level[ Thread[{d}, Den], {2},
-  {A0i, B0i, C0i, D0i, E0i}[[ Length[{d}] ]] ]
+  {A0i, B0i, C0i, D0i, E0i, F0i}[[ Length[{d}] ]] ]
 
 
 noncomm[p_Plus] := noncomm/@ p
@@ -1429,7 +1425,7 @@ Block[ {diag = 0},
 
 SUNObjs = SUNSum | SUNT | SUNTSum | SUNF
 
-DenyFunc = Level[{ga, Spinor, Den, A0i, B0i, C0i, D0i, E0i,
+DenyFunc = Level[{ga, Spinor, Den, A0i, B0i, C0i, D0i, E0i, F0i,
   SumOver, SUNObjs}, {-1}]
 
 FinalFormRules = {
@@ -1706,7 +1702,7 @@ pave[n_[i__], args__] := n[paveid[n, i], args]
 
 paveid[n_, i__] := paveid[n, i] =
 Block[ {t = ToLowerCase[StringTake[ToString[n], 1]]},
-  ToSymbol[t, t, i]
+  ToSymbol["LoopTools`", t, t, i]
 ]
 
 A0[0] = 0
@@ -1960,7 +1956,7 @@ OptimizeAbbr[rul:{__Rule}] :=
 (* UV and IR finiteness checks *)
 
 loopint = A0 | A00 | B0 | B1 | B00 | B11 | B001 | B111 |
-  DB0 | DB1 | DB00 | DB11 | B0i | C0i | D0i | E0i
+  DB0 | DB1 | DB00 | DB11 | B0i | C0i | D0i | E0i | F0i
 
 ToNewBRules = {
   B0[args__] -> B0i[bb0, args],
@@ -1975,7 +1971,8 @@ ToNewBRules = {
   DB11[args__] -> B0i[dbb11, args],
   C0[args__] -> C0i[cc0, args],
   D0[args__] -> D0i[dd0, args],
-  E0[args__] -> E0i[ee0, args] }
+  E0[args__] -> E0i[ee0, args],
+  F0[args__] -> F0i[ff0, args] }
 
 ToOldBRules = {
   B0i[bb0, args__] -> B0[args],
@@ -2046,10 +2043,11 @@ Block[ {Global`OneLoopResult, Global`GraphName},
 
 
 FeynCalcPut[expr_, file_] :=
-Block[ {C0i, D0i, E0i, PaVe},
+Block[ {C0i, D0i, E0i, F0i, PaVe},
   C0i[cc0, args___] := C0[args];
   D0i[dd0, args___] := D0[args];
   E0i[ee0, args___] := E0[args];
+  F0i[ee0, args___] := F0[args];
   C0i[i_, p__, m1_, m2_, m3_] := PaVe[
     Sequence@@ (ToExpression/@ Drop[Characters[ToString[i]], 2]),
     {p}, {m1, m2, m3} ];
@@ -2059,6 +2057,9 @@ Block[ {C0i, D0i, E0i, PaVe},
   E0i[i_, p__, m1_, m2_, m3_, m4_, m5_] := PaVe[
     Sequence@@ (ToExpression/@ Drop[Characters[ToString[i]], 2]),
     {p}, {m1, m2, m3, m4, m5} ];
+  F0i[i_, p__, m1_, m2_, m3_, m4_, m5_, m6_] := PaVe[
+    Sequence@@ (ToExpression/@ Drop[Characters[ToString[i]], 2]),
+    {p}, {m1, m2, m3, m4, m5, m6} ];
   Put[expr /. ToOldBRules /. _Amp -> List, file]
 ]
 
@@ -2857,7 +2858,7 @@ header, ffmods, abbrmods},
 (* abbint introduces abbreviations for the loop integrals.
    They fall into two categories:
    1. A0, A00 (cint..),
-   2. B0i, C0i, D0i, E0i (iint..).
+   2. B0i, C0i, D0i, E0i, F0i (iint..).
    For the latter the LoopTools functions [BCDE]get can be used to
    compute all tensor coefficients at once (which is much more efficient).
    Unlike the other integrals, whose results are double complex numbers,
@@ -2870,9 +2871,9 @@ header, ffmods, abbrmods},
       iints = {iints, uu -> #2[args]};
       abbint[#1[id_, args]] = #3[id, uu];
       #3[i, uu]
-    ])&, {{B0i,  C0i,  D0i,  E0i},
-          {Bget, Cget, Dget, Eget},
-          {Bval, Cval, Dval, Eval}} ];
+    ])&, {{B0i,  C0i,  D0i,  E0i,  F0i},
+          {Bget, Cget, Dget, Eget, Fget},
+          {Bval, Cval, Dval, Eval, Fval}} ];
 
   abbint[func_] :=
   Block[ {abb = IndexHeader[ToSymbol["cint", ++cc], func]},
@@ -2934,7 +2935,7 @@ header, ffmods, abbrmods},
       Flatten[{ mats,
         Level[maxmat[Ctree], {2}, Ctree],
         Level[maxmat[Cloop], {2}, Cloop] }],
-      "double complex", "coeff" ]
+      "double complex", "formfactors" ]
   ];
 
   Close[hh];

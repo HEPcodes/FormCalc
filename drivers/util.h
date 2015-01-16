@@ -1,7 +1,7 @@
 * util.h
 * prototypes for the functions in util.a
 * this file is part of FormCalc
-* last modified 13 Apr 06 th
+* last modified 7 Aug 06 th
 
 
 	double precision ThreeMom
@@ -17,15 +17,15 @@
 	external VxS, VeS, BxS, BeS
 
 #ifdef LEGS
-	double complex vec(2,2, 8, 0:LEGS)
+	double complex vec(2,2,8,0:LEGS)
 	common /vectors/ vec
 
-	double precision momspec(8, LEGS)
+	double precision momspec(16,LEGS)
 	common /momenta/ momspec
 #endif
 
 #ifndef Delta
-#define Delta(i,j) ibits(ibits(i-(j),0,9)-1,9,1)
+#define Delta(i,j) ibits(ieor(i,j)-1,15,1)
 
 #define k(i) (8*i+1)
 #define s(i) (8*i+3)
@@ -35,13 +35,17 @@
 #define DottedSpinor(i,s,om) (s*2*Hel(i)+16*i+om+7)
 
 #define SPEC_M 1
-#define SPEC_E 2
-#define SPEC_K 3
-#define SPEC_ET 4
-#define SPEC_KT 5
-#define SPEC_RAP 6
-#define SPEC_PRAP 7
+#define SPEC_K 2
+#define SPEC_E 3
+#define SPEC_KT 4
+#define SPEC_ET 5
+#define SPEC_PRAP 6
+#define SPEC_RAP 7
 #define SPEC_DELTAK 8
+#define SPEC_PHI 9
+#define SPEC_KX 10
+#define SPEC_KY 11
+#define SPEC_KZ 12
 
 #define Cut(c, m) (m)*(c)
 

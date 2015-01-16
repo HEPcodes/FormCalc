@@ -1,7 +1,7 @@
 * run.F
 * defines parameter settings for one run, then includes main.F
 * this file is part of FormCalc
-* last modified 2 Feb 06 th
+* last modified 10 Jan 07 th
 
 
 * Whether to run in debugging mode
@@ -35,6 +35,7 @@ c#define HIGGS_MASSES FEYNHIGGS
 c#define SM_HIGGS
 c#define FLAVOUR_VIOLATION
 c#define NO_EXCLUSION_LIMITS
+c#define NO_GUT_RELATION
 
 * options for model_thdm.F:
 c#define MODEL_TYPE_I
@@ -67,19 +68,29 @@ c#define NO_EXCLUSION_LIMITS
 #define LOOP15
 
 
-* PRINT[1..5] defines output statements with which changes in 
+* PRINT[1..15] defines output statements with which changes in 
 * parameters (typically the ones included in the scan) can be 
 * written to the output file and screen.  For example,
-*	PRINT "MH=", MH, "MT=", MT
+*	SHOW "MH", MH
 * writes out the values of MH and MT in each pass of the loop.
 * Only real parameters are allowed (use DBLE and DIMAG for complex
 * ones) and a string identifier must be given as in the example above.
 
-#define PRINT1 PRINT "MH=", MH
+#define PRINT1 SHOW "MH", MH
 #define PRINT2
 #define PRINT3
 #define PRINT4
 #define PRINT5
+#define PRINT6
+#define PRINT7
+#define PRINT8
+#define PRINT9
+#define PRINT10
+#define PRINT11
+#define PRINT12
+#define PRINT13
+#define PRINT14
+#define PRINT15
 
 
 * Cuts and increments.  May be defined in terms of sqrtS, the CMS energy.

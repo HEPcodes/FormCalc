@@ -9,14 +9,12 @@ cuhre = cuba/cuhre
 CFLAGS += -I$(common)
 
 VEGAS_C = $(vegas)/Vegas.c
-VEGAS_F = $(vegas)/vegas-f.c
 VEGAS_H = $(vegas)/decl.h $(common)/stddecl.h
 VEGAS_SRCS = $(common)/debug.c $(common)/Random.c \
   $(common)/ChiSquare.c $(common)/Erf.c $(vegas)/util.c \
   $(vegas)/common.c $(vegas)/Grid.c $(vegas)/Integrate.c
 
 SUAVE_C = $(suave)/Suave.c
-SUAVE_F = $(suave)/suave-f.c
 SUAVE_H = $(suave)/decl.h $(common)/stddecl.h
 SUAVE_SRCS = $(common)/debug.c $(common)/Random.c \
   $(common)/ChiSquare.c $(common)/Erf.c $(suave)/util.c \
@@ -24,7 +22,6 @@ SUAVE_SRCS = $(common)/debug.c $(common)/Random.c \
   $(suave)/Sample.c $(suave)/Integrate.c
 
 DIVONNE_C = $(divonne)/Divonne.c
-DIVONNE_F = $(divonne)/divonne-f.c
 DIVONNE_H = $(divonne)/decl.h $(common)/stddecl.h
 DIVONNE_SRCS = $(common)/debug.c $(common)/Random.c \
   $(common)/ChiSquare.c $(common)/Erf.c $(divonne)/util.c \
@@ -33,17 +30,12 @@ DIVONNE_SRCS = $(common)/debug.c $(common)/Random.c \
   $(divonne)/Explore.c $(divonne)/Split.c $(divonne)/Integrate.c
 
 CUHRE_C = $(cuhre)/Cuhre.c
-CUHRE_F = $(cuhre)/cuhre-f.c
 CUHRE_H = $(cuhre)/decl.h $(common)/stddecl.h
 CUHRE_SRCS = $(common)/debug.c \
   $(common)/ChiSquare.c $(common)/Erf.c $(cuhre)/util.c \
   $(cuhre)/common.c $(cuhre)/Rule.c $(cuhre)/Integrate.c
 
-CUBA = \
-  $(VEGAS_C) $(VEGAS_F) \
-  $(SUAVE_C) $(SUAVE_F) \
-  $(DIVONNE_C) $(DIVONNE_F) \
-  $(CUHRE_C) $(CUHRE_F)
+CUBA = $(VEGAS_C) $(SUAVE_C) $(DIVONNE_C) $(CUHRE_C)
 
 
 OBJS = \
@@ -61,17 +53,13 @@ OBJS = \
   kin/VeS.o \
   kin/BxS.o \
   kin/BeS.o \
-  diag/Jacobi.o \
   diag/Eigen2x2.o \
   diag/NoMixing.o \
-  diag/Eigensystem.o \
-  diag/SingularValues.o \
-  diag/PseudoEigensystem.o \
-  diag/ApplyEigen.o \
-  diag/ApplySVD.o \
-  diag/ReverseEigen.o \
-  diag/ReverseSVD.o \
-  diag/IdentityMatrix.o \
+  diag/HEigensystem.o \
+  diag/SEigensystem.o \
+  diag/CEigensystem.o \
+  diag/TakagiFactor.o \
+  diag/SVD.o \
   univariate/Patterson.o \
   univariate/Gauss.o \
   $(CUBA:.c=.o) \
@@ -83,8 +71,8 @@ $(LIB): $(LIB)($(OBJS))
 
 $(LIB)(univariate/Gauss.o univariate/Patterson.o): univariate/config.h
 
-$(LIB)(diag/Eigensystem.o diag/SingularValues.o diag/PseudoEigensystem.o \
-  diag/ApplyEigen.o diag/ApplySVD.o): diag/config.h
+$(LIB)(diag/HEigensystem.o diag/SEigensystem.o diag/CEigensystem.o \
+  diag/TakagiFactor.o diag/SVD.o): diag/config.h
 
 
 $(LIB)($(VEGAS_C:.c=.o)): $(VEGAS_C) $(VEGAS_H) $(VEGAS_SRCS)

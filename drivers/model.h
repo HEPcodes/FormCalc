@@ -1,7 +1,7 @@
 * model.h
 * common blocks for the model parameters
 * this file is part of FormCalc
-* last modified 4 May 06 th
+* last modified 16 Nov 06 th
 
 
 	double precision pi, degree, sqrt2, hbar_c2
@@ -41,10 +41,11 @@
 	parameter (CW = MW/MZ, CW2 = CW**2)
 	parameter (SW2 = 1 - CW2)
 
-	double precision GF, Alfa, Alfa2
+	double precision GF, Alfa, Alfa2, AlfaMZ
 	parameter (GF = 1.16639D-5)
 	parameter (Alfa = 1/137.0359895D0, Alfa2 = Alfa**2)
 c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
+	parameter (AlfaMZ = 1/127.934D0)
 
 	double precision ME, ME2, MM, MM2, ML, ML2
 	parameter (ME = .51099907D-3, ME2 = ME**2)
@@ -54,7 +55,7 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 	double precision MU, MU2, MC, MC2, MT, MT2
 	parameter (MU = 53.8D-3, MU2 = MU**2)
 	parameter (MC = 1.50D0, MC2 = MC**2)
-	parameter (MT = 178D0, MT2 = MT**2)
+	parameter (MT = 171.4D0, MT2 = MT**2)
 
 	double precision MD, MD2, MS, MS2, MB, MB2, MBatMB
 	parameter (MD = 53.8D-3, MD2 = MD**2)
@@ -146,14 +147,17 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 
 * flavour-violating parameters
 
+	double complex deltaSf(3:4,6,6)
 	double complex UASf(6,6,3:4)
 	double precision MASf(6,3:4), MASf2(6,3:4)
-	double precision deltaSf(3:4,6,6)
 
 	common /fv_para/ UASf, MASf, MASf2, deltaSf
 
-	double precision deltaSf_flat(2*6*6)
+	double complex deltaSf_flat(2*6*6)
 	equivalence (deltaSf, deltaSf_flat)
+
+	double precision ReImdeltaSf(2,3:4,6,6)
+	equivalence (deltaSf, ReImdeltaSf)
 
 	double complex deltaLLuc, deltaLRuc
 	double complex deltaRLucC, deltaRRuc
@@ -162,12 +166,38 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 	equivalence (deltaSf(3,2  ,1+3), deltaRLucC)
 	equivalence (deltaSf(3,1+3,2+3), deltaRRuc)
 
+	double precision RedeltaLLuc, ImdeltaLLuc
+	double precision RedeltaLRuc, ImdeltaLRuc
+	double precision RedeltaRLucC, ImdeltaRLucC
+	double precision RedeltaRRuc, ImdeltaRRuc
+	equivalence (ReImdeltaSf(1,3,1  ,2  ), RedeltaLLuc)
+	equivalence (ReImdeltaSf(2,3,1  ,2  ), ImdeltaLLuc)
+	equivalence (ReImdeltaSf(1,3,1  ,2+3), RedeltaLRuc)
+	equivalence (ReImdeltaSf(2,3,1  ,2+3), ImdeltaLRuc)
+	equivalence (ReImdeltaSf(1,3,2  ,1+3), RedeltaRLucC)
+	equivalence (ReImdeltaSf(2,3,2  ,1+3), ImdeltaRLucC)
+	equivalence (ReImdeltaSf(1,3,1+3,2+3), RedeltaRRuc)
+	equivalence (ReImdeltaSf(2,3,1+3,2+3), ImdeltaRRuc)
+
 	double complex deltaLLct, deltaLRct
 	double complex deltaRLctC, deltaRRct
 	equivalence (deltaSf(3,2  ,3  ), deltaLLct)
 	equivalence (deltaSf(3,2  ,3+3), deltaLRct)
 	equivalence (deltaSf(3,3  ,2+3), deltaRLctC)
 	equivalence (deltaSf(3,2+3,3+3), deltaRRct)
+
+	double precision RedeltaLLct, ImdeltaLLct
+	double precision RedeltaLRct, ImdeltaLRct
+	double precision RedeltaRLctC, ImdeltaRLctC
+	double precision RedeltaRRct, ImdeltaRRct
+	equivalence (ReImdeltaSf(1,3,2  ,3  ), RedeltaLLct)
+	equivalence (ReImdeltaSf(2,3,2  ,3  ), ImdeltaLLct)
+	equivalence (ReImdeltaSf(1,3,2  ,3+3), RedeltaLRct)
+	equivalence (ReImdeltaSf(2,3,2  ,3+3), ImdeltaLRct)
+	equivalence (ReImdeltaSf(1,3,3  ,2+3), RedeltaRLctC)
+	equivalence (ReImdeltaSf(2,3,3  ,2+3), ImdeltaRLctC)
+	equivalence (ReImdeltaSf(1,3,2+3,3+3), RedeltaRRct)
+	equivalence (ReImdeltaSf(2,3,2+3,3+3), ImdeltaRRct)
 
 	double complex deltaLLut, deltaLRut
 	double complex deltaRLutC, deltaRRut
@@ -176,12 +206,38 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 	equivalence (deltaSf(3,3  ,1+3), deltaRLutC)
 	equivalence (deltaSf(3,1+3,3+3), deltaRRut)
 
+	double precision RedeltaLLut, ImdeltaLLut
+	double precision RedeltaLRut, ImdeltaLRut
+	double precision RedeltaRLutC, ImdeltaRLutC
+	double precision RedeltaRRut, ImdeltaRRut
+	equivalence (ReImdeltaSf(1,3,1  ,3  ), RedeltaLLut)
+	equivalence (ReImdeltaSf(2,3,1  ,3  ), ImdeltaLLut)
+	equivalence (ReImdeltaSf(1,3,1  ,3+3), RedeltaLRut)
+	equivalence (ReImdeltaSf(2,3,1  ,3+3), ImdeltaLRut)
+	equivalence (ReImdeltaSf(1,3,3  ,1+3), RedeltaRLutC)
+	equivalence (ReImdeltaSf(2,3,3  ,1+3), ImdeltaRLutC)
+	equivalence (ReImdeltaSf(1,3,1+3,3+3), RedeltaRRut)
+	equivalence (ReImdeltaSf(2,3,1+3,3+3), ImdeltaRRut)
+
 	double complex deltaLLds, deltaLRds
 	double complex deltaRLdsC, deltaRRds
 	equivalence (deltaSf(4,1  ,2  ), deltaLLds)
 	equivalence (deltaSf(4,1  ,2+3), deltaLRds)
 	equivalence (deltaSf(4,2  ,1+3), deltaRLdsC)
 	equivalence (deltaSf(4,1+3,2+3), deltaRRds)
+
+	double precision RedeltaLLds, ImdeltaLLds
+	double precision RedeltaLRds, ImdeltaLRds
+	double precision RedeltaRLdsC, ImdeltaRLdsC
+	double precision RedeltaRRds, ImdeltaRRds
+	equivalence (ReImdeltaSf(1,4,1  ,2  ), RedeltaLLds)
+	equivalence (ReImdeltaSf(2,4,1  ,2  ), ImdeltaLLds)
+	equivalence (ReImdeltaSf(1,4,1  ,2+3), RedeltaLRds)
+	equivalence (ReImdeltaSf(2,4,1  ,2+3), ImdeltaLRds)
+	equivalence (ReImdeltaSf(1,4,2  ,1+3), RedeltaRLdsC)
+	equivalence (ReImdeltaSf(2,4,2  ,1+3), ImdeltaRLdsC)
+	equivalence (ReImdeltaSf(1,4,1+3,2+3), RedeltaRRds)
+	equivalence (ReImdeltaSf(2,4,1+3,2+3), ImdeltaRRds)
 
 	double complex deltaLLsb, deltaLRsb
 	double complex deltaRLsbC, deltaRRsb
@@ -190,12 +246,38 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 	equivalence (deltaSf(4,3  ,2+3), deltaRLsbC)
 	equivalence (deltaSf(4,2+3,3+3), deltaRRsb)
 
+	double precision RedeltaLLsb, ImdeltaLLsb
+	double precision RedeltaLRsb, ImdeltaLRsb
+	double precision RedeltaRLsbC, ImdeltaRLsbC
+	double precision RedeltaRRsb, ImdeltaRRsb
+	equivalence (ReImdeltaSf(1,4,2  ,3  ), RedeltaLLsb)
+	equivalence (ReImdeltaSf(2,4,2  ,3  ), ImdeltaLLsb)
+	equivalence (ReImdeltaSf(1,4,2  ,3+3), RedeltaLRsb)
+	equivalence (ReImdeltaSf(2,4,2  ,3+3), ImdeltaLRsb)
+	equivalence (ReImdeltaSf(1,4,3  ,2+3), RedeltaRLsbC)
+	equivalence (ReImdeltaSf(2,4,3  ,2+3), ImdeltaRLsbC)
+	equivalence (ReImdeltaSf(1,4,2+3,3+3), RedeltaRRsb)
+	equivalence (ReImdeltaSf(2,4,2+3,3+3), ImdeltaRRsb)
+
 	double complex deltaLLdb, deltaLRdb
 	double complex deltaRLdbC, deltaRRdb
 	equivalence (deltaSf(4,1  ,3  ), deltaLLdb)
 	equivalence (deltaSf(4,1  ,3+3), deltaLRdb)
 	equivalence (deltaSf(4,3  ,1+3), deltaRLdbC)
 	equivalence (deltaSf(4,1+3,3+3), deltaRRdb)
+
+	double precision RedeltaLLdb, ImdeltaLLdb
+	double precision RedeltaLRdb, ImdeltaLRdb
+	double precision RedeltaRLdbC, ImdeltaRLdbC
+	double precision RedeltaRRdb, ImdeltaRRdb
+	equivalence (ReImdeltaSf(1,4,1  ,3  ), RedeltaLLdb)
+	equivalence (ReImdeltaSf(2,4,1  ,3  ), ImdeltaLLdb)
+	equivalence (ReImdeltaSf(1,4,1  ,3+3), RedeltaLRdb)
+	equivalence (ReImdeltaSf(2,4,1  ,3+3), ImdeltaLRdb)
+	equivalence (ReImdeltaSf(1,4,3  ,1+3), RedeltaRLdbC)
+	equivalence (ReImdeltaSf(2,4,3  ,1+3), ImdeltaRLdbC)
+	equivalence (ReImdeltaSf(1,4,1+3,3+3), RedeltaRRdb)
+	equivalence (ReImdeltaSf(2,4,1+3,3+3), ImdeltaRRdb)
 
 #ifndef UASfC
 #define UASfC(a,b,t) DCONJG(UASf(a,b,t))

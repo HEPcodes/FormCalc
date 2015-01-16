@@ -7,7 +7,7 @@
 default: run
 
 
-export VPATH := $(CURDIR):$(CURDIR)/renconst:$(LT)/include
+export VPATH := $(CURDIR):$(CURDIR)/renconst:$(LT)/../include
 
 INCLUDE := $(patsubst %,-I%,$(subst :, ,$(VPATH)))
 
@@ -16,7 +16,7 @@ PREFIX =
 FFLAGS += $(INCLUDE)
 
 ifdef DEBUG
-FFLAGS += -g -DDEBUG
+FFLAGS += -g $(DEF)DEBUG
 endif
 
 export FC
@@ -53,9 +53,20 @@ MAKECMDGOALS ?= run
 -include $(MAKECMDGOALS:%=%.d)
 
 %.d: %.F
-	( echo "$*: $@ $(LIBS)" ; \
+	( grep Mma $< >/dev/null 2>&1 ; \
+	  echo "MMA = $$?" ; \
+	  echo "$*: $@ $(LIBS)" ; \
 	  $(CPP) -M $(INCLUDE) $< | sed 's/^.*:/$@:/' ) > $@
 
+ifeq ($(MMA), 0)
+%:: %.F %.d mktm
+	./mktm $<
+	$(FC) $(FFLAGS) $(DEF)MMA $(DEF)PREFIX=$(PREFIX) -c $<
+	CC="$(CC)" mcc $(CFLAGS) -o $@ $*.tm $*.o $(LIBS) $(STDLIBS) $(LDFLAGS)
+	-$(RM) $*.o $*.tm $*.tm.c
+else
 %:: %.F %.d
-	$(FC) $(FFLAGS) -DPREFIX=$(PREFIX) -o $@ $< $(LIBS) $(LDFLAGS)
+	$(FC) $(FFLAGS) $(DEF)PREFIX=$(PREFIX) -o $@ $< $(LIBS) $(STDLIBS)
 	-$(RM) $*.o
+endif
+

@@ -2,7 +2,7 @@
 * all parameters for the MSSM are initialized here
 * this file is part of FormCalc
 * Christian Schappacher, 17 Feb 99
-* last modified 15 May 06 th
+* last modified 5 Dec 06 th
 
 
 * The input parameters for model_mssm are:
@@ -227,7 +227,7 @@
 	i3part = .5D0*MZ2*C2B
 	qpart = SW2*MZ2*C2B
 	DSf(1,1) = +i3part
-	DSf(1,2) = 0
+	DSf(2,1) = 0
 	DSf(2,2) = Qe*qpart
 	DSf(1,2) = -i3part - DSf(2,2)
 	DSf(2,3) = Qu*qpart
@@ -365,7 +365,7 @@
 	  Af(t,2,3) = MX2(2,3+3)/Mf(t,2)
 	  Af(t,3,2) = MX2(3,2+3)/Mf(t,3)
 
-	  call Eigensystem(6, MX2, 6, MASf2(1,t), UASf(1,1,t), 6)
+	  call HEigensystem(6, MX2,6, MASf2(1,t), UASf(1,1,t),6, 1)
 
 	  if( MASf2(1,t) .lt. 0 ) then
 	    WARN "Negative MASf2"
@@ -422,7 +422,7 @@
 	X(1,2) = sqrt2*MW*SB
 	X(2,2) = MUE
 
-	call SingularValues(2, 2, X, 2, MCha, UCha, 2, VCha, 2)
+	call SVD(2, 2, X,2, MCha, UCha,2, VCha,2, 1)
 
 #ifndef NO_EXCLUSION_LIMITS
 	if( MCha(1) .lt. MChargino_LOWERBOUND ) then
@@ -473,7 +473,7 @@
 	Y(3,3) = 0
 	Y(4,4) = 0
 
-	call PseudoEigensystem(4, Y, 4, MNeu, ZNeu, 4)
+	call TakagiFactor(4, Y,4, MNeu, ZNeu,4, 1)
 
 #ifndef NO_EXCLUSION_LIMITS
 	if( MNeu(1) .lt. MNeutralino_LOWERBOUND ) then
@@ -525,7 +525,7 @@
 	parameter (Qb = 0)
 
 	double precision MHiggs(4)
-	double complex SAeff, UHiggs(3,3)
+	double complex SAeff, UHiggs(3,3), ZHiggs(3,3)
 #else
 	double precision sig11, sig12, sig22
 	double precision MTr2, Qsusy, Lambda
@@ -545,7 +545,8 @@
 	MA02 = MA0**2
 
 	avgMH2 = .5D0*(MA02 + MZ2)
-	deltaMH2 = sqrt(avgMH2**2 - MA02*MZ2*C2B**2)
+	deltaMH2 = MA0*MZ*C2B
+	deltaMH2 = sqrt((avgMH2 - deltaMH2)*(avgMH2 + deltaMH2))
 	Mh02tree = avgMH2 - deltaMH2
 	MHH2tree = avgMH2 + deltaMH2
 
@@ -558,7 +559,7 @@
 	if( fail .ne. 0 ) return
 
 	call FHSetPara(fail, scalefactor,
-     &    AlfasMZ, MC, MT, MBatMB, MB, MW, MZ, TB, MA0, -1D0,
+     &    AlfasMZ, MC, MT, MB, MW, MZ, TB, MA0, -1D0,
      &    MSS(1,2,3), MSS(2,2,3), MSS(1,3,3), MSS(2,3,3), MSS(2,4,3),
      &    MSS(1,2,2), MSS(2,2,2), MSS(1,3,2), MSS(2,3,2), MSS(2,4,2),
      &    MSS(1,2,1), MSS(2,2,1), MSS(1,3,1), MSS(2,3,1), MSS(2,4,1),
@@ -570,7 +571,7 @@
      &    Qtau, Qt, Qb)
         if( fail .ne. 0 ) return
 
-	call FHHiggsCorr(fail, MHiggs, SAeff, UHiggs)
+	call FHHiggsCorr(fail, MHiggs, SAeff, UHiggs, ZHiggs)
 	if( fail .ne. 0 ) return
 
         Mh0 = MHiggs(1)
@@ -813,7 +814,7 @@
 #ifndef NO_GUT_RELATION
 * Gluino mass: GUT relation
 * we use 1/Alfa(s) approx 1/Alfa(MZ2) - 20/(9*pi)*log(s/MZ2)
-	M_3 = Alfas*(127.934D0 - 40/(9*pi)*log(scale/MZ))*SW2*M_2
+	M_3 = Alfas*(1/AlfaMZ - 40/(9*pi)*log(scale/MZ))*SW2*M_2
 #endif
 
 	MGl = DBLE(M_3)

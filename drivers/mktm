@@ -2,15 +2,22 @@
 # a script to set up the interface code for accessing
 # FormCalc-generated code in Mathematica
 # this file is part of FormCalc
-# last modified 18 May 06 th
+# last modified 15 Jan 07 th
 
+
+if [ $# -ne 1 ] ; then
+  echo "Usage:  $0 file.F   -- generates file.tm for file.F" 1>&2
+  exit 1
+fi
 
 file=$1
 base=`basename $file .F`
 name=`echo "$base" | sed s/_//`
 
-set -- `grep '#include \".to.\.F\"' process.h | tr '#include"to.F' ' '`
-pol="`expr substr UUUU 1 $1``expr substr UUUU 1 $2`"
+pol=`awk '/^#include *".to.\.F"/ {
+  print substr("UUUUUUUUUU", 1, int(substr($2,2,1)) + int(substr($2,5,1)));
+  exit(0);
+}' process.h`
 
 set -- `sed '
 s/.*call MmaGetReal(/r /
@@ -26,13 +33,15 @@ while [ $# -gt 0 ] ; do
      argsR="$argsR, $2"
      argsN="$argsN, N[$2]"
      argsT="$argsT, Real"
-     argsC="$argsC, creal $2" ;;
+     argsC="$argsC, creal $2"
+     argsS="$argsS, $2" ;;
   c) argsQ="$argsQ, $2_?c"
      argsL="$argsL, $2_"
      argsR="$argsR, $2"
      argsN="$argsN, N[Re[$2]], N[Im[$2]]"
      argsT="$argsT, Real, Real"
-     argsC="$argsC, creal re$2, creal im$2" ;;
+     argsC="$argsC, creal re$2, creal im$2"
+     argsS="$argsS, (cplx){re$2, im$2}" ;;
   esac
   shift 2
 done
@@ -43,8 +52,13 @@ cat << _EOF_ > `dirname $file`/$base.tm
 :Evaluate: Options[$name] = {
   Polarizations -> "$pol",
   Serial -> {},
+  SetNumber -> 1,
   ParaHead -> Para,
-  DataHead -> Data }
+  DataHead -> Data,
+  LogFile -> "" }
+
+:Evaluate: DataRow::usage = "DataRow[v, r, e] stores a row of data from FormCalc-generated Fortran code.
+	The values of the independent variables are given in v, the integration results in r, and the corresponding integration errors in e."
 
 :Evaluate: Begin["\`$name\`"]
 
@@ -52,29 +66,38 @@ cat << _EOF_ > `dirname $file`/$base.tm
 
 :Evaluate: c = Head[# + 1. I] === Complex &
 
-:Evaluate: $name[setno_Integer, sqrtS_$argsL, opt___Rule] :=
-  Block[ {pol, serial, phead, dhead},
-    {pol, serial, phead, dhead} =
-      {Polarizations, Serial, ParaHead, DataHead} /.
+:Evaluate: $name[sqrtS_?r$argsQ, opt___Rule] :=
+  Block[ {pol, serial, setno, phead, dhead, file},
+    {pol, serial, setno, phead, dhead, file} =
+      {Polarizations, Serial, SetNumber, ParaHead, DataHead, LogFile} /.
         {opt} /. Options[$name];
     m$name[setno, ToString[phead], ToString[dhead],
-      ToString[pol], Flatten[{sqrtS}], Flatten[{serial}]$argsR]
+      ToString[file], ToString[pol],
+      Flatten[{sqrtS}], Flatten[{serial}]$argsR]
   ]
 
 :Begin:
 :Function: m$name
 :Pattern: m$name[setno_Integer, phead_String, dhead_String,
-  pol_String,
+  file_String, pol_String,
   {sqrtSfrom_, sqrtSto_:-1, sqrtSstep_:10},
   {serialfrom_:0, serialto_:2^30, serialstep_:1}$argsL]
-:Arguments: {setno, phead, dhead, pol,
+:Arguments: {setno, phead, dhead,
+  file, pol,
   N[sqrtSfrom], N[sqrtSto], N[sqrtSstep],
   serialfrom, serialto, serialstep$argsN}
-:ArgumentTypes: {Integer, String, String, String,
+:ArgumentTypes: {Integer, String, String,
+  String, String,
   Real, Real, Real,
   Integer, Integer, Integer$argsT}
 :ReturnType: Manual
 :End:
+
+:Evaluate: _m$name := (Message[$name::args]; Abort[])
+
+:Evaluate: $name::args = "Invalid arguments used in $name."
+
+:Evaluate: $name::redir = "Cannot redirect output to \`\`."
 
 :Evaluate: End[]
 
@@ -89,15 +112,24 @@ cat << _EOF_ > `dirname $file`/$base.tm
 */
 
 #include "mathlink.h"
+
 #ifndef MLCONST
-#define MLCONST
+#define MLCONST const
+#endif
+
+#if MLVERSION >= 3
+#define MLPutString(mlp, s) \
+  MLPutByteString(mlp, (unsigned MLCONST char *)s, strlen(s))
 #endif
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
 
-typedef MLCONST char cchar;
+typedef MLCONST char *string;
 typedef const int cint;
 typedef double real;
 typedef const real creal;
@@ -105,32 +137,34 @@ typedef struct { double re, im; } cplx;
 typedef const cplx ccplx;
 
 #if UNDERSCORE
-#define ProcessIni	processini_
-#define ParameterScan	parameterscan_
-#define MmaGetReal	mmagetreal_
-#define MmaGetComplex	mmagetcomplex_
-#define MmaPutReal	mmaputreal_
-#define MmaPutComplex	mmaputcomplex_
-#define flush		flush_
+#define FORTRAN(s) s##_
 #else
-#define ProcessIni	processini
-#define ParameterScan	parameterscan
-#define MmaGetReal	mmagetreal
-#define MmaGetComplex	mmagetcomplex
-#define MmaPutReal	mmaputreal
-#define MmaPutComplex	mmaputcomplex
+#define FORTRAN(s) s
 #endif
 
-extern void ProcessIni(int *fail, cchar *pol,
-  creal *sqrtSfrom, creal *sqrtSto, creal *sqrtSstep, cint lenpol);
+extern void FORTRAN(processini)(int *fail, string pol,
+  creal *sqrtSfrom, creal *sqrtSto, creal *sqrtSstep, cint pollen);
 
-extern void ParameterScan(cchar *dir,
-  cint *serialfrom, cint *serialto, cint *serialstep, cint lendir);
+extern void FORTRAN(parameterscan)(string dir,
+  cint *serialfrom, cint *serialto, cint *serialstep, cint dirlen);
 
-extern void flush(cint *unit);
+extern void FORTRAN(flush)(cint *unit);
 
 static va_list xsection_ap;
-static int truestdout;
+static string parahead, datahead;
+static int setnumber;
+
+/******************************************************************/
+
+static inline void MLPutComplex(MLINK mlp, ccplx c)
+{
+  if( c.im == 0 ) MLPutReal(mlp, c.re);
+  else {
+    MLPutFunction(mlp, "Complex", 2);
+    MLPutReal(mlp, c.re);
+    MLPutReal(mlp, c.im);
+  }
+}
 
 /******************************************************************/
 
@@ -148,35 +182,119 @@ static inline void MLSendPacket(MLINK mlp)
 
 /******************************************************************/
 
-static void m$name(cint setno, cchar *pol,
+static inline void MLEmitMessage(MLINK mlp, string tag, string arg)
+{
+  MLPutFunction(mlp, "EvaluatePacket", 1);
+
+  MLPutFunction(mlp, "Message", 2);
+  MLPutFunction(mlp, "MessageName", 2);
+  MLPutSymbol(mlp, "$name");
+  MLPutString(mlp, tag);
+  MLPutString(mlp, arg);
+
+  MLSendPacket(mlp);
+}
+
+/******************************************************************/
+
+static void MLPutRule(MLINK mlp, string s, cint len)
+{
+  MLPutFunction(mlp, "Rule", 2);
+  MLPutFunction(mlp, "ToExpression", 1);
+  MLPutByteString(mlp, (unsigned MLCONST char *)s, len);
+
+/*
+  char *const tmp = malloc(len + 1);
+  char *d;
+  int i;
+
+  if( tmp == NULL ) exit(1);
+  d = tmp;
+
+  for( i = 0; i < len; ++i ) {
+    char c = *s++;
+    switch( c ) {
+    case '_':
+      c = '$';
+      break;
+    case '(':
+      c = '[';
+      break;
+    case ')':
+      c = ']';
+      break;
+    }
+    *d++ = c;
+  }
+  *d++ = 0;
+
+  MLPutFunction(mlp, "Rule", 2);
+  MLPutFunction(mlp, "ToExpression", 1);
+  MLPutString(mlp, tmp);
+
+  free(tmp);
+*/
+}
+
+/******************************************************************/
+
+static void v$name(
+  cint serialfrom, cint serialto, cint serialstep, ...)
+{
+  va_start(xsection_ap, serialstep);
+  FORTRAN(parameterscan)("", &serialfrom, &serialto, &serialstep, 0);
+  va_end(xsection_ap);
+}
+
+/******************************************************************/
+
+static void m$name(cint setno, string phead, string dhead,
+  string file, string pol,
   creal sqrtSfrom, creal sqrtSto, creal sqrtSstep,
   cint serialfrom, cint serialto, cint serialstep$argsC)
 {
   int fail;
-  cint fortranstdout = 6;
+  cint prevstdout = dup(1);
 
-  dup2(2, 1);
-  ProcessIni(&fail, pol, &sqrtSfrom, &sqrtSto, &sqrtSstep, strlen(pol));
+  if( *file == 0 ) dup2(2, 1);
+  else {
+    cint logfile = creat(file, 0644);
+    if( logfile == -1 ) {
+      MLEmitMessage(stdlink, "redir", file);
+      MLPutSymbol(stdlink, "$Failed");
+      MLEndPacket(stdlink);
+      return;
+    }
+    dup2(logfile, 1);
+    close(logfile);
+  }
 
-  va_start(xsection_ap, serialstep);
-  ParameterScan("", &serialfrom, &serialto, &serialstep, 0);
-  va_end(xsection_ap);
+  setnumber = setno - 1;
+  parahead = phead;
+  datahead = dhead;
 
-  flush(&fortranstdout);
-  fflush(stdout);
-  dup2(truestdout, 1);
+  FORTRAN(processini)(&fail, pol,
+    &sqrtSfrom, &sqrtSto, &sqrtSstep, strlen(pol));
+  v$name(serialfrom, serialto, serialstep$argsS);
+
+  { cint fortranstdout = 6; FORTRAN(flush)(&fortranstdout); }
+  dup2(prevstdout, 1);
+  close(prevstdout);
+
+  MLPutInteger(stdlink, setnumber);
+  MLEndPacket(stdlink);
 }
 
 /******************************************************************/
 
-void MmaGetReal(real *x)
+void FORTRAN(mmagetreal)(real *r)
 {
-  *x = va_arg(xsection_ap, real);
+  *r = va_arg(xsection_ap, real);
 }
 
 /******************************************************************/
 
-void MmaGetComplex(cplx *c)
+void FORTRAN(mmagetcomplex)(cplx *c)
 {
   c->re = va_arg(xsection_ap, real);
   c->im = va_arg(xsection_ap, real);
@@ -184,32 +302,75 @@ void MmaGetComplex(cplx *c)
 
 /******************************************************************/
 
-void MmaPutReal(creal *x)
+void FORTRAN(mmasetpara)()
 {
-  have_output = 1;
-  MLPutReal(stdlink, *x);
+  MLPutFunction(stdlink, "EvaluatePacket", 1);
+
+  MLPutFunction(stdlink, "Set", 2);
+  MLPutFunction(stdlink, parahead, 1);
+  MLPutInteger(stdlink, ++setnumber);
+
+  MLPutFunction(stdlink, "List", 1);
 }
 
 /******************************************************************/
 
-void MmaPutComplex(ccplx *c)
+void FORTRAN(mmasetdata)()
 {
-  have_output = 1;
-  if( c->im == 0 ) MLPutReal(stdlink, c->re);
-  else {
-    MLPutFunction(stdlink, "Complex", 2);
-    MLPutReal(stdlink, c->re);
-    MLPutReal(stdlink, c->im);
-  }
+  MLPutFunction(stdlink, "EvaluatePacket", 1);
+
+  MLPutFunction(stdlink, "Set", 2);
+  MLPutFunction(stdlink, datahead, 1);
+  MLPutInteger(stdlink, setnumber);
+
+  MLPutFunction(stdlink, "List", 1);
+}
+
+/******************************************************************/
+
+void FORTRAN(mmaendset)()
+{
+  MLPutFunction(stdlink, "Sequence", 0);
+  MLSendPacket(stdlink);
+}
+
+/******************************************************************/
+
+void FORTRAN(mmaputreal)(string name, creal *r, cint len)
+{
+  MLPutFunction(stdlink, "Sequence", 2);
+
+  MLPutRule(stdlink, name, len);
+  MLPutReal(stdlink, *r);
+}
+
+/******************************************************************/
+
+void FORTRAN(mmaputcomplex)(string name, ccplx *c, cint len)
+{
+  MLPutFunction(stdlink, "Sequence", 2);
+
+  MLPutRule(stdlink, name, len);
+  MLPutComplex(stdlink, *c);
+}
+
+/******************************************************************/
+
+void FORTRAN(mmadata)(real *show, cint *nshow,
+  real *result, real *error, cint *ncomp)
+{
+  MLPutFunction(stdlink, "Sequence", 2);
+
+  MLPutFunction(stdlink, "DataRow", 3);
+  MLPutRealList(stdlink, show, *nshow);
+  MLPutRealList(stdlink, result, *ncomp);
+  MLPutRealList(stdlink, error, *ncomp);
 }
 
 /******************************************************************/
 
 int main(int argc, char **argv)
 {
-  int ret;
-
-  truestdout = dup(1);
   return MLMain(argc, argv);
 }
 

@@ -2,7 +2,7 @@
 	logfile.c
 		I/O redirection for logfiles
 		this file is part of FormCalc
-		last modified 30 May 05 th
+		last modified 20 Sep 06 th
 */
 
 
@@ -13,24 +13,29 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-#ifdef HAVE_UNDERSCORE
+#ifdef UNDERSCORE
 #define openlog openlog_
 #define closelog closelog_
 #define flush flush_
 #endif
 
-extern void flush(int *);
+extern void flush(const int *);
 
-static int truestdout = -1;
+static int prevstdout;
 
-
-int openlog(char *dir, const int *serial, const int len)
+int openlog(const char *dir, const int *serial, const int len)
 {
   int logfile;
   struct stat filestat;
   char filename[512];
-  char *last = memccpy(filename, dir, ' ', len);
-  *--last = 0;
+
+  prevstdout = len;
+  do
+    if( prevstdout == 0 ) return 0;
+  while( dir[--prevstdout] == ' ' );
+
+  memcpy(filename, dir, ++prevstdout);
+  filename[prevstdout] = 0;
 
   if( stat(filename, &filestat) == 0 ) {
     if( !S_ISDIR(filestat.st_mode) ) {
@@ -43,7 +48,7 @@ int openlog(char *dir, const int *serial, const int len)
     exit(1);
   }
 
-  sprintf(last, "/%07d", *serial);
+  sprintf(filename + prevstdout, "/%07d", *serial);
   if( stat(filename, &filestat) == 0 && (filestat.st_mode & 0100) == 0 ) {
     printf("%s already complete\n", filename);
     return 1;
@@ -55,11 +60,11 @@ int openlog(char *dir, const int *serial, const int len)
     exit(1);
   }
 
-  { int fortranstdout = 6; flush(&fortranstdout); }
+  { const int fortranstdout = 6; flush(&fortranstdout); }
   puts(filename);
   fflush(stdout);
 
-  if( truestdout == -1 ) truestdout = dup(1);
+  prevstdout = dup(1);
   dup2(logfile, 1);
   close(logfile);
 
@@ -69,8 +74,11 @@ int openlog(char *dir, const int *serial, const int len)
 
 void closelog()
 {
-  { int fortranstdout = 6; flush(&fortranstdout); }
-  fchmod(1, 0644);
-  dup2(truestdout, 1);
+  { const int fortranstdout = 6; flush(&fortranstdout); }
+  if( prevstdout ) {
+    fchmod(1, 0644);
+    dup2(prevstdout, 1);
+    close(prevstdout);
+  }
 }
 

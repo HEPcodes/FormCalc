@@ -3,7 +3,7 @@
 #	pnuglot
 #		makes a plotting script from data files
 #		this file is part of FormCalc
-#		last modified 29 Aug 05 th
+#		last modified 7 Nov 06 th
 
 # This program works in two steps:
 #
@@ -158,7 +158,7 @@ echo '\end{document}' >> tmpgpl.tex
 epsfile="`dirname $0`/`basename $0 .gpl`.eps"
 latex tmpgpl.tex
 dvips -Ppdf -E -o $epsfile tmpgpl.dvi
-gv -magstep 2 $epsfile &
+gv --magstep=2 $epsfile &
 
 _TEMPLATE_
 

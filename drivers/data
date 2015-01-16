@@ -1,7 +1,7 @@
 #! /bin/sh
 # a trivial utility for getting the data out of the logs
 # this file is part of FormCalc
-# last modified 26 Jan 06 th
+# last modified 11 Jan 07 th
 
 
 if [ $# -eq 0 ] ; then
@@ -23,7 +23,9 @@ done
 
 echo $out
 
-sed -n 's/^|//
+( for file in $files ; do
+  sed -n '
+	s/^|//
 	t 1
 	b
 	: 1
@@ -31,5 +33,6 @@ sed -n 's/^|//
 	s/\n|+//
 	t 1
 	P
-	D' $files > $out
+	D' $file
+done ) > $out
 

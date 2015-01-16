@@ -1,6 +1,6 @@
 #! /bin/sh
 # compile script for the C programs used by FormCalc
-# last modified 7 Mar 05 th
+# last modified 18 Sep 06 th
 
 # If this compile script doesn't work on your system, check these things:
 #
@@ -22,7 +22,15 @@ MCC=${MCC:-mcc}
 
 CFLAGS="${CFLAGS:--O3 -fomit-frame-pointer -ffast-math} $*"
 
-set -- `math -run 'Print[$SystemID]; Exit[]' < /dev/null | tail -1`
+for dir in /Applications/Mathematica*/Contents/MacOS \
+           $HOME/Desktop/Mathematica*/Contents/MacOS ; do
+  if [ -x "$dir/MathKernel" ] ; then
+    PATH=$PATH:"$dir"
+    break
+  fi
+done
+
+set -- `MathKernel -run 'Print[$SystemID]; Exit[]' < /dev/null | tail -1`
 if [ $# -ne 1 ] ; then
   echo "Cannot determine system type"
   exit 1
@@ -52,7 +60,7 @@ $1/ToFortran: FormCalc/ToFortran.c
 	strip $1/ToFortran
 
 $1/ReadData: tools/ReadData.tm
-	$MCC $CFLAGS -o $1/ReadData tools/ReadData.tm
+	CC=tools/fcmcc $MCC $CFLAGS -o $1/ReadData tools/ReadData.tm
 	strip $1/ReadData
 
 $1/reorder: tools/reorder.c
@@ -65,6 +73,7 @@ _EOF_
 
 cd drivers
 trap "rm -f makefile util.a" 0 1 2 3 9 15
-ln -s ../$1/util.a util.a
+[ -f ../$1/util.a ] && mv -f ../$1/util.a .
 ./configure util.a
+mv -f util.a ../$1/
 

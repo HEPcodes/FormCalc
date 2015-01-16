@@ -3,23 +3,22 @@
 # postings to support@wolfram.com is still unable to order
 # object files and library options correctly
 # this file is part of FormCalc
-# last modified 7 Apr 05 th
+# last modified 30 May 06 th
 
 
 linkopt=""
 otheropt=""
 
-for opt in $* ; do
+for opt in "$@" ; do
   case $opt in
   -[Ll]* | *.a)
-    linkopt="$linkopt $opt"
+    linkopt="$linkopt \"$opt\""
     ;;
   *)
-    otheropt="$otheropt $opt"
+    otheropt="$otheropt \"$opt\""
     ;;
   esac
 done
 
-set -x
-${REALCC:-gcc} $otheropt $linkopt -lpthread
+eval "set -x ; ${REALCC:-gcc} $otheropt $linkopt -lpthread"
 

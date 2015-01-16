@@ -1,7 +1,7 @@
 * process.h
 * defines all process-dependent parameters
 * this file is part of FormCalc
-* last modified 21 Feb 06 th
+* last modified 11 Sep 06 th
 
 
 * Definition of the external particles.
@@ -103,6 +103,7 @@ c#define WF_RENORMALIZATION (nW*dWFW1 + nZ*dWFZ1)
 #define PARTON1 1
 #define PARTON2 1
 #define PDFSET "cteq5l.LHgrid"
+#define PDFMEM 0
 
 
 * Include the kinematics-dependent part.

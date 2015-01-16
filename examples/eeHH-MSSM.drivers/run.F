@@ -75,11 +75,21 @@ c#define NO_EXCLUSION_LIMITS
 * Only real parameters are allowed (use DBLE and DIMAG for complex
 * ones) and a string identifier must be given as in the example above.
 
-#define PRINT1 PRINT "TB=", TB, "MA0=", MA0
-#define PRINT2 PRINT "M_2=", ReM_2, "MUE=", ReMUE
-#define PRINT3 PRINT "MSusy=", MSusy, "At=", ReAt
-#define PRINT4
-#define PRINT5
+#define PRINT1 SHOW "TB", TB
+#define PRINT2 SHOW "MA0", MA0
+#define PRINT3 SHOW "M_2", ReM_2
+#define PRINT4 SHOW "MUE", ReMUE
+#define PRINT5 SHOW "MSusy", MSusy
+#define PRINT6 SHOW "At", ReAt
+#define PRINT7
+#define PRINT8
+#define PRINT9
+#define PRINT10
+#define PRINT11
+#define PRINT12
+#define PRINT13
+#define PRINT14
+#define PRINT15
 
 
 * Cuts and increments.  May be defined in terms of sqrtS, the CMS energy.
