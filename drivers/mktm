@@ -2,7 +2,7 @@
 # a script to set up the interface code for accessing
 # FormCalc-generated code in Mathematica
 # this file is part of FormCalc
-# last modified 23 Feb 07 th
+# last modified 2 Apr 09 th
 
 
 if [ $# -ne 1 ] ; then
@@ -22,26 +22,48 @@ pol=`awk '/^#include *".to.\.F"/ {
 set -- `sed '
 s/.*call MmaGetReal(/r /
 s/.*call MmaGetComplex(/c /
-y/_)/$ /
+s/.*call MmaGetRealList(/rl /
+s/.*call MmaGetComplexList(/cl /
+y/_,)/$  /
 t
 d' $file`
 
 while [ $# -gt 0 ] ; do
   case $1 in
-  r) argsQ="$argsQ, $2_?r"
-     argsL="$argsL, $2_"
-     argsR="$argsR, $2"
-     argsN="$argsN, N[$2]"
-     argsT="$argsT, Real"
-     argsC="$argsC, creal $2"
-     argsS="$argsS, $2" ;;
-  c) argsQ="$argsQ, $2_?c"
-     argsL="$argsL, $2_"
-     argsR="$argsR, $2"
-     argsN="$argsN, N[Re[$2]], N[Im[$2]]"
-     argsT="$argsT, Real, Real"
-     argsC="$argsC, creal re$2, creal im$2"
-     argsS="$argsS, (cplx){re$2, im$2}" ;;
+  r)	argsQ="$argsQ, $2_?r"
+	argsL="$argsL, $2_"
+	argsR="$argsR, $2"
+	argsN="$argsN, N[$2]"
+	argsT="$argsT, Real"
+	argsC="$argsC, creal $2"
+	argsS="$argsS, $2"
+	;;
+  c)	argsQ="$argsQ, $2_?c"
+	argsL="$argsL, $2_"
+	argsR="$argsR, $2"
+	argsN="$argsN, N[Re[$2]], N[Im[$2]]"
+	argsT="$argsT, Real, Real"
+	argsC="$argsC, creal re$2, creal im$2"
+	argsS="$argsS, (cplx){re$2, im$2}"
+	;;
+  rl)	argsQ="$argsQ, $2_?(rl[$3])"
+	argsL="$argsL, $2_"
+	argsR="$argsR, $2"
+	argsN="$argsN, N[$2]"
+	argsT="$argsT, RealList"
+	argsC="$argsC, real *$2, long n_$2"
+	argsS="$argsS, $2, n_$2"
+	shift
+	;;
+  cl)	argsQ="$argsQ, $2_?(cl[$3])"
+	argsL="$argsL, $2_"
+	argsR="$argsR, $2"
+	argsN="$argsN, N[Flatten[{Re[#], Im[#]}&/@ $2]]"
+	argsT="$argsT, RealList"
+	argsC="$argsC, real *$2, long n_$2"
+	argsS="$argsS, $2, n_$2"
+	shift
+	;;
   esac
   shift 2
 done
@@ -65,6 +87,12 @@ cat << _EOF_ > `dirname $file`/$base.tm
 :Evaluate: r = Head[# + 1.] === Real &
 
 :Evaluate: c = Head[# + 1. I] === Complex &
+
+:Evaluate: rl[n_] = Length[#] === n && VectorQ[#, r] &
+
+:Evaluate: cl[n_] = Length[#] === n && VectorQ[#, c] &
+
+:Evaluate: tocl = Chop[Apply[Complex, Partition[#, 2], 1], 2^-51] &
 
 :Evaluate: $name[sqrtS_$argsQ, opt___Rule] :=
   Block[ {pol, serial, setno, phead, dhead, file},
@@ -117,11 +145,6 @@ cat << _EOF_ > `dirname $file`/$base.tm
 #define MLCONST const
 #endif
 
-#if MLVERSION >= 3
-#define MLPutString(mlp, s) \
-  MLPutByteString(mlp, (unsigned MLCONST char *)s, strlen(s))
-#endif
-
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -148,7 +171,7 @@ extern void FORTRAN(processini)(int *fail, string pol,
 extern void FORTRAN(parameterscan)(string dir,
   cint *serialfrom, cint *serialto, cint *serialstep, cint dirlen);
 
-extern void FORTRAN(flush)(cint *unit);
+extern void FORTRAN(fortranflush)(void);
 
 static va_list xsection_ap;
 static string parahead, datahead;
@@ -277,7 +300,7 @@ static void m$name(cint setno, string phead, string dhead,
     &sqrtSfrom, &sqrtSto, &sqrtSstep, strlen(pol));
   v$name(serialfrom, serialto, serialstep$argsS);
 
-  { cint fortranstdout = 6; FORTRAN(flush)(&fortranstdout); }
+  FORTRAN(fortranflush)();
   dup2(prevstdout, 1);
   close(prevstdout);
 
@@ -298,6 +321,24 @@ void FORTRAN(mmagetcomplex)(cplx *c)
 {
   c->re = va_arg(xsection_ap, real);
   c->im = va_arg(xsection_ap, real);
+}
+
+/******************************************************************/
+
+void FORTRAN(mmagetreallist)(real *r, cint *nr)
+{
+  const real *l = va_arg(xsection_ap, real *);
+  const long nl = va_arg(xsection_ap, long);
+  memcpy(r, l, nl*sizeof(real));
+}
+
+/******************************************************************/
+
+void FORTRAN(mmagetcomplexlist)(cplx *c, cint *nc)
+{
+  const real *l = va_arg(xsection_ap, real *);
+  const long nl = va_arg(xsection_ap, long);
+  memcpy(c, l, nl*sizeof(real));
 }
 
 /******************************************************************/
@@ -352,6 +393,27 @@ void FORTRAN(mmaputcomplex)(string name, ccplx *c, cint len)
 
   MLPutRule(stdlink, name, len);
   MLPutComplex(stdlink, *c);
+}
+
+/******************************************************************/
+
+void FORTRAN(mmaputreallist)(string name, real *r, cint *n, cint len)
+{
+  MLPutFunction(stdlink, "Sequence", 2);
+
+  MLPutRule(stdlink, name, len);
+  MLPutRealList(stdlink, r, *n);
+}
+
+/******************************************************************/
+
+void FORTRAN(mmaputcomplexlist)(string name, cplx *c, cint *n, cint len)
+{
+  MLPutFunction(stdlink, "Sequence", 2);
+
+  MLPutRule(stdlink, name, len);
+  MLPutFunction(stdlink, "XSection\`$name\`tocl", 1);
+  MLPutRealList(stdlink, (real *)c, *n*2);
 }
 
 /******************************************************************/

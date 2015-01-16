@@ -2,7 +2,7 @@
 * this is the main program for the generated Fortran code,
 * it scans the command line and then invokes ParameterScan
 * this file is part of FormCalc
-* last modified 26 Feb 08 th
+* last modified 12 Jun 09 th
 
 
 #include "xsection.F"
@@ -23,7 +23,9 @@
 	character*200 argv
 	character*512 dir
 
+#ifdef DEBUG
 	call setfpu
+#endif
 
 	argc = iargc()
 	if( argc .lt. 2 .or. argc .gt. 3 ) goto 999

@@ -1,7 +1,7 @@
 * process.h
 * defines all process-dependent parameters
 * this file is part of FormCalc
-* last modified 26 May 08 th
+* last modified 12 May 09 th
 
 
 * Definition of the external particles.
@@ -95,9 +95,10 @@ c#define WF_RENORMALIZATION (nW*dWFW1 + nZ*dWFZ1)
 #define LUMI "lumi_parton.F"
 
 * for lumi_parton.F: whether to force the decaying particle to
-* be on-shell, independent of the command-line choices for sqrtS
+* be on-shell, independent of the command-line choices for sqrtS;
+* the value specifies the maximum value of |sqrtS - sum_masses_in|
 
-c#define FORCE_ONSHELL
+c#define FORCE_ONSHELL 1D-9
 
 * for lumi_hadron.F: PARTON1 and PARTON2 identify the
 * incoming partons by their PDG code, where

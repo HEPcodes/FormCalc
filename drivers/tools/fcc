@@ -1,11 +1,13 @@
 #! /bin/sh
 # script to compile C programs that are linked 
 # against Fortran libraries
-# last modified 13 Jan 09 th
+# last modified 5 Mar 09 th
 
 args=""
 ldflags=""
+objs=""
 libs=""
+lcpp=""
 compileonly=""
 
 case "$@" in
@@ -19,18 +21,28 @@ while [ $# -gt 0 ] ; do
   -arch)
 	shift
 	;;
-  -[Ll]* | -Wl* | *.a)
+  -[Ll]* | -Wl*)
 	ldflags="$ldflags \"$arg\""
+	;;
+  *.tm.o)
+	objs="\"$arg\" $objs"
+	;;
+  *.a | *.o)
+	objs="$objs \"$arg\""
 	;;
   -Wno-long-double)
 	# mcc adds this on Macs & gcc 4 doesn't like it
 	;;
   *.cc)
 	args="$args \"$arg\""
-	libs="-lstdc++ $libs"
+	lcpp="-lstdc++"
 	;;
   -c)
 	compileonly="-c"
+	;;
+  -o)
+	args="$args \"$arg\" \"$2\""
+	shift
 	;;
   *)
 	args="$args \"$arg\""
@@ -39,5 +51,5 @@ while [ $# -gt 0 ] ; do
   shift
 done
 
-eval "set -x ; ${REALCC:-cc} $args ${compileonly:-$ldflags $libs}"
+eval "set -x ; ${REALCC:-cc} $args ${compileonly:-$objs $ldflags $lcpp $libs}"
 

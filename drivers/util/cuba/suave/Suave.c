@@ -2,7 +2,7 @@
 	Suave.c
 		Subregion-adaptive Vegas Monte-Carlo integration
 		by Thomas Hahn
-		last modified 2 Mar 06 th
+		last modified 30 Aug 07 th
 */
 
 
@@ -14,11 +14,11 @@ static Integrand integrand_;
 
 /*********************************************************************/
 
-static inline void DoSample(number n, creal *x, real *f)
+static inline void DoSample(number n, creal *w, creal *x, real *f)
 {
   neval_ += n;
   while( n-- ) {
-    integrand_(&ndim_, x, &ncomp_, f);
+    integrand_(&ndim_, x, &ncomp_, f, w++);
     x += ndim_;
     f += ncomp_;
   }

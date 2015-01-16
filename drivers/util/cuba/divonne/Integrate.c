@@ -2,9 +2,9 @@
 	Integrate.c
 		partition the integration region until each region
 		has approximately equal spread = 1/2 vol (max - min),
-		then do a final integration over all regions
+		then do a main integration over all regions
 		this file is part of Divonne
-		last modified 2 Jun 05 th
+		last modified 8 May 09 th
 */
 
 
@@ -22,10 +22,9 @@ static int Integrate(creal epsrel, creal epsabs,
 {
   TYPEDEFREGION;
 
-  Region anchor, *region;
   Totals totals[NCOMP];
   real nneed, weight;
-  count dim, comp, iter, nregions, pass = 0, err;
+  count dim, comp, iter, pass = 0, err, iregion;
   number nwant, nmin = INT_MAX;
   int fail = -1;
 
@@ -47,12 +46,14 @@ static int Integrate(creal epsrel, creal epsabs,
     Print(s);
   }
 
-  anchor.next = NULL;
+  size_ = CHUNKSIZE;
+  MemAlloc(voidregion_, size_*sizeof(Region));
   for( dim = 0; dim < ndim_; ++dim ) {
-    Bounds *b = &anchor.bounds[dim];
+    Bounds *b = &region_->bounds[dim];
     b->lower = 0;
     b->upper = 1;
   }
+  nregions_ = 0;
 
   RuleIni(&rule7_);
   RuleIni(&rule9_);
@@ -81,10 +82,11 @@ static int Integrate(creal epsrel, creal epsabs,
   Zap(totals);
   phase_ = 1;
 
-  Explore(&anchor, &samples_[0], INIDEPTH, 1);
+  Explore(0, &samples_[0], INIDEPTH, 1);
 
   for( iter = 1; ; ++iter ) {
     Totals *maxtot;
+    count valid;
 
     for( comp = 0; comp < ncomp_; ++comp ) {
       Totals *tot = &totals[comp];
@@ -92,9 +94,8 @@ static int Integrate(creal epsrel, creal epsabs,
       tot->spread = tot->secondspread = -INFTY;
     }
 
-    nregions = 0;
-    for( region = anchor.next; region; region = region->next ) {
-      ++nregions;
+    for( iregion = 0; iregion < nregions_; ++iregion ) {
+      Region *region = &region_[iregion];
       for( comp = 0; comp < ncomp_; ++comp ) {
         cResult *r = &region->result[comp];
         Totals *tot = &totals[comp];
@@ -103,7 +104,7 @@ static int Integrate(creal epsrel, creal epsabs,
         if( r->spread > tot->spread ) {
           tot->secondspread = tot->spread;
           tot->spread = r->spread;
-          tot->region = region;
+          tot->iregion = iregion;
         }
         else if( r->spread > tot->secondspread )
           tot->secondspread = r->spread;
@@ -111,9 +112,11 @@ static int Integrate(creal epsrel, creal epsabs,
     }
 
     maxtot = totals;
+    valid = 0;
     for( comp = 0; comp < ncomp_; ++comp ) {
       Totals *tot = &totals[comp];
       integral[comp] = tot->avg;
+      valid += tot->avg == tot->avg;
       if( tot->spreadsq > maxtot->spreadsq ) maxtot = tot;
       tot->spread = sqrt(tot->spreadsq);
       error[comp] = tot->spread*samples_[0].weight;
@@ -127,7 +130,7 @@ static int Integrate(creal epsrel, creal epsabs,
         NUMBER7 " integrand evaluations so far,\n"
         NUMBER7 " in optimizing regions,\n"
         NUMBER7 " in finding cuts",
-        iter, pass, nregions, neval_, neval_opt_, neval_cut_);
+        iter, pass, nregions_, neval_, neval_opt_, neval_cut_);
 
       for( comp = 0; comp < ncomp_; ++comp )
         p += sprintf(p, "\n[" COUNT "] "
@@ -137,11 +140,13 @@ static int Integrate(creal epsrel, creal epsabs,
       Print(s);
     }
 
+    if( valid == 0 ) goto abort;	/* all NaNs */
+
     if( neval_ > maxeval ) break;
 
     nneed = maxtot->spread/MaxErr(maxtot->avg);
     if( nneed < MAXPRIME ) {
-      cnumber n = neval_ + nregions*(number)ceil(nneed);
+      cnumber n = neval_ + nregions_*(number)ceil(nneed);
       if( n < nmin ) {
         nmin = n;
         pass = 0;
@@ -149,7 +154,7 @@ static int Integrate(creal epsrel, creal epsabs,
       else if( ++pass > maxpass && n >= mineval ) break;
     }
 
-    Split(maxtot->region, DEPTH);
+    Split(maxtot->iregion, DEPTH);
   }
 
   /* Step 2: do a "full" integration on each region */
@@ -167,17 +172,16 @@ static int Integrate(creal epsrel, creal epsabs,
   nwant = (number)Min(ceil(nneed), MARKMASK/40.);
 
   err = SamplesLookup(&samples_[1], key2, nwant,
-    (maxeval - neval_)/nregions + 1, samples_[0].n + 1);
+    (maxeval - neval_)/nregions_ + 1, samples_[0].n + 1);
 
   /* the number of points needed to reach the desired accuracy */
-  fail = Unmark(err)*nregions;
+  fail = Unmark(err)*nregions_;
 
   if( Marked(err) ) {
-    if( VERBOSE ) Print("\nNot enough samples left for final integration.");
+    if( VERBOSE ) Print("\nNot enough samples left for main integration.");
     for( comp = 0; comp < ncomp_; ++comp )
       prob[comp] = -999;
     weight = samples_[0].weight;
-    nregions_ = nregions;
   }
   else {
     bool can_adjust = (key3 == 1 && samples_[1].sampler != SampleRule &&
@@ -188,9 +192,9 @@ static int Integrate(creal epsrel, creal epsabs,
 
     if( VERBOSE ) {
       char s[128];
-      sprintf(s, "\nFinal integration on " COUNT
+      sprintf(s, "\nMain integration on " COUNT
         " regions with " NUMBER " samples per region.",
-        nregions, samples_[1].neff);
+        nregions_, samples_[1].neff);
       Print(s);
     }
 
@@ -198,10 +202,11 @@ static int Integrate(creal epsrel, creal epsabs,
     ResClear(error);
     ResClear(prob);
 
-    nlimit = maxeval - nregions*samples_[1].n;
-    df = nregions_ = 0;
+    nlimit = maxeval - nregions_*samples_[1].n;
+    df = 0;
 
-    for( region = anchor.next; region; region = region->next ) {
+    for( iregion = 0; iregion < nregions_; ++iregion ) {
+      Region *region = &region_[iregion];
       char s[64*NDIM + 256*NCOMP], *p = s;
       int todo;
 
@@ -209,11 +214,9 @@ refine:
       phase_ = 2;
       samples_[1].sampler(&samples_[1], region->bounds, region->vol);
 
-      if( can_adjust ) {
-        --nregions;
+      if( can_adjust )
         for( comp = 0; comp < ncomp_; ++comp )
           totals[comp].spreadsq -= Sq(region->result[comp].spread);
-      }
 
       nlimit += samples_[1].n;
       todo = 0;
@@ -237,22 +240,23 @@ refine:
                            EPS*Sq(avg2)) ) {
             if( key3 && diffsq > tot->mindevsq ) {
               if( key3 == 1 ) {
-                const Region *next = region->next;
+                ccount xregion = nregions_;
 
                 if( VERBOSE > 2 ) Print("\nSplit");
 
                 phase_ = 1;
-                Explore(region, &samples_[1], POSTDEPTH, 2);
+                Explore(iregion, &samples_[1], POSTDEPTH, 2);
 
                 if( can_adjust ) {
                   number nnew;
-                  Region *child;
+                  count ireg, xreg;
 
-                  for( child = region; child != next; child = child->next ) {
+                  for( ireg = iregion, xreg = xregion;
+                       ireg < nregions_; ireg = xreg++ ) {
+                    cResult *result = region_[ireg].result;
                     count c;
                     for( c = 0; c < ncomp_; ++c )
-                      totals[c].spreadsq += Sq(child->result[c].spread);
-                    ++nregions;
+                      totals[c].spreadsq += Sq(result[c].spread);
                   }
 
                   nnew = (tot->spreadsq/Sq(MARKMASK) > tot->maxerrsq) ?
@@ -260,8 +264,8 @@ refine:
                     (number)ceil(sqrt(tot->spreadsq/tot->maxerrsq));
                   if( nnew > nwant + nwant/64 ) {
                     ccount err = SamplesLookup(&samples_[1], key2, nnew,
-                      (maxeval - neval_)/nregions + 1, samples_[1].n);
-                    fail += Unmark(err)*nregions;
+                      (maxeval - neval_)/nregions_ + 1, samples_[1].n);
+                    fail += Unmark(err)*nregions_;
                     nwant = nnew;
                     SamplesFree(&samples_[1]);
                     SamplesAlloc(&samples_[1]);
@@ -273,7 +277,7 @@ refine:
                       char s[128];
                       sprintf(s, "Sampling remaining " COUNT
                         " regions with " NUMBER " points per region.",
-                        nregions, samples_[1].neff);
+                        nregions_, samples_[1].neff);
                       Print(s);
                     }
                   }
@@ -296,7 +300,7 @@ refine:
 
       switch( todo ) {
       case 1:	/* get spread right */
-        Explore(region, &samples_[1], 0, 2);
+        Explore(iregion, &samples_[1], 0, 2);
         break;
 
       case 3:	/* sample region again with more points */
@@ -307,13 +311,12 @@ refine:
         }
         phase_ = 3;
         samples_[2].sampler(&samples_[2], region->bounds, region->vol);
-        Explore(region, &samples_[2], 0, 2);
+        Explore(iregion, &samples_[2], 0, 2);
         ++region->depth;	/* misused for df here */
         ++df;
       }
 
       ++region->depth;	/* misused for df here */
-      ++nregions_;
 
       if( VERBOSE > 2 ) {
         for( dim = 0; dim < ndim_; ++dim ) {
@@ -408,7 +411,8 @@ refine:
   if( REGIONS ) {
     MLPutFunction(stdlink, "List", 2);
     MLPutFunction(stdlink, "List", nregions_);
-    for( region = anchor.next; region; region = region->next ) {
+    for( iregion = 0; iregion < nregions_; ++iregion ) {
+      Region *region = &region_[iregion];
       cBounds *b = region->bounds;
       real lower[NDIM], upper[NDIM];
 
@@ -434,9 +438,7 @@ refine:
   }
 #endif
 
-#ifdef MLVERSION
 abort:
-#endif
 
   SamplesFree(&samples_[2]);
   SamplesFree(&samples_[1]);
@@ -446,11 +448,7 @@ abort:
   RuleFree(&rule9_);
   RuleFree(&rule7_);
 
-  for( region = anchor.next; region; ) {
-    Region *next = region->next;
-    free(region);
-    region = next;
-  }
+  free(region_);
 
   return fail;
 }

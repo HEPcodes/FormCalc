@@ -2,13 +2,13 @@
 	common.c
 		includes most of the modules
 		this file is part of Divonne
-		last modified 14 Feb 05 th
+		last modified 5 May 09 th
 */
 
 
-static void Explore(void *voidregion, cSamples *samples, cint depth, cint flags);
+static bool Explore(count iregion, cSamples *samples, cint depth, cint flags);
 
-static void Split(void *voidregion, int depth);
+static void Split(count iregion, int depth);
 
 #include "Random.c"
 #include "ChiSquare.c"

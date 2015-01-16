@@ -4,7 +4,7 @@
 		program) rather than deliver NaNs
 		necessary only for g77/gfortran
 		this file is part of FormCalc
-		last modified 26 Feb 08 th
+		last modified 12 Dec 08 th
 */
 
 
@@ -14,6 +14,7 @@
 #if __GLIBC_PREREQ(2,2)
 #define _GNU_SOURCE
 #include <fenv.h>
+int feenableexcept(int excepts);
 #endif
 #endif
 

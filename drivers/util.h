@@ -1,7 +1,7 @@
 * util.h
 * prototypes for the functions in util.a
 * this file is part of FormCalc
-* last modified 30 Apr 08 th
+* last modified 23 Sep 08 th
 
 
 	double precision ThreeMom
@@ -16,13 +16,18 @@
 	external SxS, SeS
 	external VxS, VeS, BxS, BeS
 
-#ifdef LEGS
+#ifndef LEGS
+#define LEGS 1
+#endif
+
 	double complex vec(2,2,8,0:LEGS)
 	common /vectors/ vec
 
+	double complex kcomp(32,0:LEGS)
+	equivalence (vec, kcomp)
+
 	double precision momspec(16,LEGS)
 	common /momenta/ momspec
-#endif
 
 
 #ifndef SPEC_M
@@ -53,7 +58,8 @@
 #define Polar(r,theta) r*exp(cI*degree*theta)
 #define Sq(c) DBLE((c)*DCONJG(c))
 
-#define WARN print *,
+#define Error(msg) call m_(fail, __LINE__, __FILE__, msg)
+#define Warning(msg) call m_(0, 0, __FILE__, msg)
 #define INFO print *,
 #define DEB print *,
 

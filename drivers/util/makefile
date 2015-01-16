@@ -46,6 +46,8 @@ CUBA := $(VEGAS_C) $(SUAVE_C) $(DIVONNE_C) $(CUHRE_C)
 OBJS := \
   $(system)/logfile.o \
   $(system)/setfpu.o \
+  $(system)/Error.o \
+  $(system)/fortranflush.o \
   $(kin)/ThreeMom.o \
   $(kin)/VecSet.o \
   $(kin)/Split.o \

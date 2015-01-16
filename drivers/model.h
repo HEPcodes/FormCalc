@@ -1,7 +1,7 @@
 * model.h
 * common blocks for the model parameters
 * this file is part of FormCalc
-* last modified 19 May 08 th
+* last modified 31 Jul 08 th
 
 
 	double precision pi, degree, sqrt2, hbar_c2
@@ -87,7 +87,8 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 	double complex USf(2,2,4,3), UCSf(3,4,2:4,3), UUSf(3,4,2:4,3)
 	double complex XHiggs(3,3,2)
 	double complex Af(2:4,3,3), Xf(2:4,3,3)
-	double complex Atau, At, Ab, MUE, M_1, M_2, M_3, SqrtEGl
+	double complex Atau, At, Ab, MUE
+	double complex Mino1, Mino2, Mino3, SqrtEGl
 	double precision MCha(2), MCha2(2), MNeu(4), MNeu2(4)
 	double precision MSS(2,2:4,3), MSS2(2,2:4,3), DSf(2,4)
 	double precision MSf(2,4,3), MSf2(2,4,3), MSusy, MGl, MGl2
@@ -101,7 +102,8 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 	common /mssm_para/ USf, UCSf, UUSf
 	common /mssm_para/ XHiggs
 	common /mssm_para/ Af, Xf
-	common /mssm_para/ Atau, At, Ab, MUE, M_1, M_2, M_3, SqrtEGl
+	common /mssm_para/ Atau, At, Ab, MUE
+	common /mssm_para/ Mino1, Mino2, Mino3, SqrtEGl
 	common /mssm_para/ MCha, MCha2, MNeu, MNeu2
 	common /mssm_para/ MSS, MSS2, DSf
 	common /mssm_para/ MSf, MSf2, MSusy, MGl, MGl2
@@ -110,6 +112,22 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 	common /mssm_para/ CA, SA, CA2, SA2, C2A, S2A
 	common /mssm_para/ CAB, SAB, CBA, SBA
 	common /mssm_para/ mssm_digest
+
+#ifndef USfC
+#define USfC(i,j,t,g) DCONJG(USf(i,j,t,g))
+#define UCSfC(i,j,t,g) DCONJG(UCSf(i,j,t,g))
+#define UUSfC(i,j,t,g) DCONJG(UUSf(i,j,t,g))
+#define USf2(i,j,t,g) DBLE(UCSf(i,j,t,g))
+#define VChaC(i,j) DCONJG(VCha(i,j))
+#define UChaC(i,j) DCONJG(UCha(i,j))
+#define ZNeuC(i,j) DCONJG(ZNeu(i,j))
+#define UHiggsC(i,j) DCONJG(UHiggs(i,j))
+#define ZHiggsC(i,j) DCONJG(ZHiggs(i,j))
+#define AfC(t,g1,g2) DCONJG(Af(t,g1,g2))
+#define Mino3C DCONJG(Mino3)
+#define MUEC DCONJG(MUE)
+#define SqrtEGlC DCONJG(SqrtEGl)
+#endif
 
 	double precision Mh0, Mh02, MHH, MHH2, MA0, MA02, MHp, MHp2
 	equivalence (MHiggs(1), Mh0), (MHiggs2(1), Mh02)
@@ -147,172 +165,142 @@ c	parameter (Alfa = sqrt2/pi*GF*MW2*SW2, Alfa2 = Alfa**2)
 	equivalence (MUE, ReImMUE)
 	equivalence (ReImMUE(1), ReMUE), (ReImMUE(2), ImMUE)
 
-	double precision ReImM_1(2), ReM_1, ImM_1
-	equivalence (M_1, ReImM_1)
-	equivalence (ReImM_1(1), ReM_1), (ReImM_1(2), ImM_1)
+	double precision ReImMino1(2), ReMino1, ImMino1
+	double precision M_1, ReM_1, ImM_1
+	equivalence (Mino1, M_1, ReImMino1)
+	equivalence (ReImMino1(1), ReMino1, ReM_1)
+	equivalence (ReImMino1(2), ImMino1, ImM_1)
 
-	double precision ReImM_2(2), ReM_2, ImM_2
-	equivalence (M_2, ReImM_2)
-	equivalence (ReImM_2(1), ReM_2), (ReImM_2(2), ImM_2)
+	double precision ReImMino2(2), ReMino2, ImMino2
+	double precision M_2, ReM_2, ImM_2
+	equivalence (Mino2, M_2, ReImMino2)
+	equivalence (ReImMino2(1), ReMino2, ReM_2)
+	equivalence (ReImMino2(2), ImMino2, ImM_2)
 
-	double precision ReImM_3(2), ReM_3, ImM_3
-	equivalence (M_3, ReImM_3)
-	equivalence (ReImM_3(1), ReM_3), (ReImM_3(2), ImM_3)
-
-#ifndef USfC
-#define USfC(i,j,t,g) DCONJG(USf(i,j,t,g))
-#define UCSfC(i,j,t,g) DCONJG(UCSf(i,j,t,g))
-#define UUSfC(i,j,t,g) DCONJG(UUSf(i,j,t,g))
-#define USf2(i,j,t,g) DBLE(UCSf(i,j,t,g))
-#define VChaC(i,j) DCONJG(VCha(i,j))
-#define UChaC(i,j) DCONJG(UCha(i,j))
-#define ZNeuC(i,j) DCONJG(ZNeu(i,j))
-#define UHiggsC(i,j) DCONJG(UHiggs(i,j))
-#define ZHiggsC(i,j) DCONJG(ZHiggs(i,j))
-#define AfC(t,g1,g2) DCONJG(Af(t,g1,g2))
-#define M_3C DCONJG(M_3)
-#define MUEC DCONJG(MUE)
-#define SqrtEGlC DCONJG(SqrtEGl)
-#endif
+	double precision ReImMino3(2), ReMino3, ImMino3
+	double precision M_3, ReM_3, ImM_3
+	equivalence (Mino3, M_3, ReImMino3)
+	equivalence (ReImMino3(1), ReMino3, ReM_3)
+	equivalence (ReImMino3(2), ImMino3, ImM_3)
 
 
 * flavour-violating parameters
 
-	double complex deltaSf(3:4,6,6)
+	double complex deltaSf(6,6,3:4)
 	double complex UASf(6,6,3:4)
 	double precision MASf(6,3:4), MASf2(6,3:4)
 
 	common /fv_para/ UASf, MASf, MASf2, deltaSf
 
-	double complex deltaSf_flat(2*6*6)
+#ifndef UASfC
+#define UASfC(i,j,t) DCONJG(UASf(i,j,t))
+
+#define deltaSf_LL(i,j,t) deltaSf(i,j,t)
+#define deltaSf_LR(i,j,t) deltaSf(i,j+3,t)
+#define deltaSf_RL(i,j,t) deltaSf(j,i+3,t)
+#define deltaSf_RR(i,j,t) deltaSf(i+3,j+3,t)
+
+#define ImdeltaSf_LL(i,j,t) ReImdeltaSf(2,i,j,t)
+#define ImdeltaSf_LR(i,j,t) ReImdeltaSf(2,i,j+3,t)
+#define ImdeltaSf_RL(i,j,t) ReImdeltaSf(2,j,i+3,t)
+#define ImdeltaSf_RR(i,j,t) ReImdeltaSf(2,i+3,j+3,t)
+#endif
+
+	double complex deltaSf_flat(6*6*2)
 	equivalence (deltaSf, deltaSf_flat)
 
-	double precision ReImdeltaSf(2,3:4,6,6)
+	double precision ReImdeltaSf(2,6,6,3:4)
 	equivalence (deltaSf, ReImdeltaSf)
 
 	double complex deltaLLuc, deltaLRuc
-	double complex deltaRLucC, deltaRRuc
-	equivalence (deltaSf(3,1  ,2  ), deltaLLuc)
-	equivalence (deltaSf(3,1  ,2+3), deltaLRuc)
-	equivalence (deltaSf(3,2  ,1+3), deltaRLucC)
-	equivalence (deltaSf(3,1+3,2+3), deltaRRuc)
-
+	double complex deltaRLuc, deltaRRuc
 	double precision RedeltaLLuc, ImdeltaLLuc
 	double precision RedeltaLRuc, ImdeltaLRuc
-	double precision RedeltaRLucC, ImdeltaRLucC
+	double precision RedeltaRLuc, ImdeltaRLuc
 	double precision RedeltaRRuc, ImdeltaRRuc
-	equivalence (ReImdeltaSf(1,3,1  ,2  ), RedeltaLLuc)
-	equivalence (ReImdeltaSf(2,3,1  ,2  ), ImdeltaLLuc)
-	equivalence (ReImdeltaSf(1,3,1  ,2+3), RedeltaLRuc)
-	equivalence (ReImdeltaSf(2,3,1  ,2+3), ImdeltaLRuc)
-	equivalence (ReImdeltaSf(1,3,2  ,1+3), RedeltaRLucC)
-	equivalence (ReImdeltaSf(2,3,2  ,1+3), ImdeltaRLucC)
-	equivalence (ReImdeltaSf(1,3,1+3,2+3), RedeltaRRuc)
-	equivalence (ReImdeltaSf(2,3,1+3,2+3), ImdeltaRRuc)
+	equivalence (  deltaSf_LL(1,2,3), deltaLLuc, RedeltaLLuc)
+	equivalence (ImdeltaSf_LL(1,2,3), ImdeltaLLuc)
+	equivalence (  deltaSf_LR(1,2,3), deltaLRuc, RedeltaLRuc)
+	equivalence (ImdeltaSf_LR(1,2,3), ImdeltaLRuc)
+	equivalence (  deltaSf_RL(1,2,3), deltaRLuc, RedeltaRLuc)
+	equivalence (ImdeltaSf_RL(1,2,3), ImdeltaRLuc)
+	equivalence (  deltaSf_RR(1,2,3), deltaRRuc, RedeltaRRuc)
+	equivalence (ImdeltaSf_RR(1,2,3), ImdeltaRRuc)
 
 	double complex deltaLLct, deltaLRct
-	double complex deltaRLctC, deltaRRct
-	equivalence (deltaSf(3,2  ,3  ), deltaLLct)
-	equivalence (deltaSf(3,2  ,3+3), deltaLRct)
-	equivalence (deltaSf(3,3  ,2+3), deltaRLctC)
-	equivalence (deltaSf(3,2+3,3+3), deltaRRct)
-
+	double complex deltaRLct, deltaRRct
 	double precision RedeltaLLct, ImdeltaLLct
 	double precision RedeltaLRct, ImdeltaLRct
-	double precision RedeltaRLctC, ImdeltaRLctC
+	double precision RedeltaRLct, ImdeltaRLct
 	double precision RedeltaRRct, ImdeltaRRct
-	equivalence (ReImdeltaSf(1,3,2  ,3  ), RedeltaLLct)
-	equivalence (ReImdeltaSf(2,3,2  ,3  ), ImdeltaLLct)
-	equivalence (ReImdeltaSf(1,3,2  ,3+3), RedeltaLRct)
-	equivalence (ReImdeltaSf(2,3,2  ,3+3), ImdeltaLRct)
-	equivalence (ReImdeltaSf(1,3,3  ,2+3), RedeltaRLctC)
-	equivalence (ReImdeltaSf(2,3,3  ,2+3), ImdeltaRLctC)
-	equivalence (ReImdeltaSf(1,3,2+3,3+3), RedeltaRRct)
-	equivalence (ReImdeltaSf(2,3,2+3,3+3), ImdeltaRRct)
+	equivalence (  deltaSf_LL(2,3,3), deltaLLct, RedeltaLLct)
+	equivalence (ImdeltaSf_LL(2,3,3), ImdeltaLLct)
+	equivalence (  deltaSf_LR(2,3,3), deltaLRct, RedeltaLRct)
+	equivalence (ImdeltaSf_LR(2,3,3), ImdeltaLRct)
+	equivalence (  deltaSf_RL(2,3,3), deltaRLct, RedeltaRLct)
+	equivalence (ImdeltaSf_RL(2,3,3), ImdeltaRLct)
+	equivalence (  deltaSf_RR(2,3,3), deltaRRct, RedeltaRRct)
+	equivalence (ImdeltaSf_RR(2,3,3), ImdeltaRRct)
 
 	double complex deltaLLut, deltaLRut
-	double complex deltaRLutC, deltaRRut
-	equivalence (deltaSf(3,1  ,3  ), deltaLLut)
-	equivalence (deltaSf(3,1  ,3+3), deltaLRut)
-	equivalence (deltaSf(3,3  ,1+3), deltaRLutC)
-	equivalence (deltaSf(3,1+3,3+3), deltaRRut)
-
+	double complex deltaRLut, deltaRRut
 	double precision RedeltaLLut, ImdeltaLLut
 	double precision RedeltaLRut, ImdeltaLRut
-	double precision RedeltaRLutC, ImdeltaRLutC
+	double precision RedeltaRLut, ImdeltaRLut
 	double precision RedeltaRRut, ImdeltaRRut
-	equivalence (ReImdeltaSf(1,3,1  ,3  ), RedeltaLLut)
-	equivalence (ReImdeltaSf(2,3,1  ,3  ), ImdeltaLLut)
-	equivalence (ReImdeltaSf(1,3,1  ,3+3), RedeltaLRut)
-	equivalence (ReImdeltaSf(2,3,1  ,3+3), ImdeltaLRut)
-	equivalence (ReImdeltaSf(1,3,3  ,1+3), RedeltaRLutC)
-	equivalence (ReImdeltaSf(2,3,3  ,1+3), ImdeltaRLutC)
-	equivalence (ReImdeltaSf(1,3,1+3,3+3), RedeltaRRut)
-	equivalence (ReImdeltaSf(2,3,1+3,3+3), ImdeltaRRut)
+	equivalence (  deltaSf_LL(1,3,3), deltaLLut, RedeltaLLut)
+	equivalence (ImdeltaSf_LL(1,3,3), ImdeltaLLut)
+	equivalence (  deltaSf_LR(1,3,3), deltaLRut, RedeltaLRut)
+	equivalence (ImdeltaSf_LR(1,3,3), ImdeltaLRut)
+	equivalence (  deltaSf_RL(1,3,3), deltaRLut, RedeltaRLut)
+	equivalence (ImdeltaSf_RL(1,3,3), ImdeltaRLut)
+	equivalence (  deltaSf_RR(1,3,3), deltaRRut, RedeltaRRut)
+	equivalence (ImdeltaSf_RR(1,3,3), ImdeltaRRut)
 
 	double complex deltaLLds, deltaLRds
-	double complex deltaRLdsC, deltaRRds
-	equivalence (deltaSf(4,1  ,2  ), deltaLLds)
-	equivalence (deltaSf(4,1  ,2+3), deltaLRds)
-	equivalence (deltaSf(4,2  ,1+3), deltaRLdsC)
-	equivalence (deltaSf(4,1+3,2+3), deltaRRds)
-
+	double complex deltaRLds, deltaRRds
 	double precision RedeltaLLds, ImdeltaLLds
 	double precision RedeltaLRds, ImdeltaLRds
-	double precision RedeltaRLdsC, ImdeltaRLdsC
+	double precision RedeltaRLds, ImdeltaRLds
 	double precision RedeltaRRds, ImdeltaRRds
-	equivalence (ReImdeltaSf(1,4,1  ,2  ), RedeltaLLds)
-	equivalence (ReImdeltaSf(2,4,1  ,2  ), ImdeltaLLds)
-	equivalence (ReImdeltaSf(1,4,1  ,2+3), RedeltaLRds)
-	equivalence (ReImdeltaSf(2,4,1  ,2+3), ImdeltaLRds)
-	equivalence (ReImdeltaSf(1,4,2  ,1+3), RedeltaRLdsC)
-	equivalence (ReImdeltaSf(2,4,2  ,1+3), ImdeltaRLdsC)
-	equivalence (ReImdeltaSf(1,4,1+3,2+3), RedeltaRRds)
-	equivalence (ReImdeltaSf(2,4,1+3,2+3), ImdeltaRRds)
+	equivalence (  deltaSf_LL(1,2,4), deltaLLds, RedeltaLLds)
+	equivalence (ImdeltaSf_LL(1,2,4), ImdeltaLLds)
+	equivalence (  deltaSf_LR(1,2,4), deltaLRds, RedeltaLRds)
+	equivalence (ImdeltaSf_LR(1,2,4), ImdeltaLRds)
+	equivalence (  deltaSf_RL(1,2,4), deltaRLds, RedeltaRLds)
+	equivalence (ImdeltaSf_RL(1,2,4), ImdeltaRLds)
+	equivalence (  deltaSf_RR(1,2,4), deltaRRds, RedeltaRRds)
+	equivalence (ImdeltaSf_RR(1,2,4), ImdeltaRRds)
 
 	double complex deltaLLsb, deltaLRsb
-	double complex deltaRLsbC, deltaRRsb
-	equivalence (deltaSf(4,2  ,3  ), deltaLLsb)
-	equivalence (deltaSf(4,2  ,3+3), deltaLRsb)
-	equivalence (deltaSf(4,3  ,2+3), deltaRLsbC)
-	equivalence (deltaSf(4,2+3,3+3), deltaRRsb)
-
+	double complex deltaRLsb, deltaRRsb
 	double precision RedeltaLLsb, ImdeltaLLsb
 	double precision RedeltaLRsb, ImdeltaLRsb
-	double precision RedeltaRLsbC, ImdeltaRLsbC
+	double precision RedeltaRLsb, ImdeltaRLsb
 	double precision RedeltaRRsb, ImdeltaRRsb
-	equivalence (ReImdeltaSf(1,4,2  ,3  ), RedeltaLLsb)
-	equivalence (ReImdeltaSf(2,4,2  ,3  ), ImdeltaLLsb)
-	equivalence (ReImdeltaSf(1,4,2  ,3+3), RedeltaLRsb)
-	equivalence (ReImdeltaSf(2,4,2  ,3+3), ImdeltaLRsb)
-	equivalence (ReImdeltaSf(1,4,3  ,2+3), RedeltaRLsbC)
-	equivalence (ReImdeltaSf(2,4,3  ,2+3), ImdeltaRLsbC)
-	equivalence (ReImdeltaSf(1,4,2+3,3+3), RedeltaRRsb)
-	equivalence (ReImdeltaSf(2,4,2+3,3+3), ImdeltaRRsb)
+	equivalence (  deltaSf_LL(2,3,4), deltaLLsb, RedeltaLLsb)
+	equivalence (ImdeltaSf_LL(2,3,4), ImdeltaLLsb)
+	equivalence (  deltaSf_LR(2,3,4), deltaLRsb, RedeltaLRsb)
+	equivalence (ImdeltaSf_LR(2,3,4), ImdeltaLRsb)
+	equivalence (  deltaSf_RL(2,3,4), deltaRLsb, RedeltaRLsb)
+	equivalence (ImdeltaSf_RL(2,3,4), ImdeltaRLsb)
+	equivalence (  deltaSf_RR(2,3,4), deltaRRsb, RedeltaRRsb)
+	equivalence (ImdeltaSf_RR(2,3,4), ImdeltaRRsb)
 
 	double complex deltaLLdb, deltaLRdb
-	double complex deltaRLdbC, deltaRRdb
-	equivalence (deltaSf(4,1  ,3  ), deltaLLdb)
-	equivalence (deltaSf(4,1  ,3+3), deltaLRdb)
-	equivalence (deltaSf(4,3  ,1+3), deltaRLdbC)
-	equivalence (deltaSf(4,1+3,3+3), deltaRRdb)
-
+	double complex deltaRLdb, deltaRRdb
 	double precision RedeltaLLdb, ImdeltaLLdb
 	double precision RedeltaLRdb, ImdeltaLRdb
-	double precision RedeltaRLdbC, ImdeltaRLdbC
+	double precision RedeltaRLdb, ImdeltaRLdb
 	double precision RedeltaRRdb, ImdeltaRRdb
-	equivalence (ReImdeltaSf(1,4,1  ,3  ), RedeltaLLdb)
-	equivalence (ReImdeltaSf(2,4,1  ,3  ), ImdeltaLLdb)
-	equivalence (ReImdeltaSf(1,4,1  ,3+3), RedeltaLRdb)
-	equivalence (ReImdeltaSf(2,4,1  ,3+3), ImdeltaLRdb)
-	equivalence (ReImdeltaSf(1,4,3  ,1+3), RedeltaRLdbC)
-	equivalence (ReImdeltaSf(2,4,3  ,1+3), ImdeltaRLdbC)
-	equivalence (ReImdeltaSf(1,4,1+3,3+3), RedeltaRRdb)
-	equivalence (ReImdeltaSf(2,4,1+3,3+3), ImdeltaRRdb)
-
-#ifndef UASfC
-#define UASfC(i,j,t) DCONJG(UASf(i,j,t))
-#endif
+	equivalence (  deltaSf_LL(1,3,4), deltaLLdb, RedeltaLLdb)
+	equivalence (ImdeltaSf_LL(1,3,4), ImdeltaLLdb)
+	equivalence (  deltaSf_LR(1,3,4), deltaLRdb, RedeltaLRdb)
+	equivalence (ImdeltaSf_LR(1,3,4), ImdeltaLRdb)
+	equivalence (  deltaSf_RL(1,3,4), deltaRLdb, RedeltaRLdb)
+	equivalence (ImdeltaSf_RL(1,3,4), ImdeltaRLdb)
+	equivalence (  deltaSf_RR(1,3,4), deltaRRdb, RedeltaRRdb)
+	equivalence (ImdeltaSf_RR(1,3,4), ImdeltaRRdb)
 
 
 * THDM parameters

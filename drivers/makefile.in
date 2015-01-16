@@ -1,7 +1,7 @@
 # makefile.in
 # makefile template used by configure
 # this file is part of FormCalc
-# last modified 18 Jan 08 th
+# last modified 23 Apr 09 th
 
 # Note: make permanent changes only in makefile.in,
 # changes in makefile will be overwritten by configure.
@@ -66,7 +66,7 @@ distclean:
 -include $(SRC)/$(MAKECMDGOALS:%$(EXE)=%.d)
 
 %.d: $(SRC)/%.F
-	( grep Mma $< >/dev/null 2>&1 ; \
+	( grep "^[^c*].*Mma" $< >/dev/null 2>&1 ; \
 	  echo "MMA = $$?" ; \
 	  echo "$*$(EXE): $@ $(LIBS)" ; \
 	  $(CPP) -M $(INCLUDE) -x c $< | sed 's/^.*:/$@:/' ) > $@
@@ -75,7 +75,9 @@ ifeq ($(MMA), 0)
 %$(EXE):: $(SRC)/%.F %.d $(SRC)/mktm
 	$(SRC)/mktm $<
 	$(FC) $(FFLAGS) $(DEF)MMA $(DEF)PREFIX=$(PREFIX) -c $<
-	PATH="$(PATH):$(SRC)/tools" CC="$(SRC)/tools/fcc" REALCC="$(CC)" mcc $(CFLAGS) -o $@ $*.tm $*.o $(LIBS) $(STDLIBS) $(LDFLAGS)
+	CC="$(SRC)/tools/fcc" CXX="$(SRC)/tools/fcc" REALCC="$(CC)" \
+	  PATH="$(PATH):$(SRC)/tools" \
+	  mcc $(MCFLAGS) -o $@ $*.tm $*.o $(LIBS) $(STDLIBS) $(LDFLAGS)
 	-$(RM) $*.o $*.tm $*.tm.c
 else
 %$(EXE):: $(SRC)/%.F %.d

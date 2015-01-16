@@ -2,7 +2,7 @@
 # configure script for FormCalc
 # note: has nothing to do with GNU autoconf
 # this file is part of FormCalc
-# last modified 25 Jan 08 th
+# last modified 12 Jun 09 th
 
 
 LC_ALL=C
@@ -123,7 +123,7 @@ for arg in "$@" ; do
   --quad)
 	CONF_QUAD=1 ;;
   --debug)
-	CONF_DEBUG="-O0 -g" ;;
+	CONF_DEBUG="-O0 -g \$(DEF)DEBUG" ;;
   --make*)
 	CONF_MAKEARGS="`expr "$arg" : "--make=\(.*\)"`" ;;
   --help)
@@ -174,18 +174,18 @@ if $CONF_FC --version -c 2>&1 | grep GNU > /dev/null ; then
 else
   CONF_FFLAGS="${FFLAGS-default}"
   [ "$CONF_FFLAGS" = default ] && case "$CONF_FC$CONF_HOSTTYPE" in
-  *pgf77*)
-	CONF_FFLAGS="${CONF_DEBUG--fast -g} -Mextend -g77libs -Ktrap=fp ${CONF_STATIC+-Bstatic}" ;;
+  *pgf*)
+	CONF_FFLAGS="${CONF_DEBUG--fast -g} ${CONF_DEBUG:+-Ktrap=fp} -Mextend -g77libs ${CONF_STATIC+-Bstatic}" ;;
   *ifort*)
-	CONF_FFLAGS="${CONF_DEBUG--O3 -g} -extend_source -warn truncated_source -assume bscc -fpe0 $CONF_STATIC ${CONF_QUAD+-r16 -DDBLE=QEXT -DDIMAG=QIMAG -DDCONJG=QCONJG -DDCMPLX=QCMPLX}" ;;
+	CONF_FFLAGS="${CONF_DEBUG--O3 -g} -extend_source -warn truncated_source -assume bscc $CONF_STATIC ${CONF_QUAD+-r16 -DDBLE=QEXT -DDIMAG=QIMAG -DDCONJG=QCONJG -DDCMPLX=QCMPLX}" ;;
   *alpha)
-	CONF_FFLAGS="-old_f77 ${CONF_DEBUG--fast -g3} -extend_source -warn truncated_source -fpe0 $CONF_STATIC" ;;
+	CONF_FFLAGS="-old_f77 ${CONF_DEBUG--fast -g3} ${CONF_DEBUG:+-fpe0} -extend_source -warn truncated_source $CONF_STATIC" ;;
   *sun* | *sparc*)
-	CONF_FFLAGS="${CONF_DEBUG--fast -g} -e -ftrap=common ${CONF_STATIC+-Bstatic}" ;;
+	CONF_FFLAGS="${CONF_DEBUG--fast -g} ${CONF_DEBUG:+-ftrap=common} -e ${CONF_STATIC+-Bstatic}" ;;
   *hp*)
-	CONF_FFLAGS="${CONF_DEBUG--O2 -g} +es +U77 +FPVZO ${CONF_STATIC+-Wl,-noshared}" ;;
+	CONF_FFLAGS="${CONF_DEBUG--O2 -g} ${CONF_DEBUG:++FPVZO} +es +U77 ${CONF_STATIC+-Wl,-noshared}" ;;
   *xlf*)
-	CONF_FFLAGS="${CONF_DEBUG--O2 -g} -qfixed=132 -qmaxmem=-1 -qextname -qflttrap=enable:invalid:overflow:zerodivide ${CONF_QUAD+-qautodbl=dbl}"
+	CONF_FFLAGS="${CONF_DEBUG--O2 -g} ${CONF_DEBUG:+-qflttrap=enable:invalid:overflow:zerodivide} -qfixed=132 -qmaxmem=-1 -qextname ${CONF_QUAD+-qautodbl=dbl}"
 	CONF_DEF="-WF,-D" ;;
   *)
 	CONF_FFLAGS="${CONF_DEBUG--O -g}" ;;
@@ -239,7 +239,7 @@ else
   CONF_U77EXT=1
 fi
 
-CONF_FFLAGS="$CONF_FFLAGS ${CONF_DEF}U77EXT=$CONF_U77EXT"
+CONF_FFLAGS="$CONF_FFLAGS \$(DEF)U77EXT=$CONF_U77EXT"
 
 
 ## does Fortran append underscores to symbols?
@@ -265,7 +265,7 @@ fi
 case "`uname -m`" in
 *86*)	mach=32
 	case "`file $test.o`" in
-	*64*) mach=64 ;;
+	*x86?64*) mach=64 ;;
 	esac
 	CONF_CFLAGS="$CONF_CFLAGS -m$mach" ;;
 esac
@@ -308,6 +308,7 @@ FFLAGS = $CONF_FFLAGS
 
 CC = $CONF_CC
 CFLAGS = $CONF_CFLAGS
+MCFLAGS = ${CONF_STATIC+-st} \$(CFLAGS)
 
 # --- end defs by configure ---
 

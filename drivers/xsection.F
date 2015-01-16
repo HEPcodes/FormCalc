@@ -1,7 +1,7 @@
 * xsection.F
 * routines to compute the cross-section
 * this file is part of FormCalc
-* last modified 26 May 08 th
+* last modified 2 Dec 08 th
 
 
 #include "process.h"
@@ -77,8 +77,7 @@
 	      endif
 
 	      if( bits .eq. 0 ) then
-	        WARN "Invalid polarization for leg ", Digit(i)
-	        fail = 2
+	        Error("Invalid polarization for leg "/ /Digit(i))
 	        return
 	      endif
 
@@ -133,41 +132,45 @@
 
 #include "xsection.h"
 
-	double precision newmass_in, newmass_out, newscale
-
-	if( newsqrtS .eq. sqrtS ) then
-	  if( btest(flags, BIT_RESET) ) call ModelVarIni(fail, scale)
-	  fail = 2*sqrtSinvalid
-	  return
-	endif
+	double precision oldscale, oldmass_in, oldmass_out
+	integer i
 
 	fail = 0
 	sqrtS = newsqrtS
+	oldscale = max(DBLE(SCALE), 1D0)
 
-1	newscale = max(DBLE(SCALE), 1D0)
-	newmass_in = MASS_IN
-	newmass_out = MASS_OUT
+	if( sqrtSinvalid .eq. 1 .or.
+     &      btest(flags, BIT_RESET) .or.
+     &      abs(oldscale - scale) .gt. 1D-9 ) then
+	  oldmass_in = MASS_IN
+	  oldmass_out = MASS_OUT
 
-	if( abs(scale - newscale) +
-     &      abs(mass_in - newmass_in) +
-     &      abs(mass_out - newmass_out) .gt. 1D-9 ) then
-	  mass_in = newmass_in
-	  mass_out = newmass_out
-	  scale = newscale
-	  call ModelVarIni(fail, scale)
-	  goto 1
+	  do i = 1, 10
+	    call ModelVarIni(fail, oldscale)
+
+	    scale = max(DBLE(SCALE), 1D0)
+	    mass_in = MASS_IN
+	    mass_out = MASS_OUT
+
+	    if( abs(scale - oldscale) +
+     &          abs(mass_in - oldmass_in) +
+     &          abs(mass_out - oldmass_out) .lt. 1D-9 ) goto 1
+
+	    oldscale = scale
+	    oldmass_in = mass_in
+	    oldmass_out = mass_out
+	  enddo
+
+1	  threshold = max(mass_in, mass_out)
+	  sqrtSinvalid = fail
+	  flags = ibset(flags, BIT_RESET)
 	endif
-
-	threshold = max(mass_in, mass_out)
 
 	if( fail .ne. 0 .or. sqrtS .lt. threshold ) then
 	  fail = 1
 	else
 	  call InitialState
-	  flags = ibset(flags, BIT_RESET)
 	endif
-
-	sqrtSinvalid = fail
 	end
 
 
@@ -320,6 +323,8 @@
 	call LumiIni(fail)
 	if( fail .ne. 0 ) goto 999
 
+	call ModelDigest
+
 #define SHOW print 100,
 100	format("|# ", A, "=", F10.4, SP, F10.4, " I")
 
@@ -420,14 +425,14 @@
 	  Var(v) = Lower(v)
 	enddo
 
-999	continue
-
 #ifdef MMA
 	call MmaEndSet
 #else
 103	format("|"/"|"/)
 	print 103
 #endif
+
+999	continue
 	end
 
 
@@ -492,10 +497,10 @@
 	fac = fac/((2*pi)**(3*LEGS_OUT - 4)*2*sqrtS*flux)
 
 	do c = 1, ncomp
-	  if( .not. abs(result(c)) .lt. 1D12 ) then
-	    WARN "Got strange values from SquaredME:"
-	    WARN result
-	    WARN "(Did you compute the colour matrix elements?)"
+	  if( .not. abs(result(c)) .lt. 1D16 ) then
+	    Warning("Got strange values from SquaredME:")
+	    INFO result
+	    INFO "(Did you compute the colour matrix elements?)"
 	    stop
 	  endif
 	  result(c) = result(c)*fac
@@ -621,9 +626,9 @@
 	INFO "fail     =", fail
 
 	if( fail .gt. 0 ) then
-	  WARN "Failed to reach the desired accuracy."
+	  Warning("Failed to reach the desired accuracy")
 	else if( fail .lt. 0 ) then
-	  WARN "Integration error."
+	  Error("Integration error")
 	endif
 
 100	format(I2, G24.15, " +- ", G24.15, "    p = ", F6.3)

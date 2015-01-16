@@ -1,7 +1,7 @@
 * PolarizationSum.frm
 * the FORM part of the PolarizationSum function
 * this file is part of FormCalc
-* last modified 17 Nov 07 th
+* last modified 15 Dec 08 th
 
 
 #procedure PolSum(i, m)
@@ -35,10 +35,10 @@ id E([mu]?) * EC([nu]?) = 1/2*( -d_([mu], [nu])
 #endif
   );
 
-id eT`i'([mu]?, [nu]?) * eTc`i'([rho]?, [sig]?) = 1/2*(
-  d_([mu], [rho])*d_([nu], [sig]) +
-  d_([mu], [sig])*d_([nu], [rho]) -
-  d_([mu], [nu])*d_([rho], [sig]) );
+id eT`i'([mu]?, [nu]?) * eTc`i'([ro]?, [si]?) = 1/2*(
+  d_([mu], [ro])*d_([nu], [si]) +
+  d_([mu], [si])*d_([nu], [ro]) -
+  d_([mu], [nu])*d_([ro], [si]) );
 
 #else
 * massive case
@@ -95,38 +95,70 @@ id k`i' = `k`i'';
 
 .sort
 
+id [p1]?.[p2]? = abbM([p1].[p2], [p1], [p2]);
+
+id 1/[p1]?.[p2]? = 1/abbM([p1].[p2])
 #if "`Scale'" != "1"
-$pow = count_(<k1,1>,...,<k`Legs',1>);
-if( $pow != 0 ) multiply pow(`Scale', $pow/2);
+  * IMOM([p1], [p2])
+#endif
+  ;
+
+id e_([mu]?, [nu]?, [ro]?, [si]?) =
+  abbM(e_([mu], [nu], [ro], [si]), [mu], [nu], [ro], [si]);
+
+id d_([mu]?, [nu]?) = abbM(d_([mu], [nu]), [mu], [nu]);
+
+id [t]?(?a) = abbM([t](?a), ?a);
+
+id [p1]?([mu]?) = abbM([p1]([mu]), [p1]);
+
+repeat;
+  once abbM([x]?, ?a, [mu]?!fixed_, ?b) *
+       abbM([y]?, ?c, [mu]?, ?d) =
+    abbM([x]*[y], ?a, ?b, ?c, ?d) * replace_([mu], DUMMY);
+  also once abbM([x]?, ?a, [mu]?!fixed_, ?b, [mu]?, ?c) =
+    abbM([x], ?a, ?b, ?c) * replace_([mu], DUMMY);
+  sum DUMMY;
+endrepeat;
+
+id abbM([x]?, ?a) = abbM([x])
+#if "`Scale'" != "1"
+  * MOM(?a)
+#endif
+  ;
+
+#if "`Scale'" != "1"
+chainout MOM;
+id MOM([p1]?MOMS) = SCALE;
+id MOM(?a) = 1;
+chainout IMOM;
+id IMOM([p1]?MOMS) = 1/SCALE;
+id IMOM(?a) = 1;
+id SCALE^[x]? = powM(`Scale', [x]/2);
 #endif
 
 #call Square
 
-id [p1]?.[p2]? = abb([p1].[p2]);
-id 1/[p1]?.[p2]? = abb(1/[p1].[p2]);
-id e_([mu]?, [nu]?, [rho]?, [sig]?) = abb(e_([mu], [nu], [rho], [sig]));
-id [t]?(?a) = abb([t](?a));
-
-b abb, `Bracket';
+b abbM, `Bracket';
 .sort
 
-collect Simplify, Simplify;
-normalize Simplify;
+collect FormSimplify, FormSimplify;
+normalize FormSimplify;
 
-#call Factor(Simplify)
-#call InvSimplify(Simplify)
+#call Factor(FormSimplify)
+#call InvSimplify(FormSimplify)
 
-id Simplify(0) = 0;
+id FormSimplify(0) = 0;
 
 .sort
 
-moduleoption polyfun=abb;
+moduleoption polyfun=abbM;
 .sort
 
-normalize abb;
-id abb(1) = 1;
+normalize abbM;
+id abbM(1) = 1;
 
-b abb, `Bracket';
+b abbM, `Bracket';
 print;
 .end
 #endprocedure
@@ -135,17 +167,21 @@ print;
 
 #define Bracket "Den, A0, A00, B0, B1, B00, B11, B001, B111, A0i, B0i, C0i, D0i, E0i, F0i"
 
+i DUMMY;
+cf MOM, IMOM;
+s SCALE;
+set MOMS: k1,...,k`Legs';
+auto s ARG;
+
 s Dminus4;
-i [mu], [nu], [rho], [sig];
+i [mu], [nu], [ro], [si];
 v [p1], [p2];
 s [x], [y];
 t [t];
 
-cf abb, Simplify;
+cf abbM, powM, FormSimplify;
 cf `Bracket';
 t E, EC;
-
-auto s FC;
 
 .global
 

@@ -2,7 +2,7 @@
 * all parameters for the THDM are initialized here
 * this file is part of FormCalc
 * Abdesslam Arhrib, 2 Jun 03
-* last modified 13 May 05 th
+* last modified 1 Aug 08 th
 
 
 * The input parameters for model_thdm are:
@@ -31,22 +31,11 @@
 #define DeltaRho_UPPERBOUND .003D0
 
 
-#define ModelDefaults SMDefaults
 #define ModelConstIni SMConstIni
+#define ModelDigest SMDigest
 #include "model_sm.F"
-#undef ModelDefaults
 #undef ModelConstIni
-
-
-************************************************************************
-
-	subroutine ModelDefaults
-	implicit none
-
-#include "decl.h"
-
-	call SMDefaults
-	end
+#undef ModelDigest
 
 
 ************************************************************************
@@ -70,18 +59,18 @@
 	if( fail .ne. 0 ) return
 
 	TB2 = TB**2
-	SB = TB/sqrt(1 + TB2)
-	CB = SB/TB
-	SB2 = SB**2
-	CB2 = CB**2
-	S2B = 2*SB*CB
-	C2B = CB2 - SB2
+	CB2 = 1/(1 + TB2)
+	SB2 = CB2*TB2
+	CB = sqrt(CB2)
+	SB = CB*TB
+	S2B = 2*TB*CB2
+	C2B = (CB - SB)*(CB + SB)
 
 	SA2 = SA**2
-	CA2 = 1 - SA2
+	CA2 = (1 - SA)*(1 + SA)
 	CA = sqrt(CA2)
 	S2A = 2*SA*CA
-	C2A = CA2 - SA2
+	C2A = (CA - SA)*(CA + SA)
 	SAB = SA*CB + CA*SB
 	CAB = CA*CB - SA*SB
 	SBA = SB*CA - CB*SA
@@ -118,8 +107,7 @@
 
 	if( max(abs(Lambda1), abs(Lambda2), abs(Lambda3),
      &          Lambda4, abs(Lambda5), Lambda6) .gt. 8*pi ) then
-	  WARN "model_thdm: Perturbativity violated"
-	  fail = 4
+	  Error("Perturbativity violated")
 	  return
 	endif
 
@@ -133,16 +121,22 @@
      &                   MHp2/(MHp2 - MHH2)*log(MHp2/MHH2)) )
 
 	  if( DeltaRho .gt. DeltaRho_UPPERBOUND ) then
-	    WARN "model_thdm: DeltaRho = ", DeltaRho,
-     &        " > DeltaRho_UPPERBOUND = ", DeltaRho_UPPERBOUND
-	    fail = 3
+	    Error("DeltaRho > DeltaRho_UPPERBOUND")
 	    return
 	  endif
 	endif
 #endif
+	end
 
-	if( thdm_digest ) return
-	thdm_digest = .TRUE.
+
+************************************************************************
+
+	subroutine ModelDigest
+	implicit none
+
+#include "model.h"
+
+	call SMDigest
 
 	INFO "THDM parameters"
 	INFO "----------------------------"

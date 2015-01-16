@@ -3,7 +3,7 @@
 		explicit representation of external vectors
 		and derived quantities
 		this file is part of FormCalc
-		last modified 7 Dec 07 th
+		last modified 16 Dec 08 th
 *)
 
 
@@ -118,10 +118,10 @@ ToComponents[expr_, pol_List] :=
     h:(SxS | SeS | VxS | VeS | BxS | BeS | Pair | Eps)[__] :> rep[h]
 
 
-vecrule[pol_, {n_}] := {
-  momlist[[n]] -> VecK[n],
-  epslist[[n]] -> VecE[n, pol],
-  epsclist[[n]] -> VecE[n, pol] }
+vecrule[pol_, {n_}] := KinFunc[{
+  k -> VecK[n],
+  e -> VecE[n, pol],
+  ec -> Conjugate[VecE[n, pol]] }]@@ FormKins[[n]]
 
 
 rep @ Pair[A_List, B_List] :=

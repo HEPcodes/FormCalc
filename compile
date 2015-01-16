@@ -1,6 +1,6 @@
 #! /bin/sh
 # compile script for the C programs used by FormCalc
-# last modified 28 Nov 07 th
+# last modified 25 Mar 09 th
 
 # If this compile script doesn't work on your system, check these things:
 #
@@ -53,7 +53,10 @@ if [ -z "$DEST" ] ; then
   DEST="$1"
 fi
 
-[ "$DEST" = Linux-x86-64 ] && CFLAGS="$CFLAGS -m64"
+case "$DEST" in
+Linux)		CFLAGS="$CFLAGS -m32" ;;
+Linux-x86-64)	CFLAGS="$CFLAGS -m64" ;;
+esac
 
 [ -d "$DEST" ] || mkdir "$DEST" || {
   echo "Cannot create directory $DEST"
@@ -62,8 +65,12 @@ fi
 
 echo "Compiling for system type $DEST"
 
+case "$CFLAGS" in
+*-static*) MCFLAGS="$MCFLAGS -st" ;;
+esac
+
 fcc="$SRC/drivers/tools/fcc"
-mcc="CC=\"$fcc\" CXX=\"$fcc\" PATH=\""'$$PATH'":$SRC/drivers/tools\" $MCC $CFLAGS"
+mcc="CC=\"$fcc\" CXX=\"$fcc\" PATH=\""'$$PATH'":$SRC/drivers/tools\" $MCC $MCFLAGS $CFLAGS"
 
 cc="$CC $CFLAGS"
 

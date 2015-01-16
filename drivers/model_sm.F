@@ -1,7 +1,7 @@
 * model_sm.F
 * all parameters for the Standard Model are initialized here
 * this file is part of FormCalc
-* last modified 29 Apr 08 th
+* last modified 1 Jun 09 th
 
 
 	subroutine ModelDefaults
@@ -76,6 +76,9 @@
 	Mf2(2,3) = ML2
 	Mf2(3,3) = MT2
 	Mf2(4,3) = MB2
+
+	EL = sqrt(4*pi*Alfa)
+	SW = sqrt(SW2)
 	end
 
 
@@ -87,13 +90,9 @@
 
 #include "decl.h"
 
-	EL = sqrt(4*pi*Alfa)
-	SW = sqrt(SW2)
+	fail = 0
 
 	MH2 = MH**2
-
-	sm_digest = .FALSE.
-	fail = 0
 	end
 
 
@@ -109,13 +108,20 @@
 	double precision alphasPDF
 	external alphasPDF
 
+	fail = 0
+
 	Alfas = alphasPDF(scale)
 	Alfas2 = Alfas**2
 	GS = sqrt(4*pi*Alfas)
+	end
 
-	fail = 0
-	if( sm_digest ) return
-	sm_digest = .TRUE.
+
+************************************************************************
+
+	subroutine ModelDigest
+	implicit none
+
+#include "decl.h"
 
 	INFO "============================"
 	INFO "SM parameters"
@@ -212,10 +218,9 @@
 	parameter (delta43_21 =  .039058962962962962963D0)
 
 	double precision lam5
-	parameter (lam5 = 199D-3)
+	parameter (lam5 = 204D-3)
 * The 5-flavour scale lam5 is chosen to reproduce the
-* "world average" alpha_s(MZ) = .1172.  The 1-sigma interval
-* on alpha_s(MZ) corresponds to 177 MeV < lam5 < 223 MeV.
+* "world average" alpha_s(MZ) = .1176.
 
 	double precision beta0, beta1, beta2, lam, t, logt, c
 

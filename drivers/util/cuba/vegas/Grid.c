@@ -2,14 +2,19 @@
 	Grid.c
 		utility functions for the Vegas grid
 		this file is part of Vegas
-		last modified 2 Mar 06 th
+		last modified 29 May 09 th
 */
 
 
 static inline void GetGrid(Grid *grid)
 {
   count bin, dim;
-  unsigned const int slot = EXPORT(vegasgridno) - 1;
+  unsigned const int slot = abs(EXPORT(vegasgridno)) - 1;
+
+  if( EXPORT(vegasgridno) < 0 ) {
+    EXPORT(vegasgridno) = -EXPORT(vegasgridno);
+    if( slot < MAXGRIDS ) griddim_[slot] = 0;
+  }
 
   if( slot < MAXGRIDS && gridptr_[slot] ) {
     if( griddim_[slot] == ndim_ ) {
@@ -41,9 +46,9 @@ static inline void PutGrid(Grid *grid)
 
 /*********************************************************************/
 
-static void RefineGrid(Grid grid, Grid margsum)
+static void RefineGrid(Grid grid, Grid margsum, cint flags)
 {
-  real avgperbin, thisbin;
+  real avgperbin, thisbin, newcur, delta;
   Grid imp, newgrid;
   int bin, newbin;
 
@@ -75,7 +80,7 @@ static void RefineGrid(Grid grid, Grid margsum)
   avgperbin /= NBINS;
 
   /* redefine the size of each bin */
-  cur = 0;
+  cur = newcur = 0;
   thisbin = 0;
   bin = -1;
   for( newbin = 0; newbin < NBINS - 1; ++newbin ) {
@@ -85,8 +90,11 @@ static void RefineGrid(Grid grid, Grid margsum)
       cur = grid[bin];
     }
     thisbin -= avgperbin;
-    newgrid[newbin] = cur - 2*(cur - prev)*thisbin/
-      (imp[bin] + imp[IDim(bin - 1)]);
+    delta = (cur - prev)*thisbin;
+    newgrid[newbin] = SHARPEDGES ?
+      cur - delta/imp[bin] :
+      (newcur = Max(newcur,
+        cur - 2*delta/(imp[bin] + imp[IDim(bin - 1)])));
   }
   Copy(grid, newgrid, NBINS - 1);
   grid[NBINS - 1] = 1;

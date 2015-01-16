@@ -3,7 +3,7 @@
 		replaces all real constants by Fortran-style double
 		precision numbers (1.234D0) in Mma FortranForm output
 		this file is part of FormCalc
-		last modified 6 Jun 05 th
+		last modified 20 Nov 08 th
 */
 
 #include <stdio.h>
@@ -46,7 +46,10 @@ int main()
       if( *(pos - 1) >= 'A' ) continue;  /* belongs to variable name */
 
       term = *si;
-      if( term == '.' ) si += strspn(++si, digits);
+      if( term == '.' ) {
+        if( *++si >= 'A' ) continue;
+        si += strspn(si, digits);
+      }
 
       if( (*si++ & 0xde) != 'D' ) {
         if( term != '.' ) continue;  /* is an integer */
@@ -66,5 +69,7 @@ int main()
     }
     puts(s);
   } /* eof */
+
+  return 0;
 }
 

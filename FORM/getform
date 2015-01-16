@@ -1,7 +1,7 @@
 #! /bin/sh
 # download the FORM executables
 # invoke as "getform t" to download tform instead of form
-# last modified 23 Nov 07 th
+# last modified 20 Mar 09 th
 
 download()
 {
@@ -12,7 +12,9 @@ download()
 }
 
 download linux32/$1form.gz form_Linux
-download opteron/$1formi.gz form_Linux-x86-64
-download ppc/$1form.gz form_Darwin
+download opteron/$1form.gz form_Linux-x86-64
+download ppc/$1form.gz form_MacOSX
+ln -s form_MacOSX form_Darwin
 download apentium/$1form.gz form_MacOSX-x86
+ln -s form_MacOSX-x86 form_MacOSX-x86-64
 

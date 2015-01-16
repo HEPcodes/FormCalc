@@ -1,9 +1,12 @@
 /*
 	stddecl.h
 		Type declarations common to all Cuba routines
-		last modified 2 Mar 06 th
+		last modified 29 May 09 th
 */
 
+
+#ifndef __stddecl_h__
+#define __stddecl_h__
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -31,6 +34,7 @@
 #define VERBOSE (flags & 3)
 #define LAST (flags & 4)
 #define PSEUDORNG (flags & 8)
+#define SHARPEDGES (flags & 16)
 #define REGIONS (flags & 256)
 
 #define INFTY DBL_MAX
@@ -56,19 +60,22 @@
 
 #define MaxErr(avg) Max(epsrel*fabs(avg), epsabs)
 
-
 #ifdef __cplusplus
-#define Malloc(p, n) (*(void **)&p = malloc(n))
+#define mallocset(p, n) (*(void **)&p = malloc(n))
+#define reallocset(p, n) (*(void **)&p = realloc(p, n))
 #else
-#define Malloc(p, n) (p = malloc(n))
+#define mallocset(p, n) (p = malloc(n))
+#define reallocset(p, n) (p = realloc(p, n))
 #endif
 
-#define MemAlloc(p, n) if( Malloc(p, n) == NULL ) { \
+#define ChkAlloc(r) if( r == NULL ) { \
   fprintf(stderr, "Out of memory in " __FILE__ " line %d.\n", __LINE__); \
   exit(1); \
 }
 
 #define Alloc(p, n) MemAlloc(p, (n)*sizeof(*p))
+#define MemAlloc(p, n) ChkAlloc(mallocset(p, n))
+#define ReAlloc(p, n) ChkAlloc(reallocset(p, n))
 
 
 #ifdef __cplusplus
@@ -115,10 +122,13 @@ typedef const real creal;
 
 
 #ifdef UNDERSCORE
-#define EXPORT(s) PREFIX(s##_)
+#define SUFFIX(s) s##_
 #else
-#define EXPORT(s) PREFIX(s)
+#define SUFFIX(s) s
 #endif
+
+#define EXPORT(s) EXPORT_(PREFIX(s))
+#define EXPORT_(s) SUFFIX(s)
 
 
 static inline real Sq(creal x)
@@ -163,4 +173,6 @@ static inline real Weight(creal sum, creal sqsum, cnumber n)
 
 /* abs(a) + (a == 0) */
 #define Abs1(a) (((a) ^ NegQ(a)) - NegQ((a) - 1))
+
+#endif
 

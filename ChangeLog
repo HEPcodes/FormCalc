@@ -1,3 +1,305 @@
+12 Jun 09:
+
+- Added the possibility to pass options to InsertFields to
+  SelfEnergy, DSelfEnergy, MassRC, FieldRC, TadpoleRC, WidthRC.
+
+
+9 Jun 09:
+
+- Cleaned up some context associations for compatibility with
+  the LoopTools MathLink executable.
+
+- Fixed cancellation of factors involving gauge parameters after
+  partial fractioning of denominators.
+
+
+3 Jun 09:
+
+- Fixed minor bits in FORM procedure "Square" for Mac FORM.
+
+
+28 May 09:
+
+- Taken into account `hidden' index dependence through SumOvers and
+  lower-level DoLoops in Hoist ("Expensive" option of WriteExpr).
+
+
+26 May 09:
+
+- Fixed quoting problem with explicit Fierz ordering in
+  CalcFeynAmp.frm.
+
+
+23 Apr 09:
+
+- Added the RealArgs *function* for fine-tuning the conversion of
+  integers into reals for WriteExpr.  Cases in point: Acut, Bcut, etc.
+
+
+22 Apr 09:
+
+- Added the Expensive option to PrepareExpr.
+
+
+1 Apr 09:
+
+- Added Mma{Get,Put}{Real,Complex}List functions to mktm.
+
+
+26 Mar 09:
+
+- (Hopefully) fixed the spurious detection of 32-bit systems
+  as 64-bit ones in configure.
+
+
+25 Mar 09:
+
+- Replaced MLReleaseString by MLDisownString in ReadForm.tm,
+  the former being included in the MathLink of Mathematica
+  versions 6 and up only.
+
+
+20 Mar 09:
+
+- Added the Sq[...] =. definition.
+
+
+15 Mar 09:
+
+- Added the $LongitudinalSE variable with which the longitudinal
+  part of the self-energy can be selected.
+
+
+12 Mar 09:
+
+- Extended UVDivergentPart to recursive definitions of RCs
+  (this holds for the currently defined RenConst).
+
+
+11 Mar 09:
+
+- Added $LongitudinalSE for taking the longitudinal part of the
+  self-energies.
+
+
+5 Mar 09:
+
+- Re-enabled pipe communication for Mac OS and fixed up some
+  details in the handshake.  Works for most cases now.
+
+- Patched a couple of warnings in ReadForm.tm.
+
+
+23 Feb 09:
+
+- Fixed problem with negative powers of functions inside
+  fermion chains in FORM.
+
+
+20 Feb 09:
+
+- Added ZapFunction option to preserve symbols across
+  ClearProcess.
+
+- Added workaround for MacOS FORM (disabled pipe communication).
+
+
+11 Feb 09:
+
+- Fixed bug in categorization of abbreviations (problem for
+  spin vector s(i) only).
+
+
+28 Jan 09:
+
+- Corrected signs in charge conjugation of Dirac chains during
+  Fierzing, must be same as in HelicityME.
+
+- Added nicer formatting for Dirac and Weyl chains.
+
+
+22 Jan 09:
+
+- Fixed problem in HelicityME: negative chiralities were
+  flipped wrongly in ConjChain (e.g. -7 xor 1 = -8, not -6).
+
+- Lorentz indices arrived in Mathematica as Lor[2$] instead
+  of Lor[2] due to a mistake in the character handling.
+
+
+13 Jan 09:
+
+- Fixed compile and fcc for Mathematica 7.
+
+
+7 Jan 09:
+
+- DiracChain[om, mu, nu, ...] -> DiracChain[-om, mu, nu, ...]
+  if Antisymmetrize -> True.
+
+
+2 Jan 09:
+
+- Added FileIncludes, SubroutineIncludes, FilePrefix, and
+  FileHeader options to both WriteSquaredME and WriteRenConst.
+
+
+20 Dec 08:
+
+- Again changed _ substitute to $$ (not ß), because of problems
+  w/character encoding on Mac.
+
+- Added Abbreviate[expr, patt] functionality.
+
+
+17 Dec 08:
+
+- Internal "escape character" for _ in FORM output is now ß
+  (_ + 128).  This avoids clashes with Mathematica's auto-generated
+  patterns, e.g. i_ becomes i$_ if definition is created from inside
+  a function.
+
+- Replaced the one remaining hel by helM in HelicityME.frm.
+
+
+16 Dec 08:
+
+- Fixed (trivial) bug in VecSet.m.
+
+
+15 Dec 08:
+
+- Introduced ...M notation for symbols shared between FORM
+  and Mathematica to minimize symbol collisions.
+
+
+12 Dec 08:
+
+- Fixed race condition in threads handling pipe communication.
+
+- Added Antisymmetrize option of DeclareProcess.
+
+
+10 Dec 08:
+
+- Added the TreeSquare option of WriteSquaredME.
+
+- Fixed two bugs in the pipe code of ReadForm.
+
+
+3 Dec 08:
+
+- Hopefully final correction of signs in fermion-flip rule in
+  HelicityME.frm.
+
+- Moved test of BIT_RESET in SetEnergy such that ModelVarIni is
+  not called every time.
+
+- Reformulated AbbrScale-related code without $-variables.
+
+- Added fortranflush function to util/system/ and mktm for
+  compatibility with gfortran.
+
+
+27 Nov 08:
+
+- Replaced popen call with explicit pipe & fork.  Now sending an
+  explicit kill to the FORM process before wait, thus reliably
+  handling aborts.
+
+
+25 Nov 08:
+
+- Fixed problem with Majorana spinors and HelicityME.
+  Also e_ were wrongly abbreviated inside fme.
+
+
+20 Nov 08:
+
+- Extended IndexIf for the "else if" cases, i.e.
+  IndexIf[c1, a1, c2, a2, b] corresponds to
+	if( c1 ) then
+	  a1
+	else if( c2 ) then
+	  a2
+	else
+	  b
+	endif
+
+
+17 Nov 08:
+
+- Added the Keep function.
+
+
+14 Nov 08:
+
+- Renamed InsertAt to InsertionPolicy and added integer values,
+  specifying a LeafCount above which the insertion is postponed
+  until the amplitude comes back from FORM.
+
+- Fixed problem with FindRenConst: expansion of RCs has to
+  happen during the search process, not at the end.
+
+
+13 Nov 08:
+
+- Moved filling-in of insertions completely to replace_.
+
+
+11 Nov 08:
+
+- Added explicit variable declaration to pipe I/O, to
+  safeguard for user definitions and other hiccups.
+
+
+31 Oct 08:
+
+- Fixed bug in RegisterAbbr (ferm set without scale argument).
+
+
+30 Oct 08:
+
+- Made DeclareProcess an independent and public function.
+  Useful e.g. if one wants to compute HelicityME without
+  going through CalcFeynAmp.
+
+
+29 Oct 08:
+
+- Accounted for the antisymmetrization also in HelicityME.
+  Moved much of the HelicityME code to FORM (HelicityME.frm)
+  in the process.  Gained some efficiency on bracketing out
+  helicities cleverly for massless projectors.
+
+
+15 Oct 08:
+
+- Added alternate-channel communication in ReadForm.
+  Amplitudes are sent to Mathematica for abbreviationing
+  (usually) after generic simplification.
+
+- DiracChains are now antisymmetrized, i.e. DiracChain[1, mu, nu]
+  is Sigma[mu, nu].
+
+
+31 Jul 08:
+
+- Introduced Error(...) and Warning(...) together with Error.F
+  in a FeynHiggs-like error-reporting system, i.e. suppresses errors
+  repeating fast.
+
+- Separated subroutine HiggsMasses in model_mssm.F into
+  HiggsMassesConst and HiggsMassesVar.
+
+
+30 Jul 08:
+
+- Eliminated a few bugs from the NMFV initialization in model_mssm.F.
+
+- Added RegisterAbbr function similar to RegisterSubexpr.
+
+
 29 May 08:
 
 - Added FORCE_ONSHELL to lumi_parton.F, to force a decaying

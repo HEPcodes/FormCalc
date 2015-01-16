@@ -1,7 +1,7 @@
 * run.F
 * defines parameter settings for one run, then includes main.F
 * this file is part of FormCalc
-* last modified 8 Nov 07 th
+* last modified 1 Aug 08 th
 
 
 * Whether to run in debugging mode
@@ -16,8 +16,9 @@ c#define MUDIM 1D100
 c#define LAMBDA 1D10
 
 * The following sets all ren. constants to zero for debugging
+* or if calculating a tree-level reaction.
 
-c#define CalcRenConst ZeroRenConst
+c#define NO_RENCONST
 
 
 * The model initialization code is included here.  Options for the
@@ -33,7 +34,7 @@ c#define HIGGS_MASSES TREE
 c#define HIGGS_MASSES SIMPLE
 c#define HIGGS_MASSES FEYNHIGGS
 c#define SM_HIGGS
-c#define FLAVOUR_VIOLATION
+c#define NMFV
 c#define NO_EXCLUSION_LIMITS
 c#define NO_GUT_RELATION
 
@@ -43,32 +44,6 @@ c#define MODEL_TYPE_II
 c#define NO_EXCLUSION_LIMITS
 
 #define MODEL "model_mssm.F"
-
-
-* The DECLn are declaration statements for local variables needed
-* by the LOOPn statements (see below).  Parameters declared in
-* model.h need not be re-declared here.
-
-#define DECL1
-#define DECL2
-#define DECL3
-#define DECL4
-#define DECL5
-#define DECL6
-#define DECL7
-#define DECL8
-#define DECL9
-#define DECL10
-#define DECL11
-#define DECL12
-#define DECL13
-#define DECL14
-#define DECL15
-#define DECL16
-#define DECL17
-#define DECL18
-#define DECL19
-#define DECL20
 
 
 * The LOOPn set up the model parameters for the calculation, either
@@ -81,7 +56,7 @@ c#define NO_EXCLUSION_LIMITS
 #define LOOP2 MA0 = 700
 #define LOOP3 MSusy = 1000
 #define LOOP4 MUE = -1000
-#define LOOP5 M_2 = 100
+#define LOOP5 Mino2 = 100
 #define LOOP6 At = MSusy
 #define LOOP7 Ab = At
 #define LOOP8 Atau = At

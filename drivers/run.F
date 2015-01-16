@@ -1,7 +1,7 @@
 * run.F
 * defines parameter settings for one run, then includes main.F
 * this file is part of FormCalc
-* last modified 26 May 08 th
+* last modified 1 Aug 08 th
 
 
 * Whether to run in debugging mode
@@ -34,7 +34,7 @@ c#define HIGGS_MASSES TREE
 c#define HIGGS_MASSES SIMPLE
 c#define HIGGS_MASSES FEYNHIGGS
 c#define SM_HIGGS
-c#define FLAVOUR_VIOLATION
+c#define NMFV
 c#define NO_EXCLUSION_LIMITS
 c#define NO_GUT_RELATION
 
@@ -58,7 +58,7 @@ c#define NO_EXCLUSION_LIMITS
 #define LOOP4 MA0 = 500
 #define LOOP5 MSusy = 1000
 #define LOOP6 MUE = 200
-#define LOOP7 M_2 = 200
+#define LOOP7 Mino2 = 200
 #define LOOP8 MGl = .8D0*MSusy
 #define LOOP9 At = MUE/TB + 2*MSusy
 #define LOOP10 Ab = At
