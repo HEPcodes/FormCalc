@@ -1,8 +1,8 @@
 (*
 
-This is FormCalc, Version 7.1
+This is FormCalc, Version 7.2
 Copyright by Thomas Hahn 1996-2011
-last modified 18 Jul 11 by Thomas Hahn
+last modified 25 Aug 11 by Thomas Hahn
 
 Release notes:
 
@@ -43,9 +43,9 @@ Have fun!
 *)
 
 Print[""];
-Print["FormCalc 7.1"];
+Print["FormCalc 7.2"];
 Print["by Thomas Hahn"];
-Print["last revised 18 Jul 11"]
+Print["last revised 25 Aug 11"]
 
 
 (* symbols from FeynArts *)
@@ -631,13 +631,13 @@ CancelQ2::usage =
 q^2-terms in the numerator against a denominator."
 
 OPP::usage =
-"OPP is an option of CalcFeynAmp.  It can take the three values False,
-True, and Rational.  False chooses the regular Passarino-Veltman
-reduction with LoopTools' tensor-coefficient functions.  True and
-Rational select the OPP functions instead, which receive the integral's
-numerator as a function of the loop momentum.  Rational computes the
-rational terms analytically while True leaves their computation to
-the OPP packages."
+"OPP is an option of CalcFeynAmp.  It specifies an integer N starting
+from which an N-point function is treated with OPP methods.  For
+example, OPP -> 4 means that A, B, C functions are reduced with
+Passarino-Veltman and D and up with OPP.
+A negative N indicates that the rational terms for the OPP integrals
+shall be added analytically whereas otherwise their computation is left
+to the OPP package."
 
 NoExpand::usage =
 "NoExpand is an option of CalcFeynAmp.  NoExpand -> {sym1, sym2, ...}
@@ -1186,11 +1186,31 @@ OpenForm::usage =
 "OpenForm[file] opens file for writing in FORM format. 
 OpenForm[] opens a temporary FORM file with a unique name for writing."
 
+ToCode::usage =
+"ToCode[expr] returns the Fortran or C form of expr as a string."
+
 ToFortran::usage =
-"ToFortran[expr] returns the Fortran form of expr as a string."
+"ToFortran has been superseded by ToCode."
+
+SetLanguage::usage =
+"SetLanguage[lang] sets the language for source code, currently
+\"Fortran\" or \"C\"."
+
+$Code::usage =
+"$Code is the current language for writing out source code."
+
+$CodeExt::usage =
+"$CodeExt is the current filename extension for source code."
+
+OpenCode::usage =
+"OpenCode[file] opens file for writing out source code in the current
+output language set by SetLanguage."
 
 OpenFortran::usage =
 "OpenFortran[file] opens file for writing in Fortran format."
+
+OpenC::usage =
+"OpenC[file] opens file for writing in C99 format."
 
 TimeStamp::usage =
 "TimeStamp[] returns a string with the current date and time."
@@ -1435,15 +1455,6 @@ TInvariant::usage =
 "TInvariant[ki, kj] represents the t-type (momentum-transfer type)
 invariant formed from the momenta ki and kj, i.e. t_{ij} = (ki - kj)^2."
 
-DCONJG::usage =
-"DCONJG[z] takes the complex conjugate of z in Fortran."
-
-DBLE::usage =
-"DBLE[z] takes the real part of z in Fortran."
-
-DIMAG::usage =
-"DIMAG[z] takes the imaginary part of z in Fortran."
-
 exp::usage =
 "exp[x] is the exponential function in Fortran."
 
@@ -1534,7 +1545,7 @@ the file is split into several pieces."
 
 Begin["`Private`"]
 
-$FormCalc = 7.1
+$FormCalc = 7.2
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -1727,11 +1738,13 @@ ToBool[True] = "1"
 ToBool[___] = "0"
 
 
-ToFortran[x_String] = x
+ToCode[x_String] = x
 
-ToFortran[x_List] := StringTake[ToString[x, FortranForm], {6, -2}]
+ToCode[x_List] := StringTake[ToString[x, FortranForm], {6, -2}]
 
-ToFortran[x_] := ToString[x, FortranForm]
+ToCode[x_] := ToString[x, FortranForm]
+
+ToFortran[x_] := ToCode[x]	(* legacy *)
 
 
 ToCat[n_, {}] := Table[{}, {n}]
@@ -2456,7 +2469,7 @@ Options[CalcFeynAmp] = {
   SortDen -> True,
   PaVeReduce -> False,
   CancelQ2 -> True,
-  OPP -> False,
+  OPP -> 100,
   NoExpand -> {},
   NoBracket -> {},
   PreFunction -> Identity,
@@ -2574,8 +2587,8 @@ hh, amps, res, traces = 0},
 #define FermionChains \"" <> ToForm[fchain] <> "\"\n\
 #define SortDen \"" <> ToBool[sortden] <> "\"\n\
 #define PaVeReduce \"" <> ToForm[pavered] <> "\"\n\
-#define CancelQ2 \"" <> ToForm[cancelq2] <> "\"\n\
-#define OPP \"" <> ToForm[opp] <> "\"\n\
+#define CancelQ2 \"" <> ToBool[cancelq2] <> "\"\n\
+#define OPP \"" <> ToForm[opp /. {True -> 1, Rational -> -1, False -> 100}] <> "\"\n\
 #define HaveSUN \"" <> ToBool[!FreeQ[amps, SUNObjs]] <> "\"\n\
 #define SUNN \"" <> ToForm[SUNN] <> "\"\n\n" <>
     vars[[1]] <> "\n.global\n\n"];
@@ -2906,7 +2919,7 @@ MomEncode[f_. k[i_]] := MomEncoding[f, i]
    2. B0i, C0i, D0i, E0i, F0i (iint..).
    For the latter the LoopTools functions [BCDEF]get can be used to
    compute all tensor coefficients at once (which is much more efficient).
-   Unlike the other integrals, whose results are double complex numbers,
+   Unlike the other integrals, whose results are complex numbers,
    Cget and Dget return an integer pointing into a cache array.  In the
    conventions of LoopTools 2, the actual tensor coefficients are
    retrieved from the arrays [BCDEF]val. *)
@@ -3339,14 +3352,14 @@ SerDiv[x_] := Series[x /. Divergence -> -2/Dminus4, {Dminus4, 0, 0}]
 
 
 MapDiv[f_, expr_, fin_] :=
-Block[ {div = RCPattern[Divergence], foo = f},
+Block[ {div = RCPattern[Divergence], foo = f, Finite = fin},
   FindDiv[expr /. ToNewBRules /.
     {int:PaVeIntegral[__] :> UVDiv[int] + fin int, D -> Dminus4 + 4} /.
     Dminus4^(n_?Negative) -> (-2/Divergence)^n]
 ]
 
 
-UVDivergentPart[expr_] := MapDiv[SubDiv, expr /. Finite -> 0, 0]
+UVDivergentPart[expr_] := MapDiv[SubDiv, expr, 0]
 
 
 UVSeries[expr_, pow_] := Coefficient[UVSeries[expr], Dminus4, pow]
@@ -3980,6 +3993,14 @@ ProcessCheck[p_, p_] = 0
 _ProcessCheck := Message[WriteSquaredME::incomp]
 
 
+DefModName[dir_] := (
+  ModName[mod_, ext_:$CodeExt] := ModName[mod, ext] =
+    ToFileName[dir, file = prefix <> mod <> ext];
+  header = StringReplace[header, "%t" -> TimeStamp[]];
+  Hdr[desc_] := StringReplace[header, {"%f" -> file, "%d" -> desc}];
+)
+
+
 FFPut[Amp[p_][amp__], array_, file_] := (
   ProcessCheck[p, proc];
   FFWrite[#, array, file]&/@ {amp}
@@ -4004,10 +4025,10 @@ Block[ {ind, ff, mods},
 ]
 
 FFMod[ff_, {fmod_, mod_}] :=
-Block[ {file = prefix <> fmod <> ".F", hh},
-  hh = OpenFortran[ModName[file]];
+Block[ {hh},
+  hh = OpenCode[ModName[fmod]];
   WriteString[hh,
-    Hdr[file, "form factors for " <> name] <>
+    Hdr["form factors for " <> name] <>
     fincl <>
     SubroutineDecl[mod] <>
     "#include \"" <> prefix <> "vars.h\"\n"];
@@ -4134,10 +4155,10 @@ $OnePassDebug = {}
 AbbrMod[{}, _] := Sequence[]
 
 AbbrMod[abbr_, mod_] :=
-Block[ {file = prefix <> mod <> ".F", hh},
-  hh = OpenFortran[ModName[file]];
+Block[ {hh},
+  hh = OpenCode[ModName[mod]];
   WriteString[hh,
-    Hdr[file, "abbreviations for " <> name] <>
+    Hdr["abbreviations for " <> name] <>
     fincl <>
     SubroutineDecl[mod] <>
     "#include \"" <> prefix <> "vars.h\"\n"];
@@ -4151,10 +4172,10 @@ Block[ {file = prefix <> mod <> ".F", hh},
 NumMod[{}, _] := Sequence[]
 
 NumMod[expr_, mod_] :=
-Block[ {file = prefix <> mod <> ".F", hh},
-  hh = OpenFortran[ModName[file]];
+Block[ {hh},
+  hh = OpenCode[ModName[mod]];
   WriteString[hh,
-    Hdr[file, "numerators for " <> name] <>
+    Hdr["numerators for " <> name] <>
     fincl <>
     "#include \"num.h\"\n"];
   WriteNum[hh, #]&/@ expr;
@@ -4168,14 +4189,14 @@ Block[ {ex, $SubPrefix = "sp"},
   ex = Subexpr[expr /. WeylChain -> SplitChain,
     MatchQ[#, _SxS | _SeS]&, Deny -> {}, Fuse -> False];
   WriteString[hh, "\n\n\
-\tNumeratorFunction(" <> $SymbolPrefix <> ToFortran[var] <> ")\n\
+\tNumeratorFunction(" <> $SymbolPrefix <> ToCode[var] <> ")\n\
 \timplicit none\n"];
   WriteExpr[hh, {"\
 #include \"" <> prefix <> "vars.h\"\n\
 #include \"num.h\"\n",
       ex[[1]],
-      "Result(" <> $SymbolPrefix <> ToFortran[var] <> ")" -> ex[[2]]},
-    Type -> "double complex",
+      "Result(" <> $SymbolPrefix <> ToCode[var] <> ")" -> ex[[2]]},
+    Type -> "Complex",
     FinalTouch -> Simplify,
     FinalCollect -> True];
   WriteString[hh, "\tend\n"];
@@ -4205,7 +4226,7 @@ varDecl[vars_, type_String] :=
 Block[ {lmax = 63 - StringLength[type], llen = Infinity, vlen},
   ( llen += (vlen = StringLength[#] + 2);
     {If[llen > lmax, llen = vlen; {"\n\t", type}, ","], " ", #} )&/@
-  ToFortran/@ vars
+  ToCode/@ vars
 ]
 
 
@@ -4214,7 +4235,7 @@ CommonDecl[vars_, type_, common_, flag___] :=
 
 
 SubroutineDecl[name_, decl___String] := "\n\
-\tsubroutine " <> $SymbolPrefix <> ToFortran[name] <> "\n\
+\tsubroutine " <> $SymbolPrefix <> ToCode[name] <> "\n\
 \timplicit none\n" <> decl <> "\n"
 
 
@@ -4231,7 +4252,7 @@ DoDecl[{var_}] := DoDecl[{var, Dim[var]}]
 DoDecl[{_, _Dim}] := {{}, {}}
 
 DoDecl[{var_, from_:1, to__}] := {
-  "\tdo " <> ToFortran[var] <> " = " <> ToFortran[{from, to}] <> "\n",
+  "\tdo " <> ToCode[var] <> " = " <> ToCode[{from, to}] <> "\n",
   "\tenddo\n" }
 
 DoDecl[var_] := DoDecl[{var, Dim[var]}]
@@ -4266,7 +4287,7 @@ LoopComponents[arr_, {}] = 0
 
 LoopComponents[arr_, maxmat_] :=
 Block[ {type = StringDrop[ToString[arr], 1]},
-  {#1, ToFortran[Level[#1, {2}, arr]], ToString[arr] <> #2, ##3}&@@
+  {#1, ToCode[Level[#1, {2}, arr]], ToString[arr] <> #2, ##3}&@@
   Transpose[ LoopVar/@ maxmat ]
 ]
 
@@ -4357,8 +4378,8 @@ Options[WriteSquaredME] = {
   ExtraRules -> {},
   FilePrefix -> "",
   SymbolPrefix -> "",
-  FileHeader -> "* %f\n* %d\n* generated by FormCalc " <>
-    ToString[$FormCalc] <> " %t\n\n",
+  FileHeader -> "#if 0\n* %f\n* %d\n* generated by FormCalc " <>
+    ToString[$FormCalc] <> " %t\n#endif\n\n",
   FileIncludes -> "#include \"decl.h\"\n",
   SubroutineIncludes -> "#include \"decl.h\"\n" }
 
@@ -4379,21 +4400,17 @@ Block[ {treesq, loopsq, folder, xrules, prefix, $SymbolPrefix,
 header, fincl, sincl,
 ModName, Hdr, proc = Sequence[], name, legs, invs,
 mat, nums, fcs, abrs, matsel, treecat, angledep,
-Dim, abbint, cint = {}, cc = 0, iint = {}, ic = 0,
+Dim, abbint, cint = {}, cc = 0, iint = {}, ic = 0, defs,
 mc = 0, Global`c,
 Indices, Hel, hels, pos, file, files, hh,
 unused, maxmat, ntree, nloop, mats, com, loops,
-ffmods, nummods, abbrmods},
+ffmods, nummods, abbrmods, abbrmap},
 
   {treesq, loopsq, folder, xrules, prefix, $SymbolPrefix,
     header, fincl, sincl} =
     ParseOpt[WriteSquaredME, opt] /. Options[WriteRenConst];
 
-  (ModName[mod_] := ModName[mod] = ToFileName[#, mod])& @
-    MkDir[dir, folder];
-
-  header = StringReplace[header, "%t" -> TimeStamp[]];
-  Hdr[f_, d_] := StringReplace[header, {"%f" -> f, "%d" -> d}];
+  DefModName[MkDir[dir, folder]];
 
   abbint[f_] := intabb[f];
 
@@ -4429,33 +4446,19 @@ ffmods, nummods, abbrmods},
   ] ];
   mats = Select[MapThread[MatType, {nloop, ntree}], Length[#] > 0 &];
 
-  com = VarDecl[invs, {"double precision", "kinvars"}] <>
-    VarDecl[{Hel[legs]}, {"integer", "kinvars"}] <>
-    VarDecl[abrs, {"double complex", "abbrev"}] <>
-    VarDecl[cint, {"double complex", "loopint"}] <>
-    VarDecl[iint, {"memindex", "loopint"}] <>
-    VarDecl[
-      #[[1, 1, 1]]&/@ DownValues[Dim],
-      {"integer", "indices"} ] <>
-    VarDecl[
-      Flatten[{
-        Level[maxmat[Ctree], {2}, Ctree],
-        Level[maxmat[Cloop], {2}, Cloop], mats }],
-      {"double complex", "formfactors"} ];
-
 (* Part 2: the numerators and abbreviations *)
 
   Scan[DefFilter[matsel], mats];
   mat = Select[mat /. fcs /. Mat -> MatType, matsel];
 
-  abrs = Flatten[{abrs, mat, nums, cint, iint}];
+  defs = Flatten[{abrs, mat, nums, cint, iint}];
 
   (* split into tree/loop *)
   Scan[DefCat[treecat][MatType[#, #]]&, maxmat[Ctree]];
   treecat[r:_[v_, _]] := {r, {}} /; !FreeQ[tree, v];
   treecat[r_] := {{}, r};
-  abrs = Join[#1, Tag/@ #2]&@@
-    MoveDepsLeft@@ ToCat[2, treecat/@ abrs];
+  defs = Join[#1, Tag/@ #2]&@@
+    MoveDepsLeft@@ ToCat[2, treecat/@ defs];
 
   (* split into s/angle/hel *)
   angledep = Alt[(Range[#2] + #1)&@@ Length/@ proc];
@@ -4463,28 +4466,46 @@ ffmods, nummods, abbrmods},
     Cases[invs, _[x_, r_] :> x /; MemberQ[r, angledep]],
     (k | s)[angledep],
     MomEncoding[_, angledep] }];
-  abrs = MoveDepsRight@@ ToCat[3, Category/@ abrs];
-  pos = Take[#, 2]&/@ Position[abrs, _Num];
-  nums = Extract[abrs, pos] /. Tag -> Identity;
-  abrs = ToCat[2, #]&/@ Replace[ Delete[abrs, pos],
+  defs = MoveDepsRight@@ ToCat[3, Category/@ defs];
+  pos = Take[#, 2]&/@ Position[defs, _Num];
+  nums = Extract[defs, pos] /. Tag -> Identity;
+  defs = ToCat[2, #]&/@ Replace[ Delete[defs, pos],
     {Tag[r_] -> {{}, r}, r_ -> {r, {}}}, {2} ];
 
   nummods = FileSplit[nums, "num", NumMod];
-  nums = (#1 -> $SymbolPrefix <> ToFortran[#1] &)@@@ nums;
-  abrs = abrs /. nums;
+  nums = (#1 -> $SymbolPrefix <> ToCode[#1] &)@@@ nums;
+  defs = defs /. nums;
 
-  abbrmods = MapThread[
-    FileSplit[ToDoLoops[OnePassOrder[#1]], #2, AbbrMod]&,
-    { abrs, {{"abbr0_s",     "abbr1_s"},
-             {"abbr0_angle", "abbr1_angle"},
-             {"abbr0_hel",   "abbr1_hel"}} }, 2 ];
+  abbrmap[foo_] := MapThread[foo,
+    { defs, {{"0s",     "1s"},
+             {"0angle", "1angle"},
+             {"0hel",   "1hel"}} }, 2];
+
+  abbrmods = abbrmap[
+    FileSplit[ToDoLoops[OnePassOrder[#1]], "abbr" <> #2, AbbrMod]& ];
+
+  com = VarDecl[invs, {"Real", "kinvars"}] <>
+    VarDecl[{Hel[legs]}, {"integer", "kinvars"}] <>
+    abbrmap[VarDecl[Intersection[abrs, #1],
+      {"Complex", "abbrev" <> #2}]&] <>
+    abbrmap[VarDecl[Intersection[cint, #1],
+      {"Complex", "loopint" <> #2}]&] <>
+    abbrmap[VarDecl[Intersection[iint, #1],
+      {"memindex", "loopint" <> #2}]&] <>
+    VarDecl[
+      #[[1, 1, 1]]&/@ DownValues[Dim],
+      {"integer", "indices"} ] <>
+    VarDecl[
+      Flatten[{
+        Level[maxmat[Ctree], {2}, Ctree],
+        Level[maxmat[Cloop], {2}, Cloop], mats }],
+      {"Complex", "formfactors"} ];
 
 (* Part 3: the variable declarations *)
 
-  file = prefix <> "vars.h";
-  hh = OpenWrite[ModName[file]];
+  hh = OpenWrite[ModName["vars", ".h"]];
 
-  WriteString[hh, Hdr[file, "variable declarations"] <>
+  WriteString[hh, Hdr["variable declarations"] <>
     sincl <> com <>
     VarDecl[Last/@ nums, "external", "NUM_H"] <> "\n"];
 
@@ -4492,7 +4513,7 @@ ffmods, nummods, abbrmods},
 
 (* Part 4: the makefile *)
 
-  hh = OpenWrite[ModName[prefix <> "makefile"]];
+  hh = OpenWrite[ModName["makefile", ""]];
 
   WriteString[hh, "\
 NUMS :=" <> ({" \\\n  $(DIR)/", #, ".o"}&)/@
@@ -4514,22 +4535,21 @@ LIBS += $(LIB)\n\n"];
   nloop = LoopComponents[Cloop, maxmat[Cloop]];
   loops = DeleteCases[{ntree, nloop}, 0];
 
-  file = prefix <> "SquaredME.F";
-  hh = OpenFortran[ModName[file]];
+  hh = OpenCode[ModName["SquaredME"]];
 
   (* a) declarations *)
   WriteString[hh, "\
 *#define CHECK\n\n" <>
-    Hdr[file, "assembly of squared matrix element"] <>
+    Hdr["assembly of squared matrix element"] <>
     fincl <> "\n\
 \tsubroutine " <> $SymbolPrefix <> "SquaredME(result, helicities, flags)\n\
 \timplicit none\n\
-\tdouble precision result(*)\n\
+\tReal result(*)\n\
 \tinteger*8 helicities\n\
 \tinteger flags\n\n\
 #include \"" <> prefix <> "vars.h\"\n\n\
 * " <> prefix <> "BEGIN VARDECL\n\
-\tdouble precision " <> $SymbolPrefix <> "sumup\n\
+\tReal " <> $SymbolPrefix <> "sumup\n\
 \texternal " <> $SymbolPrefix <> "sumup\n" <>
     VarDecl[hels, "integer"] <>
     ({"\n\tequivalence (Hel(", #2, "), ", #1, ")"}&)@@@ hels <>
@@ -4620,24 +4640,24 @@ LIBS += $(LIB)\n\n"];
   (* f) the sumup function *)
   WriteString[hh, "\n\
 ************************************************************************\n\n\
-\tdouble precision function " <> $SymbolPrefix <> "sumup(C" <>
+\tReal function " <> $SymbolPrefix <> "sumup(C" <>
       nloop[[3]] <> ", C" <> ntree[[3]] <> ")\n\
 \timplicit none\n\n\
 #include \"" <> prefix <> "vars.h\"\n" <>
     nloop[[4]] <>
     ntree[[4]] <> "\n\
-\tdouble complex C" <>
+\tComplex C" <>
     StringReplace[nloop[[2]] <> ", C" <> ntree[[2]], "j" -> "n"] <> "\n\
-\tdouble complex m\n\n\
+\tComplex m\n\n\
 \t" <> $SymbolPrefix <> "sumup = 0\n" <>
     ntree[[6]] <> "\n\
 \tm = 0" <>
     nloop[[6]] <> "\n\
 \tm = m + C" <> nloop[[2]] <> "*" <>
-      ToFortran[Inner[MatType, nloop[[1]], ntree[[1]], Times]] <>
+      ToCode[Inner[MatType, nloop[[1]], ntree[[1]], Times]] <>
     nloop[[7]] <> "\n\
 \t" <> $SymbolPrefix <> "sumup = " <>
-      $SymbolPrefix <> "sumup + DBLE(DCONJG(C" <> ntree[[2]] <> ")*m)" <>
+      $SymbolPrefix <> "sumup + Re(Conjugate(C" <> ntree[[2]] <> ")*m)" <>
     ntree[[7]] <> "\n\
 \tend\n"];
 
@@ -4900,10 +4920,10 @@ Block[ {Simplify},
 
 
 RCMod[rcs_, mod_] :=
-Block[ {file = prefix <> mod <> ".F", hh},
-  hh = OpenFortran[ModName[file]];
+Block[ {hh},
+  hh = OpenCode[ModName[mod]];
   WriteString[hh,
-    Hdr[file, "renormalization constants"] <>
+    Hdr["renormalization constants"] <>
     fincl <>
     SubroutineDecl[mod] <>
     sincl <>
@@ -4916,10 +4936,10 @@ Block[ {file = prefix <> mod <> ".F", hh},
 ]
 
 RCAll[mod_, mods_] :=
-Block[ {file = prefix <> mod <> ".F", hh},
-  hh = OpenFortran[ModName[file]];
+Block[ {hh},
+  hh = OpenCode[ModName[mod]];
   WriteString[hh,
-    Hdr[file, "RC invocations"] <>
+    Hdr["RC invocations"] <>
     fincl <>
     SubroutineDecl[mod] <>
     ({"\n\tcall ", $SymbolPrefix, #}&/@ mods) <>
@@ -4947,11 +4967,7 @@ ModName, Hdr, rcmods, file, hh},
   {folder, xrules, prefix, $SymbolPrefix, header, fincl, sincl} =
     ParseOpt[WriteRenConst, opt] /. Options[WriteSquaredME];
 
-  (ModName[mod_] := ModName[mod] = ToFileName[#, mod])& @
-    MkDir[dir, folder];
-
-  header = StringReplace[header, "%t" -> TimeStamp[]];
-  Hdr[f_, d_] := StringReplace[header, {"%f" -> f, "%d" -> d}];
+  DefModName[MkDir[dir, folder]];
 
 (* Part 1: CalcRenConst.F *)
 
@@ -4962,19 +4978,18 @@ ModName, Hdr, rcmods, file, hh},
 
 (* Part 2: renconst.h *)
 
-  file = prefix <> "renconst.h";
-  hh = OpenFortran[ModName[file]];
+  hh = OpenCode[ModName["renconst", ".h"]];
 
   WriteString[hh,
-    Hdr[file, "RC declarations"] <>
+    Hdr["RC declarations"] <>
     VarDecl[MaxDims[Map[Dim, First/@ rcs, {2}]],
-      {"double complex", "renconst"}] <> "\n"];
+      {"Complex", "renconst"}] <> "\n"];
 
   Close[hh];
 
 (* Part 3: the makefile *)
 
-  hh = OpenWrite[ModName[prefix <> "makefile"]];
+  hh = OpenWrite[ModName["makefile", ""]];
 
   WriteString[hh, "\
 OBJS :=" <> ({" \\\n  $(DIR)/", #, ".o"}&)/@ Flatten[rcmods] <> "\n\n\
@@ -4991,11 +5006,35 @@ WriteRenConst[expr_, dir_, opt___Rule] :=
   WriteRenConst[CalcRenConst[expr], dir, opt]
 
 
-(* low-level Fortran output functions *)
+(* low-level output functions *)
 
-OpenFortran[file_, opt___] := OpenWrite[
-  tofortran <> Escape[file],
-  FormatType -> FortranForm, opt, PageWidth -> 67 ]
+SetLanguage::badlang = "Unknown language ``."
+
+SetLanguage["C"] := (
+  OpenCode = OpenC;
+  $CodeExt = ".c";
+  $Code = "C" )
+
+SetLanguage["Fortran"] = (
+  OpenCode = OpenFortran;
+  $CodeExt = ".F";
+  $Code = "Fortran" )
+
+SetLanguage[lang_] := (
+  Message[CodeLanguage::badlang, lang];
+  OpenCode = Abort;
+  $Failed )
+
+
+OpenC[file_, opt___] := (
+  $Code = "C";
+  OpenWrite[file, FormatType -> CForm, PageWidth -> 67] )
+
+
+OpenFortran[file_, opt___] := (
+  $Code = "Fortran";
+  OpenWrite[tofortran <> Escape[file],
+    FormatType -> FortranForm, opt, PageWidth -> 67] )
 
 tofortran = "!" <> Escape[ToFileName[$FormCalcBin, "ToFortran"]] <> " > "
 
@@ -5298,7 +5337,7 @@ Options[WriteExpr] = {
   HornerStyle -> True,
   FinalCollect -> False,
   Type -> False,
-  TmpType -> (*Type*) "double complex",
+  TmpType -> (*Type*) "Complex",
   IndexType -> False,
   RealArgs -> Level[{LoopIntegral,
     Bget, Cget, Dget, Eget, Fget, Log, Sqrt}, {-1}],
@@ -5364,14 +5403,14 @@ Attributes[WriteBlock] = {Listable}
 WriteBlock[hh_, s_String] := (WriteString[hh, s <> newline]; s)
 
 WriteBlock[hh_, DebugLine[var_, tag___]] :=
-  WriteBlock[hh, DebugStatement[ToFortran[var], {tag}, $DebugCmd]]
+  WriteBlock[hh, DebugStatement[ToCode[var], {tag}, $DebugCmd]]
 
 WriteBlock[hh_, DoLoop[expr_, ind__]] :=
   WriteBlock[hh, {#1, expr, #2}]&@@ DoDecl[ind]
 
 WriteBlock[hh_, IndexIf[cond_, a_, r___]] :=
   WriteBlock[hh, {
-    "\tif( " <> ToFortran[cond] <> " ) then\n", a,
+    "\tif( " <> ToCode[cond] <> " ) then\n", a,
     ElseIf[r], "\tendif\n" }]
 
 ElseIf[] = ElseIf[RuleAdd[_, 0]] = {}
@@ -5379,7 +5418,7 @@ ElseIf[] = ElseIf[RuleAdd[_, 0]] = {}
 ElseIf[a_] = {"\telse\n", a}
 
 ElseIf[cond_, a_, r___] :=
-  {"\telse if( " <> ToFortran[cond] <> " ) then\n", a, ElseIf[r]}
+  {"\telse if( " <> ToCode[cond] <> " ) then\n", a, ElseIf[r]}
 
 WriteBlock[hh_, ru_[var_, {sub__, expr_}]] :=
   WriteBlock[hh, {sub, ru[var, expr]}]
@@ -5400,9 +5439,8 @@ WriteBlock[hh_, var_ -> expr_] := (
 
 
 FExpr[expr_] := expr /.
-  {Conjugate -> DCONJG, Re -> DBLE, Im -> DIMAG,
-    Complex[a_, b_] -> a + cI b,
-    Dminus4 -> -2/Divergence} /.
+  Complex[a_, b_] -> a + cI b /.
+  Dminus4 -> -2/Divergence /.
   E^x_ :> exp[x] /.
   f:rargs[__] :> RealArgs[f] /.
   p_Integer^r_Rational :> (HoldForm[#]^r &)[ N[p] ] /.

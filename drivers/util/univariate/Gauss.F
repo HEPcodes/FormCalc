@@ -1,24 +1,23 @@
 * Gauss.F
 * Gaussian integration of a vector
 * this file is part of FormCalc
-* last modified 1 Jun 05 th
-
+* last modified 9 Aug 11 th
 
 #include "config.h"
 
-************************************************************************
+
 * nodes may be one of 8, 16, 24, 32 (see GaussData.m).
 
 	subroutine Gauss(ncomp, lower, upper, integrand, nodes, result)
 	implicit none
 	integer ncomp, nodes
-	double precision lower, upper, result(*)
+	Real lower, upper, result(*)
 	external integrand
 
-	double precision samples(MAXCOMP,2), mid, range, x
+	Real samples(MAXCOMP,2), mid, range, x
 	integer c, n, p
 
-	double precision gaussdata(80)
+	Real gaussdata(80)
 	data gaussdata /
      &    0.96028985649753623168356086856947299D0,
      &    0.10122853629037625915253135430996219D0,

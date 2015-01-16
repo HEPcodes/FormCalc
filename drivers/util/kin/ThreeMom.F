@@ -1,6 +1,9 @@
 * ThreeMom.F
 * this file is part of FormCalc
-* last modified 20 Oct 05 th
+* last modified 9 Aug 11 th
+
+#include "types.h"
+
 
 * ThreeMom computes the length of \vec p_b in the frame in which
 * \vec p_a + \vec p_b vanishes.  With sqrtS = sqrt((p_a + p_b)^2),
@@ -10,11 +13,11 @@
 * where lambda is the Kallen function.
 
 
-	double precision function ThreeMom(sqrtS, ma, mb)
+	Real function ThreeMom(sqrtS, ma, mb)
 	implicit none
-	double precision sqrtS, ma, mb
+	Real sqrtS, ma, mb
 
-	double precision kb0
+	Real kb0
 
 c	kb0 = ((sqrtS - ma)*(sqrtS + ma) + m2)/(2*sqrtS)
 	kb0 = .5D0*(sqrtS - (ma - mb)*(ma + mb)/sqrtS)

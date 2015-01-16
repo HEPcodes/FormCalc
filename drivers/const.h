@@ -1,10 +1,10 @@
 * const.h
 * model-independent constants
 * this file is part of FormCalc
-* last modified 27 May 11 th
+* last modified 9 Aug 11 th
 
 
-	double precision pi, degree, sqrt2, hbar_c2
+	Real pi, degree, sqrt2, hbar_c2
 
 	parameter (pi = 3.1415926535897932384626433832795029D0)
 	parameter (degree = pi/180D0)
@@ -13,7 +13,7 @@
 	parameter (hbar_c2 = 3.8937966D8)
 *         = hbar c^2 in picobarn
 
-	double complex bogus, cI
+	Complex bogus, cI
 
 	parameter (bogus = (-1D123, -2D123))
 *	  some weird number likely to noticeably distort the final result;
@@ -22,7 +22,7 @@
 
 	parameter (cI = (0D0, 1D0))
 
-	double precision Divergence, mudim, lambda
+	Real Divergence, mudim, lambda
 	integer epscoeff, Finite
 	common /renorm/ Divergence, mudim, lambda, epscoeff, Finite
 

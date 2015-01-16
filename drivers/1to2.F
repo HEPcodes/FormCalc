@@ -1,7 +1,7 @@
 * 1to2.F
 * the kinematics for a 1 -> 2 process
 * this file is part of FormCalc
-* last modified 25 Feb 11 th
+* last modified 9 Aug 11 th
 
 
 * some definitions for xsection.F
@@ -46,7 +46,7 @@
 
 #include "xsection.h"
 
-	double precision p
+	Real p
 
 #ifdef FORCE_ONSHELL
 	p = 0
@@ -68,11 +68,11 @@
 
 	subroutine FinalState(fac)
 	implicit none
-	double precision fac
+	Real fac
 
 #include "xsection.h"
 
-	double precision p, ex,ey,ez, msum, minv
+	Real p, ex,ey,ez, msum, minv
 	integer key
 
 	p = 0
@@ -89,9 +89,9 @@
 	key = key + Cut(CUT_COSTH, CUT_MIN + CUT_MAX)
 #endif
 
-	call Split(3, DBLE(MASS3), p, ex,ey,ez, minv, msum,
+	call Split(3, Re(MASS3), p, ex,ey,ez, minv, msum,
      &    fac, key, Var(FIXED), Var(XCOSTH1), Var(TRIVIAL))
 
-	call VecSet(2, DBLE(MASS2), p, ex,ey,ez)
+	call VecSet(2, Re(MASS2), p, ex,ey,ez)
 	end
 

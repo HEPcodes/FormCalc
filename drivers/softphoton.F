@@ -1,7 +1,7 @@
 * softphoton.F
 * routines for the treatment of soft-photon radiation
 * this file is part of FormCalc
-* last modified 2 Mar 11 th
+* last modified 9 Aug 11 th
 
 
 ************************************************************************
@@ -9,39 +9,39 @@
 ** off the different legs.  The result then has to be multiplied with
 ** the Born cross-section.
 
-	double precision function SoftPhotonFactor()
+	Real function SoftPhotonFactor()
 	implicit none
 
 #include "xsection.h"
 
-	double precision PhaseSpaceIntegral
+	Real PhaseSpaceIntegral
 	external PhaseSpaceIntegral
 
 	integer i, j
 
-	double precision loglambda
+	Real loglambda
 	common /infrared/ loglambda
 
-	double precision charge(LEGS), r
+	Real charge(LEGS), r
 
 * not a very nice solution, the following, but necessary
 * because there may be no "/" in a constant in the data
 * statement (such as in 2/3D0)
 #if LEGS == 3
-	double precision ch1, ch2, ch3
+	Real ch1, ch2, ch3
 	parameter (ch1 = CHARGE1)
 	parameter (ch2 = CHARGE2)
 	parameter (ch3 = CHARGE3)
 	data charge / ch1, ch2, ch3 /
 #elif LEGS == 4
-	double precision ch1, ch2, ch3, ch4
+	Real ch1, ch2, ch3, ch4
 	parameter (ch1 = CHARGE1)
 	parameter (ch2 = CHARGE2)
 	parameter (ch3 = CHARGE3)
 	parameter (ch4 = CHARGE4)
 	data charge / ch1, ch2, ch3, ch4 /
 #elif LEGS == 5
-	double precision ch1, ch2, ch3, ch4, ch5
+	Real ch1, ch2, ch3, ch4, ch5
 	parameter (ch1 = CHARGE1)
 	parameter (ch2 = CHARGE2)
 	parameter (ch3 = CHARGE3)
@@ -71,17 +71,17 @@
 ** PhaseSpaceIntegral calculates the integral over the soft photon's
 ** phase space.  See A. Denner, Fortschr. d. Physik, 41 (1993) 4.
 
-	double precision function PhaseSpaceIntegral(i, j)
+	Real function PhaseSpaceIntegral(i, j)
 	implicit none
 	integer i, j
 
 #include "xsection.h"
 
-	double precision mi, ki0, ki, kidelta, kilog
-	double precision mj, kj0, kj, kjdelta, kjlog
-	double precision kikj, alpha, d, vi
+	Real mi, ki0, ki, kidelta, kilog
+	Real mj, kj0, kj, kjdelta, kjlog
+	Real kikj, alpha, d, vi
 
-	double precision loglambda
+	Real loglambda
 	common /infrared/ loglambda
 
 	mi = momspec(SPEC_M, i)
@@ -105,7 +105,7 @@
 	kjdelta = momspec(SPEC_DELTAK, j)
 	kjlog = log(kjdelta/(kj0 + kj))
 
-	kikj = DBLE(Pair(k(i), k(j)))
+	kikj = Re(Pair(k(i), k(j)))
 
 	d = sqrt((kikj - mi*mj)*(kikj + mi*mj))
 	alpha = (kikj + d)/mi**2
@@ -114,7 +114,7 @@
 	d = 1/((alpha*mi - mj)*(alpha*mi + mj))
 	vi = 2*(alpha*ki0 - kj0)*d
 
-	PhaseSpaceIntegral = 4*pi*alpha*kikj*d * DBLE(
+	PhaseSpaceIntegral = 4*pi*alpha*kikj*d * Re(
      &    log(mi/mj*abs(alpha))*loglambda +
      &    .25D0*(kilog - kjlog)*(kilog + kjlog) +
      &    Li2omx((ki0 + ki)*alpha*vi) + Li2omx(kidelta*alpha*vi) -

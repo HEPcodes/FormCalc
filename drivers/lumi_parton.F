@@ -1,7 +1,7 @@
 * lumi_parton.F
 * "luminosity" for a partonic process
 * this file is part of FormCalc
-* last modified 5 May 11 th
+* last modified 9 Aug 11 th
 
 
 #define MINVAR SQRTS
@@ -51,7 +51,7 @@
 
 	subroutine Luminosity(fac)
 	implicit none
-	double precision fac
+	Real fac
 
 	integer fail
 

@@ -1,3 +1,25 @@
+25 Aug 11:
+
+- Introduced types 'Real' and 'Complex' (defined in types.h) for
+  better abstraction in Fortran.
+
+- Split common blocks in vars.h, e.g. abbrev splits into
+  abbrev0s, abbrev0angle, abbrev0hel etc.
+
+
+16 Aug 11:
+
+- Corrected wrong index distribution in contraction in SUNEps.
+  (Thanks to Sho Iwamoto.)
+
+
+8 Aug 11:
+
+- Modified the OPP option of CalcFeynAmp: now accepts integer (former
+  values True, False, Rational in fact mapped to integers now) indicating
+  from which N on an N-point function shall be treated with OPP methods.
+
+
 4 Aug 11:
 
 - Updated the CutTools drivers to match invocations in the latest version

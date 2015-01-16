@@ -1,7 +1,7 @@
 * SVD.F
 * singular value decomposition of an m-by-n matrix
 * this file is part of the Diag library
-* last modified 1 Aug 11 th
+* last modified 10 Aug 11 th
 
 #include "diag-f.h"
 
@@ -17,31 +17,27 @@
 	subroutine SVD(m, n, Ao,ldA, d, Vo,ldV, Wo,ldW, sort)
 	implicit none
 	integer m, n, ldA, ldV, ldW, sort
-	double complex Ao(ldA,*), Vo(ldV,*), Wo(ldW,*)
-	double precision d(*)
+	Complex Ao(ldA,*), Vo(ldV,*), Wo(ldW,*)
+	Real d(*)
 
 	integer nx, nm, p, q, px, qx, j, rev, pi(MAXDIM)
-	double precision red, off, thresh
-	double precision t, dv, dw, xv, xw, invc
-	double complex App, Apq, Aqp, Aqq
-	double complex x, y, sv, sw, tv, tw, f
-	double complex VW(MAXDIM,MAXDIM,0:2)
+	Real red, off, thresh
+	Real t, dv, dw, xv, xw, invc
+	Complex App, Apq, Aqp, Aqq
+	Complex x, y, sv, sw, tv, tw, f
+	Complex VW(MAXDIM,MAXDIM,0:2)
 
 * note: for better cache efficiency, the Vx, Wx arrays
 * contain the *transpose* of the transformation matrices
-	double complex V(MAXDIM,MAXDIM)
-	double complex W(MAXDIM,MAXDIM)
-	double complex A(MAXDIM,MAXDIM)
+	Complex V(MAXDIM,MAXDIM)
+	Complex W(MAXDIM,MAXDIM)
+	Complex A(MAXDIM,MAXDIM)
 	equivalence (VW(1,1,0), V)
 	equivalence (VW(1,1,1), W)
 	equivalence (VW(1,1,2), A)
 
 	integer sweep
 	common /nsweeps/ sweep
-
-	double precision Sq
-	double complex c
-	Sq(c) = DBLE(c*DCONJG(c))
 
 	nx = max(m, n)
 
@@ -110,13 +106,13 @@
 	        A(px,q) = 0
 	        A(qx,p) = 0
 	      else if( off .gt. thresh ) then
-	        xv = DBLE((App - Aqq)*DCONJG(App + Aqq))
-	        xw = DBLE((Apq - Aqp)*DCONJG(Apq + Aqp))
+	        xv = Re((App - Aqq)*Conjugate(App + Aqq))
+	        xw = Re((Apq - Aqp)*Conjugate(Apq + Aqp))
 	        dv = .5D0*(xv + xw)
 	        dw = .5D0*(xv - xw)
 
-	        tv = DCONJG(App)*Aqp + Aqq*DCONJG(Apq)
-	        tw = DCONJG(App)*Apq + Aqq*DCONJG(Aqp)
+	        tv = Conjugate(App)*Aqp + Aqq*Conjugate(Apq)
+	        tw = Conjugate(App)*Apq + Aqq*Conjugate(Aqp)
 c	        t = sqrt(dv**2 + Sq(tv))
 	        t = sqrt(dw**2 + Sq(tw))
 
@@ -142,31 +138,31 @@ c	        t = sqrt(dv**2 + Sq(tv))
 	        do j = 1, nx
 	          x = A(j,p)
 	          y = A(j,q)
-	          A(j,p) = x + DCONJG(sw)*(y - tw*x)
-	          A(j,q) = y - sw*(x + DCONJG(tw)*y)
+	          A(j,p) = x + Conjugate(sw)*(y - tw*x)
+	          A(j,q) = y - sw*(x + Conjugate(tw)*y)
 	          x = A(px,j)
 	          y = A(qx,j)
-	          A(p,j) = x + DCONJG(sv)*(y - tv*x)
-	          A(q,j) = y - sv*(x + DCONJG(tv)*y)
+	          A(p,j) = x + Conjugate(sv)*(y - tv*x)
+	          A(q,j) = y - sv*(x + Conjugate(tv)*y)
 	        enddo
 
-	        A(p,p) = invc*(App + DCONJG(sv)*(Aqp - tv*App))
+	        A(p,p) = invc*(App + Conjugate(sv)*(Aqp - tv*App))
 	        A(q,p) = 0
 	        A(p,q) = 0
-	        A(q,q) = invc*(Aqq - sv*(Apq + DCONJG(tv)*Aqq))
+	        A(q,q) = invc*(Aqq - sv*(Apq + Conjugate(tv)*Aqq))
 
 	        do j = 1, nx
 	          x = V(j,px)
 	          y = V(j,qx)
-	          V(j,p) = x + sv*(y - DCONJG(tv)*x)
-	          V(j,q) = y - DCONJG(sv)*(x + tv*y)
+	          V(j,p) = x + sv*(y - Conjugate(tv)*x)
+	          V(j,q) = y - Conjugate(sv)*(x + tv*y)
 	        enddo
 
 	        do j = 1, nx
 	          x = W(j,p)
 	          y = W(j,q)
-	          W(j,p) = x + sw*(y - DCONJG(tw)*x)
-	          W(j,q) = y - DCONJG(sw)*(x + tw*y)
+	          W(j,p) = x + sw*(y - Conjugate(tw)*x)
+	          W(j,q) = y - Conjugate(sw)*(x + tw*y)
 	        enddo
 	        goto 2
 	      endif
@@ -200,7 +196,7 @@ c	        t = sqrt(dv**2 + Sq(tv))
 
 	do p = 1, nm
 	  d(p) = abs(A(p,p))
-	  if( d(p) .gt. DBL_EPS .and. d(p) .ne. DBLE(A(p,p)) ) then
+	  if( d(p) .gt. DBL_EPS .and. d(p) .ne. Re(A(p,p)) ) then
 	    f = A(p,p)/d(p)
 	    do q = 1, nm
 	      W(q,p) = W(q,p)*f

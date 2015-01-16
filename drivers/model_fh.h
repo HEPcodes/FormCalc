@@ -1,7 +1,7 @@
 * model_fh.h
 * declarations for model_fh.F
 * this file is part of FormCalc
-* last modified 18 May 11 th
+* last modified 9 Aug 11 th
 
 
 #include "FHRecord.h"
@@ -9,16 +9,16 @@
 	RecordDecl(record)
 	common /rec/ record
 
-	double precision Alfa0
+	Real Alfa0
 	parameter (Alfa0 = 1/137.0359895D0)
 
-	double complex CKM(3,3)
-	double precision Mf(4,3), Mf2(4,3)
-	double precision MZ, MZ2, MW, MW2, MH, MH2, MBatMB
-	double precision CW, CW2, SW, SW2
-	double precision ELMZ, AlfaMZ, GF, AlfaGF, AlfasMZ
-	double precision EL, Alfa, Alfa2, GS, Alfas, Alfas2
-	double precision CKMlambda, CKMA, CKMrhobar, CKMetabar
+	Complex CKM(3,3)
+	Real Mf(4,3), Mf2(4,3)
+	Real MZ, MZ2, MW, MW2, MH, MH2, MBatMB
+	Real CW, CW2, SW, SW2
+	Real ELMZ, AlfaMZ, GF, AlfaGF, AlfasMZ
+	Real EL, Alfa, Alfa2, GS, Alfas, Alfas2
+	Real CKMlambda, CKMA, CKMrhobar, CKMetabar
 
 	common /sm_para/ CKM
 	common /sm_para/ Mf, Mf2
@@ -29,12 +29,12 @@
 	common /sm_para/ CKMlambda, CKMA, CKMrhobar, CKMetabar
 
 #ifndef CKMC
-#define CKMC(i,j) DCONJG(CKM(i,j))
+#define CKMC(i,j) Conjugate(CKM(i,j))
 #endif
 
-	double precision ME, ME2, MM, MM2, ML, ML2
-	double precision MU, MU2, MC, MC2, MT, MT2
-	double precision MD, MD2, MS, MS2, MB, MB2
+	Real ME, ME2, MM, MM2, ML, ML2
+	Real MU, MU2, MC, MC2, MT, MT2
+	Real MD, MD2, MS, MS2, MB, MB2
 	equivalence (Mf(2,1), ME), (Mf2(2,1), ME2)
 	equivalence (Mf(2,2), MM), (Mf2(2,2), MM2)
 	equivalence (Mf(2,3), ML), (Mf2(2,3), ML2)
@@ -46,18 +46,18 @@
 	equivalence (Mf(4,3), MB), (Mf2(4,3), MB2)
 
 
-	double complex UCha(2,2), VCha(2,2), ZNeu(4,4)
-	double complex XHiggs(3,3,2)
-	double complex deltaSf(6,6,4), UASf(6,6,4)
-	double complex MSS2(3,3,5), Afd(2:4,3), Kf(3,3,2:4)
-	double complex MUE, Mino1, Mino2, Mino3, SqrtEGl, Deltab
-	double precision MCha(2), MCha2(2), MNeu(4), MNeu2(4)
-	double precision MSS(5,3), MASf(6,4), MASf2(6,4)
-	double precision MHiggs(4), MHiggs2(4), MHtree(4), MHtree2(4)
-	double precision MGl, MGl2
-	double precision CB, SB, TB, CB2, SB2, TB2, C2B, S2B
-	double precision CA, SA, CA2, SA2, C2A, S2A
-	double precision CAB, SAB, CBA, SBA, CBA2, SBA2, SAeff
+	Complex UCha(2,2), VCha(2,2), ZNeu(4,4)
+	Complex XHiggs(3,3,2)
+	Complex deltaSf(6,6,4), UASf(6,6,4)
+	Complex MSS2(3,3,5), Afd(2:4,3), Kf(3,3,2:4)
+	Complex MUE, Mino1, Mino2, Mino3, SqrtEGl, Deltab
+	Real MCha(2), MCha2(2), MNeu(4), MNeu2(4)
+	Real MSS(5,3), MASf(6,4), MASf2(6,4)
+	Real MHiggs(4), MHiggs2(4), MHtree(4), MHtree2(4)
+	Real MGl, MGl2
+	Real CB, SB, TB, CB2, SB2, TB2, C2B, S2B
+	Real CA, SA, CA2, SA2, C2A, S2A
+	Real CAB, SAB, CBA, SBA, CBA2, SBA2, SAeff
 	integer nmfv
 
 	common /mssm_para/ UCha, VCha, ZNeu
@@ -78,86 +78,86 @@
 #define MSf(s,t,g) MASf(g+3*(s-1),t)
 #define MSf2(s,t,g) MASf2(g+3*(s-1),t)
 #define USf(i,j,t,g) UASf(g+3*(i-1),g+3*(j-1),t)
-#define USfC(i,j,t,g) DCONJG(USf(i,j,t,g))
-#define UASfC(i,j,t) DCONJG(UASf(i,j,t))
+#define USfC(i,j,t,g) Conjugate(USf(i,j,t,g))
+#define UASfC(i,j,t) Conjugate(UASf(i,j,t))
 
 #define deltaSf_LL(i,j,t) deltaSf(i,j,t)
 #define deltaSf_LR(i,j,t) deltaSf(i,j+3,t)
 #define deltaSf_RL(i,j,t) deltaSf(j,i+3,t)
 #define deltaSf_RR(i,j,t) deltaSf(i+3,j+3,t)
 
-#define VChaC(i,j) DCONJG(VCha(i,j))
-#define UChaC(i,j) DCONJG(UCha(i,j))
-#define ZNeuC(i,j) DCONJG(ZNeu(i,j))
+#define VChaC(i,j) Conjugate(VCha(i,j))
+#define UChaC(i,j) Conjugate(UCha(i,j))
+#define ZNeuC(i,j) Conjugate(ZNeu(i,j))
 
-#define UHiggsC(i,j) DCONJG(UHiggs(i,j))
-#define ZHiggsC(i,j) DCONJG(ZHiggs(i,j))
+#define UHiggsC(i,j) Conjugate(UHiggs(i,j))
+#define ZHiggsC(i,j) Conjugate(ZHiggs(i,j))
 
 #define Af(t,g1,g2) Mf(t,g1)*Kf(g1,g2,t)
-#define AfC(t,g1,g2) DCONJG(Af(t,g1,g2))
-#define KfC(g1,g2,t) DCONJG(Kf(g1,g2,t))
-#define Mino3C DCONJG(Mino3)
-#define MUEC DCONJG(MUE)
-#define SqrtEGlC DCONJG(SqrtEGl)
+#define AfC(t,g1,g2) Conjugate(Af(t,g1,g2))
+#define KfC(g1,g2,t) Conjugate(Kf(g1,g2,t))
+#define Mino3C Conjugate(Mino3)
+#define MUEC Conjugate(MUE)
+#define SqrtEGlC Conjugate(SqrtEGl)
 #endif
 
-	double precision Mh0, Mh02, MHH, MHH2, MA0, MA02, MHp, MHp2
+	Real Mh0, Mh02, MHH, MHH2, MA0, MA02, MHp, MHp2
 	equivalence (MHiggs(1), Mh0), (MHiggs2(1), Mh02)
 	equivalence (MHiggs(2), MHH), (MHiggs2(2), MHH2)
 	equivalence (MHiggs(3), MA0), (MHiggs2(3), MA02)
 	equivalence (MHiggs(4), MHp), (MHiggs2(4), MHp2)
 
-	double precision Mh0tree, Mh0tree2, MHHtree, MHHtree2
-	double precision MA0tree, MA0tree2, MHptree, MHptree2
+	Real Mh0tree, Mh0tree2, MHHtree, MHHtree2
+	Real MA0tree, MA0tree2, MHptree, MHptree2
 	equivalence (MHtree(1), Mh0tree), (MHtree2(1), Mh0tree2)
 	equivalence (MHtree(2), MHHtree), (MHtree2(2), MHHtree2)
 	equivalence (MHtree(3), MA0tree), (MHtree2(3), MA0tree2)
 	equivalence (MHtree(4), MHptree), (MHtree2(4), MHptree2)
 
-	double complex UHiggs(3,3), ZHiggs(3,3)
+	Complex UHiggs(3,3), ZHiggs(3,3)
 	equivalence (XHiggs(1,1,1), UHiggs)
 	equivalence (XHiggs(1,1,2), ZHiggs)
 
-	double complex Atau, At, Ab
+	Complex Atau, At, Ab
 	equivalence (Afd(2,3), Atau)
 	equivalence (Afd(3,3), At)
 	equivalence (Afd(4,3), Ab)
 
-	double precision MASf_flat(6*4), MASf2_flat(6*4)
+	Real MASf_flat(6*4), MASf2_flat(6*4)
 	equivalence (MASf, MASf_flat)
 	equivalence (MASf2, MASf2_flat)
 
-	double complex deltaLRuc, deltaLRct, deltaLRut
+	Complex deltaLRuc, deltaLRct, deltaLRut
 	equivalence (deltaSf_LR(1,2,3), deltaLRuc)
 	equivalence (deltaSf_LR(2,3,3), deltaLRct)
 	equivalence (deltaSf_LR(1,3,3), deltaLRut)
 
-	double complex deltaRLuc, deltaRLct, deltaRLut
+	Complex deltaRLuc, deltaRLct, deltaRLut
 	equivalence (deltaSf_RL(1,2,3), deltaRLuc)
 	equivalence (deltaSf_RL(2,3,3), deltaRLct)
 	equivalence (deltaSf_RL(1,3,3), deltaRLut)
 
-	double complex deltaRRuc, deltaRRct, deltaRRut
+	Complex deltaRRuc, deltaRRct, deltaRRut
 	equivalence (deltaSf_RR(1,2,3), deltaRRuc)
 	equivalence (deltaSf_RR(2,3,3), deltaRRct)
 	equivalence (deltaSf_RR(1,3,3), deltaRRut)
 
-	double complex deltaLL12, deltaLL23, deltaLL13
+	Complex deltaLL12, deltaLL23, deltaLL13
 	equivalence (deltaSf_LL(1,2,4), deltaLL12)
 	equivalence (deltaSf_LL(2,3,4), deltaLL23)
 	equivalence (deltaSf_LL(1,3,4), deltaLL13)
 
-	double complex deltaLRds, deltaLRsb, deltaLRdb
+	Complex deltaLRds, deltaLRsb, deltaLRdb
 	equivalence (deltaSf_LR(1,2,4), deltaLRds)
 	equivalence (deltaSf_LR(2,3,4), deltaLRsb)
 	equivalence (deltaSf_LR(1,3,4), deltaLRdb)
 
-	double complex deltaRLds, deltaRLsb, deltaRLdb
+	Complex deltaRLds, deltaRLsb, deltaRLdb
 	equivalence (deltaSf_RL(1,2,4), deltaRLds)
 	equivalence (deltaSf_RL(2,3,4), deltaRLsb)
 	equivalence (deltaSf_RL(1,3,4), deltaRLdb)
 
-	double complex deltaRRds, deltaRRsb, deltaRRdb
+	Complex deltaRRds, deltaRRsb, deltaRRdb
 	equivalence (deltaSf_RR(1,2,4), deltaRRds)
 	equivalence (deltaSf_RR(2,3,4), deltaRRsb)
 	equivalence (deltaSf_RR(1,3,4), deltaRRdb)

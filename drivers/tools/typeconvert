@@ -1,0 +1,32 @@
+#! /bin/sh
+
+[ $# -eq 0 ] && {
+  cat << _EOF_
+Usage:  $0 <files>
+
+substitute double precision -> Real,
+           double complex -> Complex,
+           DBLE -> Re,
+           DIMAG -> Im,
+           DCONJG -> Conjugate,
+           DCMPLX -> Cmplx
+in <files>.
+
+_EOF_
+  exit 1
+}
+
+
+for f in "$@" ; do
+  echo $f
+  [ -f $f.orig ] || mv $f $f.orig
+  sed '
+	s/double precision/Real/
+	s/double complex/Complex/
+	s/DBLE/Re/g
+	s/DIMAG/Im/g
+	s/DCONJG/Conjugate/g
+	s/DCMPLX/Cmplx/g
+' $f.orig > $f
+done
+

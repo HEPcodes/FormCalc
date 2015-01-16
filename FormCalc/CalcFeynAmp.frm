@@ -1,7 +1,7 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 18 Jul 11 th
+* last modified 19 Aug 11 th
 
 
 ***********************************************************************
@@ -384,8 +384,6 @@ id ABB(1, DiracChain(?a, -6, [mu]?, [nu]?, ?b) *
 
 *----------------------------------------------------------------------
 
-#if "`OPP'" != "False"
-
 if( count(cutM, 1) );
 
 id q1.[p1]? = qfM(Pair(q1, [p1]));
@@ -397,8 +395,6 @@ repeat id qfM([x]?) * qfM([y]?) = qfM([x] * [y]);
 endif;
 
 .sort
-
-#endif
 
 *----------------------------------------------------------------------
 
@@ -678,7 +674,7 @@ repeat;
 endrepeat;
 
 id dirM([x]?, [i]?) * dirM([y]?, [i]?, [j]?) *
-     dirM(Spinor(?k, [s2]?), [j]?) =
+     dirM(Spinor(?k, [s2]?)*gi_(sM), [j]?) =
   dirM([x]*[y]*Spinor(?k, -[s2]), [i], [j]);
 
 $fline = 0;
@@ -770,20 +766,27 @@ endargument;
 symm intM;
 #endif
 
+#define MinOPP "`OPP'"
+#define MaxPaVe "`OPP'"
+#define RationalTag ""
+#if `OPP' < 0
+#redefine MinOPP "{-`OPP'}"
+#redefine MaxPaVe "100"
+#redefine RationalTag "* CUTRAT"
+#endif
+
 once intM(Den([m0]?)*MOM([p0]?)) = ORD(0) *
   replace_(q1, 2*q1 - [p0]) * intM(Den(0, [p0], [m0]));
 #do n = 1, 5
 also once intM(<Den([m0]?)*MOM([p0]?)>,...,<Den([m`n']?)*MOM([p`n']?)>) =
   replace_(q1, 2*q1 - [p0]) * (
-#if "`OPP'" != "True"
+#if `n' <= `MaxPaVe'
     NN({`n'+1}) *
     ORD(<paveM(1)*([p1]-[p0])>+...+<paveM(`n')*([p`n']-[p0])>) *
     intM(<Den(0, [p0], [m0])>*...*<Den(`n', [p`n'], [m`n'])>)
-#if "`OPP'" == "Rational"
-    * CUTRAT
 #endif
-#endif
-#if "`OPP'" != "False"
+#if `n' > `MinOPP'
+    `RationalTag'
   + cutM(CUTINT[{`n'+1}],
       <[p1]-[p0]>,...,<[p`n']-[p0]>,
       <[m0]>,...,<[m`n']>)
@@ -1124,7 +1127,7 @@ id D = Dminus4 + 4;
 
 #if "`Dim'" == "D"
 
-#if "`OPP'" == "True"
+#if `OPP' > 0
 id Dminus4 * cutM(?a) = MuTildeSq * cutM(?a);
 #else
 id Dminus4 * cutM(?a) = 0;
@@ -1528,7 +1531,7 @@ factarg mulM;
 
 *----------------------------------------------------------------------
 
-#if "`OPP'" != "False"
+#if `OPP' < 100
 
 b cutM, intM, qfM, Dminus4, MuTildeSq, SumOver, Mat, Den;
 .sort

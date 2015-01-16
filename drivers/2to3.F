@@ -1,7 +1,7 @@
 * 2to3.F
 * the kinematics for a 2 -> 3 process
 * this file is part of FormCalc
-* last modified 25 Feb 11 th
+* last modified 9 Aug 11 th
 
 
 * some definitions for xsection.F
@@ -61,12 +61,12 @@
 
 #include "xsection.h"
 
-	double precision p
+	Real p
 
-	p = ThreeMom(sqrtS, DBLE(MASS1), DBLE(MASS2))
+	p = ThreeMom(sqrtS, Re(MASS1), Re(MASS2))
 
-	call VecSet(1, DBLE(MASS1), p, 0D0, 0D0, 1D0)
-	call VecSet(2, DBLE(MASS2), p, 0D0, 0D0, -1D0)
+	call VecSet(1, Re(MASS1), p, 0D0, 0D0, 1D0)
+	call VecSet(2, Re(MASS2), p, 0D0, 0D0, -1D0)
 	end
 
 
@@ -74,11 +74,11 @@
 
 	subroutine FinalState(fac)
 	implicit none
-	double precision fac
+	Real fac
 
 #include "xsection.h"
 
-	double precision p, ex,ey,ez, msum, minv
+	Real p, ex,ey,ez, msum, minv
 	integer key
 
 	p = 0
@@ -99,14 +99,14 @@
 	key = key + Cut(CUT_COSTH, CUT_MIN + CUT_MAX)
 #endif
 
-	call Split(5, DBLE(MASS5), p, ex,ey,ez, minv, msum,
+	call Split(5, Re(MASS5), p, ex,ey,ez, minv, msum,
      &    fac, key, Var(XMREM1), Var(XCOSTH1), Var(TRIVIAL))
 	Show(XMREM1) = momspec(SPEC_E, 5)
 	if( fac .eq. 0 ) return
 
-	call Split(4, DBLE(MASS4), p, ex,ey,ez, minv, msum,
+	call Split(4, Re(MASS4), p, ex,ey,ez, minv, msum,
      &    fac, 0, Var(FIXED), Var(XCOSTH2), Var(XPHI2))
 
-	call VecSet(3, DBLE(MASS3), p, ex,ey,ez)
+	call VecSet(3, Re(MASS3), p, ex,ey,ez)
 	end
 

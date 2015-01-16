@@ -2,29 +2,27 @@
 * non-adaptive 1D Gauss-Kronrod-Patterson integration
 * adapted from Quadpack's dqng.f for vector integrands
 * this file is part of FormCalc
-* last modified 6 Mar 08 th
-
+* last modified 9 Aug 11 th
 
 #include "config.h"
 
-************************************************************************
 
 	subroutine Patterson(ncomp, lower, upper, integrand,
      &    epsrel, epsabs, neval, fail, result, error)
 	implicit none
 	integer ncomp, neval, fail
-	double precision lower, upper, epsrel, epsabs
-	double precision result(*), error(*)
+	Real lower, upper, epsrel, epsabs
+	Real result(*), error(*)
 	external integrand
 
-	double precision samples(MAXCOMP,2,0:43)
-	double precision range, mid, h
-	double precision estimate, integral, fluct
-	double precision err
+	Real samples(MAXCOMP,2,0:43)
+	Real range, mid, h
+	Real estimate, integral, fluct
+	Real err
 	integer j, c
 
-	double precision x(43), w10(5), w21(0:10)
-	double precision w43(0:21), w87(0:43)
+	Real x(43), w10(5), w21(0:10)
+	Real w43(0:21), w87(0:43)
 
 * abscissae
 	data x /

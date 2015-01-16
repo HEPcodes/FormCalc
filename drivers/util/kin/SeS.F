@@ -1,14 +1,16 @@
 * SeS.F
 * computes Spinor.eps.Spinor
 * this file is part of FormCalc
-* last modified 15 Jun 04 th
+* last modified 9 Aug 11 th
+
+#include "types.h"
 
 
-	double complex function SeS(a, b)
+	Complex function SeS(a, b)
 	implicit none
 	integer a, b
 
-	double complex spi(2, 1)
+	Complex spi(2, 1)
 	common /vectors/ spi
 
 #define A(x) spi(x, a)

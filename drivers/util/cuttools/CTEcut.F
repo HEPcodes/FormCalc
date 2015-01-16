@@ -1,7 +1,7 @@
 * CTEcut.F
 * the FormCalc wrapper for the CutTools five-point function
 * this file is part of FormCalc
-* last modified 3 Aug 11 th
+* last modified 4 Aug 11 th
 
 
 	double complex function CTEcut(rank, num, numeps,
@@ -38,5 +38,6 @@
 	call ctsxcut(rootsvalue, muscale, 5, num, CTmpnum,
      &    rank, pj, mj, res, res1, stable, forcemp)
 	CTEcut = res(0)
+	PRINT *, "CTEcut=", CTEcut
 	end
 

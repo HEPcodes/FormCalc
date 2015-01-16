@@ -2,7 +2,9 @@
 * construct the CMS representation of a momentum and the
 * three corresponding polarization vectors
 * this file is part of FormCalc
-* last modified 18 Jul 07 th
+* last modified 9 Aug 11 th
+
+#include "types.h"
 
 
 * i: the index of the momentum
@@ -12,9 +14,9 @@
 	subroutine VecSet(i, m, p, ex,ey,ez)
 	implicit none
 	integer i
-	double precision m, p, ex,ey,ez
+	Real m, p, ex,ey,ez
 
-	double complex vec(2,2, 8, 0:1)
+	Complex vec(2,2, 8, 0:1)
 	common /vectors/ vec
 
 #define K(x,y)     vec(x,y, 1, i)
@@ -22,7 +24,7 @@
 #define EpsL(x,y)  vec(x,y, 3, i)
 #define EpsTL(x,y) vec(x,y, 4, i)
 
-	double complex spi(2, 16, 0:1)
+	Complex spi(2, 16, 0:1)
 	equivalence (spi, vec)
 
 #define Spinor(hel,om,x) spi(x, hel*2+om+5, i)
@@ -37,7 +39,7 @@
 *       spi(x, 15, i) = right-handed, dotted,   upper
 *       spi(x, 16, i) = right-handed, dotted,   lower
 
-	double precision momspec(16,1)
+	Real momspec(16,1)
 	common /momenta/ momspec
 
 * the following must match the definitions in util.h:
@@ -54,11 +56,11 @@
 #define SPEC_EY 11
 #define SPEC_EZ 12
 
-	double precision m2, p2, p0, deltap, sump
-	double precision sinth, onePez, oneMez
-	double complex expIphi
+	Real m2, p2, p0, deltap, sump
+	Real sinth, onePez, oneMez
+	Complex expIphi
 
-	double precision sqrt2
+	Real sqrt2
 	parameter (sqrt2 = 1.4142135623730950488016887242096981D0)
 
 	momspec(SPEC_M,i) = m
@@ -92,20 +94,20 @@
 	  momspec(SPEC_PHI,i) = 0
 	else
 	  sinth = sqrt(sinth)
-	  expIphi = DCMPLX(ex, ey)/sinth
+	  expIphi = Cmplx(ex, ey)/sinth
 	  momspec(SPEC_PHI,i) = atan2(ey, ex)
 	endif
 
 	K(1,1) = p0*onePez - deltap*ez
 	K(2,2) = p0*oneMez + deltap*ez
-	K(2,1) = p*DCMPLX(ex, ey)
-	K(1,2) = DCONJG(K(2,1))
+	K(2,1) = p*Cmplx(ex, ey)
+	K(1,2) = Conjugate(K(2,1))
 
 	if( m .ne. 0 ) then
 	  EpsL(1,1) = (p*onePez + deltap*ez)/m
 	  EpsL(2,2) = (p*oneMez - deltap*ez)/m
-	  EpsL(2,1) = p0/m*DCMPLX(ex, ey)
-	  EpsL(1,2) = DCONJG(EpsL(2,1))
+	  EpsL(2,1) = p0/m*Cmplx(ex, ey)
+	  EpsL(1,2) = Conjugate(EpsL(2,1))
 	endif
 
 	EpsTR(2,2) = 1/sqrt2*sinth
@@ -113,9 +115,9 @@
 	EpsTR(1,1) = -EpsTR(2,2)
 	EpsTL(1,1) = EpsTR(1,1)
 	EpsTR(2,1) = -1/sqrt2*oneMez*expIphi
-	EpsTL(1,2) = DCONJG(EpsTR(2,1))
+	EpsTL(1,2) = Conjugate(EpsTR(2,1))
 	EpsTL(2,1) = 1/sqrt2*onePez*expIphi
-	EpsTR(1,2) = DCONJG(EpsTL(2,1))
+	EpsTR(1,2) = Conjugate(EpsTL(2,1))
 
 #define safelog(x) log(max(x, 1D-300))
 
@@ -123,7 +125,7 @@
 	momspec(SPEC_ET,i) = sqrt(momspec(SPEC_KT,i)**2 + m2)
 	momspec(SPEC_PRAP,i) = safelog(onePez) -
      &    safelog(sinth)
-	momspec(SPEC_RAP,i) = safelog(DBLE(K(1,1))) -
+	momspec(SPEC_RAP,i) = safelog(Re(K(1,1))) -
      &    safelog(momspec(SPEC_ET,i))
 
 * this is E^(I phi) cos(th/2) = 1/sqrt2*sqrt(1 + ez)*expIphi:
@@ -136,20 +138,20 @@
 	Spinor(-1, 6, 1) = deltap*sinth
 	DottedSpinor(-1, 6, 1) = Spinor(-1, 6, 1)
 	Spinor(-1, 6, 2) = -deltap*expIphi
-	DottedSpinor(-1, 6, 2) = DCONJG(Spinor(-1, 6, 2))
+	DottedSpinor(-1, 6, 2) = Conjugate(Spinor(-1, 6, 2))
 
 	Spinor(-1, 7, 1) = sump*sinth
 	DottedSpinor(-1, 7, 1) = Spinor(-1, 7, 1)
 	Spinor(-1, 7, 2) = -sump*expIphi
-	DottedSpinor(-1, 7, 2) = DCONJG(Spinor(-1, 7, 2))
+	DottedSpinor(-1, 7, 2) = Conjugate(Spinor(-1, 7, 2))
 
 	DottedSpinor(1, 6, 1) = sump*expIphi
-	Spinor(1, 6, 1) = DCONJG(DottedSpinor(1, 6, 1))
+	Spinor(1, 6, 1) = Conjugate(DottedSpinor(1, 6, 1))
 	DottedSpinor(1, 6, 2) = sump*sinth
 	Spinor(1, 6, 2) = DottedSpinor(1, 6, 2)
 
 	DottedSpinor(1, 7, 1) = deltap*expIphi
-	Spinor(1, 7, 1) = DCONJG(DottedSpinor(1, 7, 1))
+	Spinor(1, 7, 1) = Conjugate(DottedSpinor(1, 7, 1))
 	DottedSpinor(1, 7, 2) = deltap*sinth
 	Spinor(1, 7, 2) = DottedSpinor(1, 7, 2)
 	end

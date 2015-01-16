@@ -1,19 +1,21 @@
 * Eigen2x2.F
 * diagonalization of a Hermitian 2-by-2 matrix
 * this file is part of FormCalc
-* last modified 10 Jun 06 th
+* last modified 9 Aug 11 th
+
+#include "diag-f.h"
 
 
 	subroutine Eigen2x2(fail, m, msq, U, M11, M22, M12)
 	implicit none
 	integer fail
-	double precision m(2), msq(2)
-	double complex U(2,2)
-	double precision M11, M22
-	double complex M12
+	Real m(2), msq(2)
+	Complex U(2,2)
+	Real M11, M22
+	Complex M12
 
-	double precision M12sq, delta, t, c, m1, m2
-	double complex s
+	Real M12sq, delta, t, c, m1, m2
+	Complex s
 
 	M12sq = DBLE(M12)**2 + DIMAG(M12)**2
 	t = .5D0*(M11 - M22)

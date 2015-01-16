@@ -1,7 +1,10 @@
 * diag-f.h
 * global declarations for the Diag routines
 * this file is part of Diag
-* last modified 4 Aug 11 th
+* last modified 9 Aug 11 th
+
+
+#include "types.h"
 
 
 * The maximum dimension of a matrix, needed for allocating internal

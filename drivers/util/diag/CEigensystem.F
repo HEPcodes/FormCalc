@@ -3,7 +3,7 @@
 * code adapted from the "Handbook" routines for complex A
 * (Wilkinson, Reinsch: Handbook for Automatic Computation, p. 202)
 * this file is part of the Diag library
-* last modified 1 Aug 11 th
+* last modified 10 Aug 11 th
 
 #include "diag-f.h"
 
@@ -17,20 +17,16 @@
 	subroutine CEigensystem(n, A,ldA, d, U,ldU, sort)
 	implicit none
 	integer n, ldA, ldU, sort
-	double complex A(ldA,*), U(ldU,*), d(*)
+	Complex A(ldA,*), U(ldU,*), d(*)
 
 	integer p, q, j
-	double precision red, off, thresh
-	double complex delta, t, s, invc, sx, sy, tx, ty
-	double complex x, y
-	double complex ev(2,MAXDIM)
+	Real red, off, thresh
+	Complex delta, t, s, invc, sx, sy, tx, ty
+	Complex x, y
+	Complex ev(2,MAXDIM)
 
 	integer sweep
 	common /nsweeps/ sweep
-
-	double precision Sq
-	double complex c
-	Sq(c) = DBLE(c*DCONJG(c))
 
 	if( n .gt. MAXDIM ) then
 	  print *, "Dimension too large"
@@ -135,7 +131,7 @@
 	  j = p
 	  t = d(p)
 	  do q = p + 1, n
-	    if( sort*(DBLE(t) - DBLE(d(q))) .gt. 0 ) then
+	    if( sort*(Re(t) - Re(d(q))) .gt. 0 ) then
 	      j = q
 	      t = d(q)
 	    endif

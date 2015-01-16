@@ -3,7 +3,7 @@
 * code adapted from the "Handbook" routines
 * (Wilkinson, Reinsch: Handbook for Automatic Computation, p. 202)
 * this file is part of the Diag library
-* last modified 1 Aug 11 th
+* last modified 10 Aug 11 th
 
 #include "diag-f.h"
 
@@ -18,21 +18,17 @@
 	subroutine TakagiFactor(n, A,ldA, d, U,ldU, sort)
 	implicit none
 	integer n, ldA, ldU, sort
-	double complex A(ldA,*), U(ldU,*)
-	double precision d(*)
+	Complex A(ldA,*), U(ldU,*)
+	Real d(*)
 
 	integer p, q, j
-	double precision red, off, thresh
-	double precision sqp, sqq, t, invc
-	double complex f, x, y
-	double complex ev(2,MAXDIM)
+	Real red, off, thresh
+	Real sqp, sqq, t, invc
+	Complex f, x, y
+	Complex ev(2,MAXDIM)
 
 	integer sweep
 	common /nsweeps/ sweep
-
-	double precision Sq
-	double complex c
-	Sq(c) = DBLE(c*DCONJG(c))
 
 	if( n .gt. MAXDIM ) then
 	  print *, "Dimension too large"
@@ -78,7 +74,8 @@
 	        t = .5D0*abs(sqp - sqq)
 	        if( t .gt. 0 ) then
 	          f = sign(1D0, sqp - sqq)*
-     &              (ev(2,q)*DCONJG(A(p,q)) + DCONJG(ev(2,p))*A(p,q))
+     &              (ev(2,q)*Conjugate(A(p,q)) +
+     &               Conjugate(ev(2,p))*A(p,q))
 	        else
 	          f = 1
 	          if( sqp .ne. 0 ) f = sqrt(ev(2,q)/ev(2,p))
@@ -86,7 +83,7 @@
 	        t = t + sqrt(t**2 + Sq(f))
 	        f = f/t
 
-	        ev(1,p) = ev(1,p) + A(p,q)*DCONJG(f)
+	        ev(1,p) = ev(1,p) + A(p,q)*Conjugate(f)
 	        ev(2,p) = A(p,p) + ev(1,p)
 	        ev(1,q) = ev(1,q) - A(p,q)*f
 	        ev(2,q) = A(q,q) + ev(1,q)
@@ -99,21 +96,21 @@
 	        do j = 1, p - 1
 	          x = A(j,p)
 	          y = A(j,q)
-	          A(j,p) = x + (DCONJG(f)*y - t*x)
+	          A(j,p) = x + (Conjugate(f)*y - t*x)
 	          A(j,q) = y - (f*x + t*y)
 	        enddo
 
 	        do j = p + 1, q - 1
 	          x = A(p,j)
 	          y = A(j,q)
-	          A(p,j) = x + (DCONJG(f)*y - t*x)
+	          A(p,j) = x + (Conjugate(f)*y - t*x)
 	          A(j,q) = y - (f*x + t*y)
 	        enddo
 
 	        do j = q + 1, n
 	          x = A(p,j)
 	          y = A(q,j)
-	          A(p,j) = x + (DCONJG(f)*y - t*x)
+	          A(p,j) = x + (Conjugate(f)*y - t*x)
 	          A(q,j) = y - (f*x + t*y)
 	        enddo
 
@@ -123,7 +120,7 @@
 	          x = U(p,j)
 	          y = U(q,j)
 	          U(p,j) = x + (f*y - t*x)
-	          U(q,j) = y - (DCONJG(f)*x + t*y)
+	          U(q,j) = y - (Conjugate(f)*x + t*y)
 	        enddo
 	      endif
 	    enddo
@@ -143,7 +140,7 @@
 
 	do p = 1, n
 	  d(p) = abs(A(p,p))
-	  if( d(p) .gt. DBL_EPS .and. d(p) .ne. DBLE(A(p,p)) ) then
+	  if( d(p) .gt. DBL_EPS .and. d(p) .ne. Re(A(p,p)) ) then
 	    f = sqrt(A(p,p)/d(p))
 	    do q = 1, n
 	      U(p,q) = U(p,q)*f

@@ -2,16 +2,18 @@
 * same invocation as Eigen2x2, but ignores M12 (i.e., no mixing)
 * used for testing
 * this file is part of FormCalc
-* last modified 8 Oct 05 th
+* last modified 9 Aug 11 th
+
+#include "diag-f.h"
 
 
 	subroutine NoMixing(fail, m, msq, U, M11, M22, M12)
 	implicit none
 	integer fail
-	double precision m(2), msq(2)
-	double complex U(2,2)
-	double precision M11, M22
-	double complex M12
+	Real m(2), msq(2)
+	Complex U(2,2)
+	Real M11, M22
+	Complex M12
 
 	if( M11 .gt. M22 ) then
 	  msq(1) = M22

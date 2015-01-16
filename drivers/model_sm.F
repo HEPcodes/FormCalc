@@ -1,7 +1,7 @@
 * model_sm.F
 * all parameters for the Standard Model are initialized here
 * this file is part of FormCalc
-* last modified 18 May 11 th
+* last modified 9 Aug 11 th
 
 
 	subroutine ModelDefaults(argc, argv)
@@ -25,9 +25,9 @@
 
 #else
 
-	double precision s12, s23, s13
-	double precision c12, c23, c13
-	double complex s13c
+	Real s12, s23, s13
+	Real c12, c23, c13
+	Complex s13c
 
 	s12 = CKMlambda
 	c12 = sqrt((1 - s12)*(1 + s12))
@@ -35,7 +35,7 @@
 	s23 = s12**2*CKMA
 	c23 = sqrt((1 - s23)*(1 + s23))
 
-	s13c = s12*s23*DCMPLX(CKMrhobar, CKMetabar)
+	s13c = s12*s23*Cmplx(CKMrhobar, CKMetabar)
 	s13c = c23/c12*s13c/(1 - s23/s12*s13c)
 	s13 = abs(s13c)
 	c13 = sqrt((1 - s13)*(1 + s13))
@@ -46,7 +46,7 @@
 	CKM(1,2) = s12*c13
 	CKM(2,2) = c12*c23 - s12*s23*s13c
 	CKM(3,2) = -c12*s23 - s12*c23*s13c
-	CKM(1,3) = DCONJG(s13c)
+	CKM(1,3) = Conjugate(s13c)
 	CKM(2,3) = s23*c13
 	CKM(3,3) = c23*c13
 
@@ -102,7 +102,7 @@
 	subroutine ModelVarIni(fail, scale)
 	implicit none
 	integer fail
-	double precision scale
+	Real scale
 
 #include "decl.h"
 

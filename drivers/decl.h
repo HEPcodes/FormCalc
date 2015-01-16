@@ -1,7 +1,7 @@
 * decl.h
 * these declarations are included "everywhere"
 * this file is part of FormCalc
-* last modified 6 Dec 10 th
+* last modified 9 Aug 11 th
 
 
 #ifndef DECL_H
@@ -9,6 +9,7 @@
 
 * declarations for the whole file (e.g. preprocessor defs)
 
+#include "types.h"
 #include "user.h"
 
 #else

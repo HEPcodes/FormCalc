@@ -1,7 +1,7 @@
 * xsection.F
 * routines to compute the cross-section
 * this file is part of FormCalc
-* last modified 3 Aug 11 th
+* last modified 9 Aug 11 th
 
 #include "decl.h"
 
@@ -25,7 +25,7 @@
 	integer fail, argc
 	character*(*) pol
 	character*128 argv(*)
-	double precision sqrtSfrom, sqrtSto, sqrtSstep
+	Real sqrtSfrom, sqrtSto, sqrtSstep
 
 #include "xsection.h"
 
@@ -106,7 +106,7 @@
 	Var(TRIVIAL) = 0
 	Step(TRIVIAL) = 0
 
-	avgfac = 2**(LEGS)*DBLE(COLOURFACTOR)*DBLE(IDENTICALFACTOR)/df
+	avgfac = 2**(LEGS)*Re(COLOURFACTOR)*Re(IDENTICALFACTOR)/df
 	sqrtS = -1
 	threshold = -1
 	scale = -1
@@ -161,18 +161,18 @@
 	subroutine SetEnergy(fail, newsqrtS)
 	implicit none
 	integer fail
-	double precision newsqrtS
+	Real newsqrtS
 
 #include "xsection.h"
 
-	double precision oldscale, oldmass_in, oldmass_out
+	Real oldscale, oldmass_in, oldmass_out
 	logical reset
 	integer i
 
 	fail = 0
 	reset = abs(newsqrtS - sqrtS) .gt. 1D-9
 	sqrtS = newsqrtS
-	oldscale = max(DBLE(SCALE), 1D0)
+	oldscale = max(Re(SCALE), 1D0)
 
 	if( sqrtSinvalid .eq. 1 .or.
      &      btest(flags, BIT_RESET) .or.
@@ -183,7 +183,7 @@
 	  do i = 1, 10
 	    call ModelVarIni(fail, oldscale)
 
-	    scale = max(DBLE(SCALE), 1D0)
+	    scale = max(Re(SCALE), 1D0)
 	    mass_in = MASS_IN
 	    mass_out = MASS_OUT
 
@@ -324,7 +324,7 @@
 
 	external DifferentialCS
 
-	double precision result(NCOMP), error(NCOMP), show(nvars)
+	Real result(NCOMP), error(NCOMP), show(nvars)
 	integer fail, f, v, nfix, ndim, fix(nvars)
 
 	call ModelConstIni(fail)
@@ -333,13 +333,13 @@
 	flags = 2**BIT_RESET + 2**BIT_LOOP
 
 #ifdef MUDIM
-	call setmudim(DBLE(MUDIM))
+	call setmudim(Re(MUDIM))
 #endif
 #ifdef DELTA
-	call setdelta(DBLE(DELTA))
+	call setdelta(Re(DELTA))
 #endif
 #ifdef LAMBDA
-	call setlambda(DBLE(LAMBDA))
+	call setlambda(Re(LAMBDA))
 #endif
 	Divergence = getdelta()
 	mudim = getmudim()
@@ -493,16 +493,16 @@
 	subroutine DifferentialCS(ndim, x, ncomp, result)
 	implicit none
 	integer ndim, ncomp
-	double precision x(ndim), result(ncomp)
+	Real x(ndim), result(ncomp)
 
 #include "xsection.h"
 
 #ifdef BREMSSTRAHLUNG
-	double precision SoftPhotonFactor
+	Real SoftPhotonFactor
 	external SoftPhotonFactor
 #endif
 
-	double precision fac, range, flux
+	Real fac, range, flux
 	integer v, d, c
 
 	fac = avgfac
@@ -574,10 +574,10 @@
 	implicit none
 	integer ndim
 	external integrand
-	double precision result(NCOMP), error(NCOMP)
+	Real result(NCOMP), error(NCOMP)
 
 	integer nregions, neval, fail, c
-	double precision prob(NCOMP)
+	Real prob(NCOMP)
 
 #include "xsection.h"
 
@@ -617,7 +617,7 @@
 #else
 
 	  call Patterson(NCOMP, 0D0, 1D0, integrand,
-     &      DBLE(RELACCURACY), DBLE(ABSACCURACY),
+     &      Re(RELACCURACY), Re(ABSACCURACY),
      &      neval, fail, result, error)
 	  do c = 1, NCOMP
 	    prob(c) = -1
@@ -632,7 +632,7 @@
 #if METHOD == VEGAS
 
 	  call vegas(ndim, NCOMP, integrand, USERDATA,
-     &      DBLE(RELACCURACY), DBLE(ABSACCURACY),
+     &      Re(RELACCURACY), Re(ABSACCURACY),
      &      VERBOSE, SEED, MINEVAL, MAXEVAL,
      &      NSTART, NINCREASE, NBATCH,
      &      GRIDNO, STATEFILE,
@@ -643,19 +643,19 @@
 #elif METHOD == SUAVE
 
 	  call suave(ndim, NCOMP, integrand, USERDATA,
-     &      DBLE(RELACCURACY), DBLE(ABSACCURACY),
+     &      Re(RELACCURACY), Re(ABSACCURACY),
      &      VERBOSE + FLAGS_LAST, SEED, MINEVAL, MAXEVAL,
-     &      NNEW, DBLE(FLATNESS),
+     &      NNEW, Re(FLATNESS),
      &      nregions, neval, fail, result, error, prob)
 	  INFO "Suave integration results:"
 
 #elif METHOD == DIVONNE
 
 	  call divonne(ndim, NCOMP, integrand, USERDATA,
-     &      DBLE(RELACCURACY), DBLE(ABSACCURACY),
+     &      Re(RELACCURACY), Re(ABSACCURACY),
      &      VERBOSE, SEED, MINEVAL, MAXEVAL,
      &      KEY1, KEY2, KEY3, MAXPASS,
-     &      DBLE(BORDER), DBLE(MAXCHISQ), DBLE(MINDEVIATION),
+     &      Re(BORDER), Re(MAXCHISQ), Re(MINDEVIATION),
      &      0, NDIM, 0, 0, 0,
      &      nregions, neval, fail, result, error, prob)
 	  INFO "Divonne integration results:"
@@ -663,7 +663,7 @@
 #else
 
 	  call cuhre(ndim, NCOMP, integrand, USERDATA,
-     &      DBLE(RELACCURACY), DBLE(ABSACCURACY),
+     &      Re(RELACCURACY), Re(ABSACCURACY),
      &      VERBOSE + FLAGS_LAST, MINEVAL, MAXEVAL,
      &      KEY,
      &      nregions, neval, fail, result, error, prob)

@@ -1,7 +1,10 @@
 * PrintVec.F
 * print out the Minkowskian representation of a vector
 * this file is part of FormCalc
-* last modified 19 Nov 10 th
+* last modified 9 Aug 11 th
+
+#include "types.h"
+
 
 * Note: the arguments a, b specify the vector's position in
 * the array vec, NOT the vector itself.  The macros k, e, ec, s
@@ -12,7 +15,7 @@
 	integer a
 	character*(*) s
 
-	double complex vec(2,2, 1)
+	Complex vec(2,2, 1)
 	common /vectors/ vec
 
 #define A(i,j) vec(i,j,a)

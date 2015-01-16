@@ -1,17 +1,19 @@
 * VeS.F
 * computes Vector.eps.Spinor
 * this file is part of FormCalc
-* last modified 15 Jun 04 th
+* last modified 9 Aug 11 th
+
+#include "types.h"
 
 
 	integer function VeS(a, b)
 	implicit none
 	integer a, b
 
-	double complex vec(2,2, 1)
+	Complex vec(2,2, 1)
 	common /vectors/ vec
 
-	double complex spi(2, 2)
+	Complex spi(2, 2)
 	equivalence (spi, vec)
 
 #define A(x,y) vec(x,y, a)

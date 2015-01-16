@@ -1,7 +1,7 @@
 * lumi_hadron.F
 * parton luminosity for a hadron collider
 * this file is part of FormCalc
-* last modified 5 May 11 th
+* last modified 9 Aug 11 th
 
 * This code links to the LHAPDF library.
 * The following preprocessor variables are used:
@@ -71,12 +71,12 @@
 
 	subroutine Luminosity(fac)
 	implicit none
-	double precision fac
+	Real fac
 
 #include "xsection.h"
 
-	double precision xPDF(-6:6), tPDF(-6:6)
-	double precision tau, x, xrange
+	Real xPDF(-6:6), tPDF(-6:6)
+	Real tau, x, xrange
 	integer fail
 
 	integer partonsign

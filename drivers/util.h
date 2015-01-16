@@ -1,13 +1,13 @@
 * util.h
 * prototypes for the functions in util.a
 * this file is part of FormCalc
-* last modified 3 Aug 11 th
+* last modified 25 Aug 11 th
 
 
-	double precision ThreeMom
-	double precision SInvariant, TInvariant
-	double complex Pair, Eps
-	double complex SxS, SeS
+	Real ThreeMom
+	Real SInvariant, TInvariant
+	Complex Pair, Eps
+	Complex SxS, SeS
 	integer VxS, VeS, BxS, BeS
 
 	external ThreeMom
@@ -20,16 +20,16 @@
 #define LEGS 1
 #endif
 
-	double complex vec(2,2,8,0:LEGS)
+	Complex vec(2,2,8,0:LEGS)
 	common /vectors/ vec
 
-	double complex kcomp(32,0:LEGS)
+	Complex kcomp(32,0:LEGS)
 	equivalence (vec, kcomp)
 
-	double precision momspec(16,LEGS)
+	Real momspec(16,LEGS)
 	common /momenta/ momspec
 
-	double precision rootsvalue, muscale
+	Real rootsvalue, muscale
 	common /cuttools_para/ rootsvalue, muscale
 
 	integer*8 by
@@ -64,7 +64,6 @@
 #define IndexDelta(i,j) signbit(ieor(i,j)-1)
 #define Digit(i) char(i+48)
 #define Polar(r,theta) r*exp(cI*degree*theta)
-#define Sq(c) DBLE((c)*DCONJG(c))
 
 #define Error(err,msg) call m_(err, __LINE__, __FILE__, msg)
 #define Warning(msg) call m_(0, 0, __FILE__, msg)

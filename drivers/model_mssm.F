@@ -2,7 +2,7 @@
 * all parameters for the MSSM are initialized here
 * this file is part of FormCalc
 * Christian Schappacher, 17 Feb 99
-* last modified 18 May 11 th
+* last modified 9 Aug 11 th
 
 
 * The input parameters for model_mssm are:
@@ -215,7 +215,7 @@
 	subroutine ModelVarIni(fail, scale)
 	implicit none
 	integer fail
-	double precision scale
+	Real scale
 
 #include "decl.h"
 
@@ -333,26 +333,26 @@
 #include "decl.h"
 
 	integer t, g
-	double precision i3part, qpart
+	Real i3part, qpart
 
-	double precision Qe, Qu, Qd
+	Real Qe, Qu, Qd
 	parameter (Qe = -1, Qu = 2/3D0, Qd = -1/3D0)
 
 #ifndef NO_EXCLUSION_LIMITS
-	double precision DeltaRho, f1f2
+	Real DeltaRho, f1f2
 	external f1f2
 #endif
 
 #ifdef NMFV
 	integer as, g2
-	double complex MX2(6,6), m1, m2, m3
+	Complex MX2(6,6), m1, m2, m3
 
 #define MX2_LL(i,j) MX2(i,j)
 #define MX2_LR(i,j) MX2(i,j+3)
-#define MX2_RL(i,j) DCONJG(MX2(j,i+3))
+#define MX2_RL(i,j) Conjugate(MX2(j,i+3))
 #define MX2_RR(i,j) MX2(i+3,j+3)
 
-	double complex MX2_flat(6*6)
+	Complex MX2_flat(6*6)
 	equivalence (MX2, MX2_flat)
 #endif
 
@@ -367,8 +367,8 @@
 	DSf(2,4) = Qd*qpart
 	DSf(1,4) = -i3part - DSf(2,4)
 
-	MUETB(3) = -DCONJG(MUE)/TB
-	MUETB(2) = -DCONJG(MUE)*TB
+	MUETB(3) = -Conjugate(MUE)/TB
+	MUETB(2) = -Conjugate(MUE)*TB
 	MUETB(4) = MUETB(2)
 
 	do g = 1, 3
@@ -409,7 +409,7 @@
 	    call Eigen2x2(fail, MSf(1,t,g), MSf2(1,t,g), USf(1,1,t,g),
      &        MSS2(1,t,g) + DSf(1,t) + Mf2(t,g),
      &        MSS2(2,t,g) + DSf(2,t) + Mf2(t,g),
-     &        Mf(t,g)*DCONJG(Xf(t,g)))
+     &        Mf(t,g)*Conjugate(Xf(t,g)))
 	    if( fail .ne. 0 ) return
 
 	    UCSf(1,1,t,g) = Sq(USf(1,1,t,g))
@@ -491,11 +491,11 @@
 	      m1 = MX2_LL(1,1)*CKMC(g2,1) +
      &             MX2_LL(1,2)*CKMC(g2,2) +
      &             MX2_LL(1,3)*CKMC(g2,3)
-	      m2 = DCONJG(MX2_LL(1,2))*CKMC(g2,1) +
+	      m2 = Conjugate(MX2_LL(1,2))*CKMC(g2,1) +
      &             MX2_LL(2,2)*CKMC(g2,2) +
      &             MX2_LL(2,3)*CKMC(g2,3)
-	      m3 = DCONJG(MX2_LL(1,3))*CKMC(g2,1) +
-     &             DCONJG(MX2_LL(2,3))*CKMC(g2,2) +
+	      m3 = Conjugate(MX2_LL(1,3))*CKMC(g2,1) +
+     &             Conjugate(MX2_LL(2,3))*CKMC(g2,2) +
      &             MX2_LL(3,3)*CKMC(g2,3)
 	      do g = 1, g2
 	        MX2_LL(g,g2) = CKM(g,1)*m1 + CKM(g,2)*m2 + CKM(g,3)*m3
@@ -522,11 +522,11 @@
 	  Af(t,2,3) = MX2_LR(2,3)/Mf(t,2)
 	  MX2_LR(1,3) = MSS(1,t,1)*MSS(2,t,3)*deltaSf_LR(1,3,t)
 	  Af(t,1,3) = MX2_LR(1,3)/Mf(t,1)
-	  MX2_LR(2,1) = DCONJG(MSS(2,t,1)*MSS(1,t,2)*deltaSf_RL(1,2,t))
+	  MX2_LR(2,1) = Conjugate(MSS(2,t,1)*MSS(1,t,2)*deltaSf_RL(1,2,t))
 	  Af(t,2,1) = MX2_LR(2,1)/Mf(t,2)
-	  MX2_LR(3,2) = DCONJG(MSS(2,t,2)*MSS(1,t,3)*deltaSf_RL(2,3,t))
+	  MX2_LR(3,2) = Conjugate(MSS(2,t,2)*MSS(1,t,3)*deltaSf_RL(2,3,t))
 	  Af(t,3,2) = MX2_LR(3,2)/Mf(t,3)
-	  MX2_LR(3,1) = DCONJG(MSS(2,t,1)*MSS(1,t,3)*deltaSf_RL(1,3,t))
+	  MX2_LR(3,1) = Conjugate(MSS(2,t,1)*MSS(1,t,3)*deltaSf_RL(1,3,t))
 	  Af(t,3,1) = MX2_LR(3,1)/Mf(t,3)
 
 	  call HEigensystem(6, MX2,6, MASf2(1,t), UASf(1,1,t),6, 1)
@@ -547,13 +547,13 @@
 *-----------------------------------------------------------------------
 * this function is needed for the calculation of Delta rho
 
-	double precision function f1f2(m1, m2)
+	Real function f1f2(m1, m2)
 	implicit none
-	double precision m1, m2
+	Real m1, m2
 
 #include "decl.h"
 
-	double precision f1, f2, logm1m2, c1
+	Real f1, f2, logm1m2, c1
 
 	logm1m2 = log(m1/m2)
 	c1 = 2*m1*m2/(m1 - m2)*logm1m2
@@ -575,7 +575,7 @@
 
 #include "decl.h"
 
-	double complex X(2,2)
+	Complex X(2,2)
 
 	X(1,1) = Mino2
 	X(2,1) = sqrt2*MW*CB
@@ -605,7 +605,7 @@
 
 #include "decl.h"
 
-	double complex Y(4,4)
+	Complex Y(4,4)
 
 #ifndef NO_GUT_RELATION
 * GUT relation (Higgs Hunters Guide p. 287)
@@ -654,7 +654,7 @@
 
 #include "decl.h"
 
-	double precision avgMH2, deltaMH2
+	Real avgMH2, deltaMH2
 	integer inputmass
 	data inputmass /0/
 
@@ -791,19 +791,19 @@
 
 #include "decl.h"
 
-	double precision MTr2, Qsusy, Lam
-	double precision Xt, topstop, toplog, mix
-	double precision Pb, Pf, Pg, Pg_, P1h, P2h, P2h_
-	double precision pref, pref2, tmp, tmplog
-	double precision sig11, sig12, sig22
-	double precision avgMH2, deltaMH2
+	Real MTr2, Qsusy, Lam
+	Real Xt, topstop, toplog, mix
+	Real Pb, Pf, Pg, Pg_, P1h, P2h, P2h_
+	Real pref, pref2, tmp, tmplog
+	Real sig11, sig12, sig22
+	Real avgMH2, deltaMH2
 
-	double precision MtLR, MbLR
+	Real MtLR, MbLR
 	equivalence (Xf(3,3), MtLR)
 	equivalence (Xf(4,3), MbLR)
 
 	integer Nc, Ng
-	double precision Qt, Qb
+	Real Qt, Qb
 	parameter (Nc = 3, Ng = 3, Qt = 2/3D0, Qb = -1/3D0)
 
 * this is the running top mass:
@@ -949,14 +949,14 @@
 	parameter (botResum = 1)
 	parameter (tlCplxApprox = 3)
 
-	double precision scalefactor
-	double precision Qtau, Qt, Qb
+	Real scalefactor
+	Real Qtau, Qt, Qb
 	parameter (scalefactor = 1)
 	parameter (Qtau = 0)
 	parameter (Qt = 0)
 	parameter (Qb = 0)
 
-	double complex SAeff
+	Complex SAeff
 
 	call FHSetFlags(fail, mssmpart, fieldren, tanbren, higgsmix,
      &    p2approx, looplevel, runningMT, botResum, tlCplxApprox)

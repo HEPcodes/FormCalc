@@ -1,18 +1,20 @@
 * Pair.F
 * calculates the scalar product of two four-vectors
 * this file is part of FormCalc
-* last modified 19 Nov 10 th
+* last modified 9 Aug 11 th
+
+#include "types.h"
 
 
 * Note: the arguments a, b specify the vector's position in
 * the array vec, NOT the vector itself.  The macros k, e, ec, s
 * (defined in util.h) convert from 1...LEGS to a, b.
 
-	double complex function Pair(a, b)
+	Complex function Pair(a, b)
 	implicit none
 	integer a, b
 
-	double complex vec(2,2, 1)
+	Complex vec(2,2, 1)
 	common /vectors/ vec
 
 #define A(x,y) vec(x,y, a)

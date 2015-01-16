@@ -3,7 +3,7 @@
 * code adapted from the "Handbook" routines for complex A
 * (Wilkinson, Reinsch: Handbook for Automatic Computation, p. 202)
 * this file is part of the Diag library
-* last modified 1 Aug 11 th
+* last modified 10 Aug 11 th
 
 #include "diag-f.h"
 
@@ -18,21 +18,17 @@
 	subroutine HEigensystem(n, A,ldA, d, U,ldU, sort)
 	implicit none
 	integer n, ldA, ldU, sort
-	double complex A(ldA,*), U(ldU,*)
-	double precision d(*)
+	Complex A(ldA,*), U(ldU,*)
+	Real d(*)
 
 	integer p, q, j
-	double precision red, off, thresh
-	double precision t, delta, invc, s
-	double complex x, y, Apq
-	double precision ev(2,MAXDIM)
+	Real red, off, thresh
+	Real t, delta, invc, s
+	Complex x, y, Apq
+	Real ev(2,MAXDIM)
 
 	integer sweep
 	common /nsweeps/ sweep
-
-	double precision Sq
-	double complex c
-	Sq(c) = DBLE(c*DCONJG(c))
 
 	if( n .gt. MAXDIM ) then
 	  print *, "Dimension too large"
@@ -42,7 +38,7 @@
 
 	do p = 1, n
 	  ev(1,p) = 0
-	  ev(2,p) = DBLE(A(p,p))
+	  ev(2,p) = Re(A(p,p))
 	  d(p) = ev(2,p)
 	enddo
 
@@ -91,22 +87,22 @@
 	        do j = 1, p - 1
 	          x = A(j,p)
 	          y = A(j,q)
-	          A(j,p) = x + s*(DCONJG(Apq)*y - t*x)
+	          A(j,p) = x + s*(Conjugate(Apq)*y - t*x)
 	          A(j,q) = y - s*(Apq*x + t*y)
 	        enddo
 
 	        do j = p + 1, q - 1
 	          x = A(p,j)
 	          y = A(j,q)
-	          A(p,j) = x + s*(Apq*DCONJG(y) - t*x)
-	          A(j,q) = y - s*(Apq*DCONJG(x) + t*y)
+	          A(p,j) = x + s*(Apq*Conjugate(y) - t*x)
+	          A(j,q) = y - s*(Apq*Conjugate(x) + t*y)
 	        enddo
 
 	        do j = q + 1, n
 	          x = A(p,j)
 	          y = A(q,j)
 	          A(p,j) = x + s*(Apq*y - t*x)
-	          A(q,j) = y - s*(DCONJG(Apq)*x + t*y)
+	          A(q,j) = y - s*(Conjugate(Apq)*x + t*y)
 	        enddo
 
 	        A(p,q) = 0
@@ -115,7 +111,7 @@
 	          x = U(p,j)
 	          y = U(q,j)
 	          U(p,j) = x + s*(Apq*y - t*x)
-	          U(q,j) = y - s*(DCONJG(Apq)*x + t*y)
+	          U(q,j) = y - s*(Conjugate(Apq)*x + t*y)
 	        enddo
 	      endif
 	    enddo

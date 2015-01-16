@@ -2,7 +2,7 @@
 * all parameters for the THDM are initialized here
 * this file is part of FormCalc
 * Abdesslam Arhrib, 2 Jun 03
-* last modified 13 May 11 th
+* last modified 9 Aug 11 th
 
 
 * The input parameters for model_thdm are:
@@ -46,8 +46,8 @@
 
 #include "decl.h"
 
-	double precision Lambda1, Lambda2, Lambda3, Lambda4, Lambda6
-	double precision DeltaRho
+	Real Lambda1, Lambda2, Lambda3, Lambda4, Lambda6
+	Real DeltaRho
 
 #if !defined(MODEL_TYPE_I) && !defined(MODEL_TYPE_II)
 	stop "Neither MODEL_TYPE_I nor MODEL_TYPE_II defined"

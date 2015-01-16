@@ -1,7 +1,7 @@
 * CTFcut.F
 * the FormCalc wrapper for the CutTools six-point function
 * this file is part of FormCalc
-* last modified 3 Aug 11 th
+* last modified 4 Aug 11 th
 
 
 	double complex function CTFcut(rank, num, numeps,
@@ -39,5 +39,7 @@
 
 	call ctsxcut(rootsvalue, muscale, 6, num, CTmpnum,
      &    rank, pj, mj, res, res1, stable, forcemp)
+	CTFcut = res(0)
+	PRINT *, "CTFcut=", CTFcut
 	end
 
