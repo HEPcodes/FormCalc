@@ -1,8 +1,8 @@
 (*
 
 This is FormCalc, Version 8.4
-Copyright by Thomas Hahn 1996-2014
-last modified 5 Nov 14 by Thomas Hahn
+Copyright by Thomas Hahn 1996-2015
+last modified 20 Jan 15 by Thomas Hahn
 
 Release notes:
 
@@ -42,7 +42,7 @@ Have fun!
 Print[""];
 Print["FormCalc 8.4"];
 Print["by Thomas Hahn"];
-Print["last revised 5 Nov 14"]
+Print["last revised 20 Jan 15"]
 
 
 (* symbols from FeynArts *)
@@ -1190,8 +1190,13 @@ Alternatively, expr may also be given as an amplitude directly, in which
 case PolarizationSum will first invoke SquaredME and HelicityME (with
 Hel[_] = 0) to obtain the squared amplitude."
 
+SumLegs::usage =
+"SumLegs is an option of PolarizationSum.  It specifies which of
+the external legs to include in the polarization sum, or All for
+summation over all external vector bosons."
+
 GaugeTerms::usage =
-"GaugeTerms is an option of PolarizationSum.  It controls the
+"GaugeTerms is an option of PolarizationSum.  It controls the
 treatment of the gauge-dependent terms in the polarization sum of
 massless vector bosons, which should eventually cancel in
 gauge-invariant subsets of diagrams. 
@@ -1370,6 +1375,10 @@ index n."
 
 ToCode::usage =
 "ToCode[expr] returns the Fortran or C form of expr as a string."
+
+ToDef::usage =
+"ToDef[expr] returns the Fortran or C form of expr as a string suitable
+for use in a preprocessor #define."
 
 ToFortran::usage =
 "ToFortran has been superseded by ToCode."
@@ -1983,6 +1992,8 @@ ToCode[x_] := ToString[x, CodeForm]
 
 ToFortran[x_] := ToCode[x]	(* legacy *)
 
+ToDef[x_] := StringReplace[ToCode[x], {" " -> "", "\"" -> ""}]
+
 
 ToCat[n_, {}] := Table[{}, {n}]
 
@@ -2302,6 +2313,10 @@ prop[p_, m_, d___] := Den[p, m^2, d]
 
 loop[a___, Den[p_, m_], b___, Den[p_, x_ m_], c___] :=
   loop[a, Den[p, m] - Den[p, x m], b, c] Den[m, 0]/(1 - x)
+
+loop[a___, Den[p_, m1_], b___, Den[p_, m2_], c___] :=
+  loop[a, Den[p, m1] - Den[p, m2], b, c]/(m1 - m2) (* *Den[m1, m2]*) /;
+  m1 =!= m2
 
 (*
 loop[a___, Den[p_, m_, d1___], b___, Den[p_, m_, d2___], c___] :=
@@ -2944,15 +2959,15 @@ intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
     Prepend[momrul,
       (DiracSpinor | MajoranaSpinor)[s_. p_Symbol, m_] :>
         Spinor[p, Neglect[m], s]];
-  amps = amps /. {
-    LeviCivita -> Eps,
-    ScalarProduct -> scalar,
-    PropagatorDenominator -> prop,
-    FeynAmpDenominator -> loop,
-    ChiralityProjector[c_] :> ga[(13 - c)/2],
-    (DiracSlash | DiracMatrix)[p_] :> MomThread[p, ga],
-    NonCommutative -> noncomm,
-    FourVector -> fvec };
+  amps = amps /.
+    { LeviCivita -> Eps,
+      ScalarProduct -> scalar,
+      PropagatorDenominator -> prop,
+      FeynAmpDenominator -> loop,
+      ChiralityProjector[c_] :> ga[(13 - c)/2],
+      (DiracSlash | DiracMatrix)[p_] :> MomThread[p, ga],
+      NonCommutative -> noncomm,
+      FourVector -> fvec };
 
   ampden = If[ combden === False, IdDen,
     DenList = Sort[DenList, Length[#1] >= Length[#2] &];
@@ -4118,6 +4133,9 @@ sunT[t1___, a_Symbol, t2___, i_, j_] sunT[t3___, a_, t4___, k_, l_] ^:=
   (sunT[t1, t4, i, l] sunT[t3, t2, k, j] -
     sunT[t1, t2, i, j] sunT[t3, t4, k, l]/SUNN)/2
 
+sunTsum[i_, j_, k_, l_] :=
+  (sunT[i, l] sunT[k, j] - sunT[i, j] sunT[k, l]/SUNN)/2
+
 sunT[a___, i_, j_Symbol] sunT[b___, j_, k_] ^:=
   sunT[a, b, i, k]
 
@@ -4179,7 +4197,8 @@ Block[ {res, ind},
     SUNSum[i_, _] :> (Sow[i]; 1) ];
   Simplify[ Expand[ res /.
     Cases[ind, i_Index :> i -> iname@@ i, {2}] /.
-    {SUNT -> sunText, SUNF -> sunF, SUNEps -> sunEps} /.
+    {SUNT -> sunText, SUNF -> sunF,
+     SUNEps -> sunEps, SUNTSum -> sunTsum} /.
     sunTrace[a__]^n_. :> Times@@ Table[sunTr[a], {n}]
   ] /. {sunT[i_, j_] :> Sort[SUNT[i, j]],
         sunT[g__, i_, i_] :> SUNT[g, 0, 0],
@@ -4345,6 +4364,7 @@ RealQ[p_Plus] := VectorQ[List@@ p, RealQ]
 (* performing the polarization sum analytically *)
 
 Options[PolarizationSum] = {
+  SumLegs -> All,
   Dimension -> 4,
   GaugeTerms -> True,
   MomElim -> MomElim,
@@ -4371,14 +4391,14 @@ Block[ {Hel},
 ]
 
 PolarizationSum[expr_, opt___?OptionQ] :=
-Block[ {abbr, dim, gauge, momelim, dotexp, nobrk, edit, retain,
+Block[ {slegs, dim, gauge, momelim, dotexp, nobrk, edit, retain,
 fullexpr, lor, indices, legs, masses, etasubst, vars, hh},
 
   If[ CurrentProc === {},
     Message[PolarizationSum::noprocess];
     Abort[] ];
 
-  {dim, gauge, momelim, dotexp, nobrk, edit, retain} =
+  {slegs, dim, gauge, momelim, dotexp, nobrk, edit, retain} =
     ParseOpt[PolarizationSum, opt] /. Options[CalcFeynAmp];
 
   fullexpr = expr //. Dispatch[Subexpr[]] //. Dispatch[Abbr[]] /.
@@ -4389,6 +4409,7 @@ fullexpr, lor, indices, legs, masses, etasubst, vars, hh},
 
   legs = Cases[fullexpr, Alt[ExtWF][i_] -> i,
     Infinity, Heads -> True] //Union;
+  If[ slegs =!= All, legs = Intersection[legs, Flatten[{slegs}]] ];
   masses = Masses[CurrentProc][[legs]];
 
   fullexpr = fullexpr /. s -> e /. Reverse/@ FromFormRules /.
@@ -4946,14 +4967,14 @@ varMapF[com_][vars_, type_] :=
 Block[ {off = 1, v = com <> StringTake[type, 1]},
   arr = {arr, v};
   { varMap[v <> "(", ")\n"]/@ vars,
-    "#define ", n = v <> "Len", " ", Strip[ToCode[off - 1]], "\n",
+    "#define ", n = v <> "Len", " ", ToDef[off - 1], "\n",
     varDeclF[{v[n]}, type] }
 ]
 
 varMapC[com_][vars_, type_] :=
 Block[ {off = 0, v = StringTake[type, 1], n},
   { varMap[com <> "." <> v <> "[", "]\n"]/@ vars,
-    "#define ", n = com <> v <> "Len", " ", Strip[ToCode[off]], "\n",
+    "#define ", n = com <> v <> "Len", " ", ToDef[off], "\n",
     varDeclC[{v[n]}, type] }
 ]
 
@@ -4963,15 +4984,12 @@ Block[ {ind = off, stride = 1, c = 104, lhs},
     ( ind += stride Sow[FromCharacterCode[++c]] - stride;
       stride *= # )&, {i} ]];
   off += stride;
-  { "#define ", Strip[ToCode[Level[lhs, {3}, var]]], " ",
-     arrL, Strip[ToCode[ind]], arrR }
+  { "#define ", ToDef[Level[lhs, {3}, var]], " ",
+     arrL, ToDef[ind], arrR }
 ]
 
 varMap[arrL_, arrR_][var_] :=
   {"#define ", ToCode[var], " ", arrL, ToCode[off++], arrR}
-
-
-Strip[s_String] := StringReplace[s, {" " -> "", "\"" -> ""}]
 
 
 varSubstC[var_[i___]] :=
@@ -6102,7 +6120,7 @@ Block[ {hh},
     VarDecl[Union[Cases[rcs, SumOver[i_, _] -> i, Infinity]], "integer"] <>
     "\n"];
   WriteExpr[hh, {sincl[[2]], rcs, sincl[[3]]},
-    Optimize -> True, DebugLines -> True];
+    Optimize -> True, DebugLines -> mod];
   WriteString[hh, SubroutineEnd[]];
   Close[hh];
   mod
@@ -6305,18 +6323,18 @@ Block[ {size = $BlockSize},
 ]
 
 
-Attributes[NumberMod] = {Listable}
-
-NumberMod[s__String] := StringJoin[s]
+NumberMod[s_, {n_}] := s <> ToString[n]
 
 
-FileSplit[expr_List, mod_, writemod_, ___] :=
+FileSplit[expr_, mod_String, r___] := FileSplit[expr, {mod}, r]
+
+FileSplit[expr_List, {mod_, ___}, writemod_, ___] :=
   {writemod[expr, mod]} /; LeafCount[expr] < $FileSize
 
 FileSplit[expr_List, mod_, writemod_, writeall_:(#2&)] :=
 Block[ {size = $FileSize},
   writeall[mod, MapIndexed[
-    writemod[List@@ #1, NumberMod[mod, ToString@@ #2]]&,
+    writemod[List@@ #1, NumberMod[mod, #2]]&,
     Flatten[Coalesce@@ expr] ]]
 ]
 
@@ -6324,7 +6342,7 @@ FileSplit[CodeExpr[vars__, expr_List], mod_,
   writemod_, writeall_:(#2&)] :=
 Block[ {size = $FileSize},
   writeall[mod, MapIndexed[
-    writemod[CodeExpr[vars, List@@ #1], NumberMod[mod, ToString@@ #2]]&,
+    writemod[CodeExpr[vars, List@@ #1], NumberMod[mod, #2]]&,
     Flatten[Coalesce@@ expr] ]]
 ]
 
@@ -6406,13 +6424,15 @@ process, doloop, new, vars, tmps, tmp, dup, dupc = 0},
   doloop = Hoist@@ Flatten[{expen}];
   new = Flatten[{expr}];
   vars = Cases[new, (Rule | RuleAdd)[var_, _] -> var, Infinity];
-  If[ !MemberQ[{False, All}, debug], new = AddDebug[new, debug] ];
+  If[ MatchQ[debug, True | _String],
+    new = AddDebug[new, debug];
+    debug = False ];
   new = process[new];
   dup[c_] := dup[c] = NewSymbol["dup", 0];
   new = new /. CodeExpr[_, t_, x_] :>
     (vars = DeleteCases[vars, Alt@@ t]; x);
-  If[ debug === All, new = AddDebug[new, debug] ];
   tmps = Cases[new, (ru:Rule | RuleAdd)[var_, _] -> var, Infinity];
+  If[ debug =!= False, new = AddDebug[new, debug] ];
   CodeExpr[MaxDims[vars], Complement[tmps, vars], Flatten[new]]
 ]
 
@@ -6428,6 +6448,7 @@ AddDebug[i_IndexIf, tag_] := MapIf[AddDebug[#, tag]&, i]
 
 AddDebug[(ru:Rule | RuleAdd)[var_, expr_], tag_] :=
   {ru[var, expr], DebugLine[var, expr, tag]}
+
 
 DebugLine[var_, expr_, tag_] := DebugLine[var, tag] /; FreeQ[var, Pattern]
 
@@ -6623,8 +6644,8 @@ $DebugCmd = {"#ifdef DEBUG\n", "#endif\n", "DEB(", ")"}
 DebugStatement[var_, tag_, {bline_:"", eline_:"", bcmd_, ecmd_}] :=
   bline <>
   "!" <> bcmd <> "\"" <> ({ToString[#], ": "}&)/@ tag <>
-    ToCode[var /. HelInd -> Identity] <> " =\", " <>
-    ToCode[var] <> ecmd <> $CodeEoln <> "\n" <>
+    ToDef[var /. HelInd -> Identity] <> " =\", " <>
+    ToDef[var] <> ecmd <> $CodeEoln <> "\n" <>
   eline
 
 

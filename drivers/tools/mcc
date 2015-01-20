@@ -2,7 +2,7 @@
 # this script jumps in if there is no working mcc on the path:
 # - on Mac OS it (hopefully) figures out the location of mcc,
 # - on Cygwin it substitutes mcc completely
-# last modified 14 Jul 14 th
+# last modified 16 Jan 15 th
 
 
 sdkpath()
@@ -55,6 +55,10 @@ cygmcc()
     :
   done
   dllname=`basename "$libname" m.lib`
+  OSbits=32
+  case "$dllname" in
+  *64*) OSbits=64 ;;
+  esac
 
   lib="$cache/${dllname}m"
   test -f "$lib.a" || {

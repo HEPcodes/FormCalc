@@ -2,7 +2,7 @@
 	ModelSpecific.m
 		global definitions for specific models
 		this file is part of FormCalc
-		last modified 20 Oct 14 th
+		last modified 24 Dec 14 th
 
 Note: This file is read by FormCalc only if $NoModelSpecific is not True.
 
@@ -169,10 +169,20 @@ Sq[TB] = TB2;
 Sq[SB] = SB2;
 Sq[CB] = CB2;
 CB2/: CB2 + SB2 = 1;
+CB2/: CB2 - 1 = -SB2;
+SB2/: SB2 - 1 = -CB2;
 CB2/: CB2 TB2 = SB2;
+CB2/: CB2 TB = S2B/2;
+SB2/: SB2/TB2 = CB2;
 CB/: CB TB = SB;
 CB/: CB SB = S2B/2;
+CB2/: CB2 SB2 = S2B^2/4;
 CB2/: CB2 - SB2 = C2B;
+SB2/: SB2 - CB2 = -C2B;
+SB2/: SB2/SB = SB;
+CB2/: CB2/CB = CB;
+S2B/: S2B/SB = 2 CB;
+S2B/: S2B/CB = 2 SB;
 S2B/: S2B TB = 2 SB2
 
 Sq[CBA] = CBA2;

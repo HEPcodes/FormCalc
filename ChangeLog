@@ -1,3 +1,16 @@
+20 Jan 15:
+
+- Fixed spurious 0xa0 non-UTF character in FormCalc.m.
+
+- Added SumLegs option for PolarizationSum to restrict the sum to
+  a subset of external vector bosons only.
+
+- Fixed compilation issue with the mcc script on Cygwin for
+  Mathematica versions before 10.
+
+- Fixed treatment of (rare) 'backslashed' linebreaks in FORM code.
+
+
 27 Nov 14:
 
 - Upgraded to Cuba 4.1.

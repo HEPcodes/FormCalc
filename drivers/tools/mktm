@@ -2,7 +2,7 @@
 # a script to set up the interface code for accessing
 # FormCalc-generated code in Mathematica
 # this file is part of FormCalc
-# last modified 23 Apr 13 th
+# last modified 5 Jan 15 th
 
 
 test $# -ne 1 && {
@@ -19,6 +19,7 @@ prep=`cat -`
 pol=`echo "$prep" | awk '/len_trim\(pol\)/ { print substr("UUUUUUUUUU", 1, $4); }'`
 
 set -- `echo "$prep" | sed '
+/^[cC*]/d
 s/.*call MmaGetInteger(/i /
 s/.*call MmaGetIntegerList(/il /
 s/.*call MmaGetReal(/r /
