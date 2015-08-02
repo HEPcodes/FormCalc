@@ -1,6 +1,6 @@
 #! /bin/sh -x
 # get and build FORM for a given platform
-# last modified 28 Oct 14 th
+# last modified 31 Mar 15 th
 
 gmp=gmp-5.1.3
 zlib=zlib-1.2.8
@@ -17,6 +17,7 @@ lin_cflags="$cflags -static"
 mac_cflags="$cflags -fno-pic -mmacosx-version-min=10.6 -stdlib=libstdc++"
 win_cflags="$cflags"
 ldflags=
+exe=
 
 case "$1" in
 Linux)
@@ -44,12 +45,14 @@ Windows)
 	cc=$build-gcc
 	cxx=$build-g++
 	cflags="$win_cflags"
+	exe=.exe
 	;;
 Windows-x86-64)
 	build=x86_64-pc-cygwin
 	cc=$build-gcc
 	cxx=$build-g++
 	cflags="$win_cflags"
+	exe=.exe
 	;;
 *)
 	cat << _EOF_
@@ -83,13 +86,15 @@ make BUILD="$build" \
      CXX="$cxx" \
      CFLAGS="$cflags" \
      LDFLAGS="$ldflags" \
+     EXE="$exe" \
      GMP="$gmp" \
      ZLIB="$zlib" -f - << \_EOF_
 
 CONF1 = \
 CC="$(CC)" CFLAGS="$(CFLAGS)" \
 CXX="$(CXX)" CXXFLAGS="$(CFLAGS)" \
-LDFLAGS="$(LDFLAGS)" ./configure --prefix=$(DEST)
+LDFLAGS="$(LDFLAGS)" \
+./configure --prefix=$(DEST)
 
 CONF2 = $(CONF1) --build="$(BUILD)"
 
@@ -104,7 +109,7 @@ form-master/sources/tform: $(DEST)/lib/libgmp.a $(DEST)/lib/libz.a form-master.z
 	  -e 's|-lz|"$(DEST)/lib/libz.a"|' \
 	  -e 's|-lgmp|"$(DEST)/lib/libgmp.a"|' form-master/sources/Makefile
 	cd form-master && $(MAKE) install
-	strip $(DEST)/bin/*form
+	strip $(DEST)/bin/*form$(EXE)
 	rm -fr form-master
 
 form-master.zip:

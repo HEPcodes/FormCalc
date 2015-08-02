@@ -3,7 +3,7 @@
 		simplify the sfermion mixing matrices
 		using unitarity as much as possible
 		this file is part of FormCalc
-		last modified 29 Aug 07 th
+		last modified 23 Feb 15 th
 *)
 
 
@@ -41,11 +41,36 @@ USfProd/: USfProd[i__] USfProd[j__] := USfProd[i, j]
 
 
 USfSimplify[expr_] := expr /.
+  { Abs[USf[a__]]^2 :> USf[a] USfC[a],
+    Abs[USf[a__]]^-2 :> 1/UCSf[a] } /.
   { u_USf^n_.  :> USfProd@@ Table[u, {n}],
     u_USfC^n_. :> USfProd@@ Table[u, {n}] } /.
   p_Plus u:USfProd[_] :> Distribute[p u] /; !FreeQ[p, USfProd[_]] /.
   USfProd -> USfMatch /.
   USfMatch -> Times
+
+
+i1[1] = 1;	i2[1] = 1;
+i1[2] = 2;	i2[2] = 2;
+i1[3] = 1;	i2[3] = 2;
+i1[4] = 2;	i2[4] = 1
+
+USfRev[UCSf[i_,j_, r___]] := USf[i1[i],i1[j], r] USfC[i2[i],i2[j], r];
+USfRev[UCSfC[i_,j_, r___]] := USfC[i1[i],i1[j], r] USf[i2[i],i2[j], r];
+USfRev[UUSf[i_,j_, r___]] := USf[i1[i],i1[j], r] USf[i2[i],i2[j], r];
+USfRev[UUSfC[i_,j_, r___]] := USfC[i1[i],i1[j], r] USfC[i2[i],i2[j], r]
+
+usimp[a_?AtomQ] := a
+
+usimp[p_Plus] := usimp/@ p
+
+usimp[p_ x_.] := p usimp[x] /;
+  FreeQ[p, UUSf | UUSfC (*| UCSf | UCSfC*)]
+
+usimp[x_] := usimp[x] = Simplify @ USfSimplify @
+  Distribute[x /. u:_UCSf | _UCSfC | _UUSf | _UUSfC :> USfRev[u]]
+
+USfSimplifyAll[expr_] := usimp[expr]
 
 
 (* unitarity rules:
@@ -78,10 +103,51 @@ UCSfC[3,2, r___] := -UCSfC[3,1, r];
 UCSf[2,3, r___] := -UCSf[1,3, r];
 UCSfC[2,3, r___] := -UCSfC[1,3, r]
 
+Attributes[USfChk] = {HoldAll};
+USfChk[lhs_ := rhs_] := USfChk[lhs] == USfChk[rhs];
+USfChk[lhs_] := USfSimplify @
+Block[ {UCSf, UCSfC, UUSf, UUSfC},
+  Distribute[lhs /. Pattern -> (#1&) /.
+    u:_UCSf | _UCSfC | _UUSf | _UUSfC :> USfRev[u]]
+];
+
 UCSf/: UCSf[3,j:1|2, r___] UCSfC[3,j_, r___] := UCSf[1,j, r] UCSf[2,j, r];
 UCSf/: UCSf[i:1|2,3, r___] UCSfC[i_,3, r___] := UCSf[i,1, r] UCSf[i,2, r];
 UUSf/: UUSf[3,j:1|2, r___] UUSfC[3,j_, r___] := UCSf[1,j, r] UCSf[2,j, r];
 UUSf/: UUSf[i:1|2,3, r___] UUSfC[i_,3, r___] := UCSf[i,1, r] UCSf[i,2, r]
+
+UCSf/: UCSf[3,3, r___] UCSfC[3,3, r___] := UCSf[1,1, r] UCSf[2,2, r];
+UCSf/: UCSf[3,4, r___] UCSfC[3,4, r___] := UCSf[1,2, r] UCSf[2,1, r];
+
+UCSf/: UCSf[3,3, r___] UCSfC[3,4, r___] := UCSf[1,3, r] UCSf[2,3, r];
+UCSf/: UCSfC[3,3, r___] UCSf[3,4, r___] := UCSfC[1,3, r] UCSfC[2,3, r];
+UCSf/: UCSf[3,3, r___] UCSf[3,4, r___] := UCSf[3,1, r] UCSf[3,2, r];
+UCSfC/: UCSfC[3,3, r___] UCSfC[3,4, r___] := UCSfC[3,1, r] UCSfC[3,2, r];
+
+UCSf/: UCSf[3,3, r___] UCSfC[1,3, r___] := UCSf[1,1, r] UCSf[3,2, r];
+UCSf/: UCSf[1,3, r___] UCSfC[3,3, r___] := UCSf[1,1, r] UCSfC[3,2, r];
+UCSf/: UCSf[3,3, r___] UCSfC[3,1, r___] := UCSf[1,1, r] UCSf[2,3, r];
+UCSf/: UCSf[3,1, r___] UCSfC[3,3, r___] := UCSf[1,1, r] UCSfC[2,3, r];
+
+UCSf/: UCSf[1,3, r___] UCSf[3,4, r___] := UCSf[1,2, r] UCSf[3,1, r];
+UCSfC/: UCSfC[1,3, r___] UCSfC[3,4, r___] := UCSf[1,2, r] UCSfC[3,1, r];
+
+UCSf/: UCSf[3,4, r___] UCSfC[3,1, r___] := UCSf[2,1, r] UCSfC[1,3, r];
+UCSf/: UCSf[3,1, r___] UCSfC[3,4, r___] := UCSf[2,1, r] UCSf[1,3, r];
+
+(*
+UUSf/: UUSf[1,3, r___] UUSfC[3,3, r___] := UCSf[1,1, r] UCSf[3,2, r];
+UUSf/: UUSfC[1,3, r___] UUSf[3,3, r___] := UCSf[1,1, r] UCSfC[3,2, r];
+UUSf/: UUSf[1,3, r___] UUSfC[3,4, r___] := UCSf[1,2, r] UCSf[3,1, r];
+UUSf/: UUSfC[1,3, r___] UUSf[3,4, r___] := UCSf[1,2, r] UCSfC[3,1, r];
+
+UUSf/: UUSf[2,3, r___] UUSfC[3,3, r___] := UCSf[2,2, r] UCSfC[3,1, r];
+UUSf/: UUSfC[2,3, r___] UUSf[3,3, r___] := UCSf[2,2, r] UCSf[3,1, r];
+UUSf/: UUSf[2,3, r___] UUSfC[3,4, r___] := UCSf[2,1, r] UCSfC[3,2, r];
+UUSf/: UUSfC[2,3, r___] UUSf[3,4, r___] := UCSf[2,1, r] UCSf[3,2, r];
+
+UCSf/: UCSf[1,3, r___] UCSfC[3,1, r___] := UCSf[1,1, r] UCSfC[3,4, r];
+*)
 
 UUSf/: UUSf[i:1|2,j:1|2, r___] UUSfC[i_,j_, r___] := UCSf[i,j, r]^2
 
@@ -90,4 +156,10 @@ UCSfC/: UCSfC[3,j:1|2, r___] UUSfC[3,j_, r___] := UUSfC[1,j, r] UCSf[2,j, r]
 
 UCSf/: UCSf[i:1|2,3, r___] UUSf[i_,3, r___] := UUSf[i,1, r] UCSf[i,2, r];
 UCSfC/: UCSfC[i:1|2,3, r___] UUSfC[i_,3, r___] := UUSfC[i,1, r] UCSf[i,2, r]
+
+
+Conjugate[UCSf[a___]] ^:= UCSfC[a];
+Conjugate[UCSfC[a___]] ^:= UCSf[a];
+Conjugate[UUSf[a___]] ^:= UUSfC[a];
+Conjugate[UUSfC[a___]] ^:= UUSf[a];
 

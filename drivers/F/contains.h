@@ -1,7 +1,7 @@
 * contains.h
 * inline versions of the util functions
 * this file is part of FormCalc
-* last modified 12 Apr 13 th
+* last modified 23 Feb 15 th
 
 
 #ifndef CONTAINS_H
@@ -206,6 +206,54 @@
 	BxVxBxS2 = BxVxS2(c, b, BxS1(a, r1,r2),BxS2(a, r1,r2))
 	end function
 
+	function SxVxBxVxB1(l1,l2, a, b, c, d)
+	HelType SxVxBxVxB1, l1,l2
+	integer a, b, c, d
+	SxVxBxVxB1 = SxBxVxB1(SxV1(l1,l2, a),SxV2(l1,l2, a), b, c, d)
+	end function
+
+	function SxVxBxVxB2(l1,l2, a, b, c, d)
+	HelType SxVxBxVxB2, l1,l2
+	integer a, b, c, d
+	SxVxBxVxB2 = SxBxVxB2(SxV1(l1,l2, a),SxV2(l1,l2, a), b, c, d)
+	end function
+
+	function SxBxVxBxV1(l1,l2, a, b, c, d)
+	HelType SxBxVxBxV1, l1,l2
+	integer a, b, c, d
+	SxBxVxBxV1 = SxVxBxV1(SxB1(l1,l2, a),SxB2(l1,l2, a), b, c, d)
+	end function
+
+	function SxBxVxBxV2(l1,l2, a, b, c, d)
+	HelType SxBxVxBxV2, l1,l2
+	integer a, b, c, d
+	SxBxVxBxV2 = SxVxBxV2(SxB1(l1,l2, a),SxB2(l1,l2, a), b, c, d)
+	end function
+
+	function BxVxBxVxS1(d, c, b, a, r1,r2)
+	HelType BxVxBxVxS1, r1,r2
+	integer d, c, b, a
+	BxVxBxVxS1 = BxVxBxS1(d, c, b, VxS1(a, r1,r2),VxS2(a, r1,r2))
+	end function
+
+	function BxVxBxVxS2(d, c, b, a, r1,r2)
+	HelType BxVxBxVxS2, r1,r2
+	integer d, c, b, a
+	BxVxBxVxS2 = BxVxBxS2(d, c, b, VxS1(a, r1,r2),VxS2(a, r1,r2))
+	end function
+
+	function VxBxVxBxS1(d, c, b, a, r1,r2)
+	HelType VxBxVxBxS1, r1,r2
+	integer d, c, b, a
+	VxBxVxBxS1 = VxBxVxS1(d, c, b, BxS1(a, r1,r2),BxS2(a, r1,r2))
+	end function
+
+	function VxBxVxBxS2(d, c, b, a, r1,r2)
+	HelType VxBxVxBxS2, r1,r2
+	integer d, c, b, a
+	VxBxVxBxS2 = VxBxVxS2(d, c, b, BxS1(a, r1,r2),BxS2(a, r1,r2))
+	end function
+
 	function ChainV0(iL,eL, eR,iR)
 	HelType ChainV0
 	integer iL,eL, eR,iR
@@ -338,6 +386,46 @@
      &    SxBxVxB2(SpiLV(iL,eL), a, b, c),
      &    VxBxVxS1(d, e, f, SpiRB(eR,iR)),
      &    VxBxVxS2(d, e, f, SpiRB(eR,iR)) )
+	end function
+
+	function ChainV7(iL,eL, a, b, c, d, e, f, g, eR,iR)
+	HelType ChainV7
+	integer iL,eL, a, b, c, d, e, f, g, eR,iR
+	ChainV7 = SxS(
+     &    SxVxBxVxB1(SpiLB(iL,eL), a, b, c, d),
+     &    SxVxBxVxB2(SpiLB(iL,eL), a, b, c, d),
+     &    VxBxVxS1(e, f, g, SpiRV(eR,iR)),
+     &    VxBxVxS2(e, f, g, SpiRV(eR,iR)) )
+	end function
+
+	function ChainB7(iL,eL, a, b, c, d, e, f, g, eR,iR)
+	HelType ChainB7
+	integer iL,eL, a, b, c, d, e, f, g, eR,iR
+	ChainB7 = SxS(
+     &    SxBxVxBxV1(SpiLV(iL,eL), a, b, c, d),
+     &    SxBxVxBxV2(SpiLV(iL,eL), a, b, c, d),
+     &    BxVxBxS1(e, f, g, SpiRB(eR,iR)),
+     &    BxVxBxS2(e, f, g, SpiRB(eR,iR)) )
+	end function
+
+	function ChainV8(iL,eL, a, b, c, d, e, f, g, h, eR,iR)
+	HelType ChainV8
+	integer iL,eL, a, b, c, d, e, f, g, h, eR,iR
+	ChainV8 = SxS(
+     &    SxVxBxVxB1(SpiLB(iL,eL), a, b, c, d),
+     &    SxVxBxVxB2(SpiLB(iL,eL), a, b, c, d),
+     &    VxBxVxBxS1(e, f, g, h, SpiRV(eR,iR)),
+     &    VxBxVxBxS2(e, f, g, h, SpiRV(eR,iR)) )
+	end function
+
+	function ChainB8(iL,eL, a, b, c, d, e, f, g, h, eR,iR)
+	HelType ChainB8
+	integer iL,eL, a, b, c, d, e, f, g, h, eR,iR
+	ChainB8 = SxS(
+     &    SxBxVxBxV1(SpiLV(iL,eL), a, b, c, d),
+     &    SxBxVxBxV2(SpiLV(iL,eL), a, b, c, d),
+     &    BxVxBxVxS1(e, f, g, h, SpiRB(eR,iR)),
+     &    BxVxBxVxS2(e, f, g, h, SpiRB(eR,iR)) )
 	end function
 
 #endif

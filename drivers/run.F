@@ -1,7 +1,7 @@
 * run.F
 * defines parameter settings for one run, then includes main.F
 * this file is part of FormCalc
-* last modified 8 Dec 14 th
+* last modified 5 Feb 15 th
 
 
 * Whether to run in debugging mode
@@ -130,6 +130,7 @@ c#define NO_EXCLUSION_LIMITS
 
 #define METHOD DIVONNE
 #define USERDATA bogus
+#define NVEC 1
 #define VERBOSE 1
 #define SEED 0
 #define MINEVAL 0

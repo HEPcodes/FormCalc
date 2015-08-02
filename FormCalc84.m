@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 8.4
 Copyright by Thomas Hahn 1996-2015
-last modified 20 Jan 15 by Thomas Hahn
+last modified 30 Mar 15 by Thomas Hahn
 
 Release notes:
 
@@ -42,7 +42,7 @@ Have fun!
 Print[""];
 Print["FormCalc 8.4"];
 Print["by Thomas Hahn"];
-Print["last revised 20 Jan 15"]
+Print["last revised 30 Mar 15"]
 
 
 (* symbols from FeynArts *)
@@ -55,7 +55,7 @@ BeginPackage["FeynArts`"]
   PropagatorDenominator, FeynAmpDenominator,
   FourMomentum, Internal, External, TheMass,
   Index, IndexDelta, IndexEps, IndexSum, SumOver,
-  MatrixTrace, FermionChain, NonCommutative,
+  MatrixTrace, FermionChain, NonCommutative, LeviCivita,
   CreateTopologies, ExcludeTopologies, Tadpoles,
   InitializeModel, $Model, Model, GenericModel, Reinitialize,
   InsertFields, InsertionLevel, ExcludeParticles,
@@ -303,7 +303,7 @@ EndPackage[]
 { DiracMatrix, DiracSlash, ChiralityProjector,
   DiracSpinor, MajoranaSpinor, DiracObject,
   PolarizationVector, PolarizationTensor,
-  MetricTensor, LeviCivita, FourVector, ScalarProduct,
+  MetricTensor, FourVector, ScalarProduct,
   Lorentz, Lorentz4, EpsilonScalar,
   SUNT, SUNF, SUNTSum, SUNEps, Colour, Gluon }
 
@@ -1519,18 +1519,21 @@ the minimum LeafCount a common subexpression must have in order that a
 variable is introduced for it."
 
 DebugLines::usage =
-"DebugLines is an option of PrepareExpr.  It specifies whether debugging
-statements are written out for each variable in the input.  If instead of
-True a string is given, the debugging messages are prefixed by this string. 
-Use DebugLines -> All or DebugLines -> All[string] to extend the debug
-statements also to intermediate variables (e.g. the ones introduced for
-optimization). The actual debugging statements are constructed from the
+"DebugLines is an option of PrepareExpr.  It specifies whether debugging 
+statements are written out for each variable in the input.  If instead 
+of True or False a string is given, debugging messages are generated and 
+prefixed by this string. If a function is given, it is queried for each 
+variable assignment and its output, True, False, or a string, 
+individually determines generation of the debug statement.  Debugging 
+messages are usually generated for the expressions specified by the user 
+only.  To extend them to intermediate variables, e.g. the ones 
+introduced for optimization, use DebugLines -> All (or All[string] or 
+All[func]).  The actual debugging statements are constructed from the 
 items in $DebugCmd."
 
 FinalTouch::usage =
-"FinalTouch is an option of PrepareExpr.  It specifies a function which
-is applied to each final subexpression, such as will then be written out
-to the Fortran file."
+"FinalTouch is an option of PrepareExpr.  It specifies a function which 
+is applied to each final subexpression, just before write-out to file."
 
 ResetNumbering::usage =
 "ResetNumbering is an option of PrepareExpr.  It restarts numbering
@@ -2591,8 +2594,8 @@ Options[ToFeynAmp] = {
 ToFeynAmp[amps___, opt___Rule] :=
 Block[ {proc},
   {proc} = ParseOpt[ToFeynAmp, opt] /. Automatic :>
-    Level[ Select[FromFormRules, !FreeQ[ {amps}, #[[1]] ]&],
-      {3}, Max];
+    Level[ {{{{1}}}, Select[FromFormRules, !FreeQ[ {amps}, #[[1]] ]&]},
+      {4}, Max];
   MapIndexed[ToAmp, FeynAmpList[Process -> proc][amps] /.
     Reverse/@ FromFormRules /.
     PolarizationVector | PolarizationTensor -> pol /.
@@ -3205,8 +3208,7 @@ OpenForm[stub_:"fc"] :=
 Block[ {hh},
   While[ FileType[tempfile = FormFile[stub, tempnum]] =!= None,
     ++tempnum ];
-  FCPrint[1, ""];
-  FCPrint[1, "preparing FORM code in ", tempfile];
+  FCPrint[1, "\npreparing FORM code in " <> tempfile];
   hh = OpenWrite[toform <> Escape[tempfile],
     FormatType -> InputForm, PageWidth -> 73];
   WriteString[hh, FormSetup];
@@ -3249,7 +3251,7 @@ Block[ {res},
   Switch[ edit,
     True, Pause[1]; Run[StringForm[$Editor, tempfile]]; Pause[3],
     Modal, Pause[1]; Run[StringForm[$EditorModal, tempfile]] ];
-  WriteString["stdout", "running FORM... "];
+  FCPrint[1, "running FORM... "];
   If[ Check[
         res = Set@@@ Level[
           {r, FromFormRules, {Dot -> p$$}},
@@ -3257,7 +3259,7 @@ Block[ {res},
         True,
         False] &&
     !retain, DeleteFile[tempfile] ];
-  FCPrint[1, "ok"];
+  FCPrint[1, "ok\n"];
   res
 ]
 
@@ -4626,7 +4628,7 @@ FFWrite[0, __] = {}
 
 FFWrite[amp_, array_, file_] :=
 Block[ {ind, ff, mods},
-  ind = Cases[amp, SumOver[i_, r_] :> (Dim[i] = r; i), Infinity];
+  ind = Union[Cases[amp, SumOver[i_, r_] :> (Dim[i] = r; i), Infinity]];
   ff = FFList[amp /. unused[array] -> 0 /. fcs /. xrules /. {
     _SumOver -> 1,
     int:LoopIntegral[__] :> abbint[int] }, array];
@@ -5876,7 +5878,10 @@ OnlyIfEval[cond_, a_, b_] := Thread @ IndexIf[ cond,
   b /. Cases[{cond}, i_ == j_ -> (IndexDelta[i, j] -> 0)] ]
 
 
-FermionRC[m_, a_, b_, se_] :=
+Attributes[FermionRC] = {HoldRest}
+	(* HoldRest postpones TheMass until model is initialized *)
+
+FermionRC[se_, m_, a_, b_] :=
   m (a SEPart[LVectorCoeff, se] + b SEPart[RVectorCoeff, se]) +
      b SEPart[LScalarCoeff, se] + a SEPart[RScalarCoeff, se]
 
@@ -5884,7 +5889,7 @@ BosonRC[se_] := SEPart[Identity, se]
 
 
 MassRC[f_F, opt___Rule] :=
-  FermionRC[TheMass[f], 1/2, 1/2, ReTilde[SelfEnergy[f, opt]]]
+  FermionRC[ReTilde[SelfEnergy[f, opt]], TheMass[f], 1/2, 1/2]
 
 MassRC[f_, opt___Rule] := BosonRC[ReTilde[SelfEnergy[f, opt]]]
 
@@ -5896,10 +5901,11 @@ MassRC[f1_, f2_, opt___Rule] :=
 
 
 FieldRC[f_F, opt___Rule] :=
-Block[ {m = TheMass[f], se},
+Block[ {m, se},
   se = ReTilde[SelfEnergy[f, opt]];
+  m = TheMass[f];
   -{SEPart[LVectorCoeff, se], SEPart[RVectorCoeff, se]} -
-    FermionRC[m, m, m, ReTilde[DSelfEnergy[f]]]
+    FermionRC[ReTilde[DSelfEnergy[f]], m, m, m]
 ]
 
 FieldRC[f_, opt___Rule] := -BosonRC[ReTilde[DSelfEnergy[f, opt]]]
@@ -5915,14 +5921,19 @@ FieldRC[f1_, f2_, c_, opt___Rule] := OnlyIf[
 ]
 
 FieldRC2[f1_F, f2_F, c_, opt___Rule] :=
-Block[ {m1 = TheMass[f1], m2 = TheMass[f2]},
-  2/(m1^2 - m2^2) (FermionRC[m2, {m2, m1}, {m1, m2},
-    ReTilde[SelfEnergy[f2 -> f1, m2, opt]]] - c)
+Block[ {se, m1, m2},
+  se = ReTilde[SelfEnergy[f2 -> f1, TheMass[f2], opt]];
+  m1 = TheMass[f1];
+  m2 = TheMass[f2];
+  2/(m1^2 - m2^2) (FermionRC[se, m2, {m2, m1}, {m1, m2}] - c)
 ]
 
 FieldRC2[f1_, f2_, c_, opt___Rule] :=
-Block[ {m1 = TheMass[f1], m2 = TheMass[f2]},
-  2/(m1^2 - m2^2) (BosonRC[ReTilde[SelfEnergy[f2 -> f1, m2, opt]]] - c)
+Block[ {se, m1, m2},
+  se = ReTilde[SelfEnergy[f2 -> f1, TheMass[f2], opt]];
+  m1 = TheMass[f1];
+  m2 = TheMass[f2];
+  2/(m1^2 - m2^2) (BosonRC[se] - c)
 ]
 
 
@@ -5931,7 +5942,7 @@ TadpoleRC[f_, opt___Rule] :=
 
 
 WidthRC[f_F, opt___Rule] :=
-  FermionRC[TheMass[f], 1, 1, ImTilde[SelfEnergy[f, opt]]]
+  FermionRC[ImTilde[SelfEnergy[f, opt]], TheMass[f], 1, 1]
 
 WidthRC[f_, opt___Rule] :=
   BosonRC[ImTilde[SelfEnergy[f, opt]]]/TheMass[f]
@@ -6323,26 +6334,26 @@ Block[ {size = $BlockSize},
 ]
 
 
-NumberMod[s_, {n_}] := s <> ToString[n]
+Attributes[NumberMod] = {Listable}
+
+NumberMod[s__String] := StringJoin[s]
 
 
-FileSplit[expr_, mod_String, r___] := FileSplit[expr, {mod}, r]
-
-FileSplit[expr_List, {mod_, ___}, writemod_, ___] :=
-  {writemod[expr, mod]} /; LeafCount[expr] < $FileSize
+FileSplit[expr_List, mod_, writemod_, ___] :=
+  {writemod[expr, mod /. Dot -> (#1&)]} /; LeafCount[expr] < $FileSize
 
 FileSplit[expr_List, mod_, writemod_, writeall_:(#2&)] :=
-Block[ {size = $FileSize},
+Block[ {size = $FileSize, m = mod /. Dot -> StringJoin},
   writeall[mod, MapIndexed[
-    writemod[List@@ #1, NumberMod[mod, #2]]&,
+    writemod[List@@ #1, NumberMod[m, ToString@@ #2]]&,
     Flatten[Coalesce@@ expr] ]]
 ]
 
 FileSplit[CodeExpr[vars__, expr_List], mod_,
   writemod_, writeall_:(#2&)] :=
-Block[ {size = $FileSize},
+Block[ {size = $FileSize, m = mod /. Dot -> StringJoin},
   writeall[mod, MapIndexed[
-    writemod[CodeExpr[vars, List@@ #1], NumberMod[mod, #2]]&,
+    writemod[CodeExpr[vars, List@@ #1], NumberMod[m, ToString@@ #2]]&,
     Flatten[Coalesce@@ expr] ]]
 ]
 
@@ -6424,7 +6435,7 @@ process, doloop, new, vars, tmps, tmp, dup, dupc = 0},
   doloop = Hoist@@ Flatten[{expen}];
   new = Flatten[{expr}];
   vars = Cases[new, (Rule | RuleAdd)[var_, _] -> var, Infinity];
-  If[ MatchQ[debug, True | _String],
+  If[ !MatchQ[debug, False | All | _All],
     new = AddDebug[new, debug];
     debug = False ];
   new = process[new];
@@ -6432,7 +6443,8 @@ process, doloop, new, vars, tmps, tmp, dup, dupc = 0},
   new = new /. CodeExpr[_, t_, x_] :>
     (vars = DeleteCases[vars, Alt@@ t]; x);
   tmps = Cases[new, (ru:Rule | RuleAdd)[var_, _] -> var, Infinity];
-  If[ debug =!= False, new = AddDebug[new, debug] ];
+  If[ debug =!= False,
+    new = AddDebug[new, debug /. {All[tag_] :> tag, All -> True}] ];
   CodeExpr[MaxDims[vars], Complement[tmps, vars], Flatten[new]]
 ]
 
@@ -6442,22 +6454,33 @@ Attributes[AddDebug] = {Listable}
 AddDebug[s_String, _] := s
 
 AddDebug[DoLoop[expr_, ind__], tag_] :=
-  DoLoop[{DebugLine[#1&@@@ {ind}, tag], AddDebug[expr, tag]}, ind]
+  DoLoop[{Deb[(#1&@@@ {ind}) -> 0, tag], AddDebug[expr, tag]}, ind]
 
 AddDebug[i_IndexIf, tag_] := MapIf[AddDebug[#, tag]&, i]
 
-AddDebug[(ru:Rule | RuleAdd)[var_, expr_], tag_] :=
-  {ru[var, expr], DebugLine[var, expr, tag]}
+AddDebug[ru:_Rule | _RuleAdd, tag_] := {ru, Deb[ru, tag]}
 
 
-DebugLine[var_, expr_, tag_] := DebugLine[var, tag] /; FreeQ[var, Pattern]
+Attributes[DebTag] = {HoldFirst}
 
-DebugLine[var_, expr_, tag_] :=
-  DebugLine[Cases[expr, var, Infinity, 1][[1]], tag]
+DebTag[_, False, __] = {}
 
-DebugLine[var_, All | True] := DebugLine[var]
+DebTag[_, True, var_, ___] := DebugLine[var]
 
-DebugLine[var_, All[tag_]] := DebugLine[var, tag]
+DebTag[t_, t_, var__] := DebugLine[var]
+
+DebTag[_, tag_, var_, _] := DebugLine[var, tag]
+
+
+Deb[ru_[var_, expr_], tag_] :=
+  Deb[ru[Cases[expr, var, Infinity, 1][[1]], expr], tag] /;
+  !FreeQ[var, Pattern]
+
+Deb[_[var_, ___], True] := DebugLine[var]
+
+Deb[_[var_, ___], tag_String] := DebugLine[var, tag]
+
+Deb[ru:_[var_, _], tag_] := DebTag[tag[ru], tag[ru], var, tag]
 
 
 Attributes[Prep] = {Listable}

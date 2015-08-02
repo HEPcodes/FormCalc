@@ -2,7 +2,7 @@
 * this is the main program for the generated Fortran code,
 * it scans the command line and then invokes ParameterScan
 * this file is part of FormCalc
-* last modified 21 Nov 13 th
+* last modified 5 Feb 15 th
 
 
 #include "xsection.F"
@@ -82,7 +82,7 @@ c	call setfpu
 	read(tmp, *, iostat=fail, end=993, err=993) hseleps
 993	print *, "env FCHSELEPS =", hseleps
 
-	hseln = 10
+	hseln = 30
 	call getenv("FCHSELN", tmp)
 	read(tmp, *, iostat=fail, end=994, err=994) hseln
 994	print *, "env FCHSELN =", hseln

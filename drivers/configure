@@ -2,7 +2,7 @@
 # configure script for FormCalc
 # note: has nothing to do with GNU autoconf
 # this file is part of FormCalc
-# last modified 11 Nov 14 th
+# last modified 2 Feb 15 th
 
 
 exec 2> ${LOGFILE:-/dev/null} 3>&1
@@ -81,7 +81,7 @@ findlib() {
       "$base/libs" \
       "$base/.libs" \
       "$base/src" \
-      "$base/src/.libs" \
+      "$base/*/.libs" \
       "$base"
     do
       test -f "$path/$file" && {

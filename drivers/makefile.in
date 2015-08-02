@@ -1,7 +1,7 @@
 # makefile.in
 # makefile template used by configure
 # this file is part of FormCalc
-# last modified 15 Jul 14 th
+# last modified 5 Feb 15 th
 
 # Note: make permanent changes only in makefile.in,
 # changes in makefile will be overwritten by configure.
@@ -67,7 +67,8 @@ DEPS := $(wildcard *.d)
 
 clean:
 	$(RM) -r build
-	$(RM) $(DEPS) $(DEPS:%.d=%.o) $(DEPS:%.d=%$(EXE)) $(CLEANLIBS) libs
+	$(RM) $(DEPS) $(DEPS:%.d=%.tm) $(DEPS:%.d=%.tm.c) \
+	  $(DEPS:%.d=%.o) $(DEPS:%.d=%$(EXE)) $(CLEANLIBS) libs
 
 distclean: clean
 	$(RM) $(LIBS) makefile simd.h

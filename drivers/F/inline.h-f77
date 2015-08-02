@@ -3,7 +3,7 @@
 * Caveat: this is the Fortran 77 version -
 *         must have #define SIMD 0 in distrib.h
 * this file is part of FormCalc
-* last modified 25 Apr 13 th
+* last modified 23 Feb 15 th
 
 
 #ifndef INLINE_H
@@ -28,6 +28,8 @@
 	ComplexType BxVxS1, BxVxS2, VxBxS1, VxBxS2
 	ComplexType SxVxBxV1, SxVxBxV2, SxBxVxB1, SxBxVxB2
 	ComplexType VxBxVxS1, VxBxVxS2, BxVxBxS1, BxVxBxS2
+	ComplexType SxVxBxVxB1, SxVxBxVxB2, SxBxVxBxV1, SxBxVxBxV2
+	ComplexType BxVxBxVxS1, BxVxBxVxS2, VxBxVxBxS1, VxBxVxBxS2
 	ComplexType ChainV0, ChainB0
 	ComplexType ChainV1, ChainB1
 	ComplexType ChainV2, ChainB2
@@ -35,11 +37,13 @@
 	ComplexType ChainV4, ChainB4
 	ComplexType ChainV5, ChainB5
 	ComplexType ChainV6, ChainB6
+	ComplexType ChainV7, ChainB7
+	ComplexType ChainV8, ChainB8
 	integer IndexSign, IndexEps
 	RealType SqDiff, ThreeMom
 
 	ComplexType l1_, l2_, r1_, r2_
-	integer a_, b_, c_, d_, e_, f_
+	integer a_, b_, c_, d_, e_, f_, g_, h_
 	integer iL_, iR_, eL_, eR_
 	RealType sqrtS_, ma_, mb_
 
@@ -119,6 +123,26 @@
 	BxVxBxS2(c_, b_, a_, r1_,r2_) =
      &    BxVxS2(c_, b_, BxS1(a_, r1_,r2_),BxS2(a_, r1_,r2_))
 
+	SxVxBxVxB1(l1_,l2_, a_, b_, c_, d_) =
+     &    SxBxVxB1(SxV1(l1_,l2_, a_),SxV2(l1_,l2_, a_), b_, c_, d_)
+	SxVxBxVxB2(l1_,l2_, a_, b_, c_, d_) =
+     &    SxBxVxB2(SxV1(l1_,l2_, a_),SxV2(l1_,l2_, a_), b_, c_, d_)
+
+	SxBxVxBxV1(l1_,l2_, a_, b_, c_, d_) =
+     &    SxVxBxV1(SxB1(l1_,l2_, a_),SxB2(l1_,l2_, a_), b_, c_, d_)
+	SxBxVxBxV2(l1_,l2_, a_, b_, c_, d_) =
+     &    SxVxBxV2(SxB1(l1_,l2_, a_),SxB2(l1_,l2_, a_), b_, c_, d_)
+
+	BxVxBxVxS1(d_, c_, b_, a_, r1_,r2_) =
+     &    BxVxBxS1(d_, c_, b_, VxS1(a_, r1_,r2_),VxS2(a_, r1_,r2_))
+	BxVxBxVxS2(d_, c_, b_, a_, r1_,r2_) =
+     &    BxVxBxS2(d_, c_, b_, VxS1(a_, r1_,r2_),VxS2(a_, r1_,r2_))
+
+	VxBxVxBxS1(d_, c_, b_, a_, r1_,r2_) =
+     &    VxBxVxS1(d_, c_, b_, BxS1(a_, r1_,r2_),BxS2(a_, r1_,r2_))
+	VxBxVxBxS2(d_, c_, b_, a_, r1_,r2_) =
+     &    VxBxVxS2(d_, c_, b_, BxS1(a_, r1_,r2_),BxS2(a_, r1_,r2_))
+
 	ChainV0(iL_,eL_, eR_,iR_) = SxS(
      &    SpiLB(iL_,eL_),
      &    SpiRV(eR_,iR_) )
@@ -189,6 +213,28 @@
      &    SxBxVxB2(SpiLV(iL_,eL_), a_, b_, c_),
      &    VxBxVxS1(d_, e_, f_, SpiRB(eR_,iR_)),
      &    VxBxVxS2(d_, e_, f_, SpiRB(eR_,iR_)) )
+
+	ChainV7(iL_,eL_, a_, b_, c_, d_, e_, f_, g_, eR_,iR_) = SxS(
+     &    SxVxBxVxB1(SpiLB(iL_,eL_), a_, b_, c_, d_),
+     &    SxVxBxVxB2(SpiLB(iL_,eL_), a_, b_, c_, d_),
+     &    VxBxVxS1(e_, f_, g_, SpiRV(eR_,iR_)),
+     &    VxBxVxS2(e_, f_, g_, SpiRV(eR_,iR_)) )
+	ChainB7(iL_,eL_, a_, b_, c_, d_, e_, f_, g_, eR_,iR_) = SxS(
+     &    SxBxVxBxV1(SpiLV(iL_,eL_), a_, b_, c_, d_),
+     &    SxBxVxBxV2(SpiLV(iL_,eL_), a_, b_, c_, d_),
+     &    BxVxBxS1(e_, f_, g_, SpiRB(eR_,iR_)),
+     &    BxVxBxS2(e_, f_, g_, SpiRB(eR_,iR_)) )
+
+	ChainV8(iL_,eL_, a_, b_, c_, d_, e_, f_, g_, h_, eR_,iR_) = SxS(
+     &    SxVxBxVxB1(SpiLB(iL_,eL_), a_, b_, c_, d_),
+     &    SxVxBxVxB2(SpiLB(iL_,eL_), a_, b_, c_, d_),
+     &    VxBxVxBxS1(e_, f_, g_, h_, SpiRV(eR_,iR_)),
+     &    VxBxVxBxS2(e_, f_, g_, h_, SpiRV(eR_,iR_)) )
+	ChainB8(iL_,eL_, a_, b_, c_, d_, e_, f_, g_, h_, eR_,iR_) = SxS(
+     &    SxBxVxBxV1(SpiLV(iL_,eL_), a_, b_, c_, d_),
+     &    SxBxVxBxV2(SpiLV(iL_,eL_), a_, b_, c_, d_),
+     &    BxVxBxVxS1(e_, f_, g_, h_, SpiRB(eR_,iR_)),
+     &    BxVxBxVxS2(e_, f_, g_, h_, SpiRB(eR_,iR_)) )
 
 	IndexSign(a_) = signbit(ior(a_, -a_)) - 2*signbit(a_)
 	IndexEps(a_, b_, c_) =
