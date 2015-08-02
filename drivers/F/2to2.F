@@ -38,8 +38,9 @@
 
 ************************************************************************
 
-	subroutine InitialState
+	subroutine InitialState(m1, m2)
 	implicit none
+	RealType m1, m2
 
 #include "xsection.h"
 
@@ -47,18 +48,18 @@
 
 #include "inline.h"
 
-	p = ThreeMom(sqrtS, Re(MASS1), Re(MASS2))
+	p = ThreeMom(sqrtS, m1, m2)
 
-	call VecSet(1, Re(MASS1), p, 0D0, 0D0, 1D0)
-	call VecSet(2, Re(MASS2), p, 0D0, 0D0, -1D0)
+	call VecSet(1, m1, p, 0D0, 0D0, 1D0)
+	call VecSet(2, m2, p, 0D0, 0D0, -1D0)
 	end
 
 
 ************************************************************************
 
-	subroutine FinalState(fac)
+	subroutine FinalState(fac, m3, m4)
 	implicit none
-	RealType fac
+	RealType fac, m3, m4
 
 #include "xsection.h"
 
@@ -70,7 +71,7 @@
 	ey = 0
 	ez = 1
 	minv = sqrtS
-	msum = MASS_OUT
+	msum = m3 + m4
 
 	key = 0
 #ifdef COSTH1CUT
@@ -79,9 +80,9 @@
 	key = key + Cut(CUT_COSTH, CUT_MIN + CUT_MAX)
 #endif
 
-	call Split(3, Re(MASS3), p, ex,ey,ez, minv, msum,
+	call Split(3, m3, p, ex,ey,ez, minv, msum,
      &    fac, key, Var(FIXED), Var(XCOSTH1), Var(TRIVIAL))
 
-	call VecSet(4, Re(MASS4), p, ex,ey,ez)
+	call VecSet(4, m4, p, ex,ey,ez)
 	end
 

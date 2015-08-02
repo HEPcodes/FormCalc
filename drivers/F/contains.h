@@ -1,7 +1,7 @@
 * contains.h
 * inline versions of the util functions
 * this file is part of FormCalc
-* last modified 23 Feb 15 th
+* last modified 27 Apr 15 th
 
 
 #ifndef CONTAINS_H
@@ -394,8 +394,8 @@
 	ChainV7 = SxS(
      &    SxVxBxVxB1(SpiLB(iL,eL), a, b, c, d),
      &    SxVxBxVxB2(SpiLB(iL,eL), a, b, c, d),
-     &    VxBxVxS1(e, f, g, SpiRV(eR,iR)),
-     &    VxBxVxS2(e, f, g, SpiRV(eR,iR)) )
+     &    VxBxVxS1(e, f, g, SpiRB(eR,iR)),
+     &    VxBxVxS2(e, f, g, SpiRB(eR,iR)) )
 	end function
 
 	function ChainB7(iL,eL, a, b, c, d, e, f, g, eR,iR)
@@ -404,8 +404,8 @@
 	ChainB7 = SxS(
      &    SxBxVxBxV1(SpiLV(iL,eL), a, b, c, d),
      &    SxBxVxBxV2(SpiLV(iL,eL), a, b, c, d),
-     &    BxVxBxS1(e, f, g, SpiRB(eR,iR)),
-     &    BxVxBxS2(e, f, g, SpiRB(eR,iR)) )
+     &    BxVxBxS1(e, f, g, SpiRV(eR,iR)),
+     &    BxVxBxS2(e, f, g, SpiRV(eR,iR)) )
 	end function
 
 	function ChainV8(iL,eL, a, b, c, d, e, f, g, h, eR,iR)

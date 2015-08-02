@@ -1,7 +1,7 @@
 * softphoton.F
 * routines for the treatment of soft-photon radiation
 * this file is part of FormCalc
-* last modified 19 Nov 13 th
+* last modified 17 May 15 th
 
 
 ************************************************************************
@@ -22,69 +22,12 @@
 	RealType loglambda
 	common /infrared/ loglambda
 
-	RealType charge(LEGS), r
+#define decl(i,x) ch i
+#define para(i,x) ch i = x
 
-#ifndef Charge1
-#define Charge1 0
-#endif
-
-#ifndef Charge2
-#define Charge2 0
-#endif
-
-#ifndef Charge3
-#define Charge3 0
-#endif
-
-#ifndef Charge4
-#define Charge4 0
-#endif
-
-#ifndef Charge5
-#define Charge5 0
-#endif
-
-#ifndef Charge6
-#define Charge6 0
-#endif
-
-* not a very nice solution, the following, but necessary
-* because there may be no "/" in a constant in the data
-* statement (such as in 2/3D0)
-#if LEGS == 3
-#define CHARGES ch1, ch2, ch3
-	RealType CHARGES
-	parameter (ch1 = Charge1)
-	parameter (ch2 = Charge2)
-	parameter (ch3 = Charge3)
-#elif LEGS == 4
-#define CHARGES ch1, ch2, ch3, ch4
-	RealType CHARGES
-	parameter (ch1 = Charge1)
-	parameter (ch2 = Charge2)
-	parameter (ch3 = Charge3)
-	parameter (ch4 = Charge4)
-#elif LEGS == 5
-#define CHARGES ch1, ch2, ch3, ch4, ch5
-	RealType CHARGES
-	parameter (ch1 = Charge1)
-	parameter (ch2 = Charge2)
-	parameter (ch3 = Charge3)
-	parameter (ch4 = Charge4)
-	parameter (ch5 = Charge5)
-#elif LEGS == 6
-#define CHARGES ch1, ch2, ch3, ch4, ch5, ch6
-	RealType CHARGES
-	parameter (ch1 = Charge1)
-	parameter (ch2 = Charge2)
-	parameter (ch3 = Charge3)
-	parameter (ch4 = Charge4)
-	parameter (ch5 = Charge5)
-	parameter (ch6 = Charge6)
-#else
-#error No definition for LEGS external legs
-#endif
-	data charge /CHARGES/
+	RealType charge(LEGS), r, Charge(decl)
+	parameter (Charge(para))
+	data charge /Charge(decl)/
 
 	loglambda = log(4*(ESOFTMAX)**2/getlambda())
 

@@ -1,0 +1,2 @@
+#define IDENTICALFACTOR .5D0
+

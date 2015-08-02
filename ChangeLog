@@ -1,3 +1,27 @@
+17 May 15:
+
+- New format for squaredme/specs.h allows easier handling of lists
+  (e.g. charges in softphoton.F).
+
+
+4 May 15:
+
+- Updated examples.
+
+
+28 Apr 15:
+
+- Improvements to ExpandSums and ApplyUnitarity.
+
+- Fixed bug in Chain[VB]7 functions.
+
+
+1 Apr 15:
+
+- Fixed internals in FermionRC: postponed evaluation of TheMass
+  until model is initialized.
+
+
 31 Mar 15:
 
 - Fixed ToFeynAmp for even simpler expressions.

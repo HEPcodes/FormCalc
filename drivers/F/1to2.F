@@ -1,13 +1,8 @@
 * 1to2.F
 * the kinematics for a 1 -> 2 process
 * this file is part of FormCalc
-* last modified 6 May 13 th
+* last modified 15 May 15 th
 
-
-* some definitions for xsection.F
-#define MASS_IN MASS1
-#define MASS_OUT MASS2 + MASS3
-#define TYPES TYPE1, TYPE2, TYPE3
 
 * this defines the order of integrations:
 #define XCOSTH1 1
@@ -38,8 +33,9 @@
 
 ************************************************************************
 
-	subroutine InitialState
+	subroutine InitialState(m1)
 	implicit none
+	RealType m1
 
 #include "xsection.h"
 
@@ -48,24 +44,24 @@
 #ifdef FORCE_ONSHELL
 	p = 0
 #else
-	p = dim(sqrtS, mass_in)
+	p = dim(sqrtS, m1)
 	if( p .gt. 1D-6 ) then
 	  INFO "Computing off-shell decay"
 	  INFO "Warning: Results correct only if decaying particle"
 	  INFO "was chosen off-shell in CalcFeynAmp"
 	endif
-	p = sqrt(p*(sqrtS + mass_in))
+	p = sqrt(p*(sqrtS + m1))
 #endif
 
-	call VecSet(1, mass_in, p, 0D0, 0D0, 1D0)
+	call VecSet(1, m1, p, 0D0, 0D0, 1D0)
 	end
 
 
 ************************************************************************
 
-	subroutine FinalState(fac)
+	subroutine FinalState(fac, m2, m3)
 	implicit none
-	RealType fac
+	RealType fac, m2, m3
 
 #include "xsection.h"
 
@@ -77,7 +73,7 @@
 	ey = 0
 	ez = 1
 	minv = sqrtS
-	msum = MASS_OUT
+	msum = m2 + m3
 
 	key = 0
 #ifdef COSTH1CUT
@@ -86,9 +82,9 @@
 	key = key + Cut(CUT_COSTH, CUT_MIN + CUT_MAX)
 #endif
 
-	call Split(3, Re(MASS3), p, ex,ey,ez, minv, msum,
+	call Split(3, m3, p, ex,ey,ez, minv, msum,
      &    fac, key, Var(FIXED), Var(XCOSTH1), Var(TRIVIAL))
 
-	call VecSet(2, Re(MASS2), p, ex,ey,ez)
+	call VecSet(2, m2, p, ex,ey,ez)
 	end
 

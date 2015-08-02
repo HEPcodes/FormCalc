@@ -3,7 +3,7 @@
 * Caveat: this is the Fortran 77 version -
 *         must have #define SIMD 0 in distrib.h
 * this file is part of FormCalc
-* last modified 23 Feb 15 th
+* last modified 27 Apr 15 th
 
 
 #ifndef INLINE_H
@@ -217,13 +217,13 @@
 	ChainV7(iL_,eL_, a_, b_, c_, d_, e_, f_, g_, eR_,iR_) = SxS(
      &    SxVxBxVxB1(SpiLB(iL_,eL_), a_, b_, c_, d_),
      &    SxVxBxVxB2(SpiLB(iL_,eL_), a_, b_, c_, d_),
-     &    VxBxVxS1(e_, f_, g_, SpiRV(eR_,iR_)),
-     &    VxBxVxS2(e_, f_, g_, SpiRV(eR_,iR_)) )
+     &    VxBxVxS1(e_, f_, g_, SpiRB(eR_,iR_)),
+     &    VxBxVxS2(e_, f_, g_, SpiRB(eR_,iR_)) )
 	ChainB7(iL_,eL_, a_, b_, c_, d_, e_, f_, g_, eR_,iR_) = SxS(
      &    SxBxVxBxV1(SpiLV(iL_,eL_), a_, b_, c_, d_),
      &    SxBxVxBxV2(SpiLV(iL_,eL_), a_, b_, c_, d_),
-     &    BxVxBxS1(e_, f_, g_, SpiRB(eR_,iR_)),
-     &    BxVxBxS2(e_, f_, g_, SpiRB(eR_,iR_)) )
+     &    BxVxBxS1(e_, f_, g_, SpiRV(eR_,iR_)),
+     &    BxVxBxS2(e_, f_, g_, SpiRV(eR_,iR_)) )
 
 	ChainV8(iL_,eL_, a_, b_, c_, d_, e_, f_, g_, h_, eR_,iR_) = SxS(
      &    SxVxBxVxB1(SpiLB(iL_,eL_), a_, b_, c_, d_),

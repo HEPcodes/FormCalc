@@ -1,6 +1,6 @@
 #! /bin/sh
 # compile script for the C programs used by FormCalc
-# last modified 12 Aug 14 th
+# last modified 31 Mar 15 th
 
 # If this compile script doesn't work on your system, check these things:
 #
@@ -97,12 +97,12 @@ mclibs="-lpthread"
 cc="$CC $CFLAGS"
 
 make -f - << _EOF_ || exit 1
-all: $DEST/tform \
+all: $DEST/tform$exe \
   $DEST/ReadForm$exe $DEST/ToForm$exe \
   $DEST/ToFortran$exe $DEST/ToC$exe \
   $DEST/ReadData$exe $DEST/reorder$exe
 
-$DEST/tform: $SRC/FORM/$DEST/bin/tform$exe
+$DEST/tform$exe: $SRC/FORM/$DEST/bin/tform$exe
 	cp -p $SRC/FORM/$DEST/bin/tform$exe $DEST/
 
 $DEST/ReadForm$exe: $SRC/FormCalc/ReadForm.tm

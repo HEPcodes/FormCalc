@@ -2,7 +2,7 @@
 	ModelSpecific.m
 		global definitions for specific models
 		this file is part of FormCalc
-		last modified 24 Dec 14 th
+		last modified 5 Apr 15 th
 
 Note: This file is read by FormCalc only if $NoModelSpecific is not True.
 
@@ -211,7 +211,7 @@ Scan[ (RealQ[#] = True)&,
   { TB, CB, SB, TB2, CB2, SB2, C2B, S2B,
     CA, SA, CA2, SA2, C2A, S2A,
     CAB, SAB, CBA, SBA, CBA2, SBA2,
-    Mh0, Mh02, MHH, MHH2, MA0, MA02, MHp, MHp2, MGl,
+    Mh0, Mh02, MHH, MHH2, MA0, MA02, MHp, MHp2, MGl, MGl2,
     _MSf, _MSf2, _MCha, _MCha2, _MNeu, _MNeu2,
     _MHiggs, _MHiggstree } ]
 

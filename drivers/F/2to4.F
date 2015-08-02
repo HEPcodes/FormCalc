@@ -1,13 +1,8 @@
 * 2to4.F
 * the kinematics for a 2 -> 4 process
 * this file is part of FormCalc
-* last modified 2 Jul 13 th
+* last modified 15 May 15 th
 
-
-* some definitions for xsection.F
-#define MASS_IN MASS1 + MASS2
-#define MASS_OUT MASS3 + MASS4 + MASS5 + MASS6
-#define TYPES TYPE1, TYPE2, TYPE3, TYPE4, TYPE5, TYPE6
 
 * this defines the order of integrations:
 #define XMREM1 1
@@ -68,8 +63,9 @@
 
 ************************************************************************
 
-	subroutine InitialState
+	subroutine InitialState(m1, m2)
 	implicit none
+	RealType m1, m2
 
 #include "xsection.h"
 
@@ -77,18 +73,18 @@
 
 #include "inline.h"
 
-	p = ThreeMom(sqrtS, Re(MASS1), Re(MASS2))
+	p = ThreeMom(sqrtS, m1, m2)
 
-	call VecSet(1, Re(MASS1), p, 0D0, 0D0, 1D0)
-	call VecSet(2, Re(MASS2), p, 0D0, 0D0, -1D0)
+	call VecSet(1, m1, p, 0D0, 0D0, 1D0)
+	call VecSet(2, m2, p, 0D0, 0D0, -1D0)
 	end
 
 
 ************************************************************************
 
-	subroutine FinalState(fac)
+	subroutine FinalState(fac, m3, m4, m5, m6)
 	implicit none
-	RealType fac
+	RealType fac, m3, m4, m5, m6
 
 #include "xsection.h"
 
@@ -100,7 +96,7 @@
 	ey = 0
 	ez = 1
 	minv = sqrtS
-	msum = MASS_OUT
+	msum = m3 + m4 + m5 + m6
 
 	key = 0
 #ifdef E1MIN
@@ -113,19 +109,19 @@
 	key = key + Cut(CUT_COSTH, CUT_MIN + CUT_MAX)
 #endif
 
-	call Split(6, Re(MASS6), p, ex,ey,ez, minv, msum,
+	call Split(6, m6, p, ex,ey,ez, minv, msum,
      &    fac, key, Var(XMREM1), Var(XCOSTH1), Var(TRIVIAL))
 	Show(XMREM1) = momspec(SPEC_E, 6)
 	if( fac .eq. 0 ) return
 
-	call Split(5, Re(MASS5), p, ex,ey,ez, minv, msum,
+	call Split(5, m5, p, ex,ey,ez, minv, msum,
      &    fac, 0, Var(XMREM2), Var(XCOSTH2), Var(XPHI2))
 	Show(XMREM2) = momspec(SPEC_E, 5)
 	if( fac .eq. 0 ) return
 
-	call Split(4, Re(MASS4), p, ex,ey,ez, minv, msum,
+	call Split(4, m4, p, ex,ey,ez, minv, msum,
      &    fac, 0, Var(FIXED), Var(XCOSTH3), Var(XPHI3))
 
-	call VecSet(3, Re(MASS3), p, ex,ey,ez)
+	call VecSet(3, m3, p, ex,ey,ez)
 	end
 

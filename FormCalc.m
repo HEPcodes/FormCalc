@@ -1,8 +1,8 @@
 (*
 
-This is FormCalc, Version 8.4
+This is FormCalc, Version 8.5
 Copyright by Thomas Hahn 1996-2015
-last modified 30 Mar 15 by Thomas Hahn
+last modified 17 May 15 by Thomas Hahn
 
 Release notes:
 
@@ -38,11 +38,6 @@ just write fan mail, address it to:
 Have fun!
 
 *)
-
-Print[""];
-Print["FormCalc 8.4"];
-Print["by Thomas Hahn"];
-Print["last revised 30 Mar 15"]
 
 
 (* symbols from FeynArts *)
@@ -900,9 +895,17 @@ apart into letters and digits, e.g. Var1234 becomes Var[1234].
 ToArray[expr, s1, s2, ...] turns all occurrences of the symbols s1NNN,
 s2NNN, etc. in expr into s1[NNN], s2[NNN], etc."
 
+ToArrayRules::usage =
+"ToArrayRules[expr, vars] gives the rules used for the substitution
+in ToArray[expr, vars]."
+
 Renumber::usage =
 "Renumber[expr, var1, var2, ...] renumbers all var1[n], var2[n], ... in
 expr."
+
+RenumberRules::usage =
+"RenumberRules[expr, vars] gives the rules used for the substitution
+in Renumber[expr, vars]."
 
 MaxDims::usage =
 "MaxDims[args] returns a list of all distinct functions in args with the
@@ -1733,6 +1736,9 @@ non-detached (modal) window."
 $FormCalc::usage =
 "$FormCalc contains the version number of FormCalc."
 
+$FormCalcVersion::usage =
+"$FormCalcVersion is a string that gives the version of FormCalc."
+
 $FormCalcDir::usage =
 "$FormCalcDir is the directory from which FormCalc was loaded."
 
@@ -1769,7 +1775,9 @@ the file is split into several pieces."
 
 Begin["`Private`"]
 
-$FormCalc = 8.4
+$FormCalc = 8.5
+
+$FormCalcVersion = "FormCalc 8.5 (17 May 2015)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -1779,6 +1787,10 @@ $FormCalcSrc = ToFileName[{$FormCalcDir, "FormCalc"}]
 $FormCalcBin = ToFileName[{$FormCalcDir, $SystemID}]
 
 $DriversDir = ToFileName[{$FormCalcDir, "drivers"}]
+
+Print[""];
+Print[$FormCalcVersion];
+Print["by Thomas Hahn"];
 
 $ReadForm = ToFileName[$FormCalcBin, "ReadForm"];
 
@@ -1884,25 +1896,28 @@ Block[ {t = ToString[sym], p},
 
 ToArray[other_] = other
 
-ToArray[expr_, vars__] :=
-Block[ {v = ToString/@ Flatten[{vars}], rules, t, p, h},
-  rules = (
+ToArray[expr_, vars__] := expr /. Dispatch[ToArrayRules[expr, vars]]
+
+ToArrayRules[expr_, vars__] :=
+Block[ {v = ToString/@ Flatten[{vars}], t, p, h},
+  Flatten[(
     t = ToString[#];
     p = Position[DigitQ/@ Characters[t], False][[-1, 1]];
     h = StringTake[t, p];
     If[ MemberQ[v, h],
       # -> ToExpression[h] @ ToExpression[StringDrop[t, p]],
       {} ]
-  )&/@ Symbols[expr];
-  expr /. Dispatch[Flatten[rules]]
+  )&/@ Symbols[expr]]
 ]
 
 
-Renumber[expr_, vars__] :=
+Renumber[expr_, vars__] := expr /. Dispatch[RenumberRules[expr, vars]]
+
+RenumberRules[expr_, vars__] :=
 Block[ {v = Flatten[{vars}], old, new},
   old = Union[Cases[expr, #[__], Infinity]]&/@ v;
   new = MapThread[Array, {v, Length/@ old}];
-  expr /. Dispatch[Thread[Flatten[old] -> Flatten[new]]]
+  Thread[Flatten[old] -> Flatten[new]]
 ]
 
 
@@ -1912,9 +1927,14 @@ ExpandSums[a_. IndexDelta[i_, j_] SumOver[i_, _], h___] :=
   ExpandSums[a /. i -> j, h]
 
 ExpandSums[a_. s__SumOver, h_:Sum] :=
-  h[a, Evaluate[Sequence@@ List@@@ {s}]]
+  h[ExpandSums[a], Evaluate[Sequence@@ xran@@@ {s}]]
 
 ExpandSums[other_, h___] := ExpandSums[#, h]&/@ other
+
+xran[i_] := i
+
+xran[i_, n_, ___] := {i, n}
+
 
 
 Kind[Tag[___, x_]] := Kind[x]
@@ -2105,12 +2125,12 @@ Block[ {ux, uexpr},
     ux[other___] := usq[other]
   )&@@ Range[dim];
 
-  uexpr = expr //. {
+  Global`UnitarityDebug = uexpr = TermCollect[expr //. {
     (u:U[i_, j_])^n_. (uc:Conjugate[U[k_, j_]])^nc_. :>
       (usq[j][1, i, k]^# u^(n - #) uc^(nc - #) &) @ Min[n, nc],
     (u:U[j_, i_])^n_. (uc:Conjugate[U[j_, k_]])^nc_. :>
       (usq[j][2, i, k]^# u^(n - #) uc^(nc - #) &) @ Min[n, nc]
-  } /. usq -> ux;
+  }] /. usq -> ux;
 
   uexpr /. Plus -> usqplus[simp] /. usq -> ux /. {
     usq[a__][1, i_, k_] :> Plus@@ (U[i, #] Conjugate[U[k, #]] &)/@ {a},
@@ -4557,22 +4577,44 @@ InvList[n_, r__] := {InvDef[n, #]&/@ {r}, InvList[r]}
 InvList[_] = {}
 
 
-pdefs[qn_][{(s_Integer:1) p_, _, m_, q_:0}, {n_}] := {
-  "#define TYPE", #, ptype[p, m],
-  "\n#define ANTI", #, " ", ToString[s],
-  "\n#define MASS", #, " ", ToCode[m],
-  pqnum[#, Plus@@ Flatten[{q}]]/@ qn,
-  "\n\n"
-}& @ ToString[n]
+pdefs[proc_] :=
+Block[ {qn, c = 0, mdefs, defs},
+  qn = (##4&)@@@ Level[proc, {2}];
+  qn = Union[Flatten[DeleteCases[qn, _?NumberQ, Infinity]]];
+  defs = Map[pspec, List@@ proc, {2}];
+  mdefs = Map[First, defs, {2}];
+  defs = Rest[Transpose[Flatten[defs, 1]]];
+  { mdef[ "Mass_in", mdefs[[1]] ] ,
+    mdef[ "Mass_out", mdefs[[2]] ],
+    MapThread[pdef, {Flatten[{"Generic", "Anti", ToCode/@ qn}], defs}] }
+]
 
-ptype[_V, 0] := " PHOTON";
-ptype[_V, _] := " VECTOR";
-ptype[_F, _] := " FERMION";
-ptype[_S, _] := " SCALAR";
-ptype[_U, _] := " GHOST"
+mdef[x_, {s1_, sr___}] := {
+  "\n\n#undef ", x,
+  "\n#define ", x, "(f,c) ",
+  Fold[{"c(", #1, ",", #2, ")"}&, s1, {sr}] }
 
-pqnum[n_, expr_][qn_] :=
-  {"\n#define ", ToCode[qn], n, " ", ToCode[Coefficient[expr, qn]]}
+pdef[x_, {s1_, sr___}] := {
+  "\n\n#undef ", x,
+  "\n#define ", x, "(f) ",
+  Fold[{#1, ", ", #2}&, s1, {sr}] }
+
+pspec[{(s_Integer:1) p_, _, m_, q_:0}] :=
+Block[ {pre = "f(" <> ToString[++c] <> ",", suf = ")"},
+  (pre <> # <> suf)&/@ Flatten[{
+    ToCode[m],
+    ptype[p, m],
+    ToString[s],
+    pqnum[Plus@@ Flatten[{q}]]/@ qn }]
+]
+
+ptype[_V, 0] := "PHOTON";
+ptype[_V, _] := "VECTOR";
+ptype[_F, _] := "FERMION";
+ptype[_S, _] := "SCALAR";
+ptype[_U, _] := "GHOST"
+
+pqnum[expr_][qn_] := ToCode[Coefficient[expr, qn]]
 
 
 imod[n_] := {Mod["i/" <> ToString[hmax], n], hmax *= n}[[1]]
@@ -5167,8 +5209,8 @@ Options[WriteSquaredME] = {
   ExtraRules -> {},
   FilePrefix -> "",
   SymbolPrefix -> "",
-  FileHeader -> "#if 0\n* %f\n* %d\n* generated by FormCalc " <>
-    ToString[NumberForm[$FormCalc, {Infinity, 1}]] <> " on %t\n#endif\n\n",
+  FileHeader -> "#if 0\n* %f\n* %d\n* generated by " <>
+    $FormCalcVersion <> " on %t\n#endif\n\n",
   FileIncludes -> {"#include \"decl.h\"\n",
                    "#include \"inline.h\"\n",
                    "#include \"contains.h\"\n"},
@@ -5357,14 +5399,12 @@ $(LIB)($(NUMS)): " <> $MakeDeps[[2]] <> "\n\n"];
   hh = OpenCode[ModName["specs", ".h"]];
 
   WriteString[hh, Hdr["process specifications"] <>
-    (MapIndexed[
-      pdefs[Union[Flatten[
-        DeleteCases[(##4&)@@@ #, _?NumberQ, Infinity] ]]],
-      # ]&) @ Level[proc, {2}] <>
-    ({"#define LEGS_IN ", #1,
-      "\n#define LEGS_OUT ", #2,
-      "\n#define LEGS ", ToString[legs],
-      "\n\n#define KIN \"", #1, "to", #2, ".F\"\n"}&)@@
+    "#undef FCVERSION\n#define FCVERSION \"" <> $FormCalcVersion <> "\"" <>
+    pdefs[proc] <>
+    ({"\n\n#undef LEGS_IN\n#define LEGS_IN ", #1,
+      "\n#undef LEGS_OUT\n#define LEGS_OUT ", #2,
+      "\n#undef LEGS\n#define LEGS ", ToString[legs],
+      "\n\n#undef KIN\n#define KIN \"", #1, "to", #2, ".F\"\n\n"}&)@@
       ToString/@ Length/@ proc];
 
   Close[hh];
