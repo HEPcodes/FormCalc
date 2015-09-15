@@ -1,3 +1,9 @@
+4 Sep 15:
+
+- Added simple way of combining partonic XS, through partonic.h and
+  parton.h.
+
+
 17 May 15:
 
 - New format for squaredme/specs.h allows easier handling of lists

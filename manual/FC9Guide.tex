@@ -156,13 +156,13 @@ end }
 
 \newbox\titlebox\setbox\titlebox=\hbox{\underline{%
 \vrule width 0pt height 0pt depth 2ex%
-\Huge \FC~8~~~User's Guide}}
+\Huge \FC~9~~~User's Guide}}
 
 \hfill\copy\titlebox
 
 \vspace*{1ex}
 
-\hfill\hbox{February 16, 2015~~~~~Thomas Hahn}
+\hfill\hbox{Sept. 4, 2015~~~~~Thomas Hahn}
 
 \bigskip
 \bigskip
@@ -2157,7 +2157,7 @@ default).
 \Code{Dimension} & \Code{4} &
 	the dimension to compute in \\
 \Code{GaugeTerms} & \Code{True} &
-	whether to drop the $\eta$-dependent terms \\
+	whether to retain $\eta$-dependent terms \\
 \Code{MomElim} & (taken from \Code{CalcFeynAmp}) &
 	how to apply momentum conservation \\
 \Code{DotExpand} & (taken from \Code{CalcFeynAmp}) &
@@ -2193,7 +2193,7 @@ equivalence \Code{Dminus4Eps = Dminus4} can be unset.%
 \indextt{Dminus4}%
 \indextt{Dminus4Eps}
 
-\Code{GaugeTerms} drops terms containing the gauge-dependent auxiliary 
+\Code{GaugeTerms} retains terms containing the gauge-dependent auxiliary 
 vector $\eta$.  More precisely, the $\eta$-terms are actually introduced 
 at first, to let potential cancellations of $\eta$'s in the numerator 
 against the denominator occur, but set to zero later.
@@ -2227,10 +2227,10 @@ example, the analytical expression does not reflect a particular
 phase-space parameterization.
 
 One can also obtain an analytic expression in terms of kinematic 
-invariants (but no four-vectors) by squaring the amplitude and 
-computing the polarization sums, as outlined above.  This has the 
-advantage of being independent of the representation of the spinors and 
-vectors, but of course the size of the expression is roughly doubled by 
+invariants (but no four-vectors) by squaring the amplitude and computing 
+the polarization sums, as outlined above.  This has the advantage of 
+being independent of the representation of the spinors and vectors, but 
+of course the size of the expression is significantly increased by 
 squaring.
 
 As a third alternative, one can obtain an analytical expression for the
@@ -2357,8 +2357,8 @@ limited to the achievable numerical precision.
 	up to a numerical constant \\
 \Code{DenCollect[\Var{expr},\,\Var{wrap}]} &
 	additionally applies \Var{wrap} to the collected numerators \\
-\Code{TagCollect[\Var{expr},\,\Var{tag},\,\Var{f}]} &
-	apply \Var{f} to the part of \Var{expr} tagged by \Var{tag} \\
+\Code{TagCollect[\Var{expr},\,\Var{tag},\,\Var{wrap}]} &
+	apply \Var{wrap} to the part of \Var{expr} tagged by \Var{tag} \\
 \Code{TermCollect[\Var{expr}]} &
 	combines terms with common factors, \ie does
 	$a b + a c + d \to a (b + c) + d$ \\
@@ -2378,10 +2378,10 @@ limited to the achievable numerical precision.
 	and \Code{\Var{f_{\text{def}}}[\Var{expr}]} if the expression
 	is still larger \\
 \Code{ApplyUnitarity[\Var{expr},\,\Var{U},\,\Vd,\,\Vs]} &
-	simplify expr by exploiting the unitarity of the \Vd-dimensional 
-	matrix \Var{U}.  The optional argument \Vs\ specifies the 
-	simplification function to use internally (default: 
-	\Code{FullSimplify}) \\
+	simplify \Var{expr} by exploiting the unitarity of the 
+	\Vd-dimensional matrix \Var{U}.  The optional argument \Vs\ 
+	specifies the simplification function to use internally 
+	(default: \Code{FullSimplify}) \\
 \Code{ExpandSums[\Var{expr}]} &
 	turns all pieces of \Var{expr} multiplied with \Code{SumOver}
 	into an actual sum
@@ -2421,14 +2421,14 @@ expressions because \Code{Simplify} (even \Code{FullSimplify}) is fast
 and efficient on short expressions, but tends to be slow on large ones.  
 For example,
 \begin{verbatim}
-  OnSize[100, FullSimplify, 500, Simplify, DenCollect]
+  OnSize[100, FullSimplify, 500, Simplify, TermCollect]
 \end{verbatim}
 would apply \Code{FullSimplify} if the expression's leaf count is less 
 than 100, \Code{Simplify} if it is between 100 and 500, and 
 \Code{DenCollect} above.
 
-\Code{ApplyUnitarity} uses unitarity of a given matrix to simplify an
-expression.  The two unitarity relations $UU^\dagger = \unity$ or
+\Code{ApplyUnitarity} exploits unitarity of a given matrix to simplify 
+an expression.  The two unitarity relations $UU^\dagger = \unity$ or
 $\sum_{i = 1}^d U_{ij} U_{kj}^* = \delta_{ik}$ and $U^\dagger U =
 \unity$ or $\sum_{i = 1}^d U_{jk} U_{ji}^* = \delta_{ik}$ are used to
 substitute sums of $UU^*$ elements with more than $\lceil d/2\rceil$
@@ -2489,36 +2489,75 @@ evaluation:
 \begin{tabbing}
 \Code{drivers/}\hspace{.18\linewidth} \=
 	driver programs for running the generated code: \\
-\quad\Code{main.F} \>
-	the main program (command-line processing) \\
-\quad\Code{xsection.F} \>
-	the code for computing the cross-section \\
-\quad\Code{xsection.h} \>
-	declarations for \Code{xsection.F} \\
 \quad\Code{process.h} \>
 	the process specification \\
 \quad\Code{run.F} \>
 	the parameters for a particular ``run'' \\
-\quad\Code{model\uscore sm.F,.h} \>
-	initialization of the Standard Model parameters \\
-\quad\Code{model\uscore mssm.F,.h} \>
-	initialization of the MSSM parameters \\
-\quad\Code{model\uscore thdm.F,.h} \>
-	initialization of the two-Higgs-doublet-model parameters \\
-\quad\Code{lumi\uscore parton.F} \>
-	luminosity computation for a partonic process \\
-\quad\Code{lumi\uscore hadron.F} \>
-	luminosity computation for a hadronic process \\
-\quad\Code{lumi\uscore photon.F} \>
-	luminosity computation for a photonic process \\
-\quad\MtoN.F \>
-	the kinematics for a $\Var{M}\to\Var{N}$ process \\
-\quad\MtoN.h \>
-	declarations for \MtoN.F \\
-\quad\Code{configure} \>
-	a script to find out library locations and compiler flags \\
+\quad\Code{partonic.h} \>
+	the partonic composition of the final result \\
+\quad\Code{extra.h} \>
+	extra user definitions \\
+\quad\Code{distrib.h} \>
+	definitions for distributed computing \\
 \quad\Code{makefile.in} \>
 	the makefile minus the flags set by configure \\
+\quad\Code{configure} \>
+	a script to find out library locations and compiler flags \\
+\quad\Code{do} \>
+	a script to automate computations
+\\[1ex]
+\Code{drivers/F/} \>
+	Fortran driver programs for running the generated code: \\
+\quad\Code{main.F} \>
+	the main program (command-line processing) \\
+\quad\Code{xsection.F,.h} \>
+	the code for computing the cross-section \\
+\quad\Code{parton.h} \>
+	setup for a single partonic process \\
+\quad\Code{num.h} \>
+	definitions for the OPP numerator functions \\
+\quad\Code{model\uscore *.F,.h} \>
+	initialization of the model parameters \\
+\quad\Code{lumi\uscore *.F} \>
+	luminosity computation \\
+\quad\MtoN.F,.h \>
+	the kinematics for a $\Var{M}\to\Var{N}$ process \\
+\quad\Code{softphoton.F} \>
+	the integrals for the soft-photon approximation \\
+\quad\Code{util.h} \>
+	definitions for the functions in \Code{util.a} \\
+\quad\Code{const.h} \>
+	general constants and regularization parameters \\
+\quad\Code{inline.h} \>
+	inline versions of the util functions \\
+\quad\Code{contains.h} \>
+	inline versions of the util functions \\
+\quad\Code{user.h} \>
+	user definitions, \eg choice of model, OPP, etc. \\
+\quad\Code{decl.h} \>
+	combined declarations file, included `everywhere'
+\\[1ex]
+\Code{drivers/C/} \>
+	C driver programs for running the generated code: \\
+\quad\Code{num.h} \>
+	definitions for the OPP numerator functions \\
+\quad\Code{model\uscore *.h} \>
+	declarations of the model parameters \\
+\quad\Code{util.h} \>
+	definitions for the functions in \Code{util.a} \\
+\quad\Code{const.h} \>
+	general constants and regularization parameters \\
+\quad\Code{inline.h} \>
+	inline versions of the util functions \\
+\quad\Code{contains.h} \>
+	inline versions of the util functions \\
+\quad\Code{user.h} \>
+	user definitions, \eg choice of model, OPP, etc. \\
+\quad\Code{decl.h} \>
+	combined declarations file, included `everywhere'
+\\[1ex]
+\Code{drivers/tools/} \>
+	helper scripts: \\
 \quad\Code{mktm} \>
 	a script to set up Mathematica interfacing code (internal use) \\
 \quad\Code{data} \>
@@ -2530,9 +2569,7 @@ evaluation:
 \quad\Code{turnoff} \>
 	a script to turn on or off the evaluation of code modules \\
 \quad\Code{submit} \>
-	a script to submit parallel jobs \\
-\quad\Code{do} \>
-	a script to automate computations
+	a script to submit parallel jobs
 \\[1ex]
 \Code{tools/} \>
 	tools for the numerical evaluation: \\
@@ -2553,15 +2590,13 @@ evaluation:
 \indextt{xsection.F,.h}%
 \indextt{process.h}%
 \indextt{run.F}%
-\indextt{model\uscore sm.F}%
-\indextt{model\uscore mssm.F}%
-\indextt{model\uscore thdm.F}%
-\indextt{lumi\uscore parton.F}%
-\indextt{lumi\uscore hadron.F}%
-\indextt{lumi\uscore photon.F}%
+\indextt{model\uscore *.F}%
+\indextt{lumi\uscore *.F}%
 \indextt{1to2.F,.h}%
+\indextt{1to3.F,.h}%
 \indextt{2to2.F,.h}%
 \indextt{2to3.F,.h}%
+\indextt{2to4.F,.h}%
 \indextt{configure}%
 \indextt{makefile.in}%
 \indextt{mktm}%
@@ -2699,7 +2734,7 @@ The following options can be used with \Code{WriteSquaredME}.
 	the file header \\[-\parskip]
 	& \Code{* \%f\backsl n} \\[-\parskip]
 	& \Code{* \%d\backsl n} \\[-\parskip]
-	& \rlap{\Code{* generated by FormCalc 8.4 \%t\backsl n}} \\[-\parskip]
+	& \rlap{\Code{* generated by FormCalc \Vm.\Vn \%t\backsl n}} \\[-\parskip]
 	& \rlap{\Code{\#endif\backsl n\backsl n"}} \\
 \Code{SubroutineIncludes} & \Code{FileIncludes} &
 	per-subroutine \Code{\#include} statements \\
@@ -2791,52 +2826,57 @@ the main program and all its prerequisite files, and subsidiary
 `folders' (subdirectories to the main code directory).  The default 
 setup looks like this:
 \begin{center}
-\begin{picture}(200,105)
+\begin{picture}(300,145)(0,-40)
 \Text(55,92)[b]{main code directory}
 \Text(55,80)[b]{\small (created by \Code{SetupCodeDir})}
 \Line(-5,77)(115,77)
 %
-\Line(55,77)(55,62)
-\Line(55,62)(65,62)
-\Text(70,63)[l]{\Code{squaredme/}}
-\Text(70,52)[l]{\small (generated by \Code{WriteSquaredME})}
+\Line(65,77)(65,62)
+\Line(65,62)(75,62)
+\Text(80,63)[l]{\Code{squaredme/}}
+\Text(80,52)[l]{\Blue{\Code{squaredme.a}}}
+\Text(160,63)[l]{\small (generated by \Code{WriteSquaredME})}
 %
-\Line(45,77)(45,37)
-\Line(45,37)(65,37)
-\Text(70,38)[l]{\Code{renconst/}\hphantom{p}}
-\Text(70,27)[l]{\small (generated by \Code{WriteRenConst})}
+\Line(55,77)(55,37)
+\Line(55,37)(75,37)
+\Text(80,38)[l]{\Code{renconst/}\hphantom{p}}
+\Text(80,27)[l]{\Blue{\Code{renconst.a}}\hphantom{p}}
+\Text(160,38)[l]{\small (generated by \Code{WriteRenConst})}
 %
-\Line(35,77)(35,12)
-\Line(35,12)(65,12)
-\Text(70,13)[l]{\Code{util/}\hphantom{p}}
-\Text(70,2)[l]{\small (comes with \FC)\hphantom{p}}
+\Line(45,77)(45,12)
+\Line(45,12)(75,12)
+\Text(80,13)[l]{\Code{util/}\hphantom{p}}
+\Text(80,2)[l]{\Blue{\Code{util.a}}\hphantom{p}}
+%
+\Line(35,77)(35,-12)
+\Line(35,-12)(75,-12)
+\Text(80,-11)[l]{\Code{F/}\hphantom{p}}
+%
+\Line(25,77)(25,-25)
+\Line(25,-25)(75,-25)
+\Text(80,-24)[l]{\Code{C/}\hphantom{p}}
+%
+\Line(15,77)(15,-37)
+\Line(15,-37)(75,-37)
+\Text(80,-36)[l]{\Code{tools/}\hphantom{p}}
+%
+\Text(145,-13)[l]{$\left.\vrule width 0pt depth 5.5ex height 5.5ex\right\}$}
+\Text(160,-13)[l]{\small (come with \FC)\hphantom{p}}
 \end{picture}
 \end{center}
-Each folder is equipped with its own makefile which makes a library of 
-the same name, \eg the makefile in \Code{util/} makes the library 
-\Code{util.a}.
-
+Folders equipped with an own makefile produce a library of the same 
+name, \eg the makefile in \Code{util/} makes the library \Code{util.a}.
 These sub-makefiles are orchestrated by the master makefile.  Libraries
 required for the main program are listed in the \Code{LIBS} variable
 and built automatically by invoking the sub-makefiles:
 \begin{verbatim}
   LIBS = squaredme.a renconst.a util.a
 \end{verbatim}
-The master makefile is no longer overwritten in the code-generation 
-process and is treated like the other driver programs, \ie a customized
-copy can be saved in the local drivers directory.%
 \indextt{makefile}%
-\indextt{LIBS}
-
-Occasionally it is useful to have more than one instance of
-\Code{squaredme} (or \Code{renconst}), \eg when computing an
-hadronic cross-section to which several partonic processes contribute. 
-Both \Code{WriteSquaredME} and \Code{WriteRenConst} have the
-\Code{Folder} option, with which a unique folder name can be chosen, and
-the \Code{SymbolPrefix} option, with which the symbols visible to the
-linker can be prefixed with a unique identifier.  This identifier is
-inserted only at compile time and can easily be changed in the
-sub-makefile at any time.
+\indextt{LIBS}%
+Note that \Code{configure} overwrites \Code{makefile}, hence `permanent' 
+changes should be made in \Code{makefile.in} since \Code{configure} 
+overwrites \Code{makefile}.
 
 The \Code{util} library is a collection of ancillary routines which
 currently includes:
@@ -2847,13 +2887,75 @@ currently includes:
 \item Univariate integrators (\Code{Gauss}, \Code{Patterson}),
 \item Multivariate integrators (\cuba\ library \cite{Ha04}).
 \end{itemize}
-Older versions of \FC\ used to include these directly into the main
-program.  The library version has the advantage that the linker selects
-only the routines that are actually needed, and furthermore it is
-straightforward to add new code.  The \Code{util.a} library is
-compiled once when \FC\ is installed and then copied to the main code
-directory, thus avoiding unnecessary compiles.%
+The \Code{util.a} library is compiled once when \FC\ is installed and 
+then copied to the main code directory, thus avoiding unnecessary 
+compiles.%
 \indextt{util.a}
+
+%------------------------------------------------------------------------
+
+\subsubsection*{Partonic Composition}%
+\index{partonic process}
+
+Partonic processes can be combined in the final result.  The number of 
+incoming and outgoing legs must be the same, so that the phase-spaces 
+have identical dimension for integration, but otherwise each partonic 
+process may have distinct kinematics.  It is up to the user to ensure
+that the combined result makes sense physically.
+
+Technically one invokes \Code{WriteSquaredME} for each partonic process, 
+but with different values for the \Code{Folder} and \Code{SymbolPrefix} 
+option.  The \Code{Folder} option chooses different output directories 
+and the \Code{SymbolPrefix} option disambiguates globally visible 
+symbols in the generated code.  Both options admit the use of 
+\Code{ProcName}, as in: \Code{Folder -> \Brac{"squaredme", ProcName}} 
+which will be substituted by the process name, suitably arranged as file 
+and symbol name.  The above folder name might be expanded as
+\Code{squaredme/Fb21F21Fb33iF33i}.%
+\indextt{Folder}%
+\indextt{SymbolPrefix}%
+\indextt{ProcName}
+
+The actual composition of the final result is determined through the 
+\Code{partonic.h} header in the drivers directory.  The default setup, 
+for an only partonic process, is
+\indextt{partonic.h}%
+\begin{verbatim}
+#define NPID 1
+
+*** BEGIN PARTONIC PROCESS #1
+
+#define PID 1
+#define PARTON1 -1
+#define PARTON2 -1
+#include "squaredme/specs.h"
+#include "parton.h"
+
+*** END PARTONIC PROCESS #1
+\end{verbatim}
+\indextt{NPID}%
+\indextt{PID}%
+\indextt{PARTON1,2}%
+\indextt{specs.h}%
+\indextt{PDG code}%
+For more than one partonic process, \Code{NPID} has to be increased 
+appropriately and the lines between \Code{BEGIN} and \Code{END PARTONIC 
+PROCESS} have to be replicated for each partonic process, with the 
+following quantities adapted:
+\begin{itemize}
+\item \Code{PID} is the running number of the partonic process, counting 
+from 1 to \Code{NPID} (though not necessarily in ascending order),
+
+\item \Code{PARTON1} and \Code{PARTON2} identify the incoming partons in 
+\Code{lumi\uscore hadron.F} by their PDG code: 0 = gluon, 1 = down, 2 = 
+up, 3 = strange, 4 = charm, 5 = bottom, 6 = top.
+
+\item The \Code{specs.h} file from the correct directory (cf.\ 
+\Code{Folder} option above) has to be included.
+
+\item The \Code{parton.h} stays put, \ie is the same for each partonic 
+process.
+\end{itemize}
 
 %------------------------------------------------------------------------
 
@@ -3123,6 +3225,9 @@ duties:
 \item	\Code{xsection.F} contains the kinematics-independent code, \\
 	\Code{xsection.h} contains the declarations for 
 	\Code{xsection.F},
+\item	\Code{partonic.h} determines the partonic composition of the
+	result, \\
+	\Code{parton.h} contains the code for a single partonic process,
 \item	\MtoN.F contains the kinematics-dependent
 	code for a $\Var{M}\to\Var{N}$ process, \\
 	\MtoN.h contains the declarations for \MtoN.F,

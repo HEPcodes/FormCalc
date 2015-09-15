@@ -3,16 +3,19 @@
 * code adapted from the "Handbook" routines for complex A
 * (Wilkinson, Reinsch: Handbook for Automatic Computation, p. 202)
 * this file is part of the Diag library
-* last modified 30 Nov 11 th
+* last modified 24 Aug 15 th
 
 #include "diag-f.h"
 
 
 ************************************************************************
 ** CEigensystem diagonalizes a general complex n-by-n matrix.
-** Input: n, A = n-by-n matrix
-** Output: d = vector of eigenvalues, U = transformation matrix
-** these fulfill diag(d) = U A U^-1.
+** Input:	n, A = n-by-n matrix
+** Output:	d = vector of eigenvalues,
+**		U = transformation matrix,
+** these fulfill
+**	d = U A U^-1,  A = U d U^-1,  U A = d U  (UCOLS=0),
+**	d = U^-1 A U,  A = U^-1 d U,  A U = U d  (UCOLS=1).
 
 	subroutine CEigensystem(n, A,ldA, d, U,ldU, sort)
 	implicit none
@@ -20,7 +23,7 @@
 	ComplexType A(ldA,*), U(ldU,*), d(*)
 
 	integer p, q, j
-	RealType red, off, thresh
+	RealType red, off, thresh, norm
 	ComplexType delta, t, s, invc, sx, sy, tx, ty
 	ComplexType x, y
 	ComplexType ev(2,MAXDIM)
@@ -106,10 +109,15 @@
 	        A(q,p) = 0
 
 	        do j = 1, n
-	          x = U(p,j)
-	          y = U(q,j)
-	          U(p,j) = x + sx*(y - tx*x)
-	          U(q,j) = y - sy*(x + ty*y)
+	          x = UL(p,j)
+	          y = UL(q,j)
+#if UCOLS
+	          UL(p,j) = x + sy*(y - ty*x)
+	          UL(q,j) = y - sx*(x + tx*y)
+#else
+	          UL(p,j) = x + sx*(y - tx*x)
+	          UL(q,j) = y - sy*(x + ty*y)
+#endif
 	        enddo
 	      endif
 	    enddo
@@ -123,10 +131,23 @@
 
 	print *, "Bad convergence in CEigensystem"
 
-1	if( sort .eq. 0 ) return
+1	continue
+
+* normalize the eigenvectors
+	do p = 1, n
+	  norm = 0
+	  do q = 1, n
+	    norm = norm + Sq(UL(p,q))
+	  enddo
+	  norm = 1/sqrt(norm)
+	  do q = 1, n
+	    UL(p,q) = UL(p,q)*norm
+	  enddo
+	enddo
+
+	if( sort .eq. 0 ) return
 
 * sort the eigenvalues by their real part
-
 	do p = 1, n - 1
 	  j = p
 	  t = d(p)
@@ -141,9 +162,9 @@
 	    d(j) = d(p)
 	    d(p) = t
 	    do q = 1, n
-	      x = U(p,q)
-	      U(p,q) = U(j,q)
-	      U(j,q) = x
+	      x = UL(p,q)
+	      UL(p,q) = UL(j,q)
+	      UL(j,q) = x
 	    enddo
 	  endif
 	enddo

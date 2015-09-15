@@ -1,12 +1,11 @@
 #! /bin/sh
-# a script to set up the interface code for accessing
-# FormCalc-generated code in Mathematica
+# set up the interfacing for FormCalc-generated code in Mathematica
 # this file is part of FormCalc
-# last modified 5 Jan 15 th
+# last modified 29 May 15 th
 
 
 test $# -ne 1 && {
-  echo "Usage:  FC FFLAGS file.F | $0 file.tm   -- generates file.tm for file.F" 1>&2
+  echo "Usage:  FC FFLAGS -E -P file.F | $0 file.tm   -- generates file.tm for file.F" 1>&2
   exit 1
 }
 
@@ -18,21 +17,16 @@ prep=`cat -`
 
 pol=`echo "$prep" | awk '/len_trim\(pol\)/ { print substr("UUUUUUUUUU", 1, $4); }'`
 
-set -- `echo "$prep" | sed '
-/^[cC*]/d
-s/.*call MmaGetInteger(/i /
-s/.*call MmaGetIntegerList(/il /
-s/.*call MmaGetReal(/r /
-s/.*call MmaGetRealList(/rl /
-s/.*call MmaGetComplex(/c /
-s/.*call MmaGetComplexList(/cl /
-y/_,)/$  /
-t
-d'`
+set -- `echo "$prep" | sed -n 's/^[^cC*].*MmaGet//p' | sed '
+s/(/ /1
+s/)$//
+s/,\([^),]*\)$/ \1/
+s/[(),]//g'`
 
 while test $# -gt 0 ; do
   case $1 in
-  i)	argsQ="$argsQ, $2_Integer"
+  Integer)
+	argsQ="$argsQ, $2_Integer"
 	argsL="$argsL, $2_"
 	argsR="$argsR, $2"
 	argsN="$argsN, $2"
@@ -40,7 +34,8 @@ while test $# -gt 0 ; do
 	argsC="$argsC, cint $2"
 	argsS="$argsS, $2"
 	;;
-  il)	argsQ="$argsQ, $2_?(il[$3])"
+  IntegerList)
+	argsQ="$argsQ, $2_?(il[$3])"
 	argsL="$argsL, $2_"
 	argsR="$argsR, $2"
 	argsN="$argsN, $2"
@@ -49,7 +44,8 @@ while test $# -gt 0 ; do
 	argsS="$argsS, $2, n_$2"
 	shift
 	;;
-  r)	argsQ="$argsQ, $2_?r"
+  Real)
+	argsQ="$argsQ, $2_?r"
 	argsL="$argsL, $2_"
 	argsR="$argsR, $2"
 	argsN="$argsN, N[$2]"
@@ -57,7 +53,8 @@ while test $# -gt 0 ; do
 	argsC="$argsC, cRealType $2"
 	argsS="$argsS, $2"
 	;;
-  rl)	argsQ="$argsQ, $2_?(rl[$3])"
+  RealList)
+	argsQ="$argsQ, $2_?(rl[$3])"
 	argsL="$argsL, $2_"
 	argsR="$argsR, $2"
 	argsN="$argsN, N[$2]"
@@ -66,7 +63,8 @@ while test $# -gt 0 ; do
 	argsS="$argsS, $2, n_$2"
 	shift
 	;;
-  c)	argsQ="$argsQ, $2_?c"
+  Complex)
+	argsQ="$argsQ, $2_?c"
 	argsL="$argsL, $2_"
 	argsR="$argsR, $2"
 	argsN="$argsN, N[Re[$2]], N[Im[$2]]"
@@ -74,7 +72,8 @@ while test $# -gt 0 ; do
 	argsC="$argsC, cRealType re$2, cRealType im$2"
 	argsS="$argsS, (ComplexType){re$2, im$2}"
 	;;
-  cl)	argsQ="$argsQ, $2_?(cl[$3])"
+  ComplexList)
+	argsQ="$argsQ, $2_?(cl[$3])"
 	argsL="$argsL, $2_"
 	argsR="$argsR, $2"
 	argsN="$argsN, N[Flatten[{Re[#], Im[#]}&/@ $2]]"

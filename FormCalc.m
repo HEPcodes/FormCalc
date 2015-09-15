@@ -1,8 +1,8 @@
 (*
 
-This is FormCalc, Version 8.5
+This is FormCalc, Version 9.0
 Copyright by Thomas Hahn 1996-2015
-last modified 17 May 15 by Thomas Hahn
+last modified 26 Aug 15 by Thomas Hahn
 
 Release notes:
 
@@ -1775,9 +1775,9 @@ the file is split into several pieces."
 
 Begin["`Private`"]
 
-$FormCalc = 8.5
+$FormCalc = 9.0
 
-$FormCalcVersion = "FormCalc 8.5 (17 May 2015)"
+$FormCalcVersion = "FormCalc 9.0 (26 Aug 2015)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -1858,10 +1858,11 @@ SetOptions[ToString, CharacterEncoding -> "ASCII"]
 
 SetOptions[OpenWrite, CharacterEncoding -> "ASCII"]
 
-FilterOptions = System`Utilities`FilterOptions
-
 
 (* generic functions *)
+
+FilterOpt[sym_, opts___] := Sequence@@
+  Cases[Flatten[{opts}], _[Alternatives@@ First/@ Options[sym], _]]
 
 ParseOpt[func_, opt___] :=
 Block[ {names = First/@ Options[func]},
@@ -2371,11 +2372,11 @@ FormPatt[_[_[_[lhs_]], rhs_]] := FormPatt[lhs, rhs]
 FormPatt[lhs_Alternatives, rhs_] := FormPatt[#, rhs]&/@ List@@ lhs
 
 FormPatt[lhs_, rhs_] :=
-Block[ {c = 96, newlhs, newrhs = rhs},
+Block[ {c = 96, newlhs, newrhs = rhs, patt},
   newlhs = lhs /.
     {Blank -> FormArg, BlankSequence | BlankNullSequence -> FormArgs} /.
     Pattern -> ((newrhs = newrhs /. #1 -> #2; #2)&);
-  (newlhs /. patt[x_] :> x <> "?") -> (newrhs /. patt[x_] -> x)
+  (newlhs /. patt[x_] :> x <> "?") -> (newrhs /. patt[x_] :> x)
 ]
 
 FormArg[h_:Identity] := h[patt["ARG" <> FromCharacterCode[++c]]]
@@ -3095,8 +3096,8 @@ table HEL(1:" <> ToString[Legs] <> ");\n" <>
 ]
 
 CalcFeynAmp[amps__, opt___Rule] := CalcFeynAmp[
-  DeclareProcess[amps, FilterOptions[DeclareProcess, opt]],
-  FilterOptions[CalcFeynAmp, opt] ]
+  DeclareProcess[amps, FilterOpt[DeclareProcess, opt]],
+  FilterOpt[CalcFeynAmp, opt] ]
 
 
 (* FORM interfacing *)
@@ -3680,7 +3681,7 @@ General::conflict = "Definition of `` conflicts with ``."
 
 Attributes[RegisterAbbr] = {Listable}
 
-RegisterAbbr[s_ -> x_Num] := regset[num, x, s]
+RegisterAbbr[s_ -> x_Num] := setabb[num, x, s]
 
 RegisterAbbr[s_ -> other_] := regabb[s -> 4711 other]
 
@@ -3691,11 +3692,11 @@ regabb[s_ -> x_. p___Pair e___Eps d___DiracChain w___WeylChain t___eT tc___eTc] 
 
 regabb[s_, x_, 1, 1, 1, t_] := regabb[s, x t]
 
-  regabb[s_?(likeQ["SUN*"]), x_] := regset[sunM, x, s]
+  regabb[s_?(likeQ["SUN*"]), x_] := setabb[sunM, x, s]
 
-  regabb[s_?(likeQ["Abb*"]), x_] := regset[abb, x, s]
+  regabb[s_?(likeQ["Abb*"]), x_] := setabb[abb, x, s]
 
-  regabb[s_?(likeQ["QC*"]), x_] := regset[qc, x, s]
+  regabb[s_?(likeQ["QC*"]), x_] := setabb[qc, x, s]
 
 regabb[s_, x_, p_, 1, 1, 1] := regabb[s, x, p, pair]
 
@@ -3703,16 +3704,19 @@ regabb[s_, x_, 1, e_, 1, 1] := regabb[s, x, e, eps]
 
 regabb[s_, x_, p_, e_, f_, t_] := regabb[s, x, p e f t, fermM]
 
-  regabb[s_, 1, t_, h_] := regset[h, t, 1, s]
+  regabb[s_, 1, t_, h_] := setabb[h, t, 1, s]
 
-  regabb[s_, x_, t_, h_] := regset[h, t, x^(-2 Count[4711 t, _k, {2}]), s]
+  regabb[s_, x_, t_, h_] := setabb[h, t, x^(-2 Count[4711 t, _k, {2}]), s]
 
 regabb[s_, x__] :=
   (Message[RegisterAbbr::unknown, #]; #)&[ s -> Times[x] ]
 
 
-regset[h_, args__, s_] :=
+setabb[h_, args__, s_] :=
   newset[h[args], Cases[DownValues[h], _[_[_[args]], x_] -> x], s]
+
+setsub[h_[i___], args__, s_] :=
+  newset[h[i][args], Cases[SubValues[h], _[_[_[i][args]], x_] -> x], s]
 
 Attributes[newset] = {HoldFirst}
 
@@ -3727,10 +3731,10 @@ newset[x_, {s1_}, s2_] :=
 Attributes[RegisterSubexpr] = {Listable}
 
 RegisterSubexpr[s_Symbol[i__] -> x_] :=
-  regset[abbsub[i], x, s]
+  setsub[abbsub[i], x, s]
 
 RegisterSubexpr[s_Symbol -> x_] :=
-  regset[abbsub[], x, s]
+  setsub[abbsub[], x, s]
 
 RegisterSubexpr[other_] :=
   (Message[RegisterSubexpr::unknown, other]; other)
@@ -4407,8 +4411,8 @@ Block[ {Hel},
   _Hel = 0;
   PolarizationSum[
     SquaredME[amp] /.
-      HelicityME[amp, FilterOptions[HelicityME, opt]] /.
-      ColourME[amp, FilterOptions[ColourME, opt]],
+      HelicityME[amp, FilterOpt[HelicityME, opt]] /.
+      ColourME[amp, FilterOpt[ColourME, opt]],
     opt ]
 ]
 
@@ -4578,35 +4582,27 @@ InvList[_] = {}
 
 
 pdefs[proc_] :=
-Block[ {qn, c = 0, mdefs, defs},
-  qn = (##4&)@@@ Level[proc, {2}];
+Block[ {qn, fp},
+  qn = (##4&)@@@ proc;
   qn = Union[Flatten[DeleteCases[qn, _?NumberQ, Infinity]]];
-  defs = Map[pspec, List@@ proc, {2}];
-  mdefs = Map[First, defs, {2}];
-  defs = Rest[Transpose[Flatten[defs, 1]]];
-  { mdef[ "Mass_in", mdefs[[1]] ] ,
-    mdef[ "Mass_out", mdefs[[2]] ],
-    MapThread[pdef, {Flatten[{"Generic", "Anti", ToCode/@ qn}], defs}] }
+  fp = MapIndexed[{"f(", ToString@@ #2, ",",
+    FromCharacterCode[#2[[1]] + 64], ")"}&, proc];
+  { "\n\n\
+#undef Compose\n\
+#define Compose(f,c", #[[{3, 4}]]&/@ fp, ") ",
+    Fold[{"c(", #1, ",", #2, ")"}&, fp[[1]], Rest[fp]],
+    MapThread[ {"\n\n\
+#undef ", #1, "\n\
+#define ", #1, "(f,c) Compose(f,c", {",", #}&/@ #2, ")"}&,
+      { Flatten[{"Generic", "Anti", "Mass", ToCode/@ qn}],
+        Transpose[pspec/@ proc] }] }
 ]
 
-mdef[x_, {s1_, sr___}] := {
-  "\n\n#undef ", x,
-  "\n#define ", x, "(f,c) ",
-  Fold[{"c(", #1, ",", #2, ")"}&, s1, {sr}] }
-
-pdef[x_, {s1_, sr___}] := {
-  "\n\n#undef ", x,
-  "\n#define ", x, "(f) ",
-  Fold[{#1, ", ", #2}&, s1, {sr}] }
-
-pspec[{(s_Integer:1) p_, _, m_, q_:0}] :=
-Block[ {pre = "f(" <> ToString[++c] <> ",", suf = ")"},
-  (pre <> # <> suf)&/@ Flatten[{
-    ToCode[m],
-    ptype[p, m],
-    ToString[s],
-    pqnum[Plus@@ Flatten[{q}]]/@ qn }]
-]
+pspec[{(s_Integer:1) p_, _, m_, q_:0}] := Flatten[{
+  ptype[p, m],
+  ToString[s],
+  ToCode[m],
+  pqnum[Plus@@ Flatten[{q}]]/@ qn }]
 
 ptype[_V, 0] := "PHOTON";
 ptype[_V, _] := "VECTOR";
@@ -5396,16 +5392,20 @@ $(LIB)($(NUMS)): " <> $MakeDeps[[2]] <> "\n\n"];
 
   FCPrint[2, "writing specs.h"];
 
-  hh = OpenCode[ModName["specs", ".h"]];
+  hh = OpenFortran[ModName["specs", ".h"]];
 
-  WriteString[hh, Hdr["process specifications"] <>
-    "#undef FCVERSION\n#define FCVERSION \"" <> $FormCalcVersion <> "\"" <>
-    pdefs[proc] <>
-    ({"\n\n#undef LEGS_IN\n#define LEGS_IN ", #1,
-      "\n#undef LEGS_OUT\n#define LEGS_OUT ", #2,
-      "\n#undef LEGS\n#define LEGS ", ToString[legs],
-      "\n\n#undef KIN\n#define KIN \"", #1, "to", #2, ".F\"\n\n"}&)@@
-      ToString/@ Length/@ proc];
+  WriteString[hh, (Hdr["process specifications"] <> "\
+#undef FCVERSION\n\
+#define FCVERSION \"" <> $FormCalcVersion <> "\"\n\n\
+#undef SQUAREDME_FUNC\n\
+#define SQUAREDME_FUNC " <> $SymbolPrefix <> "SquaredME\n\n\
+#undef KIN\n\
+#define KIN \"" <> #1 <> "to" <> #2 <> ".F\"\n\n\
+#undef IDENTICALFACTOR\n\
+#define IDENTICALFACTOR " <>
+    ToString[Times@@ (Factorial[Length[#]]&)/@
+      Split[Sort[ First/@ proc[[2]] ]]] <>
+    pdefs[Level[proc, {2}]] <> "\n\n")&@@ ToString/@ Length/@ proc];
 
   Close[hh];
 
@@ -5538,7 +5538,8 @@ Block[ {Hel, hfun, hmax = 1, hcode, jtree, jloop, ffcode, ffind = {}},
 \tRealType result(*)\n\
 \tinteger*8 helicities\n\
 \tinteger flags\n\n\
-#include \"" <> prefix <> "vars.h\"\n\n\
+#include \"" <> prefix <> "vars.h\"\n\
+#include \"" <> prefix <> "specs.h\"\n\n\
 * " <> prefix <> "BEGIN VAR_DECL\n\
 \tSIMD_ONLY(integer v)\n\
 \tinteger i, h, hmax, hsimd\n\
@@ -5561,6 +5562,13 @@ Block[ {Hel, hfun, hmax = 1, hcode, jtree, jloop, ffcode, ffind = {}},
     ({"\tdata ", ToString[Head[#]],
       " /", ToString[Times@@ #], "*bogus/\n"}&)/@ mats <> "\n" <>
     sincl[[2]] <> "\n\
+* " <> prefix <> "BEGIN SETMASS\n\
+\tTEST(flags, BIT_SETMASS)" <>
+    MapIndexed[{"\n\tresult(", ToString[ #2[[1]] ], ") = ",
+      ToCode[ #1[[3]] ]}&, part] <> "\n\
+\treturn\n\
+\tENDTEST(flags, BIT_SETMASS)\n\
+* " <> prefix  <> "END SETMASS\n\n\
 \tPAR_PREP(res,res(HelInd(1),2), " <> 
     comlim[defs[[1]], "ends"] <> ", " <>
     comlim[defs[[2]], "enda"] <> ", seq,endhel)\n"];
@@ -5591,9 +5599,7 @@ Block[ {Hel, hfun, hmax = 1, hcode, jtree, jloop, ffcode, ffind = {}},
 \t  if( hseltest_s(i) .lt. hselmin ) cycle\n\
 * " <> prefix <> "END HSEL_IF\n" <>
   hcode["\n\t  "] <> "\n\
-\t  hbits =" <>
-  Array[{"\n     &      + MASK_HEL(", ToString[#], ")"}&, legs] <>
-  "\n\
+\t  hbits = Generic(ARG_HEL,JOIN_HEL)\n\
 \t  if( iand(helicities, hbits) .ne. hbits ) cycle\n\n\
 \t  SIMD_ONLY(call VecCopy(v, LEGS, Hel(1)))\n\
 \t  SIMD_MULT(v = mod(v, SIMD) + 1)\n\
@@ -5742,13 +5748,14 @@ static void " <> $SymbolPrefix <> "SquaredMEHel(ResType *res, cinteger *flags) {
 }\n\n\
 /**********************************************************************/\n\n\
 void " <> $SymbolPrefix <> "SquaredME(RealType *result, cinteger8 *helicities, cinteger *flags) {\n\n\
-#include \"" <> prefix <> "vars.h\"\n\n\
+#include \"" <> prefix <> "vars.h\"\n\
+#include \"" <> prefix <> "specs.h\"\n\n\
 // " <> prefix <> "BEGIN VAR_DECL\n\
   SIMD_ONLY(int v;)\n\
   int i, h;\n\
   enum { hmax = " <> ToString[hmax] <> " };\n\
   enum { hsimd = SIMD_CEIL(hmax) };\n\
-  unsigned long long int hbits;\n\
+  integer8 hbits;\n\
   ResType res[hsimd][2];\n\
   RealType rtree, rloop;\n\
 // " <> prefix <> "END VAR_DECL\n\n\
@@ -5762,6 +5769,13 @@ void " <> $SymbolPrefix <> "SquaredME(RealType *result, cinteger8 *helicities, c
   static int hseli;\n\
 // " <> prefix <> "END HSEL_DECL\n\n" <>
     sincl[[2]] <> "\n\
+// " <> prefix <> "BEGIN SETMASS\n\
+  TEST(flags, BIT_SETMASS)" <>
+    MapIndexed[{"\n  result[", ToString[ #2[[1]] - 1 ], "] = ",
+      ToCode[ #1[[3]] ], ";"}&, part] <> "\n\
+  return;\n\
+  ENDTEST(flags, BIT_SETMASS)\n\
+// " <> prefix <> "END SETMASS\n\n\
   PAR_PREP(res[0], varXs, varXa, helind);\n"];
 
   WriteExpr[hh, {"\
@@ -5790,8 +5804,7 @@ void " <> $SymbolPrefix <> "SquaredME(RealType *result, cinteger8 *helicities, c
     if( hseltest.s[i] < hselmin ) continue;\n\
 // " <> prefix <> "END HSEL_IF\n" <>
   hcode["\n    "] <> "\n\
-    hbits =" <>
-  Array[{"\n      + MASK_HEL(", ToString[#], ")"}&, legs] <> ";\n\
+    hbits = Generic(ARG_HEL,JOIN_HEL);\n\
     if( (*helicities & hbits) != hbits ) continue;\n\n\
     SIMD_ONLY(veccopy_(&v, (integer []){LEGS}, &Hel(1));)\n\
     SIMD_MULT(v = v % SIMD + 1;)\n\
@@ -6095,7 +6108,7 @@ RenConst::nodef =
 "Warning: `` might be renormalization constants, but have no definition."
 
 FindRenConst[expr_] :=
-Block[ {test = {expr}, orbit, isym, patt, rcs = {}, new,
+Block[ {test = {expr}, orbit, isym, rcp, rcs = {}, new,
 SelfEnergy, DSelfEnergy},
   Needs["FeynArts`"];
   If[ $Model === "",
@@ -6105,7 +6118,7 @@ SelfEnergy, DSelfEnergy},
       GenericModel -> (GenericModel /. Options[InsertFields]),
       Reinitialize -> False ] ];
 
-  patt = RCPattern[];
+  rcp = RCPattern[];
 
   Cases[DownValues[Dim], _[_[_[i_]], r_Integer] :> (isym[i] = x)];
   isym[other_] := other;
@@ -6118,7 +6131,7 @@ SelfEnergy, DSelfEnergy},
         Cases[test, IndexSum[_, r___] :> r, Infinity] (*,
         Cases[DownValues[Dim], _[_[_[i_]], r_Integer] :> {i, r}]*) }, {2}];
     Length[new = Complement[
-      Flatten[Cases[test, rc:patt :> Distribute[orbit/@ rc, List], Infinity]], 
+      Flatten[Cases[test, rc:rcp :> Distribute[orbit/@ rc, List], Infinity]], 
       rcs, SameTest -> (isym/@ #1 === isym/@ #2 &) ]] =!= 0,
     rcs = Flatten[{new, rcs}];
     test = RenConst/@ new ];
@@ -6128,7 +6141,7 @@ SelfEnergy, DSelfEnergy},
       ToExpression[#, InputForm, HoldPattern] ]& ];
   If[ Length[new] =!= 0, Message[RenConst::nodef, new] ];
 
-  Cases[rcs, patt]
+  Cases[rcs, rcp]
 ]
 
 
@@ -6684,8 +6697,8 @@ var, block = 0},
 ]
 
 WriteExpr[hh_, expr_, opt___Rule] := WriteExpr[hh,
-  PrepareExpr[expr, FilterOptions[PrepareExpr, opt]],
-  FilterOptions[WriteExpr, opt]]
+  PrepareExpr[expr, FilterOpt[PrepareExpr, opt]],
+  FilterOpt[WriteExpr, opt]]
 
 
 VarType[_, False] = 0

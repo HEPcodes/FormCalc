@@ -2,7 +2,7 @@
 	inline.h
 	inline versions of the util functions
 	this file is part of FormCalc
-	last modified 23 Apr 13 th
+	last modified 8 Jun 15 th
 #endif
 
 
@@ -16,9 +16,6 @@
 #define SpiLB(i,e) RxH(1-2*e,Vec(1+e,2-e,i)), Vec(2-e,2-e,i)
 #define SpiRV(e,i) Vec(1+e,1+e,i), RxH(1-2*e,Vec(2-e,1+e,i))
 #define SpiRB(e,i) Vec(1+e,2-e,i), RxH(1-2*e,Vec(2-e,2-e,i))
-
-enum { MBbits = 8, MBmask = (1LL << MBbits) - 1 };
-#define MomEncoding(f,i) (((f) & (JK-1)) << MBbits*(i-1))
 
 #define Sqrt sqrt
 
@@ -169,6 +166,38 @@ HelFun BxVxBxS2(cinteger c, cinteger b, cinteger a, SpiType(r1,r2)) {
   return BxVxS2(c, b, BxS1(a, r1,r2),BxS2(a, r1,r2));
 }
 
+HelFun SxVxBxVxB1(SpiType(l1,l2), cinteger a, cinteger b, cinteger c, cinteger d) {
+  return SxBxVxB1(SxV1(l1,l2, a),SxV2(l1,l2, a), b, c, d);
+}
+
+HelFun SxVxBxVxB2(SpiType(l1,l2), cinteger a, cinteger b, cinteger c, cinteger d) {
+  return SxBxVxB2(SxV1(l1,l2, a),SxV2(l1,l2, a), b, c, d);
+}
+
+HelFun SxBxVxBxV1(SpiType(l1,l2), cinteger a, cinteger b, cinteger c, cinteger d) {
+  return SxVxBxV1(SxB1(l1,l2, a),SxB2(l1,l2, a), b, c, d);
+}
+
+HelFun SxBxVxBxV2(SpiType(l1,l2), cinteger a, cinteger b, cinteger c, cinteger d) {
+  return SxVxBxV2(SxB1(l1,l2, a),SxB2(l1,l2, a), b, c, d);
+}
+
+HelFun BxVxBxVxS1(cinteger d, cinteger c, cinteger b, cinteger a, SpiType(r1,r2)) {
+  return BxVxBxS1(d, c, b, VxS1(a, r1,r2),VxS2(a, r1,r2));
+}
+
+HelFun BxVxBxVxS2(cinteger d, cinteger c, cinteger b, cinteger a, SpiType(r1,r2)) {
+  return BxVxBxS2(d, c, b, VxS1(a, r1,r2),VxS2(a, r1,r2));
+}
+
+HelFun VxBxVxBxS1(cinteger d, cinteger c, cinteger b, cinteger a, SpiType(r1,r2)) {
+  return VxBxVxS1(d, c, b, BxS1(a, r1,r2),BxS2(a, r1,r2));
+}
+
+HelFun VxBxVxBxS2(cinteger d, cinteger c, cinteger b, cinteger a, SpiType(r1,r2)) {
+  return VxBxVxS2(d, c, b, BxS1(a, r1,r2),BxS2(a, r1,r2));
+}
+
 HelFun ChainV0(SpiSpec(iL,eL), SpiSpec(eR,iR)) {
   return SxS(SpiLB(iL,eL), SpiRV(eR,iR));
 }
@@ -266,6 +295,40 @@ HelFun ChainB6(SpiSpec(iL,eL), cinteger a, cinteger b, cinteger c,
              SxBxVxB2(SpiLV(iL,eL), a, b, c),
              VxBxVxS1(d, e, f, SpiRB(eR,iR)),
              VxBxVxS2(d, e, f, SpiRB(eR,iR)));
+}
+
+HelFun ChainV7(SpiSpec(iL,eL), cinteger a, cinteger b, cinteger c,
+    cinteger d, cinteger e, cinteger f, cinteger g, SpiSpec(eR,iR)) {
+  return SxS(SxVxBxVxB1(SpiLB(iL,eL), a, b, c, d),
+             SxVxBxVxB2(SpiLB(iL,eL), a, b, c, d),
+             VxBxVxS1(e, f, g, SpiRB(eR,iR)),
+             VxBxVxS2(e, f, g, SpiRB(eR,iR)));
+}
+
+HelFun ChainB7(SpiSpec(iL,eL), cinteger a, cinteger b, cinteger c,
+    cinteger d, cinteger e, cinteger f, cinteger g, SpiSpec(eR,iR)) {
+  return SxS(SxBxVxBxV1(SpiLV(iL,eL), a, b, c, d),
+             SxBxVxBxV2(SpiLV(iL,eL), a, b, c, d),
+             BxVxBxS1(e, f, g, SpiRV(eR,iR)),
+             BxVxBxS2(e, f, g, SpiRV(eR,iR)));
+}
+
+HelFun ChainV8(SpiSpec(iL,eL), cinteger a, cinteger b, cinteger c,
+    cinteger d, cinteger e, cinteger f, cinteger g,
+    cinteger h, SpiSpec(eR,iR)) {
+  return SxS(SxVxBxVxB1(SpiLB(iL,eL), a, b, c, d),
+             SxVxBxVxB2(SpiLB(iL,eL), a, b, c, d),
+             VxBxVxBxS1(e, f, g, h, SpiRV(eR,iR)),
+             VxBxVxBxS2(e, f, g, h, SpiRV(eR,iR)));
+}
+
+HelFun ChainB8(SpiSpec(iL,eL), cinteger a, cinteger b, cinteger c,
+    cinteger d, cinteger e, cinteger f, cinteger g,
+    cinteger h, SpiSpec(eR,iR)) {
+  return SxS(SxBxVxBxV1(SpiLV(iL,eL), a, b, c, d),
+             SxBxVxBxV2(SpiLV(iL,eL), a, b, c, d),
+             BxVxBxVxS1(e, f, g, h, SpiRB(eR,iR)),
+             BxVxBxVxS2(e, f, g, h, SpiRB(eR,iR)));
 }
 
 static inline integer IndexDelta(cinteger a, cinteger b) {

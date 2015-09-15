@@ -1,7 +1,7 @@
 * lumi_photon.F
 * parton luminosity for a photon collider
 * this file is part of FormCalc
-* last modified 30 Nov 11 th
+* last modified 11 Jun 15 th
 
 
 #define PARTON_T -1
@@ -25,16 +25,17 @@
 
 ************************************************************************
 
-	subroutine LumiIni(fail)
+	subroutine LumiIni(fail, sqme)
 	implicit none
 	integer fail
+	external sqme
 
 #include "xsection.h"
 
-	call SetEnergy(fail, Var(SQRTS))
+	call SetEnergy(fail, Lower(SQRTS), sqme)
 	if( fail .ne. 0 ) return
 
-	Lower(PARTON_T) = threshold/sqrtS
+	Lower(PARTON_T) = minthreshold/sqrtS
 	Upper(PARTON_T) = 1
 	Step(PARTON_T) = 0
 
@@ -46,9 +47,10 @@
 
 ************************************************************************
 
-	subroutine Luminosity(fac)
+	subroutine Luminosity(fac, sqme)
 	implicit none
 	RealType fac
+	external sqme
 
 #include "xsection.h"
 
@@ -58,7 +60,7 @@
 	RealType CompAZ
 	external CompAZ
 
-	call SetEnergy(fail, Var(PARTON_T)*Var(SQRTS))
+	call SetEnergy(fail, Var(PARTON_T)*Var(SQRTS), sqme)
 	if( fail .ne. 0 ) then
 	  fac = 0
 	  return

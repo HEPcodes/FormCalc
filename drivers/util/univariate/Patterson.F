@@ -2,18 +2,19 @@
 * non-adaptive 1D Gauss-Kronrod-Patterson integration
 * adapted from Quadpack's dqng.f for vector integrands
 * this file is part of FormCalc
-* last modified 6 May 13 th
+* last modified 22 May 15 th
 
 #include "config.h"
 
 
-	subroutine Patterson(ncomp, lower, upper, integrand,
+	subroutine Patterson(ncomp, lower, upper,
+     &    integrand, userdata,
      &    epsrel, epsabs, neval, fail, result, error)
 	implicit none
 	integer ncomp, neval, fail
 	RealType lower, upper, epsrel, epsabs
 	RealType result(*), error(*)
-	external integrand
+	external integrand, userdata
 
 	RealType samples(MAXCOMP,2,0:43)
 	RealType span, mid, h
@@ -169,11 +170,11 @@
 
 * compute the integral using the 10- and 21-point formula
 
-	call integrand(1, mid, ncomp, samples(1,1,0))
+	call integrand(1, mid, ncomp, samples(1,1,0), userdata)
 	do j = 1, 10
 	  h = span*x(j)
-	  call integrand(1, mid + h, ncomp, samples(1,1,j))
-	  call integrand(1, mid - h, ncomp, samples(1,2,j))
+	  call integrand(1, mid + h, ncomp, samples(1,1,j), userdata)
+	  call integrand(1, mid - h, ncomp, samples(1,2,j), userdata)
 	enddo
 
 	fail = 0
@@ -215,8 +216,8 @@
 
 	do j = 11, 21
 	  h = span*x(j)
-	  call integrand(1, mid + h, ncomp, samples(1,1,j))
-	  call integrand(1, mid - h, ncomp, samples(1,2,j))
+	  call integrand(1, mid + h, ncomp, samples(1,1,j), userdata)
+	  call integrand(1, mid - h, ncomp, samples(1,2,j), userdata)
 	enddo
 
 	fail = 0
@@ -248,8 +249,8 @@
 
 	do j = 22, 43
 	  h = span*x(j)
-	  call integrand(1, mid + h, ncomp, samples(1,1,j))
-	  call integrand(1, mid - h, ncomp, samples(1,2,j))
+	  call integrand(1, mid + h, ncomp, samples(1,1,j), userdata)
+	  call integrand(1, mid - h, ncomp, samples(1,2,j), userdata)
 	enddo
 
 	fail = 0

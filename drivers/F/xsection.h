@@ -1,7 +1,7 @@
 * xsection.h
 * common blocks for xsection.F
 * this file is part of FormCalc
-* last modified 18 Apr 13 th
+* last modified 11 Jun 15 th
 
 
 #include "decl.h"
@@ -19,13 +19,22 @@
 #define CutMax(v) var(7,v)
 #endif
 
-	RealType var(8, MINVAR:TRIVIAL)
-	RealType avgfac, sqrtS
-	RealType mass_in, mass_out, threshold, fscale
-	integer*8 helicities
+	integer nvars
+	parameter (nvars = MAXVAR - (MINVAR) + 1)
+
+	RealType var(8,MINVAR:TRIVIAL)
+	RealType mass(LEGS,NPID), charge(LEGS,NPID)
+	RealType avgfac(NPID), threshold(NPID), minthreshold
+	RealType sqrtS, mass_in, mass_out, fscale
+	integer*8 helmask, hel
+	integer type, pid, parton1, parton2
 	integer sqrtSinvalid, flags
 
-	common /xsection/ var, avgfac, sqrtS,
-     &    mass_in, mass_out, threshold, fscale,
-     &    helicities, sqrtSinvalid, flags
+	common /xsection/ var,
+     &    mass, charge,
+     &    avgfac, threshold, minthreshold,
+     &    sqrtS, mass_in, mass_out, fscale,
+     &    helmask, hel,
+     &    type, pid, parton1, parton2,
+     &    sqrtSinvalid, flags
 

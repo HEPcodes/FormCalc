@@ -1,13 +1,13 @@
 * lumi_hadron.F
 * parton luminosity for a hadron collider
 * this file is part of FormCalc
-* last modified 25 Aug 13 th
+* last modified 11 Jun 15 th
 
 * This code links to the LHAPDF library.
-* The following preprocessor variables are used:
+* The following variables are used:
 *
-* - PARTON1, PARTON2 are the PDG parton codes,
-* - FSCALE determines the factorization scale,
+* - parton1, parton2 are the PDG parton codes,
+* - fscale determines the factorization scale,
 * - PDFSET specifies the file name of the PDF-set to be used.
 
 
@@ -50,16 +50,19 @@
 
 ************************************************************************
 
-	subroutine LumiIni(fail)
+	subroutine LumiIni(fail, sqme)
 	implicit none
 	integer fail
+	external sqme
 
 #include "xsection.h"
 
-	call SetEnergy(fail, Var(SQRTS))
+	if( ior(parton1, parton2) .lt. 0 ) stop "parton1,2 not set"
+
+	call SetEnergy(fail, Lower(SQRTS), sqme)
 	if( fail .ne. 0 ) return
 
-	Lower(PARTON_T) = threshold/sqrtS
+	Lower(PARTON_T) = minthreshold/sqrtS
 	Upper(PARTON_T) = 1
 	Step(PARTON_T) = 0
 
@@ -71,9 +74,10 @@
 
 ************************************************************************
 
-	subroutine Luminosity(fac)
+	subroutine Luminosity(fac, sqme)
 	implicit none
 	RealType fac
+	external sqme
 
 #include "xsection.h"
 
@@ -84,14 +88,14 @@
 	integer partonsign
 	common /hadron/ partonsign
 
-	call SetEnergy(fail, Var(PARTON_T)*Var(SQRTS))
+	call SetEnergy(fail, Var(PARTON_T)*Var(SQRTS), sqme)
 	if( fail .ne. 0 ) then
 	  fac = 0
 	  return
 	endif
 
 	tau = Var(PARTON_T)**2
-	xrange = 1 - tau
+	xrange = (1 - Var(PARTON_T))*(1 + Var(PARTON_T))
 	x = tau + xrange*Var(PARTON_X)
 
 	if( x .lt. 1D-10 .or. x .gt. (1 - 1D-10) ) then
@@ -103,10 +107,8 @@
 	call evolvePDF(tau/x, fscale, tPDF)
 
 	fac = fac*xrange/(Var(PARTON_T)*x)*
-     &    ( tPDF(partonsign*PARTON1)*xPDF(PARTON2) +
-     &      xPDF(partonsign*PARTON2)*tPDF(PARTON1) )
-#if PARTON1 != PARTON2
-     &    * 2
-#endif
+     &    (2 - IndexDelta(parton1, parton2))*
+     &    ( tPDF(partonsign*parton1)*xPDF(parton2) +
+     &      xPDF(partonsign*parton2)*tPDF(parton1) )
 	end
 

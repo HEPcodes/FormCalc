@@ -3,7 +3,7 @@
 	prototypes for the util functions
 	this file is part of FormCalc
 	SIMD functions by J.-N. Lang
-	last modified 8 Sep 14 th
+	last modified 10 Jun 15 th
 #endif
 
 
@@ -43,6 +43,12 @@ struct {
 #define e0(i) (3+nvec*(i-1)+Hel(i))
 #define ec0(i) (3+nvec*(i-1)-Hel(i))
 #define Spinor0(i,af,d) (af*2+d+7+nvec*(i-1)+Hel(i))
+
+#define QH 32LL
+#define ldQK 8
+#define QK (1<<ldQK)
+
+#define MomEncoding(f,i) ((integer8)((f) & (QK-1)) << (i-1)*ldQK)
 
 #define SIMD_ONLY(x)
 #define SIMD_MULT(x)
@@ -234,9 +240,18 @@ typedef const HelType cHelType;
 #define TEST(i,b) if( *(i) & (1 << (b)) ) {
 #define ENDTEST(i,b) }
 
-#define BIT_RESET 0
-#define BIT_LOOP 1
-#define MASK_HEL(i) (1ULL << (5*(LEGS-i)+Hel(i)+2))
+#define BIT_SETMASS 0
+#define BIT_RESET 1
+#define BIT_LOOP 2
+
+#define ARG_ID(i,x) x
+#define ARG_RE(i,x) Re(x)
+#define ARG_HEL(i,x) (1LL << (Hel(i)+2))
+#define JOIN_SEQ(a,b) a,b
+#define JOIN_MUL(a,b) a*b
+#define JOIN_OCT(a,b) b+8*(a)
+#define JOIN_DEC(a,b) b+10*(a)
+#define JOIN_HEL(a,b) b+QH*(a)
 
 #define INI_S(seq) clearcache()
 #define INI_ANGLE(seq) markcache()

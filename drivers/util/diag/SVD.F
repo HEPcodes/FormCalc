@@ -1,23 +1,26 @@
 * SVD.F
 * singular value decomposition of an m-by-n matrix
 * this file is part of the Diag library
-* last modified 30 Nov 11 th
+* last modified 21 Aug 15 th
 
 #include "diag-f.h"
 
 
 ************************************************************************
 ** SVD performs a singular value decomposition.
-** Input: m, n, A = m-by-n matrix.
-** Output: d = nm-vector of singular values,
-** V = nm-by-m left transformation matrix,
-** W = nm-by-n right transformation matrix, nm = min(m, n),
-** these fulfill diag(d) = V^* A W^+.
+** Input:	m, n, A = m-by-n matrix.
+** Output:	d = nm-vector of singular values, nm = min(m, n),
+** for UCOLS=0:	V = nm-by-m left transformation matrix,
+**		W = nm-by-n right transformation matrix,
+** which fulfill d = V^* A W^+,  A = V^T d W,  V^* A = d W
+** for UCOLS=1:	V = m-by-nm left transformation matrix,
+**		W = n-by-nm right transformation matrix,
+** which fulfill d = V^+ A W^*,  A = V d W^T,  A W^* = V d
 
-	subroutine SVD(m, n, Ao,ldA, d, Vo,ldV, Wo,ldW, sort)
+	subroutine SVD(m, n, A,ldA, d, V,ldV, W,ldW, sort)
 	implicit none
 	integer m, n, ldA, ldV, ldW, sort
-	ComplexType Ao(ldA,*), Vo(ldV,*), Wo(ldW,*)
+	ComplexType A(ldA,*), V(ldV,*), W(ldW,*)
 	RealType d(*)
 
 	integer nx, nm, p, q, px, qx, j, rev, pi(MAXDIM)
@@ -29,12 +32,12 @@
 
 * note: for better cache efficiency, the Vx, Wx arrays
 * contain the *transpose* of the transformation matrices
-	ComplexType V(MAXDIM,MAXDIM)
-	ComplexType W(MAXDIM,MAXDIM)
-	ComplexType A(MAXDIM,MAXDIM)
-	equivalence (VW(1,1,0), V)
-	equivalence (VW(1,1,1), W)
-	equivalence (VW(1,1,2), A)
+	ComplexType V_(MAXDIM,MAXDIM)
+	ComplexType W_(MAXDIM,MAXDIM)
+	ComplexType A_(MAXDIM,MAXDIM)
+	equivalence (VW(1,1,0), V_)
+	equivalence (VW(1,1,1), W_)
+	equivalence (VW(1,1,2), A_)
 
 	integer sweep
 	common /nsweeps/ sweep
@@ -49,25 +52,25 @@
 
 	do p = 1, nx
 	  do q = 1, nx
-	    V(q,p) = 0
-	    W(q,p) = 0
-	    A(q,p) = 0
+	    V_(q,p) = 0
+	    W_(q,p) = 0
+	    A_(q,p) = 0
 	  enddo
-	  V(p,p) = 1
-	  W(p,p) = 1
+	  V_(p,p) = 1
+	  W_(p,p) = 1
 	enddo
 
 	rev = ibits(m - n, 15, 1)
 	if( rev .eq. 1 ) then
 	  do p = 1, n
 	    do q = 1, m
-	      A(p,q) = Ao(q,p)
+	      A_(p,q) = A(q,p)
 	    enddo
 	  enddo
 	else
 	  do p = 1, n
 	    do q = 1, m
-	      A(q,p) = Ao(q,p)
+	      A_(q,p) = A(q,p)
 	    enddo
 	  enddo
 	endif
@@ -78,7 +81,7 @@
 	  off = 0
 	  do q = 2, nx
 	    do p = 1, q - 1
-	      off = off + Sq(A(p,q)) + Sq(A(q,p))
+	      off = off + Sq(A_(p,q)) + Sq(A_(q,p))
 	    enddo
 	  enddo
 	  if( .not. off .gt. EPS ) goto 1
@@ -90,21 +93,21 @@
 	    do p = 1, q - 1
 	      px = p
 	      qx = q
-	      if( Sq(A(p,p)) + Sq(A(q,q)) .lt.
-     &            Sq(A(p,q)) + Sq(A(q,p)) ) then
+	      if( Sq(A_(p,p)) + Sq(A_(q,q)) .lt.
+     &            Sq(A_(p,q)) + Sq(A_(q,p)) ) then
 	        px = q
 	        qx = p
 	      endif
 
-	      App = A(px,p)
-	      Aqq = A(qx,q)
-	      Apq = A(px,q)
-	      Aqp = A(qx,p)
+	      App = A_(px,p)
+	      Aqq = A_(qx,q)
+	      Apq = A_(px,q)
+	      Aqp = A_(qx,p)
 	      off = Sq(Apq) + Sq(Aqp)
 	      if( sweep .gt. 4 .and.
      &            off .lt. EPS*(Sq(App) + Sq(Aqq)) ) then
-	        A(px,q) = 0
-	        A(qx,p) = 0
+	        A_(px,q) = 0
+	        A_(qx,p) = 0
 	      else if( off .gt. thresh ) then
 	        xv = Re((App - Aqq)*Conjugate(App + Aqq))
 	        xw = Re((Apq - Aqp)*Conjugate(Apq + Aqp))
@@ -136,48 +139,48 @@ c	        t = sqrt(dv**2 + Sq(tv))
 	        tw = tw/(invc + 1)
 
 	        do j = 1, nx
-	          x = A(j,p)
-	          y = A(j,q)
-	          A(j,p) = x + Conjugate(sw)*(y - tw*x)
-	          A(j,q) = y - sw*(x + Conjugate(tw)*y)
-	          x = A(px,j)
-	          y = A(qx,j)
-	          A(p,j) = x + Conjugate(sv)*(y - tv*x)
-	          A(q,j) = y - sv*(x + Conjugate(tv)*y)
+	          x = A_(j,p)
+	          y = A_(j,q)
+	          A_(j,p) = x + Conjugate(sw)*(y - tw*x)
+	          A_(j,q) = y - sw*(x + Conjugate(tw)*y)
+	          x = A_(px,j)
+	          y = A_(qx,j)
+	          A_(p,j) = x + Conjugate(sv)*(y - tv*x)
+	          A_(q,j) = y - sv*(x + Conjugate(tv)*y)
 	        enddo
 
-	        A(p,p) = invc*(App + Conjugate(sv)*(Aqp - tv*App))
-	        A(q,p) = 0
-	        A(p,q) = 0
-	        A(q,q) = invc*(Aqq - sv*(Apq + Conjugate(tv)*Aqq))
+	        A_(p,p) = invc*(App + Conjugate(sv)*(Aqp - tv*App))
+	        A_(q,q) = invc*(Aqq - sv*(Apq + Conjugate(tv)*Aqq))
+	        A_(q,p) = 0
+	        A_(p,q) = 0
 
 	        do j = 1, nx
-	          x = V(j,px)
-	          y = V(j,qx)
-	          V(j,p) = x + sv*(y - Conjugate(tv)*x)
-	          V(j,q) = y - Conjugate(sv)*(x + tv*y)
+	          x = V_(j,px)
+	          y = V_(j,qx)
+	          V_(j,p) = x + sv*(y - Conjugate(tv)*x)
+	          V_(j,q) = y - Conjugate(sv)*(x + tv*y)
 	        enddo
 
 	        do j = 1, nx
-	          x = W(j,p)
-	          y = W(j,q)
-	          W(j,p) = x + sw*(y - Conjugate(tw)*x)
-	          W(j,q) = y - Conjugate(sw)*(x + tw*y)
+	          x = W_(j,p)
+	          y = W_(j,q)
+	          W_(j,p) = x + sw*(y - Conjugate(tw)*x)
+	          W_(j,q) = y - Conjugate(sw)*(x + tw*y)
 	        enddo
 	        goto 2
 	      endif
 
 	      if( p .ne. px ) then
 	        do j = 1, nx
-	          x = A(p,j)
-	          A(p,j) = A(q,j)
-	          A(q,j) = x
+	          x = A_(p,j)
+	          A_(p,j) = A_(q,j)
+	          A_(q,j) = x
 	        enddo
 
 	        do j = 1, nx
-	          x = V(j,p)
-	          V(j,p) = V(j,q)
-	          V(j,q) = x
+	          x = V_(j,p)
+	          V_(j,p) = V_(j,q)
+	          V_(j,q) = x
 	        enddo
 	      endif
 
@@ -195,11 +198,11 @@ c	        t = sqrt(dv**2 + Sq(tv))
 * make the diagonal elements nonnegative
 
 	do p = 1, nm
-	  d(p) = abs(A(p,p))
-	  if( d(p) .gt. DBL_EPS .and. d(p) .ne. Re(A(p,p)) ) then
-	    f = A(p,p)/d(p)
+	  d(p) = abs(A_(p,p))
+	  if( d(p) .gt. DBL_EPS .and. d(p) .ne. Re(A_(p,p)) ) then
+	    f = A_(p,p)/d(p)
 	    do q = 1, nm
-	      W(q,p) = W(q,p)*f
+	      W_(q,p) = W_(q,p)*f
 	    enddo
 	  endif
 	enddo
@@ -229,10 +232,10 @@ c	        t = sqrt(dv**2 + Sq(tv))
 	  pi(j) = pi(p)
 
 	  do j = 1, m
-	    Vo(p,j) = VW(j,q,rev)
+	    VL(p,j) = VW(j,q,rev)
 	  enddo
 	  do j = 1, n
-	    Wo(p,j) = VW(j,q,1-rev)
+	    WL(p,j) = VW(j,q,1-rev)
 	  enddo
 	enddo
 	end

@@ -1,10 +1,21 @@
 * diag-f.h
 * global declarations for the Diag routines
 * this file is part of Diag
-* last modified 9 Aug 11 th
+* last modified 3 Sep 15 th
 
 
 #include "types.h"
+
+
+#if UCOLS
+#define UL(i,j) U(j,i)
+#define VL(i,j) V(j,i)
+#define WL(i,j) W(j,i)
+#else
+#define UL(i,j) U(i,j)
+#define VL(i,j) V(i,j)
+#define WL(i,j) W(i,j)
+#endif
 
 
 * The maximum dimension of a matrix, needed for allocating internal

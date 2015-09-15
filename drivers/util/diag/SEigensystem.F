@@ -4,17 +4,20 @@
 * code adapted from the "Handbook" routines for complex A
 * (Wilkinson, Reinsch: Handbook for Automatic Computation, p. 202)
 * this file is part of the Diag library
-* last modified 30 Nov 11 th
+* last modified 20 Aug 15 th
 
 #include "diag-f.h"
 
 
 ************************************************************************
 ** SEigensystem diagonalizes a complex symmetric n-by-n matrix.
-** Input: n, A = n-by-n matrix, complex symmetric
-** (only the upper triangle of A needs to be filled).
-** Output: d = vector of eigenvalues, U = transformation matrix
-** these fulfill diag(d) = U A U^T = U A U^-1 with U U^T = 1.
+** Input:	n, A = n-by-n matrix, complex symmetric
+**		(only the upper triangle of A needs to be filled).
+** Output:	d = vector of eigenvalues,
+**		U = transformation matrix (U^-1 = U^T),
+** these fulfill
+**	d = U A U^T,  A = U^T d U,  U A = d U  (UCOLS=0),
+**	d = U^T A U,  A = U d U^T,  A U = U d  (UCOLS=1).
 
 	subroutine SEigensystem(n, A,ldA, d, U,ldU, sort)
 	implicit none
@@ -112,10 +115,10 @@
 	        A(p,q) = 0
 
 	        do j = 1, n
-	          x = U(p,j)
-	          y = U(q,j)
-	          U(p,j) = x + s*(y - t*x)
-	          U(q,j) = y - s*(x + t*y)
+	          x = UL(p,j)
+	          y = UL(q,j)
+	          UL(p,j) = x + s*(y - t*x)
+	          UL(q,j) = y - s*(x + t*y)
 	        enddo
 	      endif
 	    enddo
@@ -147,9 +150,9 @@
 	    d(j) = d(p)
 	    d(p) = t
 	    do q = 1, n
-	      x = U(p,q)
-	      U(p,q) = U(j,q)
-	      U(j,q) = x
+	      x = UL(p,q)
+	      UL(p,q) = UL(j,q)
+	      UL(j,q) = x
 	    enddo
 	  endif
 	enddo

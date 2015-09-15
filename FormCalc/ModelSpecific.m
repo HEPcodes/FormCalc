@@ -2,7 +2,7 @@
 	ModelSpecific.m
 		global definitions for specific models
 		this file is part of FormCalc
-		last modified 5 Apr 15 th
+		last modified 4 Sep 15 th
 
 Note: This file is read by FormCalc only if $NoModelSpecific is not True.
 
@@ -110,13 +110,15 @@ SMFullSimplify = SMShorten[FullSimplify]
 
 (* definitions for the MSSM *)
 
-SetOptions[ CalcFeynAmp,
-  NoExpand -> {USf, USfC, UASf, UASfC,
-    UCha, UChaC, VCha, VChaC, ZNeu, ZNeuC,
-    UHiggs, UHiggsC, ZHiggs, ZHiggsC},
-  NoBracket -> {CKM, CKMC, USf, USfC, UASf, UASfC,
-    UCha, UChaC, VCha, VChaC, ZNeu, ZNeuC,
-    UHiggs, UHiggsC, ZHiggs, ZHiggsC} ]
+If[ ValueQ[$FormCalc],
+  SetOptions[ CalcFeynAmp,
+    NoExpand -> {USf, USfC, UASf, UASfC,
+      UCha, UChaC, VCha, VChaC, ZNeu, ZNeuC,
+      UHiggs, UHiggsC, ZHiggs, ZHiggsC},
+    NoBracket -> {CKM, CKMC, USf, USfC, UASf, UASfC,
+      UCha, UChaC, VCha, VChaC, ZNeu, ZNeuC,
+      UHiggs, UHiggsC, ZHiggs, ZHiggsC} ]
+]
 
 Af[t_, g_] := Af[t, g, g]
 

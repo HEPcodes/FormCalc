@@ -1,7 +1,7 @@
 * model_fh.F
 * parameter initialization via FeynHiggs
 * this file is part of FormCalc
-* last modified 30 Jul 14 th
+* last modified 13 Jun 15 th
 
 
 * NO_EXCLUSION_LIMITS
@@ -260,10 +260,10 @@
 
 ************************************************************************
 
-	subroutine ModelVarIni(fail, fscale)
+	subroutine ModelVarIni(fail, scale)
 	implicit none
 	integer fail
-	RealType fscale
+	RealType scale
 
 #include "decl.h"
 
@@ -271,7 +271,7 @@
 
 	fail = 0
 
-	call AlphaS(Alfas, nf, fscale)
+	call AlphaS(Alfas, nf, scale)
 	Alfas2 = Alfas**2
 	GS = sqrt(4*pi*Alfas)
 	end

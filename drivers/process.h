@@ -1,7 +1,7 @@
 * process.h
 * defines all process-dependent parameters
 * this file is part of FormCalc
-* last modified 29 Apr 15 th
+* last modified 29 Jun 15 th
 
 
 * When using Dirac fermions (FermionChains -> Chiral|VA) and
@@ -10,28 +10,19 @@
 * i.e. without actually summing up the different helicities.
 * This has no effect on the result, only on the speed of the
 * calculation.
-* Note: DIRACFERMIONS must NOT be defined when using Weyl fermions,
-* i.e. FermionChains -> Weyl in CalcFeynAmp.
 
-#ifndef DIRACFERMIONS
-c#define DIRACFERMIONS
-#endif
-
-
-* The combinatorial factor for identical particles in the final state:
-* 1/n! for n identical particles, 1 otherwise
-
-#ifndef IDENTICALFACTOR
-#define IDENTICALFACTOR 1
+#ifndef UNPOLARIZED_DIRAC_FERMIONS
+c#define UNPOLARIZED_DIRAC_FERMIONS
 #endif
 
 
 * Possibly a colour factor, e.g.
 * - an additional averaging factor if any of the incoming particles
-*   carry colour,
+*   carry colour (e.g. 1/8D0 for an incoming gluon),
 * - the overall colour factor resulting from the external particles
 *   if that cannot computed by FormCalc (e.g. if the model has no
 *   colour indices, as SMew.mod).
+* You MUST adapt partonic.h if not all subprocesses share this factor.
 
 #ifndef COLOURFACTOR
 #define COLOURFACTOR 1
@@ -75,7 +66,7 @@ c#define BREMSSTRAHLUNG
 #define LUMI "lumi_parton.F"
 #endif
 
-* for lumi_parton.F: whether to force the decaying particle to
+* For lumi_parton.F: whether to force the decaying particle to
 * be on-shell, independent of the command-line choices for sqrtS;
 * the value specifies the maximum value of |sqrtS - sum_masses_in|
 
@@ -83,18 +74,8 @@ c#define BREMSSTRAHLUNG
 c#define FORCE_ONSHELL 1D-9
 #endif
 
-* for lumi_hadron.F: PARTON1 and PARTON2 identify the
-* incoming partons by their PDG code, where
-* 0 = gluon
-* 1 = down   3 = strange   5 = bottom
-* 2 = up     4 = charm     6 = top
+* for lumi_hadron.F:
 
-#ifndef PARTON1
-#define PARTON1 1
-#endif
-#ifndef PARTON2
-#define PARTON2 1
-#endif
 #ifndef PDFSET
 #define PDFSET "cteq5l.LHgrid"
 #endif
@@ -103,7 +84,11 @@ c#define FORCE_ONSHELL 1D-9
 #endif
 
 
-* Include process specifications
+* At which stage to join the partonic XS:
+* 0 = add the differential partonic XS, then integrate sum,
+* 1 = integrate each differential partonic XS, then add up.
 
-#include "squaredme/specs.h"
+#ifndef JOIN_PARTONIC
+#define JOIN_PARTONIC 0
+#endif
 

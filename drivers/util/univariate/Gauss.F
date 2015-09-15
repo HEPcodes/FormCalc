@@ -1,18 +1,19 @@
 * Gauss.F
 * Gaussian integration of a vector
 * this file is part of FormCalc
-* last modified 19 Apr 13 th
+* last modified 22 May 15 th
 
 #include "config.h"
 
 
 * nodes may be one of 8, 16, 24, 32 (see GaussData.m).
 
-	subroutine Gauss(ncomp, lower, upper, integrand, nodes, result)
+	subroutine Gauss(ncomp, lower, upper, integrand, userdata,
+     &    nodes, result)
 	implicit none
 	integer ncomp, nodes
 	RealType lower, upper, result(*)
-	external integrand
+	external integrand, userdata
 
 	RealType samples(MAXCOMP,2), mid, span, x
 	integer c, n, p
@@ -112,8 +113,8 @@
 
 	do n = 1, nodes, 2
 	  x = span*gaussdata(p)
-	  call integrand(1, mid - x, ncomp, samples(1,1))
-	  call integrand(1, mid + x, ncomp, samples(1,2))
+	  call integrand(1, mid - x, ncomp, samples(1,1), userdata)
+	  call integrand(1, mid + x, ncomp, samples(1,2), userdata)
 	  x = span*gaussdata(p + 1)
 	  do c = 1, ncomp
 	    result(c) = result(c) + x*(samples(c,1) + samples(c,2))

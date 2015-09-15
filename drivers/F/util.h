@@ -1,7 +1,7 @@
 * util.h
 * prototypes for the util functions
 * this file is part of FormCalc
-* last modified 8 Sep 14 th
+* last modified 10 Jun 15 th
 
 
 #ifndef UTIL_H
@@ -78,7 +78,7 @@
 #define SIMD_MULT(x)
 #endif
 
-#define MomEncoding(f,i) iand(f,JK-1)*JK**(i-1)
+#define MomEncoding(f,i) iand(f,QK-1)*QK**(i-1)
 
 #define Digit(i) char(i+48)
 #define Polar(r,theta) r*exp(cI*degree*theta)
@@ -92,9 +92,18 @@
 #define TEST(i,b) if( btest(i,b) ) then
 #define ENDTEST(i,b) endif
 
-#define BIT_RESET 0
-#define BIT_LOOP 1
-#define MASK_HEL(i) (two**(5*(LEGS-i)+Hel(i)+2))
+#define BIT_SETMASS 0
+#define BIT_RESET 1
+#define BIT_LOOP 2
+
+#define ARG_ID(i,x) x
+#define ARG_RE(i,x) Re(x)
+#define ARG_HEL(i,x) ibset(0,Hel(i)+2)
+#define JOIN_SEQ(a,b) a,b
+#define JOIN_MUL(a,b) a*b
+#define JOIN_OCT(a,b) b+8*(a)
+#define JOIN_DEC(a,b) b+10*(a)
+#define JOIN_HEL(a,b) b+QH*(a)
 
 #define INI_S(seq) call clearcache
 #define INI_ANGLE(seq) call markcache
@@ -165,8 +174,9 @@
 	RealType momspec(12,LEGS)
 	common /momspec/ momspec
 
-* JK is encoding base for momenta
-	integer*8 two, JK
-	parameter (two = 2, JK = 256)
+* QH (QK) is encoding base for helicities (momenta)
+	integer ldQH
+	integer*8 QH, QK
+	parameter (ldQH = 5, QH = 2**ldQH, QK = 256)
 #endif
 

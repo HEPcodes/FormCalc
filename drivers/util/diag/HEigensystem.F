@@ -3,17 +3,20 @@
 * code adapted from the "Handbook" routines for complex A
 * (Wilkinson, Reinsch: Handbook for Automatic Computation, p. 202)
 * this file is part of the Diag library
-* last modified 30 Nov 11 th
+* last modified 20 Aug 15 th
 
 #include "diag-f.h"
 
 
 ************************************************************************
 ** HEigensystem diagonalizes a Hermitian n-by-n matrix.
-** Input: n, A = n-by-n matrix, Hermitian
-** (only the upper triangle of A needs to be filled).
-** Output: d = vector of eigenvalues, U = transformation matrix
-** these fulfill diag(d) = U A U^+ = U A U^-1 with U unitary.
+** Input:	n, A = n-by-n matrix, Hermitian
+**		(only the upper triangle of A needs to be filled),
+** Output:	d = vector of eigenvalues,
+**		U = transformation matrix, unitary (U^-1 = U^+),
+** these fulfill
+**	d = U A U^+,  A = U^+ d U,  U A = d U  (UCOLS=0),
+**	d = U^+ A U,  A = U d U^+,  A U = U d  (UCOLS=1).
 
 	subroutine HEigensystem(n, A,ldA, d, U,ldU, sort)
 	implicit none
@@ -108,10 +111,15 @@
 	        A(p,q) = 0
 
 	        do j = 1, n
-	          x = U(p,j)
-	          y = U(q,j)
-	          U(p,j) = x + s*(Apq*y - t*x)
-	          U(q,j) = y - s*(Conjugate(Apq)*x + t*y)
+	          x = UL(p,j)
+	          y = UL(q,j)
+#if UCOLS
+	          UL(p,j) = x + s*(Conjugate(Apq)*y - t*x)
+	          UL(q,j) = y - s*(Apq*x + t*y)
+#else
+	          UL(p,j) = x + s*(Apq*y - t*x)
+	          UL(q,j) = y - s*(Conjugate(Apq)*x + t*y)
+#endif
 	        enddo
 	      endif
 	    enddo
@@ -143,9 +151,9 @@
 	    d(j) = d(p)
 	    d(p) = t
 	    do q = 1, n
-	      x = U(p,q)
-	      U(p,q) = U(j,q)
-	      U(j,q) = x
+	      x = UL(p,q)
+	      UL(p,q) = UL(j,q)
+	      UL(j,q) = x
 	    enddo
 	  endif
 	enddo

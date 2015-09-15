@@ -1,7 +1,7 @@
 * run.F
 * defines parameter settings for one run, then includes main.F
 * this file is part of FormCalc
-* last modified 5 Feb 15 th
+* last modified 30 Jun 15 th
 
 
 * Whether to run in debugging mode
@@ -129,7 +129,6 @@ c#define NO_EXCLUSION_LIMITS
 * The multidimensional integration routines also need
 
 #define METHOD DIVONNE
-#define USERDATA bogus
 #define NVEC 1
 #define VERBOSE 1
 #define SEED 0

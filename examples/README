@@ -47,7 +47,7 @@ To execute the demo programs you need
 > GNU make 3.80 or higher
   (available e.g. from http://www.gnu.org/directory/GNU/make.html)
 
-> a Fortran 77 compiler (gfortran if you don't have any other)
+> a Fortran compiler (gfortran if you don't have any other)
 
 > for plotting the results: gnuplot 3.7 or higher
   (available from http://www.gnuplot.info)

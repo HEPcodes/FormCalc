@@ -1,7 +1,7 @@
 * model_sm.F
 * all parameters for the Standard Model are initialized here
 * this file is part of FormCalc
-* last modified 18 Apr 13 th
+* last modified 13 Jun 15 th
 
 
 	subroutine ModelDefaults(argc, argv)
@@ -99,10 +99,10 @@
 
 ************************************************************************
 
-	subroutine ModelVarIni(fail, fscale)
+	subroutine ModelVarIni(fail, scale)
 	implicit none
 	integer fail
-	RealType fscale
+	RealType scale
 
 #include "decl.h"
 
@@ -110,7 +110,7 @@
 
 	fail = 0
 
-	call AlphaS(Alfas, nf, fscale)
+	call AlphaS(Alfas, nf, scale)
 	Alfas2 = Alfas**2
 	GS = sqrt(4*pi*Alfas)
 	end
