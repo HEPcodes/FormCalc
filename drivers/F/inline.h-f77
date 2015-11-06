@@ -3,7 +3,7 @@
 * Caveat: this is the Fortran 77 version -
 *         must have #define SIMD 0 in distrib.h
 * this file is part of FormCalc
-* last modified 27 Apr 15 th
+* last modified 26 Oct 15 th
 
 
 #ifndef INLINE_H
@@ -48,14 +48,14 @@
 	RealType sqrtS_, ma_, mb_
 
 	SInvariant(a_, b_) =
-     &    (Re(vec(1,1,k0(a_))) + Re(vec(1,1,k0(b_))))*
-     &    (Re(vec(2,2,k0(a_))) + Re(vec(2,2,k0(b_)))) -
-     &    Sq(vec(1,2,k0(a_)) + vec(1,2,k0(b_)))
+     &    (Re(vec0(1,1,k0(a_))) + Re(vec0(1,1,k0(b_))))*
+     &    (Re(vec0(2,2,k0(a_))) + Re(vec0(2,2,k0(b_)))) -
+     &    Sq(vec0(1,2,k0(a_)) + vec0(1,2,k0(b_)))
 
 	TInvariant(a_, b_) =
-     &    (Re(vec(1,1,k0(a_))) - Re(vec(1,1,k0(b_))))*
-     &    (Re(vec(2,2,k0(a_))) - Re(vec(2,2,k0(b_)))) -
-     &    Sq(vec(1,2,k0(a_)) - vec(1,2,k0(b_)))
+     &    (Re(vec0(1,1,k0(a_))) - Re(vec0(1,1,k0(b_))))*
+     &    (Re(vec0(2,2,k0(a_))) - Re(vec0(2,2,k0(b_)))) -
+     &    Sq(vec0(1,2,k0(a_)) - vec0(1,2,k0(b_)))
 
 	Pair(a_, b_) = .5D0*(
      &    Vec(1,1,a_)*Vec(2,2,b_) + Vec(2,2,a_)*Vec(1,1,b_) -

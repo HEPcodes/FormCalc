@@ -1,7 +1,7 @@
 * NJCcut.F
 * the FormCalc wrapper for the Ninja three-point function
 * this file is part of FormCalc
-* last modified 29 Aug 14 th
+* last modified 27 Oct 15 th
 
 #include "types.h"
 
@@ -15,13 +15,13 @@
 
 ************************************************************************
 
-	ComplexType function NJCcut(mi, hel, rank,
+	ComplexType function NJCcut(mi, hdelta, rank,
      &    num, muexp, t3exp, t2exp,
      &	  k1, k2, m1, m2, m3)
 	implicit none
 	ComplexType mi(*)
 	external num, muexp, t3exp, t2exp
-	integer hel, rank
+	integer hdelta, rank
 	integer*8 k1, k2
 	RealType m1, m2, m3
 
@@ -31,7 +31,7 @@
 	ComplexType res(-2:0)
 
 	NJCcut = 0
-	if( hel .eq. 0 ) return
+	if( hdelta .eq. 0 ) return
 
 	kj(0,1) = 0
 	kj(1,1) = 0

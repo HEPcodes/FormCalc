@@ -2,7 +2,7 @@
 * all parameters for the MSSM are initialized here
 * this file is part of FormCalc
 * Christian Schappacher, 17 Feb 99
-* last modified 13 Jun 15 th
+* last modified 16 Oct 15 th
 
 
 * The input parameters for model_mssm are:
@@ -132,9 +132,9 @@
 #define MGl_LOWERBOUND 175
 
 
-#define TREE 100
-#define SIMPLE 200
-#define FEYNHIGGS 300
+#define TREE 7273711
+#define SIMPLE 7273712
+#define FEYNHIGGS 7273713
 
 #define ModelDefaults SMDefaults
 #define ModelConstIni SMConstIni

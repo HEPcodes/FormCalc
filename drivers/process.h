@@ -1,7 +1,7 @@
 * process.h
 * defines all process-dependent parameters
 * this file is part of FormCalc
-* last modified 29 Jun 15 th
+* last modified 23 Oct 15 th
 
 
 * When using Dirac fermions (FermionChains -> Chiral|VA) and
@@ -41,9 +41,10 @@ c#define UNPOLARIZED_DIRAC_FERMIONS
 * ESOFTMAX is the maximum energy a soft photon may have and may be
 * defined in terms of sqrtS, the CMS energy.
 
-#ifndef BREMSSTRAHLUNG
-c#define BREMSSTRAHLUNG
+#ifndef PHOTONRADIATION
+c#define PHOTONRADIATION SOFT
 #endif
+
 #ifndef ESOFTMAX
 #define ESOFTMAX .1D0*sqrtS
 #endif

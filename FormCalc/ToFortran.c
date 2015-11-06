@@ -7,7 +7,7 @@
 		  (i.e. does not touch preprocessor statements)
 		- replaces the continuation character (if any) by &
 		this file is part of FormCalc
-		last modified 29 Apr 15 th
+		last modified 23 Sep 15 th
 */
 
 #include <stdio.h>
@@ -55,7 +55,8 @@ int main()
       }
 
       si = p + strspn(p, digits);
-      if( p[-1] >= 'A' ) continue;  /* belongs to variable name */
+      if( p[-1] >= 'A' || p[-1] == '$' ) continue; 
+	/* belongs to variable name */
 
       term = *si;
       if( term == '.' ) {

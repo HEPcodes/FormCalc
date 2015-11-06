@@ -1,7 +1,7 @@
 * CTCcut.F
 * the FormCalc wrapper for the CutTools three-point function
 * this file is part of FormCalc
-* last modified 4 Jul 14 th
+* last modified 27 Oct 15 th
 
 #include "types.h"
 
@@ -15,11 +15,11 @@
 
 ************************************************************************
 
-	ComplexType function CTCcut(mi, hel, rank, num, numeps,
+	ComplexType function CTCcut(mi, hdelta, rank, num, numeps,
      &    k1, k2, m1, m2, m3)
 	implicit none
 	ComplexType mi(*)
-	integer hel, rank
+	integer hdelta, rank
 	external num, numeps
 	integer*8 k1, k2
 	RealType m1, m2, m3
@@ -33,7 +33,7 @@
 	external CTmpnum
 
 	CTCcut = 0
-	if( hel .eq. 0 ) return
+	if( hdelta .eq. 0 ) return
 
 	kj(0,1) = 0
 	kj(1,1) = 0

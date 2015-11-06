@@ -4,7 +4,7 @@
 * the momenta's (integer*1) prefactors are encoded as the
 * bytes of an integer*8
 * this file is part of FormCalc
-* last modified 8 May 13 th
+* last modified 26 Oct 15 th
 
 #include "types.h"
 #include "util.h"
@@ -17,7 +17,7 @@
 
 #include "util.h"
 
-#define K(x,y, i) vec(x,y, k0(i))
+#define K(x,y, i) vec0(x,y, k0(i))
 
 	integer i
 	ComplexType a(2,2)

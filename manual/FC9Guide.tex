@@ -89,6 +89,7 @@ end }
 \def\mma{\textit{Mathematica}}
 \def\Var#1{\ensuremath{\mathit{#1}}}
 %\def\Var#1{\ensuremath{\mathit{\Red{#1}}}}
+\def\VX{\Var{X}}
 \def\Va{\Var{a}}
 \def\Vb{\Var{b}}
 \def\Vc{\Var{c}}
@@ -156,13 +157,13 @@ end }
 
 \newbox\titlebox\setbox\titlebox=\hbox{\underline{%
 \vrule width 0pt height 0pt depth 2ex%
-\Huge \FC~9~~~User's Guide}}
+\Huge \FC~9.1~~~User's Guide}}
 
 \hfill\copy\titlebox
 
 \vspace*{1ex}
 
-\hfill\hbox{Sept. 4, 2015~~~~~Thomas Hahn}
+\hfill\hbox{Nov. 4, 2015~~~~~Thomas Hahn}
 
 \bigskip
 \bigskip
@@ -652,18 +653,29 @@ see \cite{Ha02, Ha04a}.
 \index{ordering}%
 \index{external spinors}%
 \index{Fierz transformation}%
-\Code{FermionOrder} specifies an ordering for the external spinors in
-Dirac chains, \ie makes sense only in combination with
-\Code{FermionChains -> Chiral} or \Code{VA}.  Possible values are
-\Code{None}, \Code{Fierz}, \Code{Automatic}, \Code{Colour}, or an
-explicit ordering, \eg \Code{\Brac{2,\,1,\,4,\,3}} (corresponding to
-fermion chains of the form $\bra{2}\Gamma\ket{1} \bra{4}\Gamma'\ket{3}$).
-\Code{None} applies no reordering.  \Code{Fierz} applies the Fierz
-identities \cite{Ni05} twice, thus simplifying the chains but keeping
-the original order.  \Code{Colour} applies the ordering of the
-external colour indices (after simplification) to the spinors.
-\Code{Automatic} chooses a lexicographical ordering (small numbers
-before large numbers).
+
+The \Code{FermionOrder} option means different things for Dirac and for 
+Weyl chains:
+
+For Dirac spinor chains (\Code{FermionChains -> Chiral} or \Code{VA}) 
+\Code{FermionOrder} determines the ordering of the external fermions 
+within the chains.  Choices are \Code{None}, \Code{Fierz}, 
+\Code{Automatic}, \Code{Colour}, or an explicit ordering, \eg 
+\Code{\Brac{2,\,1,\,4,\,3}} (corresponding to fermion chains of the form 
+$\bra{2}\Gamma\ket{1} \bra{4}\Gamma'\ket{3}$).  \Code{None} applies no 
+reordering.  \Code{Fierz} applies the Fierz identities \cite{Ni05} 
+twice, thus simplifying the chains but keeping the original order.  
+\Code{Colour} applies the ordering of the external colour indices (after 
+simplification) to the spinors. \Code{Automatic} chooses a 
+lexicographical ordering (small numbers before large numbers).
+
+For Weyl spinor chains (\Code{FermionChains -> Weyl}) 
+\Code{FermionOrder} determines the structuring of the amplitude with 
+respect to the fermion chains: Setting \Code{FermionOrder -> Mat} wraps 
+the Weyl fermion chains in \Code{Mat}, like their Dirac counterpart, so 
+that they end up at the outermost level of the amplitude and their 
+coefficients can be read off easily.  The matrix elements of the form
+\Code{Mat[F\Vi,\,F\Vj]} are computed with the \Code{WeylME} function.
 
 The \Code{Evanescent} option toggles whether fermionic operators are 
 tracked across Fierz transformations by emitting terms of the form 
@@ -707,7 +719,7 @@ $N_2/(D_0 D_1) + N_3/(D_0 D_1 D_2) \to (N_2 D_2 + N_3)/(D_0 D_1 D_2)$.
 \index{tensor coefficients}%
 \index{numerator function}%
 OPP specifies an integer $N$ starting from which an $N$-point function is 
-treated with OPP methods.  For example, \Code{OPP $\to$ 4} means that $A$, 
+treated with OPP methods.  For example, \Code{OPP -> 4} means that $A$, 
 $B$, $C$ functions are reduced with Passarino--Veltman and $D$ and up with 
 OPP.  A negative $N$ indicates that the rational terms for the OPP 
 integrals shall be added analytically whereas otherwise their computation 
@@ -723,14 +735,14 @@ $\qslash\to \qslash + \ri\gamma_5\tilde\mu$, where odd powers of
 $\tilde\mu$ are eventually set to zero.
 
 \index{test, $\gamma_5$}
-\Code{Gamma5Test $\to$ True} substitutes each $\gamma_5$ by
+\Code{Gamma5Test -> True} substitutes each $\gamma_5$ by
 $\gamma_5 (1 + \Code{Gamma5Test} (D - 4))$ and it can be tested whether 
 the final result depends on the variable \Code{Gamma5Test} (which it 
 shouldn't).
 
 \index{'t Hooft--Veltman scheme}%
 \index{Breitenlohner--Maison scheme}%
-\Code{Gamma5ToEps $\to$ True} substitutes all $\gamma_5$ in fermion 
+\Code{Gamma5ToEps -> True} substitutes all $\gamma_5$ in fermion 
 traces by $\frac 1{4!} \varepsilon_{\mu\nu\rho\sigma} \gamma^\mu 
 \gamma^\nu \gamma^\rho \gamma^\sigma$.  This effectively implements the 
 't~Hooft--Veltman--Breitenlohner--Maison $\gamma_5$-scheme.  External 
@@ -1023,10 +1035,9 @@ Individual legs can be taken off-shell with the function \Code{OffShell}.
 \indextt{OffShell}%
 \Code{OffShell[\Var{amp},\,\Vi\ -> $\mu_i$,\,\Vj\ -> $\mu_j$,\,
 $\dots$]} takes legs \Vi, \Vj, \dots\ off-shell by substituting the
-relation $p_i^2 = \mu_i^2$ for the true on-shell relation $p_i^2 =
-m_i^2$.  This is unlike the \Code{CalcFeynAmp} option \Code{OnShell ->
-False} which takes all legs off-shell by not using $p_i^2 = m_i^2$ at
-all.
+true on-shell relation $p_i^2 = m_i^2$ by $p_i^2 = \mu_i^2$.  This is
+different from setting the \Code{CalcFeynAmp} option \Code{OnShell ->
+False} which takes all legs off-shell by not using $p_i^2 = m_i^2$ at all.
 
 \bigskip
 
@@ -1130,7 +1141,7 @@ $$
 `Local' refers to the fact that these terms contain no loop integral 
 anymore.
 
-In dimensional regularization, a popular way of checking IR-finiteness 
+In dimensional regularization, a popular way of checking finiteness 
 of an amplitude is to substitute the loop integrals by their divergent 
 parts and test whether the coefficients of $\varepsilon^{-1}$ and 
 $\varepsilon^{-2}$ work out to zero.  In \LT, for example, this is 
@@ -1233,7 +1244,7 @@ $\Code{DiracChain[1,$\mu$,$\nu$]} = \sigma_{\mu\nu}$.  Note that the
 antisymmetrization does not extend to the chirality projector
 or $\gamma_5$, \eg
 $$
-\Code{DiracChain[6,$\mu$,$\nu$,$\rho$]} = \frac{\omega_+}{3!} 
+\Code{DiracChain[6,$\mu$,$\nu$,$\rho$]} = \frac{P_R}{3!} 
 (\gamma_\mu\gamma_\nu\gamma_\rho 
 - \gamma_\mu\gamma_\rho\gamma_\nu 
 - \gamma_\nu\gamma_\mu\gamma_\rho 
@@ -1260,17 +1271,16 @@ positions for the entire chain.
 \Code{7} &
 	signifies that the following sigma matrix has lower spinor
 	indices \\
-\Code{-1} &
-	the spinor metric $\varepsilon = \left(\begin{smallmatrix}
-	0 & 1 \\ -1 & 0 \end{smallmatrix}\right)$ \\
-\Code{Spinor[\Vp,\,\Vm,\,\Vs]} &
-	an undotted 2-spinor \\
-\Code{DottedSpinor[\Vp,\,\Vm,\,\Vs]} &
-	a dotted 2-spinor
+\Code{Spinor[\Vp,\,\Vm,\,\Vs,\,\Vd,\,\Ve]} &
+	a 2-spinor, with $\Vd = 1(2)$ undotted (dotted) and
+	$\Ve = 0(1)$ uncontracted (contracted) with $\varepsilon =
+	\left(\begin{smallmatrix}
+        0 & 1 \\ -1 & 0
+	\end{smallmatrix}\right)$
 \etab%
 \indextt{WeylChain}%
 \indextt{Spinor}%
-\indextt{DottedSpinor}
+\index{spinor metric}
 
 \FC\ also introduces some model-dependent symbols.  It can be argued that
 this is not a good practice, but the advantage of doing so is just too
@@ -1279,12 +1289,11 @@ is because \eg \Code{MW2} is an ordinary symbol while \Code{MW\power 2} is
 a non-atomic expression (the internal representation is
 \Code{Power[MW,\,2]}).
 
-To change or add to these definitions, edit \Code{FormCalc.m} and find the
-section beginning with the line
-\begin{verbatim}
-   (* global definitions for specific models *)
-\end{verbatim}
-Currently, the following model-dependent symbols are introduced by \FC:
+Setting \Code{\$NoModelSpecific = True} before loading FormCalc inhibits 
+setting of the model-dependent symbols.
+To change or add to these definitions, edit 
+\Code{FormCalc/ModelSpecific.m}.  Currently, the following 
+model-dependent symbols are defined:
 \biitab
 \textit{for the Standard Model:} \\
 \Code{Alfa}, \Code{Alfa2} &
@@ -1303,8 +1312,8 @@ Currently, the following model-dependent symbols are introduced by \FC:
 \Code{MQD2}, \Code{MD2}, \Code{MS2}, \Code{MB2} &
 	the squares of various masses \\
 \Code{SMSimplify[\Var{expr}]} &
-	\Code{Simplify} with \Code{SW2 $\to$ 1\,-\,CW2} and
-	\Code{CW2 $\to$ MW2/MZ2}
+	\Code{Simplify} with \Code{SW2 -> 1\,-\,CW2} and
+	\Code{CW2 -> MW2/MZ2}
 \etab
 \index{model parameters}%
 \indextt{Alfa}%
@@ -1345,7 +1354,7 @@ Currently, the following model-dependent symbols are introduced by \FC:
 	the squares of various masses \\
 \Code{MSSMSimplify[\Var{expr}]} &
 	\Code{Simplify} with SUSY trigonometric identities \\
-&	(\eg \Code{SBA2 $\to$ 1\,-\,CBA2}) \\
+&	(\eg \Code{SBA2 -> 1\,-\,CBA2}) \\
 \Code{SUSYTrigExpand[\Var{expr}]} &
 	express various trigonometric symbols \\
 &	(\Code{SB2}, \Code{S2B}, etc.) through \Code{ca},
@@ -1833,7 +1842,7 @@ $$%
 	  (1\pm\lambda\gamma_5)\pslash\,.
 	$$
 }%
-where $\lambda = \pm$ and $s$ is the helicity reference vector
+where $\lambda = \pm 1$ and $s$ is the helicity reference vector
 corresponding to the momentum $p$.  $s$ is the unit vector in the 
 direction of the spin axis in the particle's rest frame, boosted into the 
 CMS.  It is identical to the longitudinal polarization vector of a vector 
@@ -1857,7 +1866,7 @@ putting $\lambda = 0$ and multiplying the result by 2 for each external
 fermion.
 
 \FC\ supplies the function \Code{HelicityME} to calculate these so-called 
-helicity matrix elements $(\Code{F\Vi}\,\Code{F\Vj})$.
+helicity matrix elements $(\Code{F\Vi}\,\Code{F\Vj}^*)$.
 \biitab
 \Code{HelicityME[\Var{\M_1},\,\Var{\M_2^*}]} &
 	calculate the helicity matrix elements for all combinations
@@ -1944,6 +1953,31 @@ equivalence \Code{Dminus4Eps = Dminus4} can be unset.%
 The options \Code{MomElim}, \Code{DotExpand}, \Code{RetainFile}, and
 \Code{EditCode} are used in the same way as for \Code{CalcFeynAmp}, see
 page \pageref{retainedit}.
+
+\bigskip
+
+The matrix element method can be applied to Weyl chains, too, which
+makes sense if one wishes to apply correction factors to the matrix 
+elements.  To this end \Code{CalcFeynAmp} must be instructed to encode 
+the Weyl fermion chains \Code{F\Vi} as matrix elements \Code{Mat[F\Vi]} 
+(and sort the amplitude accordingly) with the option \Code{FermionOrder 
+-> Mat}.  The corresponding bilinear matrix elements 
+\Code{Mat[F\Vi,\,F\Vj]} needed to compute the squared amplitude are then 
+computed with \Code{WeylME}.
+\biitab
+\Code{WeylME[\Var{\M_1},\,\Var{\M_2^*}]} &
+	calculate the fermion matrix elements for all combinations
+	of \Code{F\Vn} appearing inside \Code{Mat} in \Var{\M_1} and 
+	\Var{\M_2^*}, where, as the $*$ indicates, \Var{\M_2} is the 
+	part to be complex conjugated \\
+\Code{WeylME[\Var{\M_1},\,\Var{\M_2^*},\,\Vf]} &
+	the same, but additionally multiply each \Code{Mat[F\Vi,\,F\Vj]}
+	with the correction factor \Code{\Vf[F\Vi,\,F\Vj]} \\
+\Code{All} &
+	(used as an argument of \Code{WeylME}:)
+	instead of selecting the \Code{F}s which appear in an expression,
+	simply take all \Code{F}s currently in the abbreviations
+\etab
 
 %------------------------------------------------------------------------
 
@@ -2423,9 +2457,9 @@ For example,
 \begin{verbatim}
   OnSize[100, FullSimplify, 500, Simplify, TermCollect]
 \end{verbatim}
-would apply \Code{FullSimplify} if the expression's leaf count is less 
-than 100, \Code{Simplify} if it is between 100 and 500, and 
-\Code{DenCollect} above.
+applies \Code{FullSimplify} if the expression's leaf count is less than 
+100, \Code{Simplify} if it is between 100 and 500, and 
+\Code{TermCollect} above.
 
 \Code{ApplyUnitarity} exploits unitarity of a given matrix to simplify 
 an expression.  The two unitarity relations $UU^\dagger = \unity$ or
@@ -2459,9 +2493,10 @@ compiled language.  This makes it necessary to translate the \mma\
 expressions resulting from \Code{CalcFeynAmp}, \Code{HelicityME}, etc.\ into
 a high-level language program.
 
-For \FC, Fortran has been chosen because of its proven track record for
-fast and reliable number crunching, the availability of good compilers on
-all platforms, and the possibility to link with existing code.
+For \FC, Fortran has been chosen because of its proven track record for 
+fast and reliable number crunching, the availability of good compilers 
+on all platforms, and the possibility to link with existing code.  
+Code generation in C99 is available, too.
 
 This first step of writing out a subroutine from the calculated 
 amplitudes can be implemented in a reasonably general way and is handled 
@@ -2810,11 +2845,15 @@ individual code files, after the \Code{\#include "vars.h"} statement.
 \Code{SetLanguage["Fortran"]} &
 	set the output language to Fortran (default) \\
 \Code{SetLanguage["C"]} &
-	set the output language to C
+	set the output language to C99 \\
+\Code{SetLanguage[\Var{lang},\,"novec"]} &
+	generate unvectorized code
 \etab
 \indextt{SetLanguage}%
+\indextt{novec}%
 \index{C output}%
 \index{Fortran output}%
+\index{vectorization}%
 \index{language choice}
 
 %------------------------------------------------------------------------
@@ -2975,7 +3014,7 @@ invoked before the user gets to set the input parameters.
         integer fail
 \end{verbatim}
 initializes the constant model parameters, \ie the ones that do not depend 
-on $\sqrt s$, the centre-of-mass energy.  If the routine determines that 
+on $\sqrt s$, the center-of-mass energy.  If the routine determines that 
 the input parameters yield unphysical or otherwise unacceptable model 
 parameters, it must return a non-zero value in \Code{fail}.
 \begin{verbatim}
@@ -3005,14 +3044,15 @@ numerical constants. \Code{WriteSquaredME} can optimize the generated
 code based on the information which symbols are numerical constants to
 the compiler and which are variables.
 
-The trick is to move the numerical constants to the front of each product
-so that the compiler can combine these constants into one number, thus
-reducing the number of multiplications at run time.  For example, if
-\Code{WriteSquaredME} knows \Code{Alfa2} and \Code{SW2} to be numerical
-constants, it will write \Code{(3*Alfa2)/(8.D0*SW2**2)*(Abb1*cint44*MH2)}
-instead of \mma's default ordering
-\Code{(3*Abb1*Alfa2*cint44*MH2)/(8.D0*SW2**2)}.  While this may seem a 
-minor rearrangement, the increase in execution speed can be 30\%!
+The trick is to move the numerical constants to the front of each 
+product so that the compiler can combine these constants into one 
+number, thus reducing the number of multiplications at run time.  For 
+example, if \Code{WriteSquaredME} knows \Code{Alfa2} and \Code{SW2} to 
+be numerical constants, it will write 
+\Code{(3*Alfa2)/(8.D0*SW2**2)*(Abb1*AaA0i44*MH2)} instead of \mma's 
+default ordering \Code{(3*Abb1*Alfa2*AaA0i44*MH2)/(8.D0*SW2**2)}.  While 
+this may seem a minor rearrangement, the increase in execution speed can 
+be 30\%!
 
 To tell \Code{WriteSquaredME} which symbols are numerical constants to
 the compiler, simply assign the symbol a numerical value like in (this
@@ -3028,19 +3068,23 @@ statement is near the end of \Code{FormCalc.m})
 The following excerpt is from a Fortran code generated by 
 \Code{WriteSquaredME}:
 \begin{verbatim}
-        subroutine self
+        subroutine vert
         implicit none
 
 #include "vars.h"
+#include "inline.h"
 
-        Cloop(1) = Cloop(1) +
-     &   ((3*Alfa2)/(8.D0*SW2**2)*(Abb1*cint44*MH2) +
-     &      (9*Alfa2)/(8.D0*SW2**2)*(Abb1*cint5*MH2**2) +
-     &      Alfa2/(4.D0*SW2**2)*(Abb1*cint41*(MH2 + 6*MW2)) +
-     &      (Alfa2*MW2)/SW2**2*(Abb1*cint43*S) +
-     &      (Alfa2*MW2)/(2.D0*CW2*SW2**2)*(Abb1*cint46*S) +
-     &      Alfa2/(8.D0*CW2*SW2**2)*
-     &       (Abb1*cint45*(6*MW2 + CW2*MH2)) ...
+        Cloop(HelInd(1)) = Cloop(HelInd(1)) + 
+     &    1/(4.D0*CW2**3*SW2**2)*
+     &     ((8*MW2*(Pair1*Pair2*Sub437) - Alfa2*CW2**3*Sub445)/
+     &        (MH2 - S) + (8*MW2*(Pair3*Pair4*Sub437) - 
+     &          Alfa2*CW2**3*Sub453)/(MH2 - T) + 
+     &       (8*MW2*(Pair5*Pair6*Sub437) - Alfa2*CW2**3*Sub461)/
+     &        (MH2 - U))
+
+#include "contains.h"
+
+        end
 \end{verbatim}
 Note the use of the C preprocessor in statements like \Code{\#include}.
 Because of this, the code files have the extension \Code{.F} which is
@@ -3057,8 +3101,8 @@ The following objects are treated as abbreviations:
 \begin{enumerate}
 \item
 variables replacing some function call: \Code{Pair\Vn} (dot products),
-\Code{Eps\Vn} (contracted epsilon tensors), \Code{cint\Vn},
-\Code{iint\Vn} (loop integrals),
+\Code{Eps\Vn} (contracted epsilon tensors), \Code{F\Vn} (fermion 
+chains), \Code{Aa\VX0i\Vn} (loop integrals),
 
 \item
 products or sums of variables of type 1: \Code{Abb\Vn},
@@ -3067,12 +3111,12 @@ products or sums of variables of type 1: \Code{Abb\Vn},
 \item
 matrix elements: \Code{Mat\Var{Type}(\Vi,\,\Vj)}.
 \end{enumerate}
-All of these abbreviations except the \Code{cint\Vn} and \Code{iint\Vn}
-are in fact the ones already introduced by \FC.  These abbreviations
-share the general feature of being costly in CPU time (in particular the
-loop integrals), which means that for optimal performance they should be
-calculated as few times as possible.  \Code{WriteSquaredME} splits them
-into $2\times 3$ categories:
+All of these abbreviations except the \Code{Aa\VX0i\Vn} are in fact the 
+ones already introduced by \FC.  These abbreviations share the general 
+feature of being costly in CPU time (in particular the loop integrals), 
+which means that for optimal performance they should be calculated as 
+few times as possible.  \Code{WriteSquaredME} splits them into $2\times 
+3$ categories:
 \begin{itemize}
 \item \Code{abbr0\uscore\Var{cat}.F} -- tree-level, and
 \item \Code{abbr1\uscore\Var{cat}.F} -- one-loop,
@@ -3156,15 +3200,20 @@ $\Code{helicities} = 00010\,01000\,01110\,01110_2 = 74190_{10}$.  Some
 compilers allow binary notation directly as 
 \Code{B'00010\,01000\,01110\,01110'} (this is non-portable, however).
 
-Currently two flags are passed:
+Currently three flags are passed:
 \begin{itemize}
 \item
-Bit 0 is the `reset' flag: if 1, the abbreviations must be re-calculated 
-completely.  The latter is the case when the centre-of-mass energy or 
+Bit 0 is the `set mass' flag: if 1, the masses of the external particles 
+are returned in the `\Code{result}' argument.  No cross-section is 
+computed in this case.
+
+\item
+Bit 1 is the `reset' flag: if 1, the abbreviations must be re-calculated 
+completely.  The latter is the case when the center-of-mass energy or 
 the model parameters have changed.
 
 \item
-Bit 1 is the `loop' flag: if 1, the loop corrections are computed.
+Bit 2 is the `loop' flag: if 1, the loop corrections are computed.
 This flag allows \eg to integrate phase space separately for tree-level 
 and one-loop part.
 \end{itemize}
@@ -3194,17 +3243,16 @@ parameters at the right places, and the real work is done in other files
 which are included by \Code{run.F}.%
 \index{driver program}
 
-There is almost no cross-talk between different modules which are in
-that sense `universal.'  Also, the main program has been radically 
-slimmed down in \FC\ 5.  It now only scans the command line and 
-invokes
+There is almost no cross-talk between different modules which are in 
+that sense `universal.'  The actual main program, \Code{main.F}, only 
+scans the command line and invokes
 \begin{verbatim}
    call ProcessIni(...)
    call ParameterScan(...)
 \end{verbatim}
 All further action is decoupled from the main program and can easily be
-called from any application.  It is thus straightforward to use
-\FC-generated code in own programs.
+called from any application.  It is thus relatively straightforward to
+use \FC-generated code in own programs.
 
 The distribution of the code over the various include files and their
 interdependencies is shown in the following figure, where arrows indicate
@@ -3332,14 +3380,14 @@ in \Code{process.h}:
 	identical particles in the final state,
 \item	a wave-function renormalization (\Code{WF\uscore RENORMALIZATION}), 
 	if a non-onshell renormalization scheme is used,
-\item	whether soft bremsstrahlung shall be added (\Code{BREMSSTRAHLUNG}),
+\item	whether bremsstrahlung shall be added (\Code{PHOTONRADIATION}),
 	and the maximum energy a soft photon may have (\Code{ESOFTMAX})
 	(see Sect.\ \ref{sect:qed} for details).
 \end{itemize}
 \indextt{COLOURFACTOR}%
 \indextt{IDENTICALFACTOR}%
 \indextt{WF\uscore RENORMALIZATION}%
-\indextt{BREMSSTRAHLUNG}%
+\indextt{PHOTONRADIATION}%
 \indextt{ESOFTMAX}%
 
 %------------------------------------------------------------------------
@@ -3537,7 +3585,7 @@ quantities are available:
 
 With the new variable system, the convolution with arbitrary parton
 distribution functions can easily be achieved.  Three modules are
-already included in \FC\ 5:
+already included in \FC:
 \begin{itemize}
 \item \Code{lumi\uscore parton.F}
       = initial-state partons, no convolution.
@@ -3567,13 +3615,18 @@ parameters are chosen in \Code{run.F} as preprocessor variables:
 #define VERBOSE 1
 #define MINEVAL 0
 #define MAXEVAL 50000
+#define STATEFILE ""
+#define SPIN -1
 
 * for Vegas:
 #define NSTART 1000
 #define NINCREASE 500
+#define NBATCH 1000
+#define GRIDNO 0
 
 * for Suave:
 #define NNEW 1000
+#define NMIN 2
 #define FLATNESS 50
 
 * for Divonne:
@@ -3648,7 +3701,7 @@ polarization depending on the command line.
 \ownline{\Code{run \Var{p_1\dots p_n}
   \Var{sqrtS}
   [\Var{serialfrom}[,\Var{serialto}[,\Var{serialstep}]]]}} \\
-&	compute the differential cross-section at a centre-of-mass
+&	compute the differential cross-section at a center-of-mass
 	energy \Var{sqrtS} with the external particles polarized
 	according to \Var{p_1\dots p_n}. \\
 \ownline{\Code{run \Var{p_1\dots p_n}
@@ -4351,14 +4404,14 @@ between the definition and the calculation of RCs.
 
 \FC\ regards those symbols as RCs for which a definition of the form
 \begin{verbatim}
-   RenConst[ rc ] := ...
+   RenConst[rc] := ...
 \end{verbatim}
 \indextt{RenConst}%
 exists.  The purpose of the definition is to provide the functional
 relationship between the RC and the self-energy from which it is
 calculated, for example
 \begin{verbatim}
-   RenConst[ dMHsq1 ] := ReTilde[SelfEnergy[S[1] -> S[1], MH]]
+   RenConst[dMHsq1] := ReTilde[SelfEnergy[S[1] -> S[1], MH]]
 \end{verbatim}
 Note that this definition is quite generic, in particular it contains no
 details about the selection of diagrams.  It is intentional that the
@@ -4388,13 +4441,13 @@ be used in the model file or anywhere else, even if \FC\ is not loaded.
 	the tree-level contribution to $\Vi\to\Vf$ without external
 	spinors \\
 \Code{LVectorCoeff[\Var{expr}]} &
-	the coefficient of $\kslash\omega_-$ in \Var{expr} \\
+	the coefficient of $\kslash P_L$ in \Var{expr} \\
 \Code{RVectorCoeff[\Var{expr}]} &
-	the coefficient of $\kslash\omega_+$ in \Var{expr} \\
+	the coefficient of $\kslash P_R$ in \Var{expr} \\
 \Code{LScalarCoeff[\Var{expr}]} &
-	the coefficient of $\omega_-$ in \Var{expr} \\
+	the coefficient of $P_L$ in \Var{expr} \\
 \Code{RScalarCoeff[\Var{expr}]} &
-	the coefficient of $\omega_+$ in \Var{expr} \\
+	the coefficient of $P_R$ in \Var{expr} \\
 \Code{ReTilde[\Var{expr}]} &
 	takes the real part of loop integrals in \Var{expr} \\
 \Code{ImTilde[\Var{expr}]} &
@@ -4642,14 +4695,15 @@ The soft-photon factor $\delta_{\text{SB}}$ is implemented in
 \Code{main.F} using the formulas of \cite{De93}.  It is controlled by the 
 following two preprocessor statements in \Code{process.h}.
 \begin{verbatim}
-c#define BREMSSTRAHLUNG
+c#define PHOTONRADIATION SOFT
 #define ESOFTMAX .1D0*sqrtS
 \end{verbatim}
-The first flag, \Code{BREMSSTRAHLUNG}, is commented out by default.  To
-switch on soft-photon corrections, take out the \Code{c} before the
+The first flag, \Code{PHOTONRADIATION}, is commented out by default.  
+To switch on soft-photon corrections, take out the \Code{c} before the
 {\tt\#define}.  The second line determines the energy cutoff
 $E_{\text{soft}}^{\text{max}}$.%
-\indextt{BREMSSTRAHLUNG}%
+\indextt{PHOTONRADIATION}%
+\indextt{SOFT}%
 \indextt{ESOFTMAX}
 
 %------------------------------------------------------------------------
@@ -4681,7 +4735,7 @@ The data files are read into \mma\ with the \textit{MathLink} program
 \begin{verbatim}
 In[1]:= Install["ReadData"];
 
-In[2]:= ReadData["run.UUUU.00300-01000.data"]
+In[2]:= ReadData["run.uuuu.00300-01000.data"]
 
 Out[2]= 24
 \end{verbatim}
@@ -4733,10 +4787,10 @@ Data[2] = { {160.79, 0.264226, 0.502511},
 \end{verbatim}
 \indextt{Data}%
 \indextt{Para}%
-Note that the numbers have not suffered in accuracy; it is a peculiarity
-of \mma\ to display real numbers with no more than six digits by
-default.  Note also that the underscore in \Code{M\uscore 2} which is
-not allowed in symbol names in \mma\ has been replaced by a \Code{\$}.
+The numbers have not suffered in accuracy; it is a peculiarity of \mma\ 
+to display real numbers with no more than six digits by default.  Note 
+also that the underscore in \Code{M\uscore 2} which is not allowed in 
+symbol names in \mma\ has been replaced by a \Code{\$}.
 \biitab
 \Code{ReadData[\Vf,\,\Vn,\,\Var{h_{\mathrm{para}}},\,\Var{h_{\mathrm{data}}}]} &
 	read the data file \Vf\ into parameter and data sets in \mma;
@@ -5033,8 +5087,8 @@ its output, \Code{True}, \Code{False}, or a string, individually
 determines generation of the debug statement.  Debugging messages are 
 usually generated for the expressions specified by the user only.  To 
 extend them to intermediate variables, e.g. the ones introduced for 
-optimization, use \Code{DebugLines $\to$ All} (or 
-\Code{All[\Var{string}]} or \Code{All[\Var{func}]}).
+optimization, use \Code{DebugLines -> All} (or \Code{All[\Var{string}]} 
+or \Code{All[\Var{func}]}).
 
 The actual debugging statements are constructed from the items in 
 \Code{\$DebugCmd}, which is a list of four strings: The first two 

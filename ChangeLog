@@ -1,3 +1,18 @@
+4 Nov 15:
+
+- Added SetLanguage[lang, "novec"] functionality to generate
+  unvectorized code only.
+
+
+3 Nov 15:
+
+- Added new function WeylME and CalcFeynAmp option FermionOrder -> Weyl
+  to use matrix-element method also with Weyl chains.
+
+- Fixed many smallish issues with vectorization, mostly in the C output
+  (and particularly for clang), mostly when used with HelicityME.
+
+
 4 Sep 15:
 
 - Added simple way of combining partonic XS, through partonic.h and

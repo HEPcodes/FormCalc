@@ -2,7 +2,7 @@
 	inline.h
 	inline versions of the util functions
 	this file is part of FormCalc
-	last modified 8 Jun 15 th
+	last modified 27 Oct 15 th
 #endif
 
 
@@ -34,16 +34,35 @@ static inline RealType Sq(cComplexType c) {
   return Re(c*Conjugate(c));
 }
 
-static inline ComplexType SInvariant(cinteger a, cinteger b) {
-  return (Re(vec(1,1,k0(a))) + Re(vec(1,1,k0(b))))*
-         (Re(vec(2,2,k0(a))) + Re(vec(2,2,k0(b)))) -
-         Sq(vec(1,2,k0(a)) + vec(1,2,k0(b)));
+static inline RealType SInvariant(cinteger a, cinteger b) {
+  return (Re(vec0(1,1,k0(a))) + Re(vec0(1,1,k0(b))))*
+         (Re(vec0(2,2,k0(a))) + Re(vec0(2,2,k0(b)))) -
+         Sq(vec0(1,2,k0(a)) + vec0(1,2,k0(b)));
 }
 
-static inline ComplexType TInvariant(cinteger a, cinteger b) {
-  return (Re(vec(1,1,k0(a))) - Re(vec(1,1,k0(b))))*
-         (Re(vec(2,2,k0(a))) - Re(vec(2,2,k0(b)))) -
-         Sq(vec(1,2,k0(a)) - vec(1,2,k0(b)));
+static inline RealType TInvariant(cinteger a, cinteger b) {
+  return (Re(vec0(1,1,k0(a))) - Re(vec0(1,1,k0(b))))*
+         (Re(vec0(2,2,k0(a))) - Re(vec0(2,2,k0(b)))) -
+         Sq(vec0(1,2,k0(a)) - vec0(1,2,k0(b)));
+}
+
+static inline ComplexType Pair0(cinteger a, cinteger b) {
+  return .5*(
+    vec0(1,1,a)*vec0(2,2,b) + vec0(2,2,a)*vec0(1,1,b) -
+    vec0(1,2,a)*vec0(2,1,b) - vec0(2,1,a)*vec0(1,2,b) );
+}
+
+static inline ComplexType Eps0_(cinteger a, cinteger b, cinteger c, cinteger d) {
+  return
+    (vec0(1,1,a)*vec0(2,2,b) - vec0(2,2,a)*vec0(1,1,b))*
+    (vec0(2,1,c)*vec0(1,2,d) - vec0(1,2,c)*vec0(2,1,d));
+}
+
+static inline ComplexType Eps0(cinteger a, cinteger b, cinteger c, cinteger d) {
+  return .25*(
+    Eps0_(a, b, c, d) + Eps0_(c, d, a, b) -
+    Eps0_(a, c, b, d) - Eps0_(b, d, a, c) +
+    Eps0_(a, d, b, c) + Eps0_(b, c, a, d) );
 }
 
 HelFun Pair(cinteger a, cinteger b) {

@@ -1,7 +1,7 @@
 * SADcut.F
 * the FormCalc wrapper for the Samurai four-point function
 * this file is part of FormCalc
-* last modified 29 Aug 14 th
+* last modified 27 Oct 15 th
 
 #include "types.h"
 
@@ -17,12 +17,12 @@
 
 ************************************************************************
 
-	ComplexType function SADcut(mi, hel, rank, num, numeps,
+	ComplexType function SADcut(mi, hdelta, rank, num, numeps,
      &    k1, k2, k3, m1, m2, m3, m4)
 	implicit none
 	ComplexType mi(*), num, numeps
 	external num, numeps
-	integer hel, rank
+	integer hdelta, rank
 	integer*8 k1, k2, k3
 	RealType m1, m2, m3, m4
 
@@ -33,7 +33,7 @@
 	logical ok
 
 	SADcut = 0
-	if( hel .eq. 0 ) return
+	if( hdelta .eq. 0 ) return
 
 	kj(1,1) = 0
 	kj(1,2) = 0

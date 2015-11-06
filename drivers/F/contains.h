@@ -1,7 +1,7 @@
 * contains.h
 * inline versions of the util functions
 * this file is part of FormCalc
-* last modified 27 Apr 15 th
+* last modified 26 Oct 15 th
 
 
 #ifndef CONTAINS_H
@@ -15,22 +15,6 @@
 #else
 
 	contains
-
-	RealType function SInvariant(i, j)
-	integer i, j
-	SInvariant =
-     &    (Re(vec(1,1,k0(i))) + Re(vec(1,1,k0(j))))*
-     &    (Re(vec(2,2,k0(i))) + Re(vec(2,2,k0(j)))) -
-     &    Sq(vec(1,2,k0(i)) + vec(1,2,k0(j)))
-	end function
-
-	RealType function TInvariant(i, j)
-	integer i, j
-	TInvariant =
-     &    (Re(vec(1,1,k0(i))) - Re(vec(1,1,k0(j))))*
-     &    (Re(vec(2,2,k0(i))) - Re(vec(2,2,k0(j)))) -
-     &    Sq(vec(1,2,k0(i)) - vec(1,2,k0(j)))
-	end function
 
 	function Pair(a, b)
 	HelType Pair

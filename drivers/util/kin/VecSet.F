@@ -2,7 +2,7 @@
 * construct the CMS representation of a momentum and the
 * three corresponding polarization vectors
 * this file is part of FormCalc
-* last modified 8 May 13 th
+* last modified 26 Oct 13 th
 
 #include "types.h"
 #include "util.h"
@@ -20,12 +20,12 @@
 
 #include "util.h"
 
-#define K(x,y)     vec(x,y, 1+nvec*(i-1))
-#define EpsTR(x,y) vec(x,y, 2+nvec*(i-1))
-#define EpsL(x,y)  vec(x,y, 3+nvec*(i-1))
-#define EpsTL(x,y) vec(x,y, 4+nvec*(i-1))
+#define K(x,y)     vec0(x,y, 1+nvec0*(i-1))
+#define EpsTR(x,y) vec0(x,y, 2+nvec0*(i-1))
+#define EpsL(x,y)  vec0(x,y, 3+nvec0*(i-1))
+#define EpsTL(x,y) vec0(x,y, 4+nvec0*(i-1))
 
-#define Spi(af,hel,om,d,x) vec(x, om-5, af*2+(hel)+d+7+nvec*(i-1))
+#define Spi(af,hel,om,d,x) vec0(x, om-5, af*2+(hel)+d+7+nvec0*(i-1))
 
 * i.e., spi(x, 6, 5, i) = left-handed,  undotted, upper
 *       spi(x, 7, 5, i) = left-handed,  undotted, lower

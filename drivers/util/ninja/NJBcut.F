@@ -1,7 +1,7 @@
 * NJBcut.F
 * the FormCalc wrapper for the Ninja two-point function
 * this file is part of FormCalc
-* last modified 29 Aug 14 th
+* last modified 27 Oct 15 th
 
 #include "types.h"
 
@@ -15,13 +15,13 @@
 
 ************************************************************************
 
-	ComplexType function NJBcut(mi, hel, rank,
+	ComplexType function NJBcut(mi, hdelta, rank,
      &    num, muexp, t3exp, t2exp,
      &	  k, m1, m2)
 	implicit none
 	ComplexType mi(*)
 	external num, muexp, t3exp, t2exp
-	integer hel, rank
+	integer hdelta, rank
 	integer*8 k
 	RealType m1, m2
 
@@ -31,7 +31,7 @@
 	ComplexType res(-2:0)
 
 	NJBcut = 0
-	if( hel .eq. 0 ) return
+	if( hdelta .eq. 0 ) return
 
 	kj(0,1) = 0
 	kj(1,1) = 0

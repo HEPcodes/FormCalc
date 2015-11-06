@@ -2,7 +2,7 @@
 	const.h
 	model-independent constants
 	this file is part of FormCalc
-	last modified 28 Jan 14 th
+	last modified 9 Oct 15 th
 #endif
 
 
@@ -26,5 +26,5 @@ struct renorm_ {
 #define epsi renorm_.epsi
 
 #define Finite (1>>epsi)
-#define PVC(i) i+epsi
+#define Epsi(i) i+epsi
 

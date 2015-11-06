@@ -1,7 +1,7 @@
 * 1to3.F
 * the kinematics for a 1 -> 3 process
 * this file is part of FormCalc
-* last modified 3 Jun 15 th
+* last modified 21 Oct 15 th
 
 
 #define LEGS 4
@@ -96,7 +96,7 @@
 	ey = 0
 	ez = 1
 	minv = sqrtS
-	msum = mass_out
+	msum = MASS_OUT(pid)
 
 	key = 0
 #ifdef E1MIN

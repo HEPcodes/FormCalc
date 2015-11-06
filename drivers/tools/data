@@ -1,29 +1,25 @@
 #! /bin/sh
 # a trivial utility for getting the data out of the logs
 # this file is part of FormCalc
-# last modified 11 Jan 07 th
+# last modified 16 Oct 15 th
 
 
-if [ $# -eq 0 ] ; then
-  echo "Usage:  $0 DIR"
-  echo ""
-  echo "Extracts the data from the log files DIR/*"
-  echo "and writes them to the file DIR.data."
-  echo ""
+test $# -eq 0 && {
+  cat << _EOF_
+Usage:  $0 dir1 dir2 ...
+
+Extracts the data from the log files dir1/*, dir2/*, ...
+and writes them to the respective files dir1.data, dir2.data, ...
+
+_EOF_
   exit 1
-fi
+}
 
 files=""
 out=""
-for arg in $* ; do
-  [ -d $arg ] && arg="$arg/*"
-  files="$files $arg"
-  [ -z "$out" ] && out=`dirname "$arg"`.data
-done
-
-echo $out
-
-( for file in $files ; do
+for arg in "$@" ; do
+  arg=`dirname "$arg"/*`
+  echo "$arg"
   sed -n '
 	s/^|//
 	t 1
@@ -33,6 +29,5 @@ echo $out
 	s/\n|+//
 	t 1
 	P
-	D' $file
-done ) > $out
-
+	D' "$arg"/* > "$arg.data"
+done

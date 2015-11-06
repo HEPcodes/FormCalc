@@ -1,7 +1,7 @@
 * CTBcut.F
 * the FormCalc wrapper for the CutTools two-point function
 * this file is part of FormCalc
-* last modified 4 Jul 14 th
+* last modified 27 Oct 15 th
 
 #include "types.h"
 
@@ -15,11 +15,11 @@
 
 ************************************************************************
 
-	ComplexType function CTBcut(mi, hel, rank, num, numeps,
+	ComplexType function CTBcut(mi, hdelta, rank, num, numeps,
      &    k, m1, m2)
 	implicit none
 	ComplexType mi(*)
-	integer hel, rank
+	integer hdelta, rank
 	external num, numeps
 	integer*8 k
 	RealType m1, m2
@@ -33,7 +33,7 @@
 	external CTmpnum
 
 	CTBcut = 0
-	if( hel .eq. 0 ) return
+	if( hdelta .eq. 0 ) return
 
 	kj(0,1) = 0
 	kj(1,1) = 0

@@ -1,7 +1,7 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 24 Sep 14 th
+* last modified 25 Sep 15 th
 
 
 #procedure Contract
@@ -536,12 +536,9 @@ argument fermM;
 toPolynomial;
 endargument;
 id fermM([x]?) = Mat(fermM([x]));
-argument Mat;
-toPolynomial;
-endargument;
 #endif
 
-argument abbM;
+argument abbM, Mat;
 toPolynomial;
 endargument;
 
@@ -1500,7 +1497,11 @@ id CH([s1]?, ?g, [s2]?) = [s1] * GA(?g) * [s2];
 #call kikj
 
 id Spinor(?s1) * GA(?g) * Spinor(?s2) =
+#if "`FermionOrder'" == "Mat"
+  Mat(fermM(WeylChain(Spinor(?s1), ?g, Spinor(?s2))));
+#else
   abbM(fermM(WeylChain(Spinor(?s1), ?g, Spinor(?s2))));
+#endif
 
 #call Abbreviate
 

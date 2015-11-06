@@ -1,7 +1,7 @@
 * CTDcut.F
 * the FormCalc wrapper for the CutTools four-point function
 * this file is part of FormCalc
-* last modified 4 Jul 14 th
+* last modified 27 Oct 15 th
 
 #include "types.h"
 
@@ -17,11 +17,11 @@
 
 ************************************************************************
 
-	ComplexType function CTDcut(mi, hel, rank, num, numeps,
+	ComplexType function CTDcut(mi, hdelta, rank, num, numeps,
      &    k1, k2, k3, m1, m2, m3, m4)
 	implicit none
 	ComplexType mi(*)
-	integer hel, rank
+	integer hdelta, rank
 	external num, numeps
 	integer*8 k1, k2, k3
 	RealType m1, m2, m3, m4
@@ -35,7 +35,7 @@
 	external CTmpnum
 
 	CTDcut = 0
-	if( hel .eq. 0 ) return
+	if( hdelta .eq. 0 ) return
 
 	kj(0,1) = 0
 	kj(1,1) = 0
