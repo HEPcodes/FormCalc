@@ -2,7 +2,7 @@
 	decl.h
 	these declarations are included "everywhere"
 	this file is part of FormCalc
-	last modified 19 Nov 13 th
+	last modified 6 Jan 16 th
 #endif
 
 
@@ -14,6 +14,7 @@
 #include <math.h>
 #include <complex.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "distrib.h"
 #include "clooptools.h"
@@ -23,25 +24,24 @@ typedef long long integer8;
 typedef const integer8 cinteger8;
 
 #if NOUNDERSCORE
-#define CalcRenConst calcrenconst
+#define RenConst renconst
 #else
-#define CalcRenConst calcrenconst_
+#define RenConst renconst_
 #endif
 
-#include "user.h"
 #include "extra.h"
 #include "const.h"
-#include "util.h"
-
-#ifndef DRIVER
-#include "renconst.h"
-#endif
 
 #else
 
 // declarations for every subroutine
 
-#include "user.h"
+#endif
 
+#include "user.h"
+#include "util.h"
+
+#ifdef SQUAREDME
+#include "RenConst.h"
 #endif
 

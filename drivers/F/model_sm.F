@@ -1,7 +1,15 @@
 * model_sm.F
 * all parameters for the Standard Model are initialized here
 * this file is part of FormCalc
-* last modified 13 Jun 15 th
+* last modified 14 Jan 16 th
+
+
+#ifndef MB_SCHEME
+#define MB_SCHEME ONSHELL
+#endif
+
+#define ONSHELL -1
+#define MSBAR(o) o
 
 
 	subroutine ModelDefaults(argc, argv)
@@ -36,7 +44,7 @@
 	c23 = sqrt((1 - s23)*(1 + s23))
 
 	s13c = s12*s23*ToComplex(CKMrhobar, CKMetabar)
-	s13c = c23/c12*s13c/(1 - s23/s12*s13c)
+	s13c = c23/c12*s13c/(1 - s12*CKMA*s13c)
 	s13 = abs(s13c)
 	c13 = sqrt((1 - s13)*(1 + s13))
 
@@ -63,7 +71,7 @@
 	Mf(1,3) = 0
 	Mf(2,3) = ML
 	Mf(3,3) = MT
-	Mf(4,3) = MB
+	Mf(4,3) = MB1S
 
 	Mf2(1,1) = 0
 	Mf2(2,1) = ME2
@@ -76,10 +84,28 @@
 	Mf2(1,3) = 0
 	Mf2(2,3) = ML2
 	Mf2(3,3) = MT2
-	Mf2(4,3) = MB2
+	Mf2(4,3) = MB1S**2
+
+	MH = MH_
+	MH2 = MH**2
 
 	EL = sqrt(4*pi*Alfa)
+	ELMZ = sqrt(4*pi*AlfaMZ)
 	SW = sqrt(SW2)
+
+* the light quark masses MU, MD are effective parameters made to
+* reproduce the 5-flavor Delta alpha_had(MZ):
+* DeltaAlfa5Had = 2 Alfa/Pi (4/9 (Log[MZ/MU] + Log[MZ/MC]) +
+*   1/9 (Log[MZ/MD] + Log[MZ/MS] + Log[MZ/MB]) - 55/54)
+
+	MU = exp(11/5D0*log(MZ) - 4/5D0*log(MC) -
+     &    1/5D0*(log(MS) + log(MB)) - 55/30D0 -
+     &    9/5D0*pi/2D0*DeltaAlfa5Had/Alfa)
+	MD = MU
+	MU2 = MU**2
+	MD2 = MU2
+
+	call SetQCDPara(MZ, AlfasMZ, MU, MD, MS, MC, MBatMB, MT)
 	end
 
 
@@ -93,16 +119,15 @@
 
 	fail = 0
 
-	MH2 = MH**2
 	end
 
 
 ************************************************************************
 
-	subroutine ModelVarIni(fail, scale)
+	subroutine ModelVarIni(fail, Q)
 	implicit none
 	integer fail
-	RealType scale
+	RealType Q
 
 #include "decl.h"
 
@@ -110,12 +135,20 @@
 
 	fail = 0
 
-	call AlphaS(Alfas, nf, scale)
+#ifndef ALPHAS_ORDER
+#define ALPHAS_ORDER 3
+#endif
+
+	call AlphaS(Alfas, nf, Q, ALPHAS_ORDER)
 	Alfas2 = Alfas**2
 	GS = sqrt(4*pi*Alfas)
-	end
 
-#include "AlphaS.F"
+#if MB_SCHEME != ONSHELL
+	MB = MBatMB
+	call MqRun(MB, MBatMB, Q, MB_SCHEME)
+	MB2 = MB**2
+#endif
+	end
 
 
 ************************************************************************
@@ -147,6 +180,7 @@
 	INFO "MD =", MD
 	INFO "MS =", MS
 	INFO "MB =", MB
+	INFO "MB(MB) =", MBatMB
 	INFO "----------------------------"
 	INFO "Higgs mass:"
 	INFO "MH =", MH

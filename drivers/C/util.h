@@ -3,9 +3,12 @@
 	prototypes for the util functions
 	this file is part of FormCalc
 	SIMD functions by J.-N. Lang
-	last modified 3 Nov 15 th
+	last modified 11 Jan 16 th
 #endif
 
+
+#ifndef UTIL_H
+#define UTIL_H
 
 #ifndef LEGS
 #define LEGS 1
@@ -13,12 +16,19 @@
 
 struct {
   RealType eps;
-  int n, seq[2];
+  int n;
 } hsel_;
 
 #define hseleps hsel_.eps
 #define hseln hsel_.n
-#define seq(i) hsel_.seq[i-1]
+
+struct {
+  RealType chkval;
+  integer chkyes;
+} chktmp_;
+
+#define chkval chktmp_.chkval
+#define chkyes chktmp_.chkyes
 
 /* special vectors needed by num.h; overlaps intended */
 enum {
@@ -59,23 +69,14 @@ struct {
 
 #define MomEncoding(f,i) ((integer8)((f) & (QK-1)) << (i-1)*ldQK)
 
-#define SIMD_ONLY(x)
-#define SIMD_MULT(x)
-#define SIMD_CEIL(n) n
+#define Zero(x) memset(&x, 0, sizeof(x))
+
 
 #if SIMD > 0 && !defined DEPS
 
 #include <immintrin.h>
 
-#undef SIMD_ONLY
-#define SIMD_ONLY(x) x
-
 #if SIMD == 2 && defined __AVX__
-
-#undef SIMD_MULT
-#define SIMD_MULT(x) x
-#undef SIMD_CEIL
-#define SIMD_CEIL(n) (n+SIMD-1)/SIMD
 
 typedef __m128d ResType;
 typedef const ResType cResType;
@@ -88,7 +89,6 @@ typedef integer HelInt __attribute__((__vector_size__(SIMD*sizeof(integer))));
 #endif
 typedef const HelInt cHelInt;
 
-#define ResZero _mm_setzero_pd()
 #define HelZero _mm256_setzero_pd()
 #define HelNaN {NAN, NAN, NAN, NAN}
 
@@ -158,107 +158,24 @@ static inline RealType HelSum(cResType a) {
   return _mm_hadd_pd(a, a)[0];
 }
 
-#elif SIMD == 1 && defined __SSE3__
+#elif SIMD != 1
 
-typedef RealType ResType;
-typedef const ResType cResType;
-typedef __m128d HelType;
-typedef const HelType cHelType;
-typedef int HelInt;
-typedef const HelInt cHelInt;
-
-#define HelZero _mm_setzero_pd()
-#define ResZero 0
-#define HelNaN {NAN, NAN}
-
-
-#define StoH(a) (sizeof(a) == sizeof(ComplexType) ? CtoH(a) : RtoH(a))
-
-static inline HelType CtoH(cComplexType a) {
-  return (HelType){Re(a),Im(a)};
-}
-
-static inline HelType RtoH(cRealType a) {
-  return (HelType){a,0};
-}
-
-static inline HelType ItoH(cHelInt a) {
-  return (HelType){a,0};
-}
-
-
-static inline HelType HxH(cHelType a, cHelType b) {
-  HelType t1 = _mm_movedup_pd(b);
-  HelType t2 = _mm_shuffle_pd(b, b, 0x3);
-  t1 = _mm_mul_pd(a, t1);
-  t2 = _mm_mul_pd(a, t2);
-  t2 = _mm_shuffle_pd(t2, t2, 0x1);
-  return _mm_addsub_pd(t1, t2);
-}
-
-#define SxH(a,b) (sizeof(a) == sizeof(ComplexType) ? CxH(a,b) : RxH(a,b))
-
-static inline HelType CxH(cComplexType a, cHelType b) {
-  return HxH(CtoH(a), b);
-}
-
-static inline HelType RxH(cRealType a, cHelType b) {
-  return (HelType){a,a}*b;
-}
-
-static inline HelType IxH(cHelInt a, cHelType b) {
-  return (HelType){a,a}*b;
-}
-
-
-#define SxI(a,b) (sizeof(a) == sizeof(ComplexType) ? CxI(a,b) : RxI(a,b))
-
-static inline HelType CxI(cComplexType a, cHelInt b) {
-  return CtoH(a*b);
-}
-
-static inline HelType RxI(cRealType a, cHelInt b) {
-  return RtoH(a*b);
-}
-
-static inline HelType ConjugateH(cHelType a) {
-  return (HelType){1,-1}*a;
-}
-
-static inline ResType ReH(cHelType a) {
-  return a[0];
-}
-
-#define AbsRxRes(a,b) fabs((a)*(b))
-#define HelSum(a) (a)
-
-#else
-
-#if SIMD != 1
 #error This value of SIMD not implemented.
-#endif
 
-typedef RealType ResType;
-typedef const ResType cResType;
-typedef ComplexType HelType;
-typedef const HelType cHelType;
-#define HelZero 0
-#define ResZero 0
-#define HelNaN NaN
-
-#define StoH(a) (a)
-#define ItoH(a) (a)
-#define HxH(a,b) (a)*(b)
-#define SxH(a,b) (a)*(b)
-#define RxH(a,b) (a)*(b)
-#define IxH(a,b) (a)*(b)
-#define SxI(a,b) (a)*(b)
-#define ConjugateH(a) Conjugate(a)
-#define ReH(a) Re(a)
-#define AbsRxRes(a,b) fabs((a)*(b))
-#define HelSum(a) (a)
+#undef SIMD
+#define SIMD 0
 
 #endif
+
+#endif
+
+
+#if SIMD > 1
+
+#define SIMD_ONLY(x) x
+#define SIMD_CEIL(n) (n+SIMD-1)/SIMD
+#define HelArg(a,x) a,x
+#define HelInd(v) [v]
 
 enum { nvec = 8 };
 
@@ -289,27 +206,16 @@ struct {
 
 extern void veccopy_(cinteger *v, cinteger *n);
 
+#define VecCopy(v,legs) veccopy_(&v, (integer[]){legs})
+
 #else
 
-typedef RealType ResType;
-typedef const ResType cResType;
-typedef ComplexType HelType;
-typedef const HelType cHelType;
-#define HelZero 0
-#define ResZero 0
-#define HelNaN NaN
-
-#define StoH(a) (a)
-#define ItoH(a) (a)
-#define HxH(a,b) (a)*(b)
-#define SxH(a,b) (a)*(b)
-#define RxH(a,b) (a)*(b)
-#define IxH(a,b) (a)*(b)
-#define SxI(a,b) (a)*(b)
-#define ConjugateH(a) Conjugate(a)
-#define ReH(a) Re(a)
-#define AbsRxRes(a,b) fabs((a)*(b))
+#define SIMD_ONLY(x)
+#define SIMD_CEIL(n) n
+#define HelArg(a,x) x
+#define HelInd(v)
 #define HelSum(a) (a)
+#define AbsRxRes(a,b) fabs((a)*(b))
 
 #define k k0
 #define s s0
@@ -321,31 +227,46 @@ typedef const HelType cHelType;
 #define Vec(x,y,i) vec0(x,y,i)
 #define bVec vec0_
 
+typedef RealType ResType;
+typedef const ResType cResType;
+
+typedef ComplexType HelType;
+typedef const HelType cHelType;
+#define HelZero 0
+#define HelNaN NaN
+
+#define StoH(a) (a)
+#define ItoH(a) (a)
+#define SxH(a,b) (a)*(b)
+#define RxH(a,b) (a)*(b)
+#define IxH(a,b) (a)*(b)
+#define SxI(a,b) (a)*(b)
+#define ConjugateH(a) Conjugate(a)
+#define ReH(a) Re(a)
+
+#if SIMD == 1 && defined __SSE3__
+static inline HelType HxH(cHelType a, cHelType b) {
+  const __m128d a_ = {Re(a), Im(a)};
+  const __m128d b_ = {Re(b), Im(b)};
+  __m128d t1 = _mm_movedup_pd(b_);
+  __m128d t2 = _mm_shuffle_pd(b_, b_, 0x3);
+  t1 = _mm_mul_pd(a_, t1);
+  t2 = _mm_mul_pd(a_, t2);
+  t2 = _mm_shuffle_pd(t2, t2, 0x1);
+  t1 = _mm_addsub_pd(t1, t2);
+  return ToComplex2(t1[0],t1[1]);
+}
+#else
+#define HxH(a,b) (a)*(b)
 #endif
 
-#define DEBr " %.13lg"
-#define DEBc " (%.13lg,%.13lg)"
-#define DEBx(x,i) ((RealType *)&x)[i]
-#define DEB(a,x) switch( sizeof(x) ) { \
-case sizeof(int): \
-  printf(a " %d\n", *((int *)&x)); \
-  break; \
-case sizeof(RealType): \
-  printf(a DEBr "\n", DEBx(x,0)); \
-  break; \
-case sizeof(ComplexType): \
-  printf(a DEBc "\n", DEBx(x,0),DEBx(x,1)); \
-  break; \
-case 2*sizeof(ComplexType): \
-  printf(a DEBc DEBc "\n", DEBx(x,0),DEBx(x,1), DEBx(x,2),DEBx(x,3)); \
-  break; \
-default: \
-  printf("Don't know how to print " #x "\n"); \
-}
+#endif
+
 
 #define LOOP(var,from,to,step) for( var = from; var <= to; var += step ) {
 #define ENDLOOP(var) }
-#define TEST(i,b) if( *(i) & (1 << (b)) ) {
+#define btest(i,b) ((i) & (1 << (b)))
+#define TEST(i,b) if( btest(i,b) ) {
 #define ENDTEST(i,b) }
 
 #define BIT_SETMASS 0
@@ -361,32 +282,33 @@ default: \
 #define JOIN_DEC(a,b) b+10*(a)
 #define JOIN_HEL(a,b) b+QH*(a)
 
-#define INI_S(seq) clearcache()
-#define INI_ANGLE(seq) markcache()
-#define DEINI(seq) restorecache()
+#define DEBr " %.13lg"
+#define DEBc " (%.13lg,%.13lg)"
+#define DEBx(x,i) ((RealType *)&x)[i]
+#define DEB(tag,var) switch( sizeof(var) ) { \
+case sizeof(int): \
+  printf(tag " %d\n", *((int *)&var)); \
+  break; \
+case sizeof(RealType): \
+  printf(tag DEBr "\n", DEBx(var,0)); \
+  break; \
+case sizeof(ComplexType): \
+  printf(tag DEBc "\n", DEBx(var,0),DEBx(var,1)); \
+  break; \
+case 2*sizeof(ComplexType): \
+  printf(tag DEBc DEBc "\n", DEBx(var,0),DEBx(var,1), DEBx(var,2),DEBx(var,3)); \
+  break; \
+default: \
+  printf("Don't know how to print " #var "\n"); \
+}
 
-#if PARALLEL
-#if NOUNDERSCORE
-#define sqmeprep_ sqmeprep
-#define sqmeexec_ sqmeexec
-#define sqmesync_ sqmesync
-#define sqmewait_ sqmewait
-#endif
+#define CHK_INI(seq) chkyes = seq[0] | seq[1]
+#define CHK_PRE(var) chkval = cabs(var);
+#define CHK_POST(tag,var) if( chkyes && fabs(cabs(var) - chkval) > 1e10 ) puts(tag " differs");
 
-void sqmeprep_(void *v, void *ve, void *r, void *re,
-  void *s, void *se, void *a, void *ae, void *h, void *he);
-void sqmeexec_(void (*foo)(ResType *, cinteger *),
-  ResType *res, cinteger *flags);
-void sqmesync_();
-void sqmewait_();
+#define INI_S() clearcache()
+#define INI_A() markcache()
+#define DEINI() restorecache()
 
-#define lim(x) &x, ((char *)&x + sizeof(x))
-#define PAR_PREP(r, s, a, h) sqmeprep_(lim(bVec), lim(r), lim(s), lim(a), lim(h))
-#define PAR_EXEC(f, res, flags) sqmeexec_(&f, res, flags)
-#define PAR_SYNC() sqmesync_()
-#else
-#define PAR_PREP(r, s, a, h)
-#define PAR_EXEC(f, res, flags) f(res, flags)
-#define PAR_SYNC()
 #endif
 

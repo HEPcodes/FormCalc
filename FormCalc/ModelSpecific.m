@@ -2,7 +2,7 @@
 	ModelSpecific.m
 		global definitions for specific models
 		this file is part of FormCalc
-		last modified 4 Sep 15 th
+		last modified 29 Dec 15 th
 
 Note: This file is read by FormCalc only if $NoModelSpecific is not True.
 
@@ -94,7 +94,7 @@ Scan[ (N[#] = Random[])&,
     MW, MW2, MZ, MZ2,
     ME, ME2, MM, MM2, ML, ML2,
     MU, MU2, MC, MC2, MT, MT2,
-    MD, MD2, MS, MS2, MB, MB2 } ]
+    MD, MD2, MS, MS2 } ]
 
 SMReduce[foo_][expr_, r___] := foo[expr /.
   SW2 -> 1 - CW2 /.

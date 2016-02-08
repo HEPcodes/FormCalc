@@ -1,7 +1,4 @@
-spectrum: spectrum.f CompAZ.f
-	$(FC) $(FFLAGS) -o spectrum spectrum.f CompAZ.f
-	-$(RM) spectrum.o CompAZ.o
+OBJS += $(DIR)CompAZ.o
 
-clean:
-	$(RM) spectrum
+$(UTILLIB)($(DIR)CompAZ.o): $(SRC)/F/types.h
 

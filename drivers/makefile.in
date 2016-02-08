@@ -1,7 +1,7 @@
 # makefile.in
 # makefile template used by configure
 # this file is part of FormCalc
-# last modified 5 Feb 15 th
+# last modified 8 Jan 16 th
 
 # Note: make permanent changes only in makefile.in,
 # changes in makefile will be overwritten by configure.
@@ -20,22 +20,18 @@ all: $(LEFTOVERS) $(MAKECMDGOALS)
 AR = $(SRC)/tools/ar
 RANLIB = $(SRC)/tools/ranlib
 
+DIR = $(dir $(lastword $(MAKEFILE_LIST)))
+LIB = $(subst /,_,$(patsubst $(SRC)/%,%,$(DIR:/=))).a
 LIBS :=
+INCS :=
 VPATH := .:$(SRC):$(INCPATH)
 
-LIB := renconst.a
-LIBS += $(LIB)
--include $(SRC)/renconst/makefile
-VPATH := $(VPATH):$(DIR)
+-include $(SRC)/renconst/*makefile
 
-LIB := squaredme.a
-LIBS += $(LIB)
--include $(SRC)/squaredme/makefile $(SRC)/squaredme/*/makefile
+-include $(SRC)/squaredme/*makefile $(SRC)/squaredme/*/*makefile
 
 CLEANLIBS := $(LIBS)
 
-LIB := util.a
-LIBS += $(LIB)
 -include $(SRC)/util/makefile
 
 libs: $(LIBS)
@@ -53,8 +49,8 @@ FFLAGS += $(FINCLUDE)
 CFLAGS += $(CINCLUDE)
 
 ifdef DEBUG
-FFLAGS += -g $(DEF)DEBUG
-CFLAGS += -g -DDEBUG
+FFLAGS += -g $(DEF)DEBUG=$(DEBUG)
+CFLAGS += -g -DDEBUG=$(DEBUG)
 endif
 
 export FC
@@ -74,25 +70,14 @@ distclean: clean
 	$(RM) $(LIBS) makefile simd.h
 
 
-define makedeps
-( echo '#include "$<"' ; echo '#include "$<"' ) > deps.c
-$(CPP) -M -DDEPS -I$(<D) $(INCLUDE) deps.c | sed 's|^.*: deps.c|$@:|' > $@
-$(RM) deps.c
-endef
+-include [FC]-squaredme.d
+-include [FC]-renconst.d
 
--include Fdecl.d
--include Finline.d
--include Fnum.d
+F-%.d: deps-%.c
+	$(CPP) -MM -I$(SRC)/F $(INCLUDE) $< | sed 's|^.*:|$@:|' > $@
 
-F%.d: $(SRC)/F/%.h renconst.h
-	$(makedeps)
-
--include Cdecl.d
--include Cinline.d
--include Cnum.d
-
-C%.d: $(SRC)/C/%.h renconst.h
-	$(makedeps)
+C-%.d: deps-%.c
+	$(CPP) -MM -I$(SRC)/C $(INCLUDE) $< | sed 's|^.*:|$@:|' > $@
 
 
 -include $(MAKECMDGOALS:%$(EXE)=%.d)

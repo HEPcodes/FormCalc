@@ -1,10 +1,12 @@
 * diag-f.h
 * global declarations for the Diag routines
 * this file is part of Diag
-* last modified 3 Sep 15 th
+* last modified 14 Jan 16 th
 
 
 #include "types.h"
+
+#define Sq(c) Re((c)*Conjugate(c))
 
 
 #if UCOLS

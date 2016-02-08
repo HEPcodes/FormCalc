@@ -2,7 +2,7 @@
 	inline.h
 	inline versions of the util functions
 	this file is part of FormCalc
-	last modified 27 Oct 15 th
+	last modified 22 Jan 16 th
 #endif
 
 
@@ -351,8 +351,7 @@ HelFun ChainB8(SpiSpec(iL,eL), cinteger a, cinteger b, cinteger c,
 }
 
 static inline integer IndexDelta(cinteger a, cinteger b) {
-  enum { n = 8*sizeof a - 1 };
-  return (unsigned)((a ^ b) - 1) >> n;
+  return a == b;
 }
 
 static inline integer IndexSign(cinteger a) {

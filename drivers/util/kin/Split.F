@@ -2,9 +2,10 @@
 * splits a parent momentum into two child momenta
 * loosely based on code by T. Fritzsche
 * this file is part of FormCalc
-* last modified 6 May 13 th
+* last modified 28 Dec 15 th
 
 #include "types.h"
+#include "util.h"
 
 
 * The first child momentum is stored in vector i, the second
@@ -28,33 +29,12 @@
 *   p (ex,ey,ez) = sum of momenta of child particles 2..n
 
 
-* NB: the following enumeration must match the one in xsection.h
-#define Var(v) v(1)
-#define Show(v) v(2)
-#define Lower(v) v(3)
-#define Upper(v) v(4)
-#define Step(v) v(5)
-#define CutMin(v) v(6)
-#define CutMax(v) v(7)
+* to resolve Var, Show, Lower, Upper, CutMin, CutMax:
+#define var(i,v) v(i)
 
-#define Test(c, m) iand(key, (m)*(c)) .ne. 0
-#define Zero(c, m) key = iand(key, not((m)*(c)))
+#define Test(c,m) iand(key, Cut(c,m)) .ne. 0
+#define Zero(c,m) key = iand(key, not(Cut(c,m)))
 #define MomQ(m) ibits(key, m-1, 1)
-
-#define CUT_MIN 1
-#define CUT_MAX 2
-
-#define CUT_COSTH 4
-#define CUT_COSTHCMS 16
-#define CUT_COSTH_E 64
-#define CUT_COSTH_K 65
-#define CUT_MREM 256
-#define CUT_MREM_E 1024
-#define CUT_MREM_K 1025
-#define CUT_MREM_ET 4096
-#define CUT_MREM_KT 4097
-#define CUT_MREM_RAP 16384
-#define CUT_MREM_PRAP 16385
 
 #define CUT_ANY CUT_MIN + CUT_MAX
 #define CUT_COSTH_INDIRECT CUT_COSTHCMS + CUT_COSTH_E
@@ -66,6 +46,8 @@
 	integer i, cutkey
 	RealType m, p, ex, ey, ez, minv, msum
 	RealType fac, xmrem(*), xcosth(*), xphi(*)
+
+#include "util.h"
 
 	RealType costh, sinth, cosphi, sinphi
 	RealType bmrem(2), bcosth(2)

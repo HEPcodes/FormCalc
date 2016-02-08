@@ -1,3 +1,110 @@
+24 Jan 16:
+
+- Updated detection of Fortran compilers and flags in configure.
+
+
+22 Jan 16:
+
+- Added PaVeReduce -> LoopTools option which reduces only tensors
+  higher than those available in LoopTools.
+
+
+21 Jan 16:
+
+- Improvements in configure for SIMD detection & pgf* compilers.
+
+- Fixed bug in IndexDelta for negative index values.
+
+- Fixed bug in computation of IDENTICALFACTOR for colored particles.
+
+
+15 Jan 16:
+
+- Improved detection of libraries (in particular LHAPDF) in configure.
+
+- Added compatibility check for libraries.
+
+
+13 Jan 16:
+
+- Added UnAbbr function to quickly recover an unabbreviated expression.
+
+
+11 Jan 16:
+
+- Fixed several problems with vectorization in Fortran/C for different
+  values of SIMD.
+
+- Added debug statements to SquaredME.{F,c}.
+
+- Introduced debug level in WriteSquaredME, i.e. no longer on/off
+  (#ifdef/#ifndef DEBUG) but graded (#if DEBUG >= 1, 2, 3, 4).
+
+
+7 Jan 16:
+
+- Added checking statements (DebugLines -> 2 or 3 in PrepareExpr).
+  Modified (extended) also the $DebugCmd stuff.
+
+- Added global variables $DebugFF, $DebugAbbr[.], $DebugNum, $DebugRC
+  which specify the DebugLines value in the generation respectively of
+  the form-factor, abbreviation, numerator, and renconst modules.
+
+- Removed the PARALLEL code from the drivers (util/system/parallel.c).
+  Not as efficient as the SIMD code, hence rarely used, and requiring
+  a bunch of workarounds for Fortran, too.
+
+- Fixed bottleneck behavior in vplus/vtimes (conversion of C-bound
+  expression to vectorized multiplications).
+
+- Updated all examples/*.drivers/run.uuuu.* used for comparison.
+
+
+24 Dec 15:
+
+- Added computation of effective MU, MD masses, uses DeltaAlfa5Had
+  as input.
+
+- Added MB_SCHEME flag to choose OS or MSbar b-mass in model_sm.
+
+
+22 Dec 15:
+
+- Extended QCD routines so that each routine has its own nloop
+  argument.
+
+
+16 Dec 15:
+
+- Extended {Find,Calc,Write}RenConst functions for arbitrary
+  heads, not just RenConst.
+
+
+11 Dec 15:
+
+- Removed -ff2c flag for gfortran in configure.  Must link with
+  LoopTools 2.13 or adjust -ff2c flags in old versions accordingly.
+
+
+10 Dec 15:
+
+- Added informative printout of helicities being processed, serves
+  to check selection of bits in 'helicites' argument.
+
+- Added reset of hseli whenever BIT_RESET is set.
+
+
+1 Dec 15:
+
+- Added/extended QCD routines.  Formerly in AlphaS.F, now split up
+  and moved to util/qcd directory.
+
+- Added cuts.F which implements various cuts by 'veto' (setting the
+  cross-section to zero).
+
+- Slimmed down makefiles.
+
+
 4 Nov 15:
 
 - Added SetLanguage[lang, "novec"] functionality to generate

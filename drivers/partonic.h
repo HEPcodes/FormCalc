@@ -1,7 +1,7 @@
 * partonic.h
 * defines how to build the total cross-section from partonic ones
 * this file is part of FormCalc
-* last modified 29 Jun 15
+* last modified 20 Jan 16
 
 * To add a partonic process, copy and adapt the part between
 * "BEGIN PARTONIC PROCESS" and "END PARTONIC PROCESS":
@@ -20,13 +20,13 @@
 #endif
 
 
-*** BEGIN PARTONIC PROCESS #1
+*** BEGIN PARTONIC PROCESS
 
 #define PID 1
-#define PARTON1 -1
-#define PARTON2 -1
+#define PARTON1 -999
+#define PARTON2 -999
 #include "squaredme/specs.h"
 #include "parton.h"
 
-*** END PARTONIC PROCESS #1
+*** END PARTONIC PROCESS
 

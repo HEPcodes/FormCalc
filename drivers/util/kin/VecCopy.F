@@ -2,7 +2,7 @@
 * set up the correct polarization vectors and spinors
 * for a particular helicity combination
 * this file is part of FormCalc
-* last modified 26 Oct 15 th
+* last modified 11 Jan 16 th
 
 #include "distrib.h"
 #include "types.h"
@@ -17,7 +17,7 @@
 	implicit none
 	integer v, n
 
-#if SIMD > 0
+#if SIMD > 1
 
 #include "util.h"
 

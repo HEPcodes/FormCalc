@@ -1,15 +1,16 @@
-#! /bin/sh
+#! /bin/bash
 # tools/ar and tools/ranlib trick GNU make into building
 # archive files correctly in parallel builds (-j)
-# last modified 15 Jun 14 th
+# last modified 20 Nov 15 th
 
-lib=$2
-dir=build/$lib
+lib="$2"
+dir="build/$lib"
 shift 2
 test $# -gt 0 || exit
 
 rm -f libs
-touch -c $lib
-mkdir -p $dir
-mv "$@" $dir/
+touch -c "$lib"
+
+mkdir -p "$dir"
+mv "$@" "$dir/"
 

@@ -1,7 +1,7 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 25 Sep 15 th
+* last modified 22 Jan 16 th
 
 
 #procedure Contract
@@ -832,6 +832,10 @@ ntable BASIS(1:5, [i]?, [mu]?, [nu]?);
 ntable DUAL(1:5, [mu]?, [nu]?);
 ntable CHI(6:7);
 
+ctable LTRANK(1:5);
+
+fill LTRANK(1) = 2,3,4,5,4;
+
 *#define sig(i,mu,nu) "i_/2*(g_(`~i',`~mu',`~nu') - g_(`~i',`~nu',`~mu'))"
 #define sig(i,mu,nu) "i_*(g_(`~i',`~mu',`~nu') - g_(`~i')*d_(`~mu',`~nu'))"
 
@@ -1126,7 +1130,13 @@ b NN, paveM, intM;
 .sort
 keep brackets;
 
-id ifnomatch->1 NN([i]?) * intM([x]?) = NN([i]) * intM([x]) * [x];
+#if "`PaVeReduce'" == "LoopTools"
+id NN([i]?) * paveM(?a) =
+  NN([i], sig_(LTRANK([i]) - nargs_(?a))) * paveM(?a);
+id ifmatch->1 NN([i]?, 1) = 1;
+#endif
+
+id ifnomatch->1 NN([i]?, ?a) * intM([x]?) = NN([i]) * intM([x]) * [x];
 
 * symmetrize the coefficients for N > 4
 * hep-ph/0509141 Eq. (6.14+15)

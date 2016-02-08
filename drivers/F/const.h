@@ -1,16 +1,23 @@
 * const.h
 * model-independent constants
 * this file is part of FormCalc
-* last modified 19 Oct 15 th
+* last modified 17 Nov 15 th
 
 
-	RealType pi, degree, sqrt2, sqrt3, hbar_c2
+	RealType pi, degree, sqrt2, sqrt3, log2
+	RealType zeta2, zeta3, zeta4, zeta5
 
 	parameter (pi = 3.1415926535897932384626433832795029D0)
 	parameter (degree = pi/180D0)
 	parameter (sqrt2 = 1.4142135623730950488016887242096981D0)
 	parameter (sqrt3 = 1.7320508075688772935274463415058724D0)
+	parameter (log2 = .6931471805599453094172321214581766D0)
+	parameter (zeta2 = pi**2/6D0)
+	parameter (zeta3 = 1.2020569031595942853997381615114500D0)
+	parameter (zeta4 = pi**4/90D0)
+	parameter (zeta5 = 1.0369277551433699263313654864570342D0)
 
+	RealType hbar_c2
 	parameter (hbar_c2 = 3.8937966D8)
 *         = hbar c^2 in picobarn
 

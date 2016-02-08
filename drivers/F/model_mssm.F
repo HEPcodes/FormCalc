@@ -2,7 +2,7 @@
 * all parameters for the MSSM are initialized here
 * this file is part of FormCalc
 * Christian Schappacher, 17 Feb 99
-* last modified 16 Oct 15 th
+* last modified 14 Jan 16 th
 
 
 * The input parameters for model_mssm are:
@@ -190,7 +190,7 @@
 	call SMConstIni(fail)
 	if( fail .ne. 0 ) return
 
-	call AlphaS(AlfasMT, nf, MT)
+	call AlphaS(AlfasMT, nf, MT, ALPHAS_ORDER)
 
 	TB2 = TB**2
 	CB2 = 1/(1 + TB2)
@@ -215,20 +215,20 @@
 
 ************************************************************************
 
-	subroutine ModelVarIni(fail, scale)
+	subroutine ModelVarIni(fail, Q)
 	implicit none
 	integer fail
-	RealType scale
+	RealType Q
 
 #include "decl.h"
 
-	call SMVarIni(fail, scale)
+	call SMVarIni(fail, Q)
 	if( fail .ne. 0 ) return
 
 #ifndef NO_GUT_RELATION
 * Gluino mass: GUT relation
 * we use 1/Alfa(s) approx 1/Alfa(MZ2) - 20/(9*pi)*log(s/MZ2)
-	Mino3 = Alfas*(1/AlfaMZ - 40/(9*pi)*log(scale/MZ))*SW2*Mino2
+	Mino3 = Alfas*(1/AlfaMZ - 40/(9*pi)*log(Q/MZ))*SW2*Mino2
 #endif
 
 	MGl = abs(Mino3)
@@ -278,10 +278,10 @@
 #else
 	INFO "(using 2-loop approximation)"
 #endif
-	INFO "Mh0 =", Mh0
-	INFO "MHH =", MHH
-	INFO "MA0 =", MA0
-	INFO "MHp =", MHp
+	INFO "Mh0 full,tree =", Mh0, sqrt(Mh0tree2)
+	INFO "MHH full,tree =", MHH, sqrt(MHHtree2)
+	INFO "MA0 full,tree =", MA0, sqrt(MA0tree2)
+	INFO "MHp full,tree =", MHp, sqrt(MHptree2)
 	INFO "----------------------------"
 	INFO "Sfermion masses:"
 #ifdef NO_SQUARK_MIXING
@@ -366,6 +366,8 @@
 	equivalence (MX2, MX2_flat)
 #endif
 
+#include "inline.h"
+
 	i3part = .5D0*MZ2*C2B
 	qpart = SW2*MZ2*C2B
 	DSf(1,1) = +i3part
@@ -413,7 +415,7 @@
 #endif
 
 	  call NoMixing(fail, MSf(1,1,g), MSf2(1,1,g), USf(1,1,1,g),
-     &      MSS2(1,2,g) + DSf(1,1), 1D300, DCMPLX(0D0))
+     &      MSS2(1,2,g) + DSf(1,1), 1D300, ToComplex(0))
 
 	  do t = 2, 4
 	    call Eigen2x2(fail, MSf(1,t,g), MSf2(1,t,g), USf(1,1,t,g),

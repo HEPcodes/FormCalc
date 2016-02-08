@@ -1,8 +1,24 @@
 * model_mssm.h
 * declarations for model_mssm.F
 * this file is part of FormCalc
-* last modified 31 Jul 14 th
+* last modified 29 Dec 15 th
 
+
+#ifndef USfC
+#define USfC(i,j,t,g) Conjugate(USf(i,j,t,g))
+#define UCSfC(i,j,t,g) Conjugate(UCSf(i,j,t,g))
+#define UUSfC(i,j,t,g) Conjugate(UUSf(i,j,t,g))
+#define USf2(i,j,t,g) Re(UCSf(i,j,t,g))
+#define VChaC(i,j) Conjugate(VCha(i,j))
+#define UChaC(i,j) Conjugate(UCha(i,j))
+#define ZNeuC(i,j) Conjugate(ZNeu(i,j))
+#define UHiggsC(i,j) Conjugate(UHiggs(i,j))
+#define ZHiggsC(i,j) Conjugate(ZHiggs(i,j))
+#define AfC(t,g1,g2) Conjugate(Af(t,g1,g2))
+#define Mino3C Conjugate(Mino3)
+#define MUEC Conjugate(MUE)
+#define SqrtEGlC Conjugate(SqrtEGl)
+#endif
 
 #include "model_sm.h"
 
@@ -35,22 +51,6 @@
 	common /mssmpara/ CA, SA, CA2, SA2, C2A, S2A
 	common /mssmpara/ CAB, SAB, CBA, SBA, CBA2, SBA2
 	common /mssmpara/ AlfasMT
-
-#ifndef USfC
-#define USfC(i,j,t,g) Conjugate(USf(i,j,t,g))
-#define UCSfC(i,j,t,g) Conjugate(UCSf(i,j,t,g))
-#define UUSfC(i,j,t,g) Conjugate(UUSf(i,j,t,g))
-#define USf2(i,j,t,g) Re(UCSf(i,j,t,g))
-#define VChaC(i,j) Conjugate(VCha(i,j))
-#define UChaC(i,j) Conjugate(UCha(i,j))
-#define ZNeuC(i,j) Conjugate(ZNeu(i,j))
-#define UHiggsC(i,j) Conjugate(UHiggs(i,j))
-#define ZHiggsC(i,j) Conjugate(ZHiggs(i,j))
-#define AfC(t,g1,g2) Conjugate(Af(t,g1,g2))
-#define Mino3C Conjugate(Mino3)
-#define MUEC Conjugate(MUE)
-#define SqrtEGlC Conjugate(SqrtEGl)
-#endif
 
 	RealType Mh0, Mh02, MHH, MHH2, MA0, MA02, MHp, MHp2
 	equivalence (MHiggs(1), Mh0), (MHiggs2(1), Mh02)

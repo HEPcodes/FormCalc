@@ -2,17 +2,17 @@
 * all parameters for the THDM are initialized here
 * this file is part of FormCalc
 * Abdesslam Arhrib, 2 Jun 03
-* last modified 25 Aug 14 th
+* last modified 9 Nov 15 th
 
 
 * The input parameters for model_thdm are:
 
 * SA = sin alpha
 * TB = tan beta
-* Mh0 = Mass(H1)
-* MHH = Mass(H2)
-* MA0 = Mass(H3)
-* MHp = Mass(Hp)
+* Mh0 = H1 mass
+* MHH = H2 mass
+* MA0 = H3 mass
+* MHp = Hp mass
 * Lambda5
 
 * The following preprocessor variables can be defined

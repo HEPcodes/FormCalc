@@ -1,9 +1,7 @@
 * xsection.F
 * routines to compute the cross-section
 * this file is part of FormCalc
-* last modified 27 Oct 15 th
-
-#define DRIVER
+* last modified 23 Jan 16 th
 
 #include "decl.h"
 #include "inline.h"
@@ -52,6 +50,8 @@
 #endif
 #include "hardradiation.F"
 #endif
+
+#include "cuts.F"
 
 
 ************************************************************************
@@ -358,7 +358,7 @@ c	call NinjaFormCalcDebug(1)
 #include "xsection.h"
 
 	integer fail, f, v, c, ndim, ivar
-	integer nshow, nfix, ishow(nvars), ifix(nvars)
+	integer nshow, nfixed, ishow(nvars), ifixed(nvars)
 	RealType xs(NCOMP,2), show(nvars)
 
 #define CPdecl
@@ -367,10 +367,12 @@ c	call NinjaFormCalcDebug(1)
 
 	integer h, bc1, bc2, bc3, bc4, bitcount, spin_df
 	integer*8 h8
-	bc1(h) = h - iand(ishft(h, -1), Z'555')
-	bc2(h) = iand(h, Z'333') + iand(ishft(h, -2), Z'333')
-	bc3(h) = iand(h + ishft(h, -4), Z'F0F')
-	bc4(h) = iand(h + ishft(h, -8), Z'3F')
+	integer m1, m2, m3, m4
+	parameter (m1 = Z'555', m2 = Z'333', m3 = Z'F0F', m4 = Z'3F')
+	bc1(h) = h - iand(ishft(h, -1), m1)
+	bc2(h) = iand(h, m2) + iand(ishft(h, -2), m2)
+	bc3(h) = iand(h + ishft(h, -4), m3)
+	bc4(h) = iand(h + ishft(h, -8), m4)
 	bitcount(h) = bc4(bc3(bc2(bc1(h))))
 	spin_df(h8) = bitcount(int(ibits(h8, (LEGS-1)*ldQH, ldQH)))
 #if LEGS_IN == 2
@@ -472,14 +474,14 @@ c	call NinjaFormCalcDebug(1)
 #endif
 
 	nshow = 0
-	nfix = 0
+	nfixed = 0
 	do v = MINVAR, MAXVAR
 	  if( Step(v) .ne. 0 ) then
 	    nshow = nshow + 1
 	    ishow(nshow) = v
 	    if( Step(v) .ne. -999 ) then
-	      nfix = nfix + 1
-	      ifix(nfix) = v
+	      nfixed = nfixed + 1
+	      ifixed(nfixed) = v
 	      Var(v) = Lower(v)
 	    endif
 	  endif
@@ -534,8 +536,8 @@ c	call NinjaFormCalcDebug(1)
 	call flush(6)
 #endif
 
-	do f = nfix, 1, -1
-	  v = ifix(f)
+	do f = nfixed, 1, -1
+	  v = ifixed(f)
 	  Var(v) = Var(v) + Step(v)
 	  if( (Var(v) - Upper(v))/Step(v) .lt. 1D-10 ) goto 1
 	  Var(v) = Lower(v)
@@ -544,10 +546,6 @@ c	call NinjaFormCalcDebug(1)
 #ifndef MMA
 103	format("|"/"|"/)
 	print 103
-#endif
-
-#if PARALLEL
-	call cubarunexit
 #endif
 
 999	continue
@@ -683,7 +681,7 @@ c	call NinjaFormCalcDebug(1)
 
 #include "xsection.h"
 
-	RealType jac, span, flux
+	RealType jac, span
 	integer v, d, c
 
 #define CPdecl
@@ -751,10 +749,13 @@ c	call NinjaFormCalcDebug(1)
 	call Kinematics(fac)
 	if( fac .eq. 0 ) return
 
+	call Cuts(fac)
+	if( fac .eq. 0 ) return
+
 	if( btest(flags, BIT_RESET) ) then
 	  call clearcache
 #ifndef NO_RENCONST
-	  call CalcRenConst
+	  call RenConst
 #endif
 	endif
 
@@ -769,7 +770,7 @@ c	call NinjaFormCalcDebug(1)
 
 #if GLUONRADIATION == SOFT
 	call SoftRadiationFactor(rad, colorcharge(1,pid), weight1)
-	res(2) = res(2) - 1/(2*pi)**2*Alfas*rad*res(1)
+	res(2) = res(2) - 2/(2*pi)**2*Alfas*rad*res(1)
 #endif
 
 #if LEGS_IN == 1

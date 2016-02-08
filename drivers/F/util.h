@@ -1,7 +1,7 @@
 * util.h
 * prototypes for the util functions
 * this file is part of FormCalc
-* last modified 27 Oct 15 th
+* last modified 11 Jan 16 th
 
 
 #ifndef UTIL_H
@@ -18,17 +18,19 @@
 
 #define NaN(n) n*bogus
 
-#if SIMD > 0
+#if SIMD > 1
 
 #define ResType RealType, dimension(SIMD) ::
 #define HelType ComplexType, dimension(SIMD) ::
 #define HelDim(i) SIMD,i
-#define HelInd(i) :,i
+#define HelAll(i) :,i
+#define HelInd(v,i) v,i
+#define HelLoop(x,y,v,vmax) (x,y, v = 1,vmax)
 #define HelSum(x) sum(x)
+#define SIMD_ONLY(x) x
+#define SIMD_CEIL(n) (n+SIMD-1)/SIMD
 
-#if SIMD == 1
-#define HelNaN(n) n*bogus
-#elif SIMD == 2
+#if SIMD == 2
 #define HelNaN(n) n*bogus,n*bogus
 #elif SIMD == 4
 #define HelNaN(n) n*bogus,n*bogus,n*bogus,n*bogus
@@ -44,22 +46,19 @@
 #define bVec vec(1,1,1,1)
 #define eVec vec_end
 
-#define SIMD_CEIL(n) (n+SIMD-1)/SIMD
-#define SIMD_ONLY(x) x
-#if SIMD > 1
-#define SIMD_MULT(x) x
-#else
-#define SIMD_MULT(x)
-#endif
-
 #else
 
 #define ResType RealType
 #define HelType ComplexType
 #define HelDim(i) i
-#define HelInd(i) i
+#define HelAll(i) i
+#define HelInd(v,i) i
+#define HelLoop(x,y,v,vmax) x,y
 #define HelSum(x) x
-#define HelIni(x) x
+
+#define SIMD_CEIL(n) n
+#define SIMD_ONLY(x)
+#define SIMD_MULT(x)
 
 #define k k0
 #define s s0
@@ -72,10 +71,6 @@
 #define bVec vec0(1,1,1)
 #define eVec vec0_end
 
-#define SIMD_CEIL(n) n
-#define SIMD_ONLY(x)
-#define SIMD_MULT(x)
-
 #endif
 
 #define MomEncoding(f,i) iand(f,QK-1)*QK**(i-1)
@@ -86,7 +81,6 @@
 #define Error(err,msg) call m_(err, __LINE__, __FILE__, msg)
 #define Warning(msg) call m_(0, 0, __FILE__, msg)
 #define INFO print *,
-#define DEB(a,x) print *, a, x
 #define LOOP(var,from,to,step) do var = from, to, step
 #define ENDLOOP(var) enddo
 #define TEST(i,b) if( btest(i,b) ) then
@@ -105,19 +99,23 @@
 #define JOIN_DEC(a,b) b+10*(a)
 #define JOIN_HEL(a,b) b+QH*(a)
 
-#define INI_S(seq) call clearcache
-#define INI_ANGLE(seq) call markcache
-#define DEINI(seq) call restorecache
+#define DEB(tag,var) print *, tag, " =", var
 
-#if PARALLEL
-#define PAR_PREP(r,re, s,se, a,ae, h,he) call sqmeprep(bVec,eVec, r,re, s,se, a,ae, h,he)
-#define PAR_EXEC(f, res, flags) call sqmeexec(f, res, flags)
-#define PAR_SYNC() call sqmesync()
-#else
-#define PAR_PREP(r,re, s,se, a,ae, h,he)
-#define PAR_EXEC(f, res, flags) call f(res, flags)
-#define PAR_SYNC()
-#endif
+#define CHK_INI(seq) chkyes = ior(seq(1), seq(2))
+#define CHK_PRE(var) chkval = abs(var)
+#define CHK_POST(tag,var) if( chkyes .ne. 0 .and. abs(abs(var) - chkval) .gt. 1D10 ) print *, tag, " differs"
+
+#define INI_S() call clearcache
+#define INI_A() call markcache
+#define DEINI() call restorecache
+
+#define Var(v) var(1,v)
+#define Show(v) var(2,v)
+#define Lower(v) var(3,v)
+#define Upper(v) var(4,v)
+#define Step(v) var(5,v)
+#define CutMin(v) var(6,v)
+#define CutMax(v) var(7,v)
 
 #define Cut(c,m) (m)*(c)
 
@@ -186,10 +184,14 @@
 	common /hel0/ Hel0
 
 	RealType hseleps
-	integer hseln, seq(2)
-	common /hsel/ hseleps, hseln, seq
+	integer hseln
+	common /hsel/ hseleps, hseln
 
-#if SIMD > 0
+	RealType chkval
+	integer chkyes
+	common /chktmp/ chkval, chkyes
+
+#if SIMD > 1
 	integer nvec
 	parameter (nvec = 8)
 

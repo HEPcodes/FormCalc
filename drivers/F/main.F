@@ -2,7 +2,7 @@
 * this is the main program for the generated Fortran code,
 * it scans the command line and then invokes ParameterScan
 * this file is part of FormCalc
-* last modified 5 Feb 15 th
+* last modified 13 Jan 16 th
 
 
 #include "xsection.F"
@@ -82,7 +82,7 @@ c	call setfpu
 	read(tmp, *, iostat=fail, end=993, err=993) hseleps
 993	print *, "env FCHSELEPS =", hseleps
 
-	hseln = 30
+	hseln = 50
 	call getenv("FCHSELN", tmp)
 	read(tmp, *, iostat=fail, end=994, err=994) hseln
 994	print *, "env FCHSELN =", hseln
@@ -96,14 +96,14 @@ c	call setfpu
 
 99	format (/"USAGE:  ", A, " [:args] p1...p", I1,
      &    " sqrtSfrom[,to[,step]] [serialfrom[,to[,step]]]"
-     &    //"p1..", I1, " = +  for right-circular polarization"
+     &    / /"p1..", I1, " = +  for right-circular polarization"
      &    /"        -  for left-circular       ''"
      &    /"        l  for longitudinal        ''"
      &    /"        t  for transverse          ''"
      &    /"        u  for unpolarized particle"
-     &    //"sqrtSfrom = compute the differential cross-section"
+     &    / /"sqrtSfrom = compute the differential cross-section"
      &    /"sqrtSfrom,to,step = compute the total cross-section"
-     &    //"serialfrom,to,step = range of serial numbers"/)
+     &    / /"serialfrom,to,step = range of serial numbers"/)
 
 999	call getarg(0, tmp)
 	print 99, tmp(1:len_trim(tmp)), LEGS, LEGS

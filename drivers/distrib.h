@@ -3,7 +3,7 @@
 	preprocessor defs for distributed computing
 	(included by both Fortran and C)
 	this file is part of FormCalc
-	last modified 19 Nov 13 th
+	last modified 6 Jan 16 th
 #endif
 
 
@@ -12,6 +12,4 @@
 #else
 #include "simd.h"
 #endif
-
-#define PARALLEL 0
 

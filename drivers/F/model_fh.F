@@ -1,11 +1,15 @@
 * model_fh.F
 * parameter initialization via FeynHiggs
 * this file is part of FormCalc
-* last modified 13 Jun 15 th
+* last modified 14 Jan 16 th
 
 
-* NO_EXCLUSION_LIMITS
-*   If defined, the experimental exclusion limits are ignored.
+#ifndef MB_SCHEME
+#define MB_SCHEME ONSHELL
+#endif
+
+#define ONSHELL -1
+#define MSBAR(o) o
 
 
 * Exclusion limits (only checked if NO_EXCLUSION_LIMITS is not set):
@@ -260,10 +264,10 @@
 
 ************************************************************************
 
-	subroutine ModelVarIni(fail, scale)
+	subroutine ModelVarIni(fail, Q)
 	implicit none
 	integer fail
-	RealType scale
+	RealType Q
 
 #include "decl.h"
 
@@ -271,12 +275,20 @@
 
 	fail = 0
 
-	call AlphaS(Alfas, nf, scale)
+#ifndef ALPHAS_ORDER
+#define ALPHAS_ORDER 3
+#endif
+
+	call AlphaS(Alfas, nf, Q, ALPHAS_ORDER)
 	Alfas2 = Alfas**2
 	GS = sqrt(4*pi*Alfas)
-	end
 
-#include "AlphaS.F"
+#if MB_SCHEME != ONSHELL
+	MB = MBatMB
+	call MqRun(MB, MBatMB, Q, MB_SCHEME)
+	MB2 = MB**2
+#endif
+	end
 
 
 ************************************************************************

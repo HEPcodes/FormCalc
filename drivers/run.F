@@ -1,24 +1,35 @@
 * run.F
 * defines parameter settings for one run, then includes main.F
 * this file is part of FormCalc
-* last modified 30 Jun 15 th
+* last modified 22 Jan 16 th
 
 
 * Whether to run in debugging mode
 
-#define DEBUG
-
+#ifndef DEBUG
+#define DEBUG 1
+#endif
 
 * Uncomment the following to check UV- and IR-finiteness
 
+#ifndef DELTA
 c#define DELTA 1D7
+#endif
+
+#ifndef MUDIM
 c#define MUDIM 1D100
+#endif
+
+#ifndef LAMBDA
 c#define LAMBDA 1D10
+#endif
 
 * The following sets all ren. constants to zero for debugging
 * or if calculating a tree-level reaction.
 
+#ifndef NO_RENCONST
 c#define NO_RENCONST
+#endif
 
 
 * The model initialization code is included here.  Options for the
@@ -27,6 +38,8 @@ c#define NO_RENCONST
 
 * options for model_sm.F:
 c#define NO_CKM
+#define MB_SCHEME ONSHELL
+#define ALPHAS_ORDER 3
 
 * options for model_mssm.F:
 c#define NO_SQUARK_MIXING
@@ -43,26 +56,28 @@ c#define MODEL_TYPE_I
 c#define MODEL_TYPE_II
 c#define NO_EXCLUSION_LIMITS
 
+#ifndef MODEL
 #define MODEL "model_sm.F"
+#endif
 
 
 * The LOOPn set up the model parameters for the calculation, either
 * - as fixed declarations, e.g.
-*       MH = 125
+*       TB = 12.3D0
 * - or as do-loops terminating on label 1, e.g.
-*       do 1 MH = 100, 500, 10
+*       do 1 MA0 = 100, 500, 10
 
-#define LOOP1 MH = 125
-#define LOOP2
-#define LOOP3 TB = 5
-#define LOOP4 MA0 = 500
-#define LOOP5 MSusy = 1000
-#define LOOP6 MUE = 200
-#define LOOP7 Mino2 = 200
-#define LOOP8 MGl = .8D0*MSusy
-#define LOOP9 At = MUE/TB + 2*MSusy
-#define LOOP10 Ab = At
-#define LOOP11 Atau = At
+#define LOOP1 TB = 5
+#define LOOP2 MA0 = 750
+#define LOOP3 MSusy = 1000
+#define LOOP4 MUE = 200
+#define LOOP5 Mino2 = 200
+#define LOOP6 MGl = .8D0*MSusy
+#define LOOP7 At = MUE/TB + 2*MSusy
+#define LOOP8 Ab = At
+#define LOOP9 Atau = At
+#define LOOP10
+#define LOOP11
 #define LOOP12
 #define LOOP13
 #define LOOP14
@@ -78,9 +93,9 @@ c#define NO_EXCLUSION_LIMITS
 * in parameters (typically the ones included in the scan) can be
 * written to the output file and screen.  For example,
 *       SHOW "MH", MH
-* writes out the values of MH and MT in each pass of the loop.
+* writes out the value of MH in each pass of the loop.
 
-#define PRINT1 SHOW "MH", MH
+#define PRINT1
 #define PRINT2
 #define PRINT3
 #define PRINT4
@@ -119,6 +134,36 @@ c#define NO_EXCLUSION_LIMITS
 #define XMREM1STEP .1D0
 #define E1MIN ESOFTMAX
 
+* The following are veto cuts, i.e. the cross-section is kept if the
+* cut conditions apply (set to zero otherwise).  They are formulated
+* in terms of the CUT_... macros in cuts.F, e.g.
+*   #define CUT1 CUT_kT(3) .gt. 10
+* The CUT1..20 together make up a single logical expression in Fortran
+* and may include logical operators, e.g.
+*   #define CUT1 CUT_kT(3) .gt. 10
+*   #define CUT2 .and. CUT_kT(4) .gt. 10
+
+#define CUT1 .TRUE.
+#define CUT2
+#define CUT3
+#define CUT4
+#define CUT5
+#define CUT6
+#define CUT7
+#define CUT8
+#define CUT9
+#define CUT10
+#define CUT11
+#define CUT12
+#define CUT13
+#define CUT14
+#define CUT15
+#define CUT16
+#define CUT17
+#define CUT18
+#define CUT19
+#define CUT20
+
 
 * The integration parameters:
 * - the desired relative and absolute accuracy
@@ -129,11 +174,12 @@ c#define NO_EXCLUSION_LIMITS
 * The multidimensional integration routines also need
 
 #define METHOD DIVONNE
+#define USERDATA bogus
 #define NVEC 1
 #define VERBOSE 1
 #define SEED 0
-#define MINEVAL 0
-#define MAXEVAL 50000
+#define MINEVAL 1000
+#define MAXEVAL 100000
 #define STATEFILE ""
 #define SPIN -1
 

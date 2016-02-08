@@ -157,13 +157,13 @@ end }
 
 \newbox\titlebox\setbox\titlebox=\hbox{\underline{%
 \vrule width 0pt height 0pt depth 2ex%
-\Huge \FC~9.1~~~User's Guide}}
+\Huge \FC~9.2~~~User's Guide}}
 
 \hfill\copy\titlebox
 
 \vspace*{1ex}
 
-\hfill\hbox{Nov. 4, 2015~~~~~Thomas Hahn}
+\hfill\hbox{Jan 13, 2016~~~~~Thomas Hahn}
 
 \bigskip
 \bigskip
@@ -2116,7 +2116,7 @@ is easily summed up \eg in Fortran as
         do 1 j = 1, \textrm{(\# of \Code{F}s in \Var{\M\sb{2}})}
         do 1 k = 1, \textrm{(\# of \Code{SUN}s in \Var{\M\sb{1}})}
         do 1 l = 1, \textrm{(\# of \Code{SUN}s in \Var{\M\sb{2}})}
-          result = result + a(i,k)*DCONJG(b(j,l))*MatF(i,j)*MatSUN(k,l)
+          result = result + a(i,k)*Conjugate(b(j,l))*MatF(i,j)*MatSUN(k,l)
   1     continue
 \end{alltt}
 While this is arguably the most economic way to evaluate a squared
@@ -2858,7 +2858,7 @@ individual code files, after the \Code{\#include "vars.h"} statement.
 
 %------------------------------------------------------------------------
 
-\subsubsection*{Libraries and Makefiles}
+\subsubsection{Libraries and Makefiles}
 
 The code is organized in \FC\ into a main code directory, which contains 
 the main program and all its prerequisite files, and subsidiary 
@@ -2933,7 +2933,7 @@ compiles.%
 
 %------------------------------------------------------------------------
 
-\subsubsection*{Partonic Composition}%
+\subsubsection{Partonic Composition}%
 \index{partonic process}
 
 Partonic processes can be combined in the final result.  The number of 
@@ -2998,7 +2998,7 @@ process.
 
 %------------------------------------------------------------------------
 
-\subsubsection*{Specifying numerical parameters}
+\subsubsection{Specifying numerical parameters}
 
 Numerical parameters are specified in the model initialization file, \eg 
 \Code{model\uscore sm.F}, with declarations in \Code{model\uscore sm.h}.  
@@ -3429,17 +3429,17 @@ symmetry.  From the practical point of view this looks as follows
        ey = 0
        ez = 1
        minv = sqrtS
-       msum = MASS3 + MASS4 + MASS5
+       msum = mass(3) + mass(4) + mass(5)
 
-       call Split(5, dble(MASS5),
+       call Split(5, mass(5),
      &   p, ex,ey,ez, minv, msum, fac, 0, 
      &   Var(XMREM5), Var(XCOSTH5), Var(TRIVIAL))
 
-       call Split(4, dble(MASS4),
+       call Split(4, mass(4),
      &   p, ex,ey,ez, minv, msum, fac, 0,
      &   Var(FIXED), Var(XCOSTH4), Var(XPHI4))
 
-       call VecSet(3, dble(MASS3), p, ex,ey,ez)
+       call VecSet(3, mass(3), p, ex,ey,ez)
 \end{verbatim}
 One starts with the initial reference direction in $(\Code{ex},
 \Code{ey}, \Code{ez})$ and no boost, \Code{p = 0}.  The available energy
@@ -3455,6 +3455,42 @@ About the integration variables more will be said in the next section.
 For the moment, note that the \Code{X} in \Code{XMREM5} refers to
 the ratio, \ie \Code{XMREM5} runs from 0 to 1.  The actual integration
 borders are determined internally by Split.
+
+After invoking \Code{Split} or \Code{VecSet} for external particle \Vi, 
+several kinematical quantities are available:
+\begin{itemize}
+\item	\Code{momspec(SPEC\uscore M,\Vi)}
+	--- mass $m_i$,
+
+\item	\Code{momspec(SPEC\uscore E,\Vi)}
+	--- energy $E_i$,
+
+\item	\Code{momspec(SPEC\uscore K,\Vi)}
+	--- momentum $|\vec k_i|$,
+
+\item	\Code{momspec(SPEC\uscore ET,\Vi)}
+	--- transverse energy $E_i^T$,
+
+\item	\Code{momspec(SPEC\uscore KT,\Vi)}
+	--- transverse momentum $|\vec k_i^T|$,
+
+\item	\Code{momspec(SPEC\uscore RAP,\Vi)}
+	--- rapidity $y_i$,
+
+\item	\Code{momspec(SPEC\uscore PRAP,\Vi)}
+	--- pseudo-rapidity $\eta_i$,
+
+\item	\Code{momspec(SPEC\uscore DELTAK,\Vi)}
+	--- the difference $E_i - k_i$,
+
+\item	\Code{momspec(SPEC\uscore PHI,\Vi)}
+	--- aximuthal angle $\varphi_i$,
+
+\item	\Code{momspec(SPEC\uscore EX,\Vi)},
+	\Code{momspec(SPEC\uscore EY,\Vi)},
+	\Code{momspec(SPEC\uscore EZ,\Vi)} \\
+	--- direction of motion $\vec e_i$.
+\end{itemize}
 
 %------------------------------------------------------------------------
 
@@ -3502,9 +3538,40 @@ There are two special variables: \Code{FIXED} for fixed values,
 
 \subsubsection{Cuts}
 
-The subroutine \Code{Split} allows to place cuts on each $M$- and
-$\cos\theta$-integration.  The $\varphi$-integration is not modified in
-the present setup.
+There are two principal ways to apply cuts in FormCalc.  The first is by 
+actually restricting the integration limits.
+%-- this is possible only for the `natural' integration variables.  
+The second is by selectively setting the integrand (differential 
+cross-section) to zero whenever the cut condition(s) are met.
+
+\paragraph{Restricting integration limits}
+
+The subroutine \Code{Split} allows to restrict the integration region of 
+the $M$- and $\cos\theta$-integration.  The $\varphi$-integration is not 
+modified in the present setup.  The application of cuts works \eg as 
+follows:
+\begin{verbatim}
+       key = 0
+
+       CutMin(XMREM5) = E5MIN
+       key = key + Cut(CUT_MREM_E, CUT_MIN)
+
+       CutMin(XCOSTH5) = -(1 - COSTH5CUT)
+       CutMax(XCOSTH5) = +(1 - COSTH5CUT)
+       key = key + Cut(CUT_COSTH, CUT_MIN + CUT_MAX)
+
+       call Split(5, dble(MASS5),
+     &   p, ex,ey,ez, minv, msum, fac, key,
+     &   Var(XMREM5), Var(XCOSTH5), Var(TRIVIAL))
+       ...
+\end{verbatim}
+The value of the cut is deposited in \Code{CutMin} or \Code{CutMax} and 
+`registered' by setting a bit in the integer variable \Code{key} passed 
+to \Code{Split}, \eg \Code{Cut(CUT\uscore MREM\uscore E,\,CUT\uscore MIN)}
+specifies a cut on the energy (\Code{CUT\uscore MREM\uscore\underline{E}})
+from below (\Code{CUT\uscore\underline{MIN}}) which is used to restrict 
+the invariant-mass integration (\Code{CUT\uscore\underline{MREM}\uscore E}).
+Available restrictions are:
 \begin{center}
 \begin{tabular}{|c|l|l|c|l|}
 \multicolumn{2}{c}{Cuts restricting $M_i$} &
@@ -3523,68 +3590,78 @@ $\eta_i$  & \verb=CUT_MREM_PRAP= & &       & \\
 \cline{1-2}\cline{4-5}
 \end{tabular}
 \end{center}
-In practice, the application of cuts works as follows:
-\begin{verbatim}
-       key = 0
 
-       CutMin(XMREM5) = E5MIN
-       key = key + Cut(CUT_MREM_E, CUT_MIN)
 
-       CutMin(XCOSTH5) = -(1 - COSTH5CUT)
-       CutMax(XCOSTH5) = +(1 - COSTH5CUT)
-       key = key + Cut(CUT_COSTH, CUT_MIN + CUT_MAX)
+\paragraph{Imposing veto cuts}
 
-       call Split(5, dble(MASS5),
-     &   p, ex,ey,ez, minv, msum, fac, key,
-     &   Var(XMREM5), Var(XCOSTH5), Var(TRIVIAL))
-       ...
-\end{verbatim}
-The value of the cut is deposited in \Code{CutMin} or \Code{CutMax}
-and the cut registered by adding an identifier for the cut to the
-integer \Code{key}, \eg \Code{Cut(CUT\uscore MREM\uscore E,
-CUT\uscore MIN)} specifies a cut on the energy (\Code{CUT\uscore
-MREM\uscore\underline{E}}) from below (\Code{CUT\uscore\underline{MIN}})
-which is used to restrict the invariant-mass integration
-(\Code{CUT\uscore\underline{MREM}\uscore E}).
+In many interesting cases, the cut condition(s) cannot straightforwardly 
+be translated into restrictions of the integration limits.  They are 
+more easily applied through veto functions (1 in wanted, 0 in unwanted 
+areas) cuts, \ie by setting the integrand to zero in phase-space 
+regions where cut conditions apply.
 
-Note that these cuts really restrict the integration limits.  They do 
-not introduce veto functions (1 in wanted, 0 in unwanted areas) into the 
-integrand, which can severely hamper convergence.
-
-In addition, for each external particle \Vi\ several kinematical 
-quantities are available:
+The veto function is constructed from the following preprocessor macros:
 \begin{itemize}
-\item \Code{momspec(SPEC\uscore M,\Vi)}
-      -- mass $m$,
-
-\item \Code{momspec(SPEC\uscore E,\Vi)}
-      -- energy $E$,
-
-\item \Code{momspec(SPEC\uscore K,\Vi)}
-      -- momentum $k$,
-
-\item \Code{momspec(SPEC\uscore ET,\Vi)}
-      -- transverse energy $E_T$,
-
-\item \Code{momspec(SPEC\uscore KT,\Vi)}
-      -- transverse momentum $k_T$,
-
-\item \Code{momspec(SPEC\uscore RAP,\Vi)}
-      -- rapidity $y$,
-
-\item \Code{momspec(SPEC\uscore PRAP,\Vi)}
-      -- pseudo-rapidity $\eta$,
-
-\item \Code{momspec(SPEC\uscore DELTAK,\Vi)}
-      -- the difference $E - k$.
+\item	\Code{CUT\uscore E(\Vi)}
+	--- the energy $E_i$ of particle \Vi,
+\item	\Code{CUT\uscore k(\Vi)}
+	--- the momentum $|\vec k_i|$ of particle \Vi,
+\item	\Code{CUT\uscore ET(\Vi)}
+	--- the transverse energy $E_i^T$ of particle \Vi,
+\item	\Code{CUT\uscore kT(\Vi)}
+	--- the transverse momentum $|\vec k_i^T|$ of particle \Vi,
+\item	\Code{CUT\uscore y(\Vi)}
+	--- the rapidity $y_i$ of particle \Vi,
+\item	\Code{CUT\uscore eta(\Vi)}
+	--- the pseudo-rapidity $\eta_i$ of particle \Vi,
+\item	\Code{CUT\uscore deltatheta(\Vi)}
+	--- the scattering angle $\theta_i$ between particle \Vi\ and
+	   the $z$-axis ($\leqslant\tfrac\pi 2$), \\
+	\Code{CUT\uscore cosdeltatheta(\Vi)}
+	--- $\cos\theta_i$,
+\item	\Code{CUT\uscore deltaalpha(\Vi,\Vj)}
+	--- the angle $\alpha_{ij}$ between particles \Vi\ and \Vj\
+	   ($\leqslant\tfrac\pi 2$), \\
+	\Code{CUT\uscore cosdeltaalpha(\Vi,\Vj)}
+	--- $\cos\alpha_{ij}$,
+\item	\Code{CUT\uscore deltay(\Vi,\Vj)}
+	--- the rapidity gap $\Delta y_{ij}$
+	   between particles \Vi\ and \Vj,
+\item	\Code{CUT\uscore deltaeta(\Vi,\Vj)}
+	--- the pseudo-rapidity gap $\Delta\eta_{ij}$
+	   between particles \Vi\ and \Vj,
+\item	\Code{CUT\uscore R(\Vi,\Vj)}
+	--- the separation variable
+	   $\Delta R = \sqrt{\smash[b]{\Delta y_{ij}^2 + \Delta\varphi_{ij}^2}}$
+	   of particles \Vi\ and \Vj,
+\item	\Code{CUT\uscore rho(\Vi,\Vj)}
+	--- the separation variable
+	   $\Delta\rho = \sqrt{\smash[b]{\Delta\eta_{ij}^2 + \Delta\varphi_{ij}^2}}$
+	   of particles \Vi\ and \Vj,
+\item	\Code{CUT\uscore yprod(\Vi,\Vj)}
+	--- the opposite-hemisphere variable $y_i y_j$ of
+	   particles \Vi\ and \Vj,
+\item	\Code{CUT\uscore etaprod(\Vi,\Vj)}
+	--- the opposite-hemisphere variable $\eta_i \eta_j$ of
+	   particles \Vi\ and \Vj,
+\item	\Code{CUT\uscore invmass(\Vi,\Vj)}
+	--- the invariant mass $M_{ij}$ of particles \Vi\ and \Vj.
 \end{itemize}
+The cuts are listed in the \Code{CUT1}$\dots$\Code{CUT20} definitions in
+\Code{run.F}.  Together they make up a single logical expression in 
+Fortran and may include \eg logical operators.  For example, the
+following cut forces particle 3 to have a transverse energy of at
+least 10 GeV:
+\begin{verbatim}
+#define CUT1 CUT_ET(3) .lt. 10
+\end{verbatim}
 
 %------------------------------------------------------------------------
 
 \subsubsection{Convolution}
 
-With the new variable system, the convolution with arbitrary parton
-distribution functions can easily be achieved.  Three modules are
+With the system of integration variables, the convolution with arbitrary 
+parton distribution functions can easily be achieved.  Three modules are
 already included in \FC:
 \begin{itemize}
 \item \Code{lumi\uscore parton.F}
@@ -3718,7 +3795,7 @@ The \Var{p_i} can take the following values:
 \Code{t}\quad for a transversely polarized particle, \\
 \Code{+}\quad for right-circular polarization, \\
 \Code{-}\quad for left-circular polarization, and \\
-\Code{0}\quad for longitudinal polarization.
+\Code{l}\quad for longitudinal polarization.
 \end{quote}
 For a scalar particle, the polarization parameter must be present on the
 command line although its value is ignored.  The energies are specified
@@ -3750,9 +3827,7 @@ wrong averaging factor.}}
 
 %------------------------------------------------------------------------
 
-\subsubsection{Parallelization and Vectorization}%
-\label{sect:parvect}%
-\index{parallelization}%
+\subsubsection{Vectorization}%
 \index{vectorization}
 
 The assembly of the squared matrix element in code generated by FormCalc 
@@ -3774,23 +3849,11 @@ at the center of the calculation:
 
 The helicity loop is not only strategically the most desirable but also 
 the most obvious candidate for concurrent execution.  FormCalc can 
-distribute the helicity loop in two ways: parallel execution via 
-\Code{fork}/\Code{wait} on the cores of the local CPU (\ie SMP), and 
-vectorization using the CPU's SIMD instructions (that is, the squared 
-matrix element is computed for several helicity combinations at once), 
-or both.  The include file \Code{distrib.h} chooses the distribution 
+vectorize the helicity loop using the CPU's SIMD instructions (that is, 
+the squared matrix element is computed for several helicity combinations 
+at once).  The include file \Code{distrib.h} chooses the distribution 
 properties of the compiled code.  Distribution of scans over parameter 
 space is described in Sect.\ \ref{sect:scans}.
-
-Parallel execution with \Code{fork}/\Code{wait} is switched on by 
-setting the preprocessor variable \Code{PARALLEL} in \Code{distrib.h} to 
-1.  The drawback of this method is that it competes for compute cores in 
-particular with Cuba.  In the usual settings of few (\eg 4 or 8) cores 
-per system the cores should be assigned to Cuba since it computes entire 
-phase-space points in parallel, not just the helicity loop.  The number 
-of cores is determined from the environment variable \Code{FCCORES}, or 
-if that is not set, from the number of cores reported by the system 
-minus the current load average.
 
 Vectorization is turned on automatically by the configure script if it 
 detects that the CPU and compiler are capable of it.  If this is in 
@@ -3848,18 +3911,18 @@ changed, \ie a structure of the form
 \medskip
 
 \Code{run.F} provides several preprocessor variables,
-\Code{LOOP1}$\dots$\Code{LOOP15}, which may be defined to contain the
+\Code{LOOP1}$\dots$\Code{LOOP20}, which may be defined to contain the
 \Code{do}-statements that initiate the loops.  Each loop must terminate
 on statement 1, just as above.  For example, the lines
 \begin{verbatim}
-#define LOOP1 do 1 MT = 160, 180, 5
-#define LOOP2 do 1 MH = 100, 300, 100
+#define LOOP1 do 1 TB = 10, 50, 5
+#define LOOP2 do 1 MA0 = 250, 1000, 250
 \end{verbatim}
 result in a scan of the form
 
 \medskip
-\verb|      do 1 MT = 160, 180, 5| \\
-\verb|      do 1 MH = 100, 300, 100| \\
+\verb|      do 1 TB = 10, 50, 5| \\
+\verb|      do 1 MA0 = 250, 1000, 250| \\
 \verb|      |\textit{calculate the cross-section} \\
 \verb|1     continue|
 \medskip
@@ -3869,22 +3932,21 @@ outermost loop.  It is not mandatory to declare a loop with each
 \Code{LOOP\Vn}, also a fixed value may be given as in the following
 definition:
 \begin{verbatim}
-#define LOOP1 MH = 115
+#define LOOP1 TB = 30
 \end{verbatim}
 
 When scanning over parameter space, it is further necessary to keep
 track of the parameter values for each data set.  This is done by
-defining \Code{PRINT} commands in the preprocessor variables
-\Code{PRINT1}$\dots$\Code{PRINT5} in \Code{run.F}.  The \Code{PRINT}
-command takes pairs of arguments, first a string identifying the
-variable and then the variable itself.  Defining, for example,
+defining \Code{SHOW} commands in the preprocessor variables
+\Code{PRINT1}$\dots$\Code{PRINT20} in \Code{run.F}.  The \Code{SHOW}
+command two arguments, a string identifying the variable and then the 
+variable itself.  Defining, for example,
 \begin{verbatim}
-#define PRINT1 PRINT "MT=", MT, "MH=", MH
+#define PRINT1 SHOW "Mh0=", Mh0
 \end{verbatim}
-causes each data set to be preceded by two lines of the form
+causes each data set to be preceded by a line of the form
 \begin{verbatim}
-# MT=  160.00
-# MH=  100.00
+# Mh0=  125.00
 \end{verbatim}
 
 Such a scan can be a real CPU hog, but on the other hand, the
@@ -4200,21 +4262,21 @@ particles, specified as in the stand-alone version, \ie a string of
 characters for each external leg:
 \begin{center}
 \begin{tabular}{|cl|cl|} \hline
-\Code{U} & unpolarized, &
-	\Code{L} & longitudinal polarization, \\
-\Code{T} & transversely polarized, \quad &
+\Code{u} & unpolarized, &
+	\Code{l} & longitudinal polarization, \\
+\Code{t} & transversely polarized, \quad &
 	\Code{-} & left-handed polarization, \\
 &&	\Code{+} & right-handed polarization. \\ \hline
 \end{tabular}
 \end{center}
 
-\Code{Serial} gives the range of serial numbers for which to perform the
-calculation, specified as \Code{\Brac{\Var{serialfrom[},
-\Var{serialto[}, \Var{serialstep]]}}}.  The concept of serial numbers,
-used to parallelize parameter scans, is described in
-Sect.~\ref{sect:scans}.  This option applies only to parameters scanned
-by do-loops in the parameter statements.  Parameters read from
-Mathematica are unaffected by this option.
+\Code{Serial} gives the range of serial numbers for which to perform the 
+calculation, specified as 
+\Code{\Brac{\Var{serialfrom[},\,\Var{serialto[},\,\Var{serialstep]]}}}.  
+The concept of serial numbers, used to distribute parameter scans, is 
+described in Sect.~\ref{sect:scans}.  This option applies only to 
+parameters scanned by do-loops in the parameter statements.  Parameters 
+read from Mathematica are unaffected by this option.
 
 \Code{SetNumber} specifies the set number beginning with which 
 parameters and data are stored (see next Section).
@@ -4363,7 +4425,7 @@ argument list:
 
    xs[sqrtS_, MA0_, TB_] := (
      run[{sqrtS, sqrtS}, MA0, TB];
-     Data[1][[1, 2]] )
+     Data[1][[1,2]] )
 
    ContourPlot[xs[500, MA0, TB], {MA0, 100, 500}, {TB, 5, 50}]
 \end{verbatim}
@@ -4372,7 +4434,7 @@ The first argument of \Code{run}, \Code{\Brac{sqrtS, sqrtS}}, instructs
 the code to compute the total cross-section for just one point in energy.  
 We then select the first (and only) \Code{DataRow} in the output and 
 choose its second argument, the cross-section results:
-\Code{Data[1][[1,\,2]]}.
+\Code{Data[1][[1,2]]}.
 
 This example can be extended a little to produce a one-dimensional
 plot where \eg for each value of $\tan\beta$ the minimum and maximum
@@ -5048,14 +5110,18 @@ symbols in the generated code to avoid symbol collisions.
 \Code{Optimize} & \Code{False} &
 	whether to introduce temporary variables for common
 	subexpressions \\
-\Code{Expensive} & \Code{\lbrac\rbrac} &
+\Code{Expensive} & \Code{\Brac{}} &
 	objects which should be hoisted from inner loops
 	as far as possible \\
 \Code{MinLeafCount} & \Code{10} &
 	the mininum leaf count above which a subexpression becomes
 	eligible for abbreviationing \\
-\Code{DebugLines} & \Code{False} &
-	whether to generate debugging statements for every variable \\
+\Code{DebugLines} & \Code{0} &
+	whether to generate debugging/ checking statements for every
+	variable \\
+\Code{DebugLabel} & \Code{True} &
+	whether and which label to use in debugging/checking
+	statements \\
 \Code{FinalTouch} & \Code{Identity} &
 	a function which is applied to the final subexpressions \\
 \Code{ResetNumbering} & \Code{True} &
@@ -5066,6 +5132,7 @@ symbols in the generated code to avoid symbol collisions.
 \indextt{Expensive}%
 \indextt{MinLeafCount}%
 \indextt{DebugLines}%
+\indextt{DebugLabel}%
 \indextt{FinalTouch}%
 \indextt{ResetNumbering}
 
@@ -5079,34 +5146,62 @@ possible.
 \Code{MinLeafCount} specifies the minimum leaf count a common
 subexpression must have in order that a variable is introduced for it.
 
-\Code{DebugLines} specifies whether debugging statements are generated 
-for each expression.  If instead of \Code{True} or \Code{False} a string 
-is given, debugging messages are generated and prefixed by this string.  
-If a function is given, it is queried for each variable assignment and 
-its output, \Code{True}, \Code{False}, or a string, individually 
-determines generation of the debug statement.  Debugging messages are 
-usually generated for the expressions specified by the user only.  To 
-extend them to intermediate variables, e.g. the ones introduced for 
-optimization, use \Code{DebugLines -> All} (or \Code{All[\Var{string}]} 
-or \Code{All[\Var{func}]}).
+\Code{DebugLines} specifies whether debugging and/or checking statements 
+are generated for each expression.  Admissible values are
+0 = no statements are generated,
+1 = debugging statements are generated,
+2 = checking statements are generated,
+3 = debugging and checking statements are generated.
+Debugging messages are usually generated for the expressions specified
+by the user only.  To cover intermediate variables (\eg the ones
+introduced for optimization), too, specify the negative of the values
+above.
 
-The actual debugging statements are constructed from the items in 
-\Code{\$DebugCmd}, which is a list of four strings: The first two 
-strings provide commands issued before and after the debugging 
-statement, the second two strings provide the opening and closing of the 
-debugging statement.  The debugging statement has two arguments: a 
-string (the variable name) and a number (the variable value).  The
-default setting is
+\Code{DebugLabel} specifies with which label debugging/checking 
+statements are printed.  \Code{False} disables printing, \Code{True}
+prints the variable name, and a string prefixes the variable name.
+Any other value is understood as a function which is queried for each
+variable assignment and its output, \Code{True}, \Code{False}, or a 
+string, individually determines generation of the debug statement
+for each variable assignment.
+
+Debugging/checking statements come in three kinds, $1$, $-2$, and $2$.
+Type $1$ are debugging statements of the form
+\begin{alltt}
+   \Var{var} = \Var{expr}
+   DEB("\Var{var}", \Var{var})
+\end{alltt}
+Type $-2$ and $2$ are (pre and post) checking statements of the form
+\begin{alltt}
+   CHK_PRE(\Var{var})
+   \Var{var} = \Var{expr}
+   CHK_POST("\Var{var}", \Var{var})
+\end{alltt}
+The actual statements are constructed from \Code{\$DebugCmd[\Vt]},
+$\Vt = 1, -2, 2$, which gives the debugging statement in
+\Code{StringForm} format with three arguments: prefix (string), 
+variable name (string), variable value (number).  For example, the 
+default setting for debugging statements is
 \begin{verbatim}
-  $DebugCmd = {"#ifdef DEBUG\n", "#endif\n", "DEB(", ")"}
+  $DebugCmd[1] = "DEB(\"`1``2`\", `3`)\n"
 \end{verbatim}
 \indextt{\$DebugCmd}%
-Hence debugging is activated at compile time by defining the 
-preprocessor variable \Code{DEBUG} and the preprocessor macro \Code{DEB} 
-might be defined in Fortran as
+which refers to the preprocessor macro \Code{DEB} that might be defined 
+in Fortran as
 \begin{verbatim}
-  #define DEB(a,x) print *, a, x
+  #define DEB(tag,var) print *, tag, var
 \end{verbatim}
+The statements are further enclosed by the strings in
+\Code{\$DebugPre[\Vt]} and \Code{\$DebugPost[\Vt]}, which serves \eg
+to enable debugging, as in:
+\begin{verbatim}
+  $DebugPre[1, level_:4] := "#if DEBUG >= " <> ToString[level] <> "\n"
+  $DebugPost[1] = "#endif\n"
+\end{verbatim}
+\indextt{\$DebugPre}%
+\indextt{\$DebugPost}%
+Here debugging would be activated at compile time if the preprocessor 
+variable \Code{DEBUG} (debug level) is larger than 2.
 
 \Code{FinalTouch} gives a function which is applied to each final
 subexpression, just before write-out to file.
@@ -5442,10 +5537,10 @@ mapping the \Var{v_1,v_2,\ldots} onto array elements.
 \Code{VarDecl} arguments wrapped in \Code{NotEmpty} are output only if 
 at least one of its variable lists is non-empty.
 
-\Code{DoDecl[\Vi,\,\Vm]} returns a string with the declaration of a 
-loop over \Vi\ from 1 to \Vm.  \Code{DoDecl[\Vi,\,\Va,\,\Vb]}
-returns the same for a loop from \Va\ to \Vb.  \Code{DoDecl[\Vi]} 
-invokes \Code{Dim[\Vi]} to determine the upper bound on \Vi.
+\Code{DoDecl[\Vi,\,\Vm]} returns a string containing the declaration of 
+a loop over \Vi\ from 1 to \Vm.  \Code{DoDecl[\Vi,\,\Va,\,\Vb]} returns 
+the same for a loop from \Va\ to \Vb.  \Code{DoDecl[\Vi]} invokes 
+\Code{Dim[\Vi]} to determine the upper bound on \Vi.
 
 \Code{CallDecl[\Brac{\Var{sub_1},\,\Var{sub_2},\,\dots}]} returns a 
 string with the invocations of the subroutines \Var{sub_1}, \Var{sub_2}, 
