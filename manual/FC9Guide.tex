@@ -157,13 +157,13 @@ end }
 
 \newbox\titlebox\setbox\titlebox=\hbox{\underline{%
 \vrule width 0pt height 0pt depth 2ex%
-\Huge \FC~9.2~~~User's Guide}}
+\Huge \FC~9.3~~~User's Guide}}
 
 \hfill\copy\titlebox
 
 \vspace*{1ex}
 
-\hfill\hbox{Jan 13, 2016~~~~~Thomas Hahn}
+\hfill\hbox{Apr 18, 2016~~~~~Thomas Hahn}
 
 \bigskip
 \bigskip
@@ -3581,15 +3581,21 @@ Available restrictions are:
 Cut on & Key & & Cut on & Key \\
 \cline{1-2}\cline{4-5}
 $M_i$     & \verb=CUT_MREM=      & & $\cos\theta_i$     & \verb=CUT_COSTH= \\
-$E_i$     & \verb=CUT_MREM_E=    & & $\cos\hat\theta_i$ & \verb=CUT_COSTHCMS= \\
-$k_i$     & \verb=CUT_MREM_K=    & & $E_i$ & \verb=CUT_COSTH_E= \\
-$E_{T,i}$ & \verb=CUT_MREM_ET=   & & $k_i$ & \verb=CUT_COSTH_K= \\
-$k_{T,i}$ & \verb=CUT_MREM_KT=   & &       & \\
-$y_i$     & \verb=CUT_MREM_RAP=  & &       & \\
-$\eta_i$  & \verb=CUT_MREM_PRAP= & &       & \\
+$E_i$     & \verb=CUT_MREM_E=    & &			& \\
+$k_i$     & \verb=CUT_MREM_K=    & &			& \\
+$E_{T,i}$ & \verb=CUT_MREM_ET=   & &			& \\
+$k_{T,i}$ & \verb=CUT_MREM_KT=   & &			& \\
+$y_i$     & \verb=CUT_MREM_RAP=  & &			& \\
+$\eta_i$  & \verb=CUT_MREM_PRAP= & &			& \\
 \cline{1-2}\cline{4-5}
 \end{tabular}
 \end{center}
+The transverse energy cut has the slight anomaly that it corresponds to 
+$E_T = \sqrt{\smash[b]{k_T^2} + m^2}$ rather than $k^0 
+\sqrt{\smash[b]{e_x^2 + e_y^2}}$ as the veto cut (see below).  The 
+reason is that, because the cuts are applied by actually restricting the 
+integration bounds, solvability of the cut equations is a limiting 
+factor.
 
 
 \paragraph{Imposing veto cuts}
@@ -3607,7 +3613,8 @@ The veto function is constructed from the following preprocessor macros:
 \item	\Code{CUT\uscore k(\Vi)}
 	--- the momentum $|\vec k_i|$ of particle \Vi,
 \item	\Code{CUT\uscore ET(\Vi)}
-	--- the transverse energy $E_i^T$ of particle \Vi,
+	--- the transverse energy $E_i^T = k_i^0 \sqrt{\smash[b]{e_{ix}^2 +
+	    e_{iy}^2}}$ of particle \Vi,
 \item	\Code{CUT\uscore kT(\Vi)}
 	--- the transverse momentum $|\vec k_i^T|$ of particle \Vi,
 \item	\Code{CUT\uscore y(\Vi)}
@@ -3616,34 +3623,34 @@ The veto function is constructed from the following preprocessor macros:
 	--- the pseudo-rapidity $\eta_i$ of particle \Vi,
 \item	\Code{CUT\uscore deltatheta(\Vi)}
 	--- the scattering angle $\theta_i$ between particle \Vi\ and
-	   the $z$-axis ($\leqslant\tfrac\pi 2$), \\
+	    the $z$-axis ($\leqslant\tfrac\pi 2$), \\
 	\Code{CUT\uscore cosdeltatheta(\Vi)}
 	--- $\cos\theta_i$,
 \item	\Code{CUT\uscore deltaalpha(\Vi,\Vj)}
 	--- the angle $\alpha_{ij}$ between particles \Vi\ and \Vj\
-	   ($\leqslant\tfrac\pi 2$), \\
+	    ($\leqslant\tfrac\pi 2$), \\
 	\Code{CUT\uscore cosdeltaalpha(\Vi,\Vj)}
 	--- $\cos\alpha_{ij}$,
 \item	\Code{CUT\uscore deltay(\Vi,\Vj)}
 	--- the rapidity gap $\Delta y_{ij}$
-	   between particles \Vi\ and \Vj,
+	    between particles \Vi\ and \Vj,
 \item	\Code{CUT\uscore deltaeta(\Vi,\Vj)}
 	--- the pseudo-rapidity gap $\Delta\eta_{ij}$
-	   between particles \Vi\ and \Vj,
+	    between particles \Vi\ and \Vj,
 \item	\Code{CUT\uscore R(\Vi,\Vj)}
 	--- the separation variable
-	   $\Delta R = \sqrt{\smash[b]{\Delta y_{ij}^2 + \Delta\varphi_{ij}^2}}$
-	   of particles \Vi\ and \Vj,
+	    $\Delta R = \sqrt{\smash[b]{\Delta y_{ij}^2 + \Delta\varphi_{ij}^2}}$
+	    of particles \Vi\ and \Vj,
 \item	\Code{CUT\uscore rho(\Vi,\Vj)}
 	--- the separation variable
-	   $\Delta\rho = \sqrt{\smash[b]{\Delta\eta_{ij}^2 + \Delta\varphi_{ij}^2}}$
-	   of particles \Vi\ and \Vj,
+	    $\Delta\rho = \sqrt{\smash[b]{\Delta\eta_{ij}^2 + \Delta\varphi_{ij}^2}}$
+	    of particles \Vi\ and \Vj,
 \item	\Code{CUT\uscore yprod(\Vi,\Vj)}
 	--- the opposite-hemisphere variable $y_i y_j$ of
-	   particles \Vi\ and \Vj,
+	    particles \Vi\ and \Vj,
 \item	\Code{CUT\uscore etaprod(\Vi,\Vj)}
 	--- the opposite-hemisphere variable $\eta_i \eta_j$ of
-	   particles \Vi\ and \Vj,
+	    particles \Vi\ and \Vj,
 \item	\Code{CUT\uscore invmass(\Vi,\Vj)}
 	--- the invariant mass $M_{ij}$ of particles \Vi\ and \Vj.
 \end{itemize}

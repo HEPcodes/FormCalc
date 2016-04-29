@@ -1,7 +1,7 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 22 Jan 16 th
+* last modified 20 Apr 16 th
 
 
 #procedure Contract
@@ -522,7 +522,8 @@ repeat;
   once ABB([s1]?, [x]?, ?a, [mu]?!fixed_, ?b) *
        ABB([s2]?, [y]?, ?c, [mu]?, ?d) =
     ABB([s1] + [s2], [x]*[y], ?a, ?b, ?c, ?d) * replace_([mu], N100_?);
-  also once ABB([s1]?, [x]?, ?a, [mu]?!fixed_, ?b, [mu]?, ?c) =
+  renumber;
+  once ABB([s1]?, [x]?, ?a, [mu]?!fixed_, ?b, [mu]?, ?c) =
     ABB([s1], [x], ?a, ?b, ?c) * replace_([mu], N100_?);
   renumber;
 endrepeat;

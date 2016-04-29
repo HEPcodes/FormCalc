@@ -3,13 +3,11 @@
 * Caveat: this is the Fortran 77 version -
 * MUST have #define SIMD 0 in distrib.h
 * this file is part of FormCalc
-* last modified 14 Jan 16 th
+* last modified 26 Feb 16 th
 
 
 #ifndef INLINE_H
 #define INLINE_H
-
-#define signbit(i) ibits(i,31,1)
 
 #define SpiLV(iL,eL) (1-2*eL)*Vec(1+eL,1+eL,iL), Vec(2-eL,1+eL,iL)
 #define SpiLB(iL,eL) (1-2*eL)*Vec(1+eL,2-eL,iL), Vec(2-eL,2-eL,iL)

@@ -2216,7 +2216,7 @@ enum
 };
 
 /* Define CC and CFLAGS which were used to build this version of GMP */
-#define __GMP_CC "clang"
+#define __GMP_CC "gcc -std=gnu99"
 #define __GMP_CFLAGS "-O3 -fomit-frame-pointer -static"
 
 /* Major version number is the value of __GNU_MP__ too, above and in mp.h. */

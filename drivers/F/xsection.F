@@ -1,7 +1,7 @@
 * xsection.F
 * routines to compute the cross-section
 * this file is part of FormCalc
-* last modified 23 Jan 16 th
+* last modified 18 Mar 16 th
 
 #include "decl.h"
 #include "inline.h"
@@ -188,7 +188,7 @@ c	call NinjaFormCalcDebug(1)
 	integer openlog
 	external openlog
 
-	integer serial, next
+	integer next
 
 	next = serialfrom
 	serial = 0
@@ -256,10 +256,6 @@ c	call NinjaFormCalcDebug(1)
 
 	serial = serial + 1
 	if( serial .lt. next ) goto 1
-
-#ifdef MMA
-	call MmaNewPara(serial)
-#endif
 
 	call flush(6)
 	if( openlog(dir, serial) .eq. 0 ) then
@@ -357,7 +353,7 @@ c	call NinjaFormCalcDebug(1)
 
 #include "xsection.h"
 
-	integer fail, f, v, c, ndim, ivar
+	integer fail, f, v, c, ndim
 	integer nshow, nfixed, ishow(nvars), ifixed(nvars)
 	RealType xs(NCOMP,2), show(nvars)
 
@@ -405,7 +401,7 @@ c	call NinjaFormCalcDebug(1)
 100	format("|# ", A, "=", F10.4, SP, F10.4, " I")
 
 #ifdef MMA
-	call MmaBeginPara
+	call MmaBeginPara(serial)
 #endif
 
 #ifdef PRINT1
@@ -489,15 +485,7 @@ c	call NinjaFormCalcDebug(1)
 
 	ndim = nvars - nshow
 
-	ivar = 0
-
-1	ivar = ivar + 1
-
-#ifdef MMA
-	call MmaNewData(ivar)
-#endif
-
-	do c = 1, NCOMP
+1	do c = 1, NCOMP
 	  xs(c,1) = 0
 	enddo
 	do c = 1, NCOMP

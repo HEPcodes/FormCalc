@@ -1,13 +1,11 @@
 * inline.h
 * inline util functions and computation of numerators
 * this file is part of FormCalc
-* last modified 20 Jan 16 th
+* last modified 26 Feb 16 th
 
 
 #ifndef INLINE_H
 #define INLINE_H
-
-#define signbit(i) ibits(i,31,1)
 
 #ifdef NINJA
 

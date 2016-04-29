@@ -1,7 +1,7 @@
 * xsection.h
 * common blocks for xsection.F
 * this file is part of FormCalc
-* last modified 13 Jan 16 th
+* last modified 18 Mar 16 th
 
 
 #include "decl.h"
@@ -22,7 +22,7 @@
 	RealType avgfac(NPID), threshold(NPID), minthreshold
 	RealType sqrtS, mass_in, mass_out, fscale
 	integer*8 helmask, helicities
-	integer type, pid, parton1, parton2
+	integer type, pid, parton1, parton2, serial
 	integer sqrtSinvalid, flags
 
 	common /xsection/ var,
@@ -30,6 +30,6 @@
      &    avgfac, threshold, minthreshold,
      &    sqrtS, mass_in, mass_out, fscale,
      &    helmask, helicities,
-     &    type, pid, parton1, parton2,
+     &    type, pid, parton1, parton2, serial,
      &    sqrtSinvalid, flags
 

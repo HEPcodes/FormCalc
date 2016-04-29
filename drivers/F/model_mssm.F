@@ -2,7 +2,7 @@
 * all parameters for the MSSM are initialized here
 * this file is part of FormCalc
 * Christian Schappacher, 17 Feb 99
-* last modified 14 Jan 16 th
+* last modified 29 Jan 16 th
 
 
 * The input parameters for model_mssm are:
@@ -198,7 +198,7 @@
 	CB = sqrt(CB2)
 	SB = CB*TB
 	S2B = 2*TB*CB2
-	C2B = (CB - SB)*(CB + SB)
+	C2B = CB2*(1 - TB)*(1 + TB)
 
 	call SfermionMasses(fail)
 	if( fail .ne. 0 ) return

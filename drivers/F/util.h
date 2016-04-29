@@ -1,11 +1,13 @@
 * util.h
 * prototypes for the util functions
 * this file is part of FormCalc
-* last modified 11 Jan 16 th
+* last modified 29 Mar 16 th
 
 
 #ifndef UTIL_H
 #define UTIL_H
+
+#define signbit(i) ibits(i,31,1)
 
 #define k0(i) (1+nvec0*(i-1))
 #define s0(i) (3+nvec0*(i-1))
@@ -77,6 +79,7 @@
 
 #define Digit(i) char(i+48)
 #define Polar(r,theta) r*exp(cI*degree*theta)
+#define SafeLog(x) log(max(x,1D-300))
 
 #define Error(err,msg) call m_(err, __LINE__, __FILE__, msg)
 #define Warning(msg) call m_(0, 0, __FILE__, msg)
@@ -114,6 +117,7 @@
 #define Lower(v) var(3,v)
 #define Upper(v) var(4,v)
 #define Step(v) var(5,v)
+#define CutVar(c,v) var(c+5,v)
 #define CutMin(v) var(6,v)
 #define CutMax(v) var(7,v)
 
@@ -123,16 +127,13 @@
 #define CUT_MAX 2
 
 #define CUT_COSTH 4
-#define CUT_COSTHCMS 16
-#define CUT_COSTH_E 64
-#define CUT_COSTH_K 65
-#define CUT_MREM 256
-#define CUT_MREM_E 1024
-#define CUT_MREM_K 1025
-#define CUT_MREM_ET 4096
-#define CUT_MREM_KT 4097
-#define CUT_MREM_RAP 16384
-#define CUT_MREM_PRAP 16385
+#define CUT_MREM 16
+#define CUT_MREM_E 256
+#define CUT_MREM_K 257
+#define CUT_MREM_ET 1024
+#define CUT_MREM_KT 1025
+#define CUT_MREM_RAP 4096
+#define CUT_MREM_PRAP 4097
 
 #define SPEC_M 1
 #define SPEC_K 2

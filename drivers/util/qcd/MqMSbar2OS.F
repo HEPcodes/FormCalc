@@ -2,12 +2,12 @@
 * compute the conversion factor from mq^MSbar(Q) -> mq^OS,
 * code is transcribed from RunDec's mMS2mOS function.
 * this file is part of FormCalc
-* last modified 16 Jan 16 th
+* last modified 7 Mar 16 th
 
 #include "types.h"
 
 
-	subroutine MqMSbartoOS(m, mMS, Q, nloop)
+	subroutine MqMSbar2OS(m, mMS, Q, nloop)
 	implicit none
 	RealType m, mMS, Q
 	integer nloop

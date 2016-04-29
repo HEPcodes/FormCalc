@@ -2,7 +2,7 @@
 * construct the CMS representation of a momentum and the
 * three corresponding polarization vectors
 * this file is part of FormCalc
-* last modified 15 Jan 16 th
+* last modified 29 Mar 16 th
 
 #include "types.h"
 #include "util.h"
@@ -98,14 +98,12 @@
 	EpsTL(2,1) = 1/sqrt2*onePez*expIphi
 	EpsTR(1,2) = Conjugate(EpsTL(2,1))
 
-#define safelog(x) log(max(x, 1D-300))
-
 	momspec(SPEC_KT,i) = p*sinth
 	momspec(SPEC_ET,i) = p0*sinth
-	momspec(SPEC_PRAP,i) = safelog(onePez) -
-     &    safelog(sinth)
-	momspec(SPEC_RAP,i) = safelog(Re(K(1,1))) -
-     &    safelog(sqrt(momspec(SPEC_KT,i)**2 + m2))
+	momspec(SPEC_PRAP,i) = SafeLog(onePez) -
+     &    SafeLog(sinth)
+	momspec(SPEC_RAP,i) = SafeLog(Re(K(1,1))) -
+     &    SafeLog(sqrt(momspec(SPEC_KT,i)**2 + m2))
 
 * this is E^(I phi) cos(th/2) = 1/sqrt2*sqrt(1 + ez)*expIphi:
 	expIphi = 1/sqrt2*sqrt(onePez)*expIphi

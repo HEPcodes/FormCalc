@@ -2,7 +2,7 @@
 * splits a parent momentum into two child momenta
 * loosely based on code by T. Fritzsche
 * this file is part of FormCalc
-* last modified 28 Dec 15 th
+* last modified 5 Apr 16 th
 
 #include "types.h"
 #include "util.h"
@@ -32,50 +32,47 @@
 * to resolve Var, Show, Lower, Upper, CutMin, CutMax:
 #define var(i,v) v(i)
 
-#define Test(c,m) iand(key, Cut(c,m)) .ne. 0
+#define Bits(c,m) iand(key, Cut(c,m))
+#define Test(c,m) Bits(c,m) .ne. 0
 #define Zero(c,m) key = iand(key, not(Cut(c,m)))
-#define MomQ(m) ibits(key, m-1, 1)
+#define kQ(m) ibits(key, m-1, 1)
 
 #define CUT_ANY CUT_MIN + CUT_MAX
-#define CUT_COSTH_INDIRECT CUT_COSTHCMS + CUT_COSTH_E
 #define CUT_MREM_INDIRECT CUT_MREM_E + CUT_MREM_ET + CUT_MREM_RAP
 
 	subroutine Split(i, m, p, ex, ey, ez, minv, msum,
-     &    fac, cutkey, xmrem, xcosth, xphi)
+     &    cutfac, cutkey, xmrem, xcosth, xphi)
 	implicit none
 	integer i, cutkey
 	RealType m, p, ex, ey, ez, minv, msum
-	RealType fac, xmrem(*), xcosth(*), xphi(*)
+	RealType cutfac, xmrem(*), xcosth(*), xphi(*)
 
 #include "util.h"
 
 	RealType costh, sinth, cosphi, sinphi
-	RealType bmrem(2), bcosth(2)
-	RealType fxz, fyz, fxy
+	RealType bmrem(2), bcosth(2), cmrem(2)
+	RealType fxz, fyz
 	RealType fx, fy, fz
 	RealType nx, ny, nz
-	RealType ref, cut, c0, c1, c2, a, b
-	RealType r, r0, r0costh, rz, r1
+	RealType fac, cut, c0, c1, c2, d, k2
+	RealType r, r0, r0costh, rz, r1, k2max
 	RealType m2, mrem, k, k10, q, qe, qn
-	integer key
+	integer key, c, s, j, n
 
 	RealType rpart(0:1)
 	equivalence (rpart(0), r0), (rpart(1), r)
 
-	RealType pi
+	RealType pi, eps
 	parameter (pi = 3.1415926535897932384626433832795029D0)
+	parameter (eps = 1D-7)
 
-	RealType ksq, mremsq
-	ksq() = (2*c1*(sqrt(c0*(c0 + c2*m2) + (c1*m2)**2) - c1*m2) -
-     &    c0*c2)/((2*c1 - c2)*(2*c1 + c2))
-	mremsq() = m2 + minv*(minv - 2*sqrt(ksq() + m2))
+	RealType sqdiff, k2eq, a_, b_
+	sqdiff(a_, b_) = (a_ - b_)*(a_ + b_)
+	k2eq(k2) = 2*c1*sqrt(k2*(k2 + m2)) + c2*k2 - c0
 
 	key = cutkey
-
-* simultaneous indirect cuts on mrem and costh are not allowed:
-	if( Test(CUT_COSTH_INDIRECT, CUT_ANY) .and.
-     &      Test(CUT_MREM_INDIRECT, CUT_ANY) )
-     &    stop "Illegal key"
+	fac = cutfac
+	cutfac = 0
 
 * rotate the unit vector e = (ex,ey,ez) into the desired direction:
 * rotate by theta in the e-n-plane and then by phi around e.
@@ -112,93 +109,39 @@
 
 * direct cut on mrem
 	if( Test(CUT_MREM, CUT_MIN) ) then
-	  bmrem(1) = max(bmrem(1), CutMin(xmrem))
 	  Zero(CUT_MREM, CUT_MIN)
+	  bmrem(1) = max(bmrem(1), CutMin(xmrem))
 	endif
 	if( Test(CUT_MREM, CUT_MAX) ) then
-	  bmrem(2) = min(bmrem(2), CutMax(xmrem))
 	  Zero(CUT_MREM, CUT_MAX)
+	  bmrem(2) = min(bmrem(2), CutMax(xmrem))
 	endif
+
+	if( bmrem(2) .le. bmrem(1) ) return
 
 	bcosth(1) = -1
 	bcosth(2) = 1
 
 * direct cut on costh
 	if( Test(CUT_COSTH, CUT_MIN) ) then
-	  bcosth(1) = max(bcosth(1), CutMin(xcosth))
 	  Zero(CUT_COSTH, CUT_MIN)
+	  bcosth(1) = max(bcosth(1), CutMin(xcosth))
 	endif
 	if( Test(CUT_COSTH, CUT_MAX) ) then
-	  bcosth(2) = min(bcosth(2), CutMax(xcosth))
 	  Zero(CUT_COSTH, CUT_MAX)
+	  bcosth(2) = min(bcosth(2), CutMax(xcosth))
 	endif
 
-* indirect cuts on costh:
-* - costh(CMS) cut
-* - energy cut
-* - momentum cut
-
-	if( Test(CUT_COSTH_INDIRECT, CUT_ANY) ) then
-	  mrem = bmrem(1) + Var(xmrem)*(bmrem(2) - bmrem(1))
-	  k10 = .5D0*(minv - (mrem - m)*(mrem + m)/minv)
-	  k = sqrt((k10 - m)*(k10 + m))
-
-	  if( Test(CUT_COSTHCMS, CUT_MIN) ) then
-	    if( k .ne. 0 ) then
-	      costh = CutMin(xcosth)
-	      sinth = (1 - costh)*(1 + costh)
-	      if( sinth .ge. 0 ) then
-	        sinth = sqrt(sinth)
-	        cut = max((k - m*r*sinth)*(k + m*r*sinth), 0D0)
-	        cut = (costh*sqrt(cut) - k10*r0*r*sinth**2)/
-     &            (k*((r*sinth)**2 + 1))
-	        bcosth(1) = max(bcosth(1), cut)
-	      endif
-	    endif
-	    Zero(CUT_COSTHCMS, CUT_MIN)
-	  else if( Test(CUT_COSTH_E, CUT_MIN) ) then
-	    if( k*r .ne. 0 ) then
-	      cut = CutMin(xcosth)
-	      if( MomQ(CUT_MIN) .ne. 0 ) cut = sqrt(cut**2 + m2)
-	      bcosth(1) = max(bcosth(1), (cut - k10*r0)/(k*r))
-	    endif
-	    Zero(CUT_COSTH_K, CUT_MIN)
-	  endif
-
-	  if( Test(CUT_COSTHCMS, CUT_MAX) ) then
-	    if( k .ne. 0 ) then
-	      costh = CutMin(xcosth)
-	      sinth = (1 - costh)*(1 + costh)
-	      if( sinth .ge. 0 ) then
-	        sinth = sqrt(sinth)
-	        cut = max((k - m*r*sinth)*(k + m*r*sinth), 0D0)
-	        cut = (costh*sqrt(cut) - k10*r0*r*sinth**2)/
-     &            (k*((r*sinth)**2 + 1))
-	        bcosth(2) = min(bcosth(2), cut)
-	      endif
-	    endif
-	    Zero(CUT_COSTHCMS, CUT_MAX)
-	  else if( Test(CUT_COSTH_E, CUT_MAX) ) then
-	    if( k*r .ne. 0 ) then
-	      cut = CutMax(xcosth)
-	      if( MomQ(CUT_MAX) .ne. 0 ) cut = sqrt(cut**2 + m2)
-	      bcosth(2) = min(bcosth(2), (cut - k10*r0)/(k*r))
-	    endif
-	    Zero(CUT_COSTH_K, CUT_MAX)
-	  endif
-	endif
-
+	if( bcosth(2) .le. bcosth(1) ) return
 	bcosth(2) = bcosth(2) - bcosth(1)
-	if( bcosth(2) .lt. 0 ) then
-	  fac = 0
-	  return
-	endif
 	if( Step(xcosth) .eq. 0 ) fac = fac*bcosth(2)
 	costh = bcosth(1) + Var(xcosth)*bcosth(2)
 	Show(xcosth) = costh
 
 	r0costh = r0*costh
-	sinth = sqrt((1 - costh)*(1 + costh))
+	sinth = sqrt(sqdiff(1D0, costh))
+	rz = r*fz
+	r1 = r**2*(1 + costh**2) + 1
 
 * indirect cuts on mrem:
 * - energy cut
@@ -208,111 +151,84 @@
 * - rapidity cut
 * - pseudo-rapidity cut
 
-	if( Test(CUT_MREM_INDIRECT, CUT_ANY) ) then
-	  rz = r*fz
-	  r1 = sqrt(r**2*(1 + costh**2) + 1)
-
-	  if( Test(CUT_MREM_E, CUT_MIN) ) then
+	do c = CUT_MIN + signbit(Bits(CUT_MREM_INDIRECT, CUT_MIN) - 1),
+     &         CUT_MAX - signbit(Bits(CUT_MREM_INDIRECT, CUT_MAX) - 1)
+	  cut = CutVar(c,xmrem)
+	  if( Test(CUT_MREM_E, c) ) then
+	    c0 = sqdiff(cut, m*rpart(kQ(c)))
 	    c1 = r*r0costh
-	    c2 = r1**2
-	    ref = m*rpart(MomQ(CUT_MIN))
-	    if( CutMin(xmrem) .gt. ref ) then
-	      c0 = (CutMin(xmrem) - ref)*(CutMin(xmrem) + ref)
-	      cut = mremsq()
-	      if( cut .gt. 0 ) bmrem(2) = min(bmrem(2), sqrt(cut))
-	    endif
-	    Zero(CUT_MREM_K, CUT_MIN)
-	  else if( Test(CUT_MREM_ET, CUT_MIN) ) then
-	    fxy = fx**2 + fy**2
-	    c1 = r*(r0costh*fxy - sinth*fz*nz)
-	    a = sqrt((r1 - rz)*(r1 + rz))
-	    b = r0costh*fz + sinth*nz
-	    c2 = (a - b)*(a + b)
-	    ref = m*sqrt(r**2*fxy + (1 - MomQ(CUT_MIN)))
-	    if( CutMin(xmrem) .gt. ref ) then
-	      c0 = (CutMin(xmrem) - ref)*(CutMin(xmrem) + ref)
-	      cut = mremsq()
-	      if( cut .gt. 0 ) bmrem(2) = min(bmrem(2), sqrt(cut))
-	    endif
-	    Zero(CUT_MREM_KT, CUT_MIN)
-	  else if( Test(CUT_MREM_RAP, CUT_MIN) ) then
-	    cut = tanh(CutMin(xmrem))
-	    ref = rpart(MomQ(CUT_MIN))*cut
-	    if( ref .gt. rz ) then
-	      c0 = m2*(ref - rz)*(ref + rz)
-	      c1 = r*(sinth*fz*nz - r0costh*(cut - fz)*(cut + fz))
-	      c2 = (r0costh*fz + sinth*nz)**2 -
-     &          (cut*r1 - rz)*(cut*r1 + rz)
-	      cut = mremsq()
-	      if( cut .gt. 0 ) then
-	        cut = sqrt(cut)
-	        if( c2 .gt. 0 ) then
-	          bmrem(1) = max(bmrem(1), cut)
-	        else
-	          bmrem(2) = min(bmrem(2), cut)
-	        endif
-	      endif
-	    endif
-	    Zero(CUT_MREM_PRAP, CUT_MIN)
+	    c2 = r1
+	    Zero(CUT_MREM_K, c)
+	  else if( Test(CUT_MREM_ET, c) ) then
+* caveat: the c0 here corresponds to the 'old' definition
+* momspec(SPEC_ET,i) = sqrt(momspec(SPEC_KT,i)**2 + m2)
+	    c0 = sqdiff(cut, m*rpart(kQ(c))) + m2*rz**2
+	    c2 = r0costh*fz + sinth*nz
+	    c1 = r*(r0costh - fz*c2)
+	    c2 = sqdiff(sqrt(r1), c2) - rz**2
+	    Zero(CUT_MREM_KT, c)
+	  else if( Test(CUT_MREM_RAP, c) ) then
+	    cut = tanh(cut)
+	    c0 = m2*sqdiff(rpart(kQ(c))*cut, rz)
+	    c2 = r0costh*fz + sinth*nz
+	    c1 = r*(fz*c2 - r0costh*cut**2)
+	    c2 = sqdiff(c2, cut*sqrt(r1)) + rz**2
+	    Zero(CUT_MREM_PRAP, c)
+	  else
+	    goto 1
 	  endif
 
-	  if( Test(CUT_MREM_E, CUT_MAX) ) then
-	    c1 = r*r0costh
-	    c2 = r1**2
-	    ref = m*rpart(MomQ(CUT_MAX))
-	    if( CutMax(xmrem) .gt. ref ) then
-	      c0 = (CutMax(xmrem) - ref)*(CutMax(xmrem) + ref)
-	      cut = mremsq()
-	      if( cut .gt. 0 ) bmrem(1) = max(bmrem(1), sqrt(cut))
+	  k2max = .25D0*sqdiff(minv - m, bmrem(1))*
+     &                  sqdiff(minv + m, bmrem(1))/minv**2
+
+* -int(.) here because mrem and k2 move oppositely
+	  j = ieor(c, ibits(-int(sign(1D0, k2eq(k2max))), 1, 2))
+
+	  d = c1**2*(c0*(c0 + c2*m2) + (c1*m2)**2)
+	  if( d .lt. 0 ) goto (999, 1) j
+	  d = sqrt(d)
+
+	  n = 0
+	  do s = 1, 2
+	    d = -d
+	    k2 = (c0*c2 + 2*(c1**2*m2 + d))/sqdiff(c2, 2*c1)
+	    if( k2 .gt. 0 .and. k2 .lt. k2max .and.
+     &          abs(k2eq(k2)) .lt. eps ) then
+	      n = n + 1
+	      cmrem(n) = sqrt(m2 + minv*(minv - 2*sqrt(k2 + m2)))
 	    endif
-	    Zero(CUT_MREM_K, CUT_MAX)
-	  else if( Test(CUT_MREM_ET, CUT_MAX) ) then
-	    fxy = fx**2 + fy**2
-	    c1 = r*(r0costh*fxy - sinth*fz*nz)
-	    a = sqrt((r1 - rz)*(r1 + rz))
-	    b = r0costh*fz + sinth*nz
-	    c2 = (a - b)*(a + b)
-	    ref = m*sqrt(r**2*fxy + (1 - MomQ(CUT_MAX)))
-	    if( CutMax(xmrem) .gt. ref ) then
-	      c0 = (CutMax(xmrem) - ref)*(CutMax(xmrem) + ref)
-	      cut = mremsq()
-	      if( cut .gt. 0 ) bmrem(1) = max(bmrem(1), sqrt(cut))
+	  enddo
+
+	  if( n .eq. 2 .and. abs(cmrem(2) - cmrem(1)) .gt. eps ) then
+	    if( j .eq. 2 ) then
+	      print *, "Cannot satisfy direct cut, use veto cut"
+	      print *, "bnd mrem = ", bmrem
+	      print *, "cut mrem = ", cmrem
+	    else
+	      bmrem(1) = max(bmrem(1), cmrem(1))
+	      bmrem(2) = min(bmrem(2), cmrem(2))
 	    endif
-	    Zero(CUT_MREM_KT, CUT_MAX)
-	  else if( Test(CUT_MREM_RAP, CUT_MAX) ) then
-	    cut = tanh(CutMax(xmrem))
-	    ref = rpart(MomQ(CUT_MAX))*cut
-	    if( ref .gt. rz ) then
-	      c0 = m2*(ref - rz)*(ref + rz)
-	      c1 = r*(sinth*fz*nz - r0costh*(cut - fz)*(cut + fz))
-	      c2 = (r0costh*fz + sinth*nz)**2 -
-     &          (cut*r1 - rz)*(cut*r1 + rz)
-	      cut = mremsq()
-	      if( cut .gt. 0 ) then
-	        cut = sqrt(cut)
-	        if( c2 .gt. 0 ) then
-	          bmrem(2) = min(bmrem(2), cut)
-	        else
-	          bmrem(1) = max(bmrem(1), cut)
-	        endif
-	      endif
-	    endif
-	    Zero(CUT_MREM_PRAP, CUT_MAX)
+	  else if( n .ne. 0 ) then
+	    if( (2*j - 3)*(bmrem(j) - cmrem(1)) .gt. 0 )
+     &        bmrem(j) = cmrem(1)
+	  else
+	    goto (999, 1) j
 	  endif
-	endif
+
+	  if( bmrem(2) .ge. bmrem(1) ) goto 1
+999	  return
+
+1	  continue
+	enddo
 
 	bmrem(2) = bmrem(2) - bmrem(1)
-	if( bmrem(2) .lt. 0 ) then
-	  fac = 0
-	  return
-	endif
 	if( Step(xmrem) .eq. 0 ) fac = fac*bmrem(2)
 	mrem = bmrem(1) + Var(xmrem)*bmrem(2)
 	Show(xmrem) = mrem
 
-	k10 = .5D0*(minv - (mrem - m)*(mrem + m)/minv)
-	k = sqrt((k10 - m)*(k10 + m))
-	fac = .5D0*k*fac
+	k10 = .5D0*(minv - sqdiff(mrem, m)/minv)
+	k = sqrt(sqdiff(k10, m))
+	cutfac = .5D0*k*fac
 
 * k is in the CMS of the decay minv -> m + mrem and must finally
 * be boosted into the CMS of the entire process
@@ -338,5 +254,7 @@
 	endif
 
 	minv = mrem
+
+	if( key .ne. 0 ) print *, "Warning: Superfluous bits in key"
 	end
 

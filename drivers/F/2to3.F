@@ -1,7 +1,7 @@
 * 2to3.F
 * the kinematics for a 2 -> 3 process
 * this file is part of FormCalc
-* last modified 3 Jun 15 th
+* last modified 16 Feb 16 th
 
 
 #define LEGS 5
@@ -46,6 +46,7 @@
 	Lower(XMREM1) = 0
 	Upper(XMREM1) = 1
 	if( Lower(SQRTS) .gt. Upper(SQRTS) ) then
+	  Lower(XMREM1) = XMREM1STEP
 	  Step(XMREM1) = XMREM1STEP
 	else
 	  Step(XMREM1) = 0

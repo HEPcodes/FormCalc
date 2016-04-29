@@ -1,7 +1,7 @@
 * lumi_hadron.F
 * parton luminosity for a hadron collider
 * this file is part of FormCalc
-* last modified 22 Jan 16 th
+* last modified 29 Mar 16 th
 
 * This code links to the LHAPDF library.
 * The following variables are used:

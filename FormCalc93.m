@@ -1,8 +1,8 @@
 (*
 
-This is FormCalc, Version 9.2
+This is FormCalc, Version 9.3
 Copyright by Thomas Hahn 1996-2016
-last modified 28 Jan 16 by Thomas Hahn
+last modified 20 Apr 16 by Thomas Hahn
 
 Release notes:
 
@@ -1869,9 +1869,9 @@ the file is split into several pieces."
 
 Begin["`Private`"]
 
-$FormCalc = 9.2
+$FormCalc = 9.3
 
-$FormCalcVersion = "FormCalc 9.2 (28 Jan 2016)"
+$FormCalcVersion = "FormCalc 9.3 (20 Apr 2016)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -2318,12 +2318,12 @@ ToIndexIf[expr_, s_String] := ToIndexIf[expr, Alt[Names[s]]]
 
 ToIndexIf[expr_, patt_:_] :=
   Fold[ singleIf, expr, Union @ Cases[expr,
-    (IndexDelta | IndexDiff)[i:patt..] -> {i}, Infinity] ]
+    (IndexDelta | IndexDiff)[i:patt..] :> {i}, Infinity] ]
 
 singleIf[expr_, {i__}] := expr /.
   { IndexDelta[i] -> suck[1, 1],
     IndexDiff[i] -> suck[2, 1] } /.
-  a_. suck[1, x_] + a_. suck[2, y_] -> a IndexIf[Equal[i], x, y] /.
+  a_. suck[1, x_] + a_. suck[2, y_] :> a IndexIf[Equal[i], x, y] /.
   suck[h_, x_] :> IndexIf[{Equal, Unequal}[[h]][i], x]
 
 suck/: r_ suck[h_, x_] := suck[h, r x] /; FreeQ[r, Mat (*| SumOver*)]
@@ -2652,7 +2652,7 @@ invproc = {}, invs = {}, kikj = {}, eiki = {}, eiei = {}},
       Null,
     2,
       (*dot[ Moms[[2]], Moms[[2]] ] =.;*)
-      MomSubst = {s_Spinor -> s, Moms[[2]] -> Moms[[1]]};
+      MomSubst = {s_Spinor :> s, Moms[[2]] -> Moms[[1]]};
       eiki = eiki /. MomSubst;
       FormSymbols = {FormSymbols, Spinor[]},
     _,
@@ -2789,7 +2789,7 @@ Block[ {old, new, amp, name = AmpName[id], pc},
   old = ampden[GetDen[gen], gm]/@ old;
   new = Thread[Flatten[ReduceIns[gm, Transpose[old]]], Rule];
   amp = gen /. new[[1]] /.
-    {d_Den :> (d /. small[m_] -> m), _small -> 0};
+    {d_Den :> (d /. small[m_] :> m), _small -> 0};
   { name -> amp,
     If[ Length[ new[[2]] ] === 0,
       Length[old] name,
@@ -2942,7 +2942,7 @@ Block[ {comp},
   _comp = 0;
   Map[Component, #, {2}];
   _comp =.;
-  #[[1,0]]@@ Cases[DownValues[comp], _[_[_[x___]], r_] -> r x]
+  #[[1,0]]@@ Cases[DownValues[comp], _[_[_[x___]], r_] :> r x]
 ]& @ {amp}
 
 Component[r_ s__SumOver] := comp[s] += r
@@ -3003,9 +3003,9 @@ DenyHide = Level[{SumOver, PowerOf, IndexDelta, IndexEps, SUNObjs},
   {-1}, Alternatives]
 
 FinalFormRules = {
-  (f:_[__])^(n_?Negative) -> powM[f, n],
+  (f:_[__])^(n_?Negative) :> powM[f, n],
   x_^n_ :> powM[x, n] /; !IntegerQ[n],
-  Complex[a_, b_] -> a + "i_" b }
+  Complex[a_, b_] :> a + "i_" b }
 
 
 Attributes[CalcFeynAmp] = {Listable}
@@ -3088,7 +3088,7 @@ intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
   vecs = {};
 
   amps = pre/@ {amp} /.
-    { g:G[_][_][__][_] -> g,
+    { g:G[_][_][__][_] :> g,
       IndexDelta -> idelta,
       IndexEps -> ieps,
       IndexSum -> isum } /.
@@ -3143,10 +3143,10 @@ intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
 
   amps = FLines[amps /. Index -> indsym] /. FinalFormRules;
   mmains = mmains /. Index -> indsym;
-  ranges = Append[Union[Flatten[ranges]] /. Index -> indsym, i_ -> i == 0];
+  ranges = Append[Union[Flatten[ranges]] /. Index -> indsym, i_ :> i == 0];
 
   indices = Union[Flatten[ {indices, sM,
-    Cases[DownValues[indsym], _[_, s_Symbol] -> s],
+    Cases[DownValues[indsym], _[_, s_Symbol] :> s],
     Cases[amps, SumOver[i_, ___] | IndexSum[_, i_, ___] :> i, Infinity],
 	(* possibly some colour or gluon indices have been fixed by
 	   the user in FeynArts; these would by default be declared
@@ -3219,8 +3219,8 @@ CalcFeynAmp[amps__, opt___Rule] := CalcFeynAmp[
 
 trace[g__] := (traces = Max[traces, ++fline];
   NonCommutativeMultiply[ga[], g] /. {
-    a_. ga[li__] ** ga[6] + a_. ga[li__] ** ga[7] -> a ga[li],
-    a_. ga[6] + a_. ga[7] -> a
+    a_. ga[li__] ** ga[6] + a_. ga[li__] ** ga[7] :> a ga[li],
+    a_. ga[6] + a_. ga[7] :> a
   } /. ga -> om)
 
 chain[g1_, g___] := (fline = Max[fline + 1, 100];
@@ -3253,7 +3253,7 @@ Block[ {fline = 0},
     MatrixTrace -> trace /.
     FermionChain -> chain /.
     DiracObject -> dobj /.
-    NonCommutativeMultiply[a_] -> a)
+    NonCommutativeMultiply[a_] :> a)
 ]
 
 FLines[other_] := other
@@ -3555,7 +3555,7 @@ Abbr[] := Flatten @ Apply[dv, DownValues/@
 
 Abbr[patt__] :=
 Block[ {all = Abbr[], need = Flatten[{patt}], omit},
-  omit = Cases[need, !x_ -> x];
+  omit = Cases[need, !x_ :> x];
   need = DeleteCases[need, !_];
   FixedPoint[ abbsel[First/@ #]&, abbsel[need, omit] ]
 ]
@@ -3698,7 +3698,7 @@ subdef[minleaf_, deny_, fuse_, pre_, ind_] := (
     HoldPattern[subadd[x_]] :> x
   } /. {
     HoldPattern[abbsub@@ Select[{}, _]] -> abbsub[],
-    HoldPattern[x_ && FreeQ[_, _[]]] -> x };
+    HoldPattern[x_ && FreeQ[_, _[]]] :> x };
 
   DownValues[subfun] = {
     HoldPattern[subfun[x_]] :>
@@ -3731,7 +3731,7 @@ AbbrevSet[expr_, opt___Rule] :=
 Block[ {minleaf, deny, fuse, pre},
   {minleaf, deny, fuse, pre} = ParseOpt[Abbreviate, opt];
   subdef[minleaf, Alt[deny], fuse, pre, Union @
-    Join[Cases[expr, SumOver[i_, ___] -> i, Infinity], FormInd]];
+    Join[Cases[expr, SumOver[i_, ___] :> i, Infinity], FormInd]];
 ]
 
 
@@ -3836,10 +3836,10 @@ regabb[s_, x__] :=
 
 
 setabb[h_, args__, s_] :=
-  newset[h[args], Cases[DownValues[h], _[_[_[args]], x_] -> x], s]
+  newset[h[args], Cases[DownValues[h], _[_[_[args]], x_] :> x], s]
 
 setsub[h_[i___], args__, s_] :=
-  newset[h[i][args], Cases[SubValues[h], _[_[_[i][args]], x_] -> x], s]
+  newset[h[i][args], Cases[SubValues[h], _[_[_[i][args]], x_] :> x], s]
 
 Attributes[newset] = {HoldFirst}
 
@@ -3991,32 +3991,32 @@ Block[ {subst, new = arg, rul},
 (* UV and IR finiteness checks *)
 
 ToNewBRules = {
-  B0[args__] -> B0i[bb0, args],
-  B1[args__] -> B0i[bb1, args],
-  B00[args__] -> B0i[bb00, args],
-  B11[args__] -> B0i[bb11, args],
-  B001[args__] -> B0i[bb001, args],
-  B111[args__] -> B0i[bb111, args],
-  DB0[args__] -> B0i[dbb0, args],
-  DB1[args__] -> B0i[dbb1, args],
-  DB00[args__] -> B0i[dbb00, args],
-  DB11[args__] -> B0i[dbb11, args],
-  C0[args__] -> C0i[cc0, args],
-  D0[args__] -> D0i[dd0, args],
-  E0[args__] -> E0i[ee0, args],
-  F0[args__] -> F0i[ff0, args] }
+  B0[args__] :> B0i[bb0, args],
+  B1[args__] :> B0i[bb1, args],
+  B00[args__] :> B0i[bb00, args],
+  B11[args__] :> B0i[bb11, args],
+  B001[args__] :> B0i[bb001, args],
+  B111[args__] :> B0i[bb111, args],
+  DB0[args__] :> B0i[dbb0, args],
+  DB1[args__] :> B0i[dbb1, args],
+  DB00[args__] :> B0i[dbb00, args],
+  DB11[args__] :> B0i[dbb11, args],
+  C0[args__] :> C0i[cc0, args],
+  D0[args__] :> D0i[dd0, args],
+  E0[args__] :> E0i[ee0, args],
+  F0[args__] :> F0i[ff0, args] }
 
 ToOldBRules = {
-  B0i[bb0, args__] -> B0[args],
-  B0i[bb1, args__] -> B1[args],
-  B0i[bb00, args__] -> B00[args],
-  B0i[bb11, args__] -> B11[args],
-  B0i[bb001, args__] -> B001[args],
-  B0i[bb111, args__] -> B111[args],
-  B0i[dbb0, args__] -> DB0[args],
-  B0i[dbb1, args__] -> DB1[args],
-  B0i[dbb00, args__] -> DB00[args],
-  B0i[dbb11, args__] -> DB11[args] }
+  B0i[bb0, args__] :> B0[args],
+  B0i[bb1, args__] :> B1[args],
+  B0i[bb00, args__] :> B00[args],
+  B0i[bb11, args__] :> B11[args],
+  B0i[bb001, args__] :> B001[args],
+  B0i[bb111, args__] :> B111[args],
+  B0i[dbb0, args__] :> DB0[args],
+  B0i[dbb1, args__] :> DB1[args],
+  B0i[dbb00, args__] :> DB00[args],
+  B0i[dbb11, args__] :> DB11[args] }
 
 
 Attributes[FindDiv] = {Listable}
@@ -4044,7 +4044,7 @@ MapDiv[f_, expr_, fin_] :=
 Block[ {div = RCPattern[RenConst, Divergence], foo = f, Finite = fin},
   FindDiv[expr /. ToNewBRules /.
     {int:PaVeIntegral[__] :> UVDiv[int] + fin int, D -> Dminus4 + 4} /.
-    Dminus4^(n_?Negative) -> (-2/Divergence)^n]
+    Dminus4^(n_?Negative) :> (-2/Divergence)^n]
 ]
 
 
@@ -4134,7 +4134,7 @@ Block[ {C0i, D0i, E0i, F0i, PaVe},
 ToTrace[fi_ -> plain_, 1] := Mat[fi] -> plain
 
 ToTrace[fi_ -> plain_, fj_ -> conj_] := Mat[fi, fj] ->
-  plain (conj /. DiracChain -> ConjChain /. ep_Eps -> -ep /. ConjWF)
+  plain (conj /. DiracChain -> ConjChain /. ep_Eps :> -ep /. ConjWF)
 
 ConjChain[s1_Spinor, om_Integer, g___, s2_Spinor] :=
   (#1 Reverse[DiracChain[s1, g, #2, s2]])&@@
@@ -4230,7 +4230,7 @@ abbr, part, ind, ic = 0, vars, hels, helM, hh, e, mat},
     SelectAbbr[abbr, DiracChain[_Spinor, ___], plain, conj, HelicityME],
     Return[{}] ];
 
-  part = Cases[abbr, Spinor[k[i_], __] -> i, Infinity] //Union;
+  part = Cases[abbr, Spinor[k[i_], __] :> i, Infinity] //Union;
 
   ind = Map[# -> "N" <> ToString[++ic] <> "_?" &,
     Union[Cases[#, _Lor, Infinity]]&/@ abbr, {2}];
@@ -4377,7 +4377,7 @@ Block[ {res, ind},
     {IndexDelta -> idelta, SumOver -> sumover} /.
     SUNSum[i_, _] :> (Sow[i]; 1) ];
   Simplify[ Expand[ res /.
-    Cases[ind, i_Index :> i -> iname@@ i, {2}] /.
+    Cases[ind, i_Index :> (i -> iname@@ i), {2}] /.
     {SUNT -> sunText, SUNF -> sunF,
      SUNEps -> sunEps, SUNTSum -> sunTsum} /.
     sunTrace[a__]^n_. :> Times@@ Table[sunTr[a], {n}]
@@ -4391,7 +4391,7 @@ ColourGrouping[tops_] := DiagramGrouping[ tops,
   Replace[
     ColourSimplify[Times@@
       FeynAmpCases[_[Index[Colour | Gluon, _], ___]][##]],
-    _?NumberQ r_ -> r]& ]
+    _?NumberQ r_ :> r]& ]
 
 
 ColourFactor[fi_ -> plain_, fj_ -> conj_] :=
@@ -4414,7 +4414,7 @@ Block[ {abbr},
 UniqIndices[conj_, plain_] :=
 Block[ {ind},
   ind = Intersection@@
-    (Union[Cases[#, SumOver[x_, ___] -> x, Infinity]]&)/@ {conj, plain};
+    (Union[Cases[#, SumOver[x_, ___] :> x, Infinity]]&)/@ {conj, plain};
   conj /. Thread[ind -> (ToSymbol[#, "c"]&)/@ ind]
 ]
 
@@ -4586,7 +4586,7 @@ fullexpr, lor, indices, legs, masses, etasubst, vars, hh},
   indices = FormIndices[[ Level[lor, {2}] ]];
   fullexpr = fullexpr /. Thread[lor -> indices];
 
-  legs = Cases[fullexpr, Alt[ExtWF][i_] -> i,
+  legs = Cases[fullexpr, Alt[ExtWF][i_] :> i,
     Infinity, Heads -> True] //Union;
   If[ slegs =!= All, legs = Intersection[legs, Flatten[{slegs}]] ];
   masses = Masses[CurrentProc][[legs]];
@@ -4597,7 +4597,7 @@ fullexpr, lor, indices, legs, masses, etasubst, vars, hh},
     FinalFormRules;
 
   etasubst = Block[{dv = DownValues[eta], eta},
-    Cases[dv, _[_[lhs_], rhs_] :> lhs -> rhs] /. Reverse/@ FromFormRules];
+    Cases[dv, _[_[lhs_], rhs_] :> (lhs -> rhs)] /. Reverse/@ FromFormRules];
 
   dim = If[dim === 0, D, 4];
   vars = FormVars[dim, {fullexpr, masses}, indices];
@@ -4941,7 +4941,7 @@ toTicket[v_ -> x_] := (v = Dep[v]; Ticket[Dep[v], x]) /; FreeQ[v, Pattern]
 
 toTicket[v_ -> x_] := {
   Ticket[Dep[v], x /. v -> 1],
-  v = Dep[v] /. HoldPattern[Pattern][a_, _] -> a }[[1]]
+  v = Dep[v] /. HoldPattern[Pattern][a_, _] :> a }[[1]]
 
 toTicket[x_] := Ticket[x]
 
@@ -5559,7 +5559,7 @@ ffmods, nummods, abbrmods, com, helrul, hmax, hfun},
   pos = Take[#, 2]&/@ Position[defs, _Num];
   nums = Extract[defs, pos] /. Tag -> Identity;
   defs = ToCat[2, #]&/@ Replace[ Delete[defs, pos],
-    {Tag[r_] -> {{}, r}, r_ -> {r, {}}}, {2} ];
+    {Tag[r_] :> {{}, r}, r_ :> {r, {}}}, {2} ];
 
   nummods = FileSplit[nums, "num", delay[NumMod]];
   nums = NumName@@@ nums;
@@ -5677,7 +5677,7 @@ $(LIB)($(OBJS)): " <> $MakeDeps[[1]] <> MakefileName["vars.h"] <> "\n\n"];
   writeSquaredME[hh, proc, hfun, hmax];
   Close[hh];
 
-  Cases[DownValues[ModName], _[_, s_String] -> s]
+  Cases[DownValues[ModName], _[_, s_String] :> s]
 ]
 
 
@@ -6279,8 +6279,8 @@ OnlyIf[other__] := OnlyIfEval[other]
 OnlyIfEval[_, a_, a_] := a
 
 OnlyIfEval[cond_, a_, b_] := Thread @ IndexIf[ cond,
-  a /. Cases[{cond}, i_ == j_ -> (IndexDelta[i, j] -> 1), Infinity],
-  b /. Cases[{cond}, i_ == j_ -> (IndexDelta[i, j] -> 0)] ]
+  a /. Cases[{cond}, i_ == j_ :> (IndexDelta[i, j] -> 1), Infinity],
+  b /. Cases[{cond}, i_ == j_ :> (IndexDelta[i, j] -> 0)] ]
 
 
 Attributes[FermionRC] = {HoldRest}
@@ -6547,7 +6547,7 @@ Block[ {RCInt},
     Collect[ Plus[p],
       First/@ DeleteCases[Split @ Sort @ Cases[Plus[p], _Re, Infinity], {_}],
       RCInt ],
-    RCInt[x_] -> x, {1} ]
+    RCInt[x_] :> x, {1} ]
 ]
 
 
@@ -6560,7 +6560,7 @@ Block[ {hh},
     fincl[[1]] <> hincl <> fincl[[2]] <>
     SubroutineDecl[mod] <>
     sincl[[1]] <> hincl <> "\n" <>
-    VarDecl[Union[Cases[rcs, SumOver[i_, _] -> i, Infinity]], "integer"]];
+    VarDecl[Union[Cases[rcs, SumOver[i_, _] :> i, Infinity]], "integer"]];
   WriteExpr[hh, {sincl[[2]], rcs, sincl[[3]]},
     Optimize -> True,
     DebugLines -> $DebugRC, DebugLabel -> mod];
@@ -6648,7 +6648,7 @@ OBJS_RC :=\n\n" <>
 $(LIB): $(LIB)($(OBJS_RC))\n\n"];
   Close[hh];
 
-  Cases[DownValues[ModName], _[_, s_String] -> s]
+  Cases[DownValues[ModName], _[_, s_String] :> s]
 ]
 
 
@@ -6776,6 +6776,10 @@ Coalesce[(ru:Rule | RuleAdd)[v_, x_. p_Plus], r___] :=
         RuleAdd[v, x Plus@@ #]&/@ Flatten[Coalesce@@ p],
         ru, {1, 0} ],
       {r} }, {2}, Coalesce ] /; AtomQ[x] && LeafCount[p] > size
+
+Coalesce[DoLoop[rul_, ind__], r___] := Level[
+  {DoLoop[{##}, ind]&@@@ Flatten[Coalesce@@ rul], {r}},
+  {2}, Coalesce ] /; LeafCount[rul] > size
 
 Coalesce[a_, b_, r___] :=
   Coalesce[batch[a, b], r] /; LeafCount[{a, b}] < size
@@ -6994,7 +6998,7 @@ Hoist[patt_][expr_, i__] :=
 Block[ {veto, abb, got = {}, c},
   veto = Alt@@ Union[
     DoIndex/@ Cases[expr, DoLoop[_, j__] :> j, Infinity],
-    Cases[expr, SumOver[j_, ___] -> j, Infinity] ];
+    Cases[expr, SumOver[j_, ___] :> j, Infinity] ];
   abb = Cases[expr, x:patt /; FreeQ[x, veto], Infinity] //Union;
   abb = (got = Join[got, c = Complement[#2, got]]; #1 -> c)&@@@
     Sort[hsel[abb]/@ {i}, Length[ #1[[2]] ] < Length[ #2[[2]] ]&];
@@ -7041,7 +7045,7 @@ cull[other_] := {1, other}
 
 FindIndices[var_ -> _] := Union[Cases[var, _Symbol]]
 
-FindIndices[t_Times] := Cases[t, SumOver[i__] -> {i}]
+FindIndices[t_Times] := Cases[t, SumOver[i__] :> {i}]
 
 FindIndices[i_IndexIf] := Union@@ FindIndices/@ Flatten[List@@ i]
 
@@ -7052,7 +7056,7 @@ ToDoLoops[li:{__}, indices_:FindIndices] :=
 Block[ {do, si},
   _do = {};
   Scan[(do[#1] = {do[#1], Tag[##]})&[indices[#], #]&, li];
-  si = Flatten[Cases[DownValues[do], _[_[_[{___}]], a_] -> a]];
+  si = Flatten[Cases[DownValues[do], _[_[_[{___}]], a_] :> a]];
   DoLoop[ Last/@ #, Sequence@@ #[[1,1]] ]&/@ 
     Split[OnePassOrder[si], #1[[1]] === #2[[1]] &]
 ]
@@ -7106,7 +7110,7 @@ var, decl, block = 0},
   VarType[vars, type];
   VarType[tmpvars, tmptype /. Type -> type];
   VarType[Union[DoIndex/@
-    Cases[expr, DoLoop[_, i__] -> i, Infinity]], indtype];
+    Cases[expr, DoLoop[_, i__] :> i, Infinity]], indtype];
   _var =.;
   decl = VarDecl[ Flatten[#2], #1[[1,1]] ]&@@@ DownValues[var];
   If[ Length[decl] > 0, WriteString[hh, decl <> "\n"] ];
@@ -7203,7 +7207,7 @@ WriteBlock[hh_, var_ -> expr_] := (
 
 
 FExpr[expr_] := fcoll[ expr /.
-    Complex[a_, b_] -> a + cI b /.
+    Complex[a_, b_] :> a + cI b /.
     Dminus4 -> -2/Divergence /.
     E^x_ :> exp[x] /.
     f:rargs[__] :> RealArgs[f] /.
