@@ -1,6 +1,6 @@
 #! /bin/sh
 # compile script for the C programs used by FormCalc
-# last modified 31 Mar 15 th
+# last modified 23 May 16 th
 
 # If this compile script doesn't work on your system, check these things:
 #
@@ -57,6 +57,7 @@ test -z "$DEST" && {
   DEST="$1"
 }
 
+BIN="$DEST"
 case "$DEST" in
 Please)
 	cat << _EOF_
@@ -76,6 +77,8 @@ Linux | MacOSX-x86)
 Linux-x86-64 | MacOSX-x86-64)
 	CFLAGS="$CFLAGS -m64"
 	MCFLAGS="$MCFLAGS -b64" ;;
+Windows-x86-64)
+	${DLLTOOL:-dlltool} --help | grep x86-64 > /dev/null || BIN=Windows ;;
 esac
 
 test -d "$DEST" || mkdir "$DEST" || {
@@ -102,8 +105,8 @@ all: $DEST/tform$exe \
   $DEST/ToFortran$exe $DEST/ToC$exe \
   $DEST/ReadData$exe $DEST/reorder$exe
 
-$DEST/tform$exe: $SRC/FORM/$DEST/bin/tform$exe
-	cp -p $SRC/FORM/$DEST/bin/tform$exe $DEST/
+$DEST/tform$exe: $SRC/bin/$BIN/tform$exe
+	cp -p $SRC/bin/$BIN/* $DEST/
 
 $DEST/ReadForm$exe: $SRC/FormCalc/ReadForm.tm
 	$mcc -o $DEST/ReadForm$exe $SRC/FormCalc/ReadForm.tm $mclibs

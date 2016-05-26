@@ -1,7 +1,7 @@
 #! /bin/sh
 # a trivial utility for getting the data out of the logs
 # this file is part of FormCalc
-# last modified 16 Oct 15 th
+# last modified 22 Apr 16 th
 
 
 test $# -eq 0 && {
@@ -17,9 +17,13 @@ _EOF_
 
 files=""
 out=""
-for arg in "$@" ; do
-  arg=`dirname "$arg"/*`
-  echo "$arg"
+for dir in "$@" ; do
+  test -d "$dir" || {
+    echo "$dir is no directory"
+    continue
+  }
+  d=`dirname "$dir/x"`
+  echo "$d"
   sed -n '
 	s/^|//
 	t 1
@@ -29,5 +33,6 @@ for arg in "$@" ; do
 	s/\n|+//
 	t 1
 	P
-	D' "$arg"/* > "$arg.data"
+	D' "$d"/* > "$d.data"
 done
+

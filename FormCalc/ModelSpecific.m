@@ -2,7 +2,7 @@
 	ModelSpecific.m
 		global definitions for specific models
 		this file is part of FormCalc
-		last modified 29 Dec 15 th
+		last modified 10 May 16 th
 
 Note: This file is read by FormCalc only if $NoModelSpecific is not True.
 
@@ -218,7 +218,11 @@ Scan[ (RealQ[#] = True)&,
     _MHiggs, _MHiggstree } ]
 
 MSSMReduce[foo_, red_:SMReduce][expr_, r___] :=
-  red[foo][expr /. SBA2 -> 1 - CBA2, r]
+  red[foo][expr /. SBA2 -> 1 - CBA2, r] //.
+  { CB2^2 + SB2^2 + c_ S2B^2 :> C2B^2 + (c + 1/2) S2B^2 /; c < 0,
+    CB2^2 + SB2^2 + c_. S2B^2 :> 1 + (c - 1/2) S2B^2 } /.
+  { 1 - S2B^2 -> C2B^2, -1 + S2B^2 -> -C2B^2,
+    1 - C2B^2 -> S2B^2, -1 + C2B^2 -> -S2B^2 }
 
 MSSMShorten[foo_, red_:SMSimplify][x__] :=
   MSSMReduce[foo, red][x] /. CBA2 - 1 -> -SBA2
@@ -226,13 +230,46 @@ MSSMShorten[foo_, red_:SMSimplify][x__] :=
 MSSMSimplify = MSSMShorten[Simplify];
 MSSMFullSimplify = MSSMShorten[FullSimplify]
 
+MSSMTrig[expr_, simp_:Simplify] := SUSYTrigFullReduce @
+  MapOnly[Plus, _ | a | b][simp, SUSYTrigFullExpand[expr]]
+
+MSSMTrig2[expr_, simp_:Simplify] := MapOnly[Plus,
+  _ | CB | SB | CB2 | SB2 | C2B | S2B | TB |
+  CA | SA | CA2 | SA2 | C2A | S2A |
+  CAB | CBA | CBA2 | SBA2][SUSYTrigFullSimplify[#, simp]&, expr]
+
+
+SUSYTrigFullExpand[expr_] := expr /. {
+  SB -> Sin[b], CB -> Cos[b], SB2 -> Sin[b]^2, CB2 -> Cos[b]^2,
+  TB -> Tan[b], TB2 -> Tan[b]^2,
+  SA -> Sin[a], CA -> Cos[a], SA2 -> Sin[a]^2, CA2 -> Cos[a]^2,
+  C2B -> Cos[2 b], S2B -> Sin[2 b],
+  C2A -> Cos[2 a], S2A -> Sin[2 a],
+  CAB -> Cos[a + b], SAB -> Sin[a + b],
+  CBA -> Cos[b - a], SBA -> Sin[b - a],
+  CBA2 -> Cos[b - a]^2, SBA2 -> Sin[b - a]^2 }
+
+SUSYTrigFullReduce[expr_] := expr //. {
+  Cos[2 b] -> C2B, Sin[2 b] -> S2B,
+  Sec[2 b] -> 1/C2B, Csc[2 b] -> 1/S2B,
+  Cos[2 a] -> C2A, Sin[2 a] -> S2A,
+  Sec[2 a] -> 1/C2A, Csc[2 a] -> 1/S2A,
+  Cos[n_?EvenQ x:a | b] :> 1 - 2 Sin[n/2 x]^2,
+  Sin[n_?EvenQ x:a | b] :> 2 Cos[n/2 x] Sin[n/2 x] } /. {
+  Cos[b] -> CB, Sin[b] -> SB, Tan[b] -> TB,
+  Sec[b] -> 1/CB, Csc[b] -> 1/SB,
+  Cos[a] -> CA, Sin[a] -> SA, Tan[a] -> SA/CA,
+  Sec[a] -> 1/CA, Csc[a] -> 1/SA }
+
+SUSYTrigFullSimplify[expr_, simp_:Simplify] :=
+  SUSYTrigFullReduce[simp[SUSYTrigFullExpand[expr]]]
 
 SUSYTrigExpand[expr_] := expr /. {
   SB -> sb, CB -> cb, SB2 -> sb^2, CB2 -> cb^2,
   TB -> sb/cb, TB2 -> sb^2/cb^2,
   SA -> sa, CA -> ca, SA2 -> sa^2, CA2 -> ca^2,
-  C2A -> ca^2 - sa^2, S2A -> 2 ca sa,
   C2B -> cb^2 - sb^2, S2B -> 2 cb sb,
+  C2A -> ca^2 - sa^2, S2A -> 2 ca sa,
   CAB -> ca cb - sa sb, SAB -> cb sa + ca sb,
   CBA -> ca cb + sa sb, SBA -> ca sb - cb sa,
   CBA2 -> (ca cb + sa sb)^2, SBA2 -> (ca sb - cb sa)^2 }

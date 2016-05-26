@@ -1,8 +1,16 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 20 Apr 16 th
+* last modified 13 May 16 th
 
+
+#procedure EiKi(e, k)
+id d_(`e', `k') = 0;
+id Pol(`e',?a, `k',sM?) = 0;
+id Pol(?a,`e', sM?,`k') = 0;
+#endprocedure
+
+***********************************************************************
 
 #procedure Contract
 repeat once e_([i]?, [j]?, [k]?, [LA]?)*e_([I]?, [J]?, [K]?, [LA]?) =
@@ -16,46 +24,60 @@ repeat once e_([i]?, [j]?, [k]?, [LA]?)*e_([I]?, [J]?, [K]?, [LA]?) =
 
 ***********************************************************************
 
-#if "`MomElim'" == "Automatic"
-#define MomRange "1, `Legs'"
-#elseif `MomElim'
-#define MomRange "`MomElim', `MomElim'"
-#endif
+#if (("`MomElim'" == "Automatic") && (isdefined(k1)))
 
-#procedure MomConserv(foo, r1, r2)
-#do rep1 = 1, `r1'
-#ifdef `MomRange'
-id `foo'([x]?) = `foo'(nterms_([x]), [x]);
+#procedure MomConserv(foo)
+id `foo'([x]?) = `foo'(TMP([x], [x]));
+argument `foo';
+argument TMP, 1;
+#call kikj
+#call Square
+endargument;
+id TMP([x]?, [y]?) = TMP(nterms_([x]), [x], [y]);
 
-#do rep2 = 1, `r2'
-#do i = `MomRange'
-#ifdef `k`i''
-id `foo'([n]?, [x]?) = `foo'([n], [x]) * NOW([x]);
-argument NOW;
+#do rep = 1, 2
+#do i = 1, `Legs'
+id TMP([n]?, [x]?, [y]?, ?a) = TMP([x], [n], [x], [y]);
+argument TMP, 1;
 id k`i' = `k`i'';
 #call eiki
 endargument;
-
-id NOW(0) = 0;
-id NOW([x]?) = `foo'(nterms_([x]), [x]);
-once `foo'(?a) = `foo'(?a);
-also `foo'(?a) = 1;
-#endif
-#enddo
-#enddo
-
-id `foo'([n]?, [x]?) = `foo'([x]);
-#endif
-
-argument `foo';
+id TMP([x]?, ?a) = TMP([x], [x], ?a);
+argument TMP, 1;
 #call kikj
 #call Square
+endargument;
+id TMP(0, ?a) = 0;
+id TMP([x]?, ?a) = TMP(nterms_([x]), [x], ?a);
+symm TMP (1,2,3) (4,5,6);
+#enddo
+#enddo
+
+id TMP([n]?, [x]?, [y]?, ?a) = [x];
 endargument;
 
 #call InvSimplify(`foo')
 id `foo'(0) = 0;
-#enddo
 #endprocedure
+
+#else
+
+#procedure MomConserv(foo)
+argument `foo';
+#ifdef `k`MomElim''
+id k`MomElim' = `k`MomElim'';
+#call eiki
+#endif
+#call kikj
+#call Square
+endargument;
+
+id `foo'(0) = 0;
+#call InvSimplify(`foo')
+id `foo'(0) = 0;
+#endprocedure
+
+#endif
 
 ***********************************************************************
 
@@ -88,7 +110,7 @@ b dotM;
 .sort
 keep brackets;
 
-#call MomConserv(dotM, 1, 2)
+#call MomConserv(dotM)
 
 #if `DotExpand' == 1
 
@@ -100,6 +122,10 @@ off oldFactArg;
 id TAG = 1;
 
 #else
+
+b dotM;
+.sort
+keep brackets;
 
 factarg dotM;
 chainout dotM;
@@ -217,7 +243,7 @@ id ifmatch->1 TAG = 1;
 
 #if "`OnShell'" == "True"
 
-#do i = 1, `Legs'
+#do i = {`MomRange'}
 #ifdef `k`i''
 b `Fermionic';
 .sort
@@ -514,7 +540,7 @@ id e_([mu]?, [nu]?, [ro]?, [si]?) =
 
 id d_([mu]?, [nu]?) = ABB(0, MetricTensor([mu], [nu]), [mu], [nu]);
 
-id [t]?(?a) = ABB(0, [t](?a), ?a);
+id Pol(?a) = ABB(0, Pol(?a), ?a);
 
 id [p1]?([mu]?) = ABB(0, [p1]([mu]), [p1]);
 
@@ -784,7 +810,7 @@ hide;
 
 #define SUNObjs "SUNSum, SUNT, SUNTSum, SUNF, SUNEps"
 
-#define Fermionic "Spinor, GA, e_, `Tensors'"
+#define Fermionic "Spinor, GA, e_, Pol"
 
 * variables appearing in the CalcFeynAmp input and output
 s I, Pi, D, Dminus4, `Invariants';
@@ -796,6 +822,7 @@ cf IndexDelta, IndexEps, IndexSum, `SUNObjs', SUNTr(c);
 f Spinor, g5M, g6M, g7M;
 i Col1,...,Col`Legs', Ind1,...,Ind9;
 v nul, vTnj, v0nj, v1nj, v2nj, v3nj, v4nj;
+t Pol;
 
 * variables that make it into Mma but don't appear in the output
 extrasymbols array subM;
@@ -944,6 +971,20 @@ moduleoption local $fline;
 #call Contract
 
 id intM(?a) = intM(?a) * NN(nargs_(?a));
+
+repeat;
+  id Pol([p1]?, [LA]?, [mu]?) * Pol(?b, [LA]?, [nu]?) =
+    Pol([p1], ?b, [mu], [nu]);
+  id Pol(?a, [mu]?, [LA]?) * Pol([p1]?, [nu]?, [LA]?) =
+    Pol(?a, [p1], [mu], [nu]);
+  id Pol(?a, [mu]?, [LA]?) * Pol(?b, [LA]?, [nu]?) =
+    Pol(?a, ?b, [mu], [nu]);
+endrepeat;
+id Pol(?a, [LA]?, [LA]?) = Pol(?a, 0, 0);
+id Pol(?a, [mu]?, [nu]?) =
+  TMP(TMP(?a, [mu], [nu]), TMP(reverse_(?a), [nu], [mu]));
+symm TMP;
+id TMP(TMP(?a), [x]?) = Pol(?a);
 
 *----------------------------------------------------------------------
 

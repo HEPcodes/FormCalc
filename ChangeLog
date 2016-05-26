@@ -1,3 +1,34 @@
+24 May 16:
+
+- FORM + MathLink binaries are now shipped with FormCalc.
+  This should hopefully put to rest the many MathLink build problems.
+
+
+17 May 16:
+
+- Individual polarization tensors for each leg (eT1, eT2, ...)
+  are no longer introduced, rather a function Pol(e, mu, nu) where
+  e is the identifier also used for a polarization vector.  That is,
+  if 'e' appears alone it is a vector, inside Pol it represents a
+  tensor (that made handling in FORM a lot easier).
+
+- The default assumption is that the polarization tensor factorizes
+  into two polarization vectors, i.e. eT_{mu nu} = e_mu e_nu, which
+  is a specific choice for massless particles, and can be turned off 
+  with Clear[Pol].
+
+- Fixed problem with MomElim -> n, which was so far understood as
+  a hint to perform dot-product simplification most efficiently
+  whereas now it actually eliminates external momentum n.
+
+- Fixed problem with RegisterAbbr which didn't correctly classify
+  all external abbreviations.
+
+- MapOnly function added, to apply (e.g.) simplifications only
+  to subexpressions containing only particular symbols, for
+  example SUSY trig relations.
+
+
 19 Apr 16:
 
 - Fixed bugs in direct CUT_MREM_... cuts.

@@ -1,0 +1,169 @@
+#! /bin/sh -x
+# get and build FORM and the MathLink executables for a given platform
+# last modified 23 May 15 th
+
+gmp=gmp-6.1.0
+zlib=zlib-1.2.8
+
+cc=gcc
+cxx=g++
+clang --version > /dev/null 2>&1 && {
+  cc=clang
+  cxx=clang++
+}
+
+cflags="-O3 -fomit-frame-pointer -ffast-math"
+lin_cflags="$cflags -static"
+mac_cflags="$cflags -fno-pic -mmacosx-version-min=10.6 -stdlib=libstdc++"
+win_cflags="$cflags"
+ldflags=
+exe=
+
+case "$1" in
+Linux)
+	build=i686-unknown-linux-gnu
+	cc=gcc
+	cxx=g++
+	cflags="$lin_cflags -m32"
+	mcflags="-st -b32"
+	;;
+Linux-x86-64)
+	build=x86_64-unknown-linux-gnu
+	cflags="$lin_cflags -m64"
+	mcflags="-st -b64"
+	;;
+MacOSX-x86)
+	build=i486-apple-darwin
+	cflags="$mac_cflags -m32 -Wl,-read_only_relocs,suppress"
+	ldflags="-Wl,-no_pie"
+	mcflags="-st -b32"
+	;;
+MacOSX-x86-64)
+	build=x86_64-apple-darwin
+	cflags="$mac_cflags -m64"
+	ldflags="-Wl,-no_pie"
+	mcflags="-st -b64"
+	;;
+Windows)
+	build=i686-pc-cygwin
+	cc=$build-gcc
+	cxx=$build-g++
+	cflags="$win_cflags -m32"
+	mcflags="-st -b32"
+	exe=.exe
+	;;
+Windows-x86-64)
+	build=x86_64-pc-cygwin
+	cc=$build-gcc
+	cxx=$build-g++
+	cflags="$win_cflags -m64"
+	mcflags="-st -b64"
+	exe=.exe
+	;;
+*)
+	cat << _EOF_
+Usage: $0 platform
+where platform is one of
+Linux
+Linux-x86-64
+MacOSX-x86
+MacOSX-x86-64
+Windows
+Windows-x86-64
+_EOF_
+	exit 1
+	;;
+esac
+
+
+src="$PWD"
+dest=/tmp/makebin-build
+rm -fr "$dest" "$src/$1"
+mkdir -p $dest/bin
+cp -pf "$src/$gmp.tar.xz" "$src/$zlib.tar.gz" "$src/form-master.zip" \
+  "$src/../drivers/tools/fcc" "$src/../drivers/tools/mcc" \
+  "$src/../FormCalc/ReadForm.tm" "$src/../tools/ReadData.tm" $dest/
+ln -s fcc "$dest/f++"
+trap "mv '$dest/bin' '$src/$1'" 0 1 2 3 15
+cd $dest
+
+echo $dest.log
+exec > $dest.log 2>&1
+
+make BUILD="$build" \
+     SRC="$src" \
+     DEST="$dest" \
+     CC="$cc" \
+     CXX="$cxx" \
+     CFLAGS="$cflags" \
+     LDFLAGS="$ldflags" \
+     MCFLAGS="$mcflags" \
+     EXE="$exe" \
+     GMP="$gmp" \
+     ZLIB="$zlib" -f - << \_EOF_
+
+MCLIBS = -lpthread
+
+CONF1 = \
+CC="$(CC)" CFLAGS="$(CFLAGS)" \
+CXX="$(CXX)" CXXFLAGS="$(CFLAGS)" \
+LDFLAGS="$(LDFLAGS)" \
+./configure --prefix=$(DEST)
+
+CONF2 = $(CONF1) --build="$(BUILD)"
+
+MCC = \
+CC="./fcc" REALCC="$(CC)" \
+CXX="./f++" REALCXX="$(CXX)" \
+PATH="$(PATH):." mcc $(MCFLAGS) $(CFLAGS)
+
+all: FORM ReadForm ReadData
+
+FORM: $(DEST)/lib/libgmp.a $(DEST)/lib/libz.a form-master.zip
+	unzip form-master.zip
+	sed -i \
+	  -e '/mmacosx-version-min/d' \
+	  -e '/LINKFLAGS/s/-s//' form-master/sources/Makefile.am
+	cd form-master && autoreconf -i
+	cd form-master && $(CONF2) --with-gmp=$(DEST) --with-zlib=$(DEST)
+	sed -i \
+	  -e 's|-lz|"$(DEST)/lib/libz.a"|' \
+	  -e 's|-lgmp|"$(DEST)/lib/libgmp.a"|' form-master/sources/Makefile
+	cd form-master && $(MAKE) install
+	strip $(DEST)/bin/*form$(EXE)
+	rm -fr form-master
+
+form-master.zip:
+	wget -O form-master.zip https://github.com/vermaseren/form/archive/master.zip
+	cp -p form-master.zip "$(SRC)/"
+
+$(DEST)/lib/libgmp.a: $(GMP).tar.xz
+	tar xvf $(GMP).tar.xz
+	cd $(GMP) && $(CONF2) --disable-shared
+	cd $(GMP) && $(MAKE) install
+	rm -fr $(GMP)
+
+$(GMP).tar.xz:
+	wget http://ftp.gnu.org/gnu/gmp/$(GMP).tar.xz
+	cp -p $(GMP).tar.xz "$(SRC)/"
+
+$(DEST)/lib/libz.a: $(ZLIB).tar.gz
+	tar xvf $(ZLIB).tar.gz
+	cd $(ZLIB) && $(CONF1)
+	cd $(ZLIB) && $(MAKE) SHAREDLIBV= install
+	rm -fr $(ZLIB)
+
+$(ZLIB).tar.gz:
+	wget http://zlib.net/$(ZLIB).tar.gz
+	cp -p $(ZLIB).tar.gz "$(SRC)/"
+
+ReadForm: ReadForm.tm
+	$(MCC) -o $(DEST)/bin/ReadForm$(EXE) ReadForm.tm $(MCLIBS)
+	strip $(DEST)/bin/ReadForm$(EXE)
+
+ReadData: ReadData.tm
+	$(MCC) -o $(DEST)/bin/ReadData$(EXE) ReadData.tm $(MCLIBS)
+	strip $(DEST)/bin/ReadData$(EXE)
+
+_EOF_
+

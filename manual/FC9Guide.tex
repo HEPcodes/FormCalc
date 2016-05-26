@@ -163,7 +163,7 @@ end }
 
 \vspace*{1ex}
 
-\hfill\hbox{Apr 18, 2016~~~~~Thomas Hahn}
+\hfill\hbox{May 9, 2016~~~~~Thomas Hahn}
 
 \bigskip
 \bigskip
@@ -2411,6 +2411,10 @@ limited to the achievable numerical precision.
 	\Code{LeafCount[\Var{expr}] < \Var{n_2}}, etc., \linebreak
 	and \Code{\Var{f_{\text{def}}}[\Var{expr}]} if the expression
 	is still larger \\
+\Code{MapOnly[\Vh,\,\Var{syms}][\Vf,\,\Var{expr}]} &
+	maps \Vf\ onto subexpressions of head \Vh\ in \Var{expr}
+	which must contain one each of all items in \Var{syms} and no 
+	other symbols \\
 \Code{ApplyUnitarity[\Var{expr},\,\Var{U},\,\Vd,\,\Vs]} &
 	simplify \Var{expr} by exploiting the unitarity of the 
 	\Vd-dimensional matrix \Var{U}.  The optional argument \Vs\ 
@@ -2424,6 +2428,7 @@ limited to the achievable numerical precision.
 \indextt{TagCollect}%
 \indextt{Pool}%
 \indextt{OnSize}%
+\indextt{MapOnly}%
 \indextt{ApplyUnitarity}%
 \indextt{ExpandSums}
 
@@ -2460,6 +2465,16 @@ For example,
 applies \Code{FullSimplify} if the expression's leaf count is less than 
 100, \Code{Simplify} if it is between 100 and 500, and 
 \Code{TermCollect} above.
+
+\Code{MapOnly} maps a function onto certain subexpressions (given head, 
+with given symbols) of an expression.  For example, 
+\Code{MapOnly[\Vh,\,\Va|\Vb,\,\Vc][\Vf,\,\Var{expr}]} maps \Vf\ onto all 
+subexpressions of \Var{expr} which must contain \Vc\ \underline{and} 
+\Va\ or \Vb, and may not contain symbols other than \Va, \Vb, \Vc.  
+Alternately, 
+\Code{MapOnly[\Vh,\,\Va|\Vb,\,\uscore|\Vc][\Vf,\,\Var{expr}]} maps \Vf\ 
+onto subexpressions which must contain \Va\ or \Vb\ and must not contain 
+variables other that \Va, \Vb, \Vc.
 
 \Code{ApplyUnitarity} exploits unitarity of a given matrix to simplify 
 an expression.  The two unitarity relations $UU^\dagger = \unity$ or

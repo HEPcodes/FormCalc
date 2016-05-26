@@ -2,7 +2,7 @@
 # this script jumps in if there is no working mcc on the path:
 # - on Mac OS it (hopefully) figures out the location of mcc,
 # - on Cygwin it substitutes mcc completely
-# last modified 16 Jan 15 th
+# last modified 25 May 15 th
 
 
 sdkpath()
@@ -93,7 +93,9 @@ macmcc()
   sdkpath MathKernel \
     /Applications/Mathematica*/Contents/MacOS \
     $HOME/Desktop/Mathematica*/Contents/MacOS
-  exec "$sdk/mcc" "$@"
+  trap "rm -f /tmp/mcc.$$" 0 1 2 3 15
+  ln -s "$sdk" /tmp/mcc.$$
+  exec /tmp/mcc.$$/mcc "$@"
 }
 
 
@@ -105,7 +107,9 @@ defaultmcc()
     /usr/local/Wolfram/Mathematica/*/Executables \
     /opt/Wolfram/bin \
     /opt/Wolfram/Mathematica/*/Executables
-  exec "$sdk/mcc" "$@"
+  trap "rm -f /tmp/mcc.$$" 0 1 2 3 15
+  ln -s "$sdk" /tmp/mcc.$$
+  exec /tmp/mcc.$$/mcc "$@"
 }
 
 
