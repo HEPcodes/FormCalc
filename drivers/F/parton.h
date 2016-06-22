@@ -2,7 +2,7 @@
 * setup for a single partonic process
 * is included by partonic.h for every partonic process
 * this file is part of FormCalc
-* last modified 27 Oct 15
+* last modified 7 Jun 16 th
 
 #undef CPall
 #if defined CPini || defined CPxs
@@ -24,11 +24,7 @@ CPall	parton1 = PARTON1
 CPall	parton2 = PARTON2
 CPall	type = Generic(ARG_Ptyp,JOIN_OCT)
 CPall	helicities = iand(helmask, Generic(ARG_Phel,JOIN_HEL))
-
-CPini	avgfac(pid) = Re(COLOURFACTOR)/(IDENTICALFACTOR*spin_df(helicities))
-#ifdef UNPOLARIZED_DIRAC_FERMIONS
-CPini	avgfac(pid) = avgfac(pid)*Generic(ARG_Pfac,JOIN_MUL)
-#endif
+CPini	avgfac(pid) = Generic(ARG_Pavg,JOIN_MUL)*Re(COLOURFACTOR)/(IDENTICALFACTOR*spin_df(helicities))
 
 #ifdef PHOTONRADIATION
 CPini	call SetArray(charge(1,pid), Charge(ARG_RE,JOIN_SEQ))

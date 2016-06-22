@@ -1,3 +1,50 @@
+9 Jun 16:
+
+- Fixed non-removal of internal dot[.,.] functions in FORM code.
+
+
+8 Jun 16:
+
+- Automated detection of unpolarized Dirac fermions in the
+  Fortran code, i.e. got rid of manually setting
+  UNPOLARIZED_DIRAC_FERMIONS in process.h altogether.
+  For this to work the definitions of Hel must be present during
+  WriteSquaredME, however.
+
+
+7 Jun 16:
+
+- Corrected averaging factor for fermions computed with the
+  HelicityME method.
+
+- Added incoming/outgoing information to 'Compose' preprocessor
+  function in specs.h.
+
+- Fixed empty variable declaration in FORM for Invariants -> False.
+
+
+4 Jun 16:
+
+- Fixed issue with HelNaN, which was not declared in a non-vectorized
+  environment.
+
+
+3 Jun 16:
+
+- Moved FORM procedures common to CalcFeynAmp, HelicityME, 
+  PolarizationSum to Common.frm (with slight adaptations).
+
+- In FormCalc.m accordingsly moved code related to momentum 
+  conservation (including MomElim and DotExpand options) from 
+  CalcFeynAmp, HelicityME, PolarizationSum functions to
+  DeclareProcess.
+
+- Color sums over external particles are now communicated
+  to CalcFeynAmp.frm.  They are still not carried out (so as
+  not to overcount color when squaring the amplitude) but are
+  used to remove terms known to cancel when summed over later.
+
+
 24 May 16:
 
 - FORM + MathLink binaries are now shipped with FormCalc.

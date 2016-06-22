@@ -1,16 +1,8 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 13 May 16 th
+* last modified 3 Jun 16 th
 
-
-#procedure EiKi(e, k)
-id d_(`e', `k') = 0;
-id Pol(`e',?a, `k',sM?) = 0;
-id Pol(?a,`e', sM?,`k') = 0;
-#endprocedure
-
-***********************************************************************
 
 #procedure Contract
 repeat once e_([i]?, [j]?, [k]?, [LA]?)*e_([I]?, [J]?, [K]?, [LA]?) =
@@ -20,155 +12,6 @@ repeat once e_([i]?, [j]?, [k]?, [LA]?)*e_([I]?, [J]?, [K]?, [LA]?) =
   ( d_([i], [I]) * (d_([j], [J])*d_([k], [K]) - d_([j], [K])*d_([k], [J])) +
     d_([i], [J]) * (d_([j], [K])*d_([k], [I]) - d_([j], [I])*d_([k], [K])) +
     d_([i], [K]) * (d_([j], [I])*d_([k], [J]) - d_([j], [J])*d_([k], [I])) );
-#endprocedure
-
-***********************************************************************
-
-#if (("`MomElim'" == "Automatic") && (isdefined(k1)))
-
-#procedure MomConserv(foo)
-id `foo'([x]?) = `foo'(TMP([x], [x]));
-argument `foo';
-argument TMP, 1;
-#call kikj
-#call Square
-endargument;
-id TMP([x]?, [y]?) = TMP(nterms_([x]), [x], [y]);
-
-#do rep = 1, 2
-#do i = 1, `Legs'
-id TMP([n]?, [x]?, [y]?, ?a) = TMP([x], [n], [x], [y]);
-argument TMP, 1;
-id k`i' = `k`i'';
-#call eiki
-endargument;
-id TMP([x]?, ?a) = TMP([x], [x], ?a);
-argument TMP, 1;
-#call kikj
-#call Square
-endargument;
-id TMP(0, ?a) = 0;
-id TMP([x]?, ?a) = TMP(nterms_([x]), [x], ?a);
-symm TMP (1,2,3) (4,5,6);
-#enddo
-#enddo
-
-id TMP([n]?, [x]?, [y]?, ?a) = [x];
-endargument;
-
-#call InvSimplify(`foo')
-id `foo'(0) = 0;
-#endprocedure
-
-#else
-
-#procedure MomConserv(foo)
-argument `foo';
-#ifdef `k`MomElim''
-id k`MomElim' = `k`MomElim'';
-#call eiki
-#endif
-#call kikj
-#call Square
-endargument;
-
-id `foo'(0) = 0;
-#call InvSimplify(`foo')
-id `foo'(0) = 0;
-#endprocedure
-
-#endif
-
-***********************************************************************
-
-#procedure DotSimplify
-#call eiki
-
-id GA(?g) = GF(?g);
-
-id q1 = q1 * QTAG;
-id e_([mu]?, [nu]?, [ro]?, [si]?) =
-  e_([mu], [nu], [ro], [si]) * TMP([mu], [nu], [ro], [si]) * ETAG;
-id [t]?(?i) = [t](?i) * TMP(?i);
-chainout TMP;
-id TMP([p1]?) = 1;
-id TMP([mu]?)^2 = 1;
-id TMP([mu]?) = TAG;
-id ETAG^[n]?{>1} = ETAG;
-
-ab k1,...,k`Legs';
-.sort
-on oldFactArg;
-
-collect dotM, dotM, 50;
-makeinteger dotM;
-
-id ETAG = 1;
-id QTAG = TAG;
-
-b dotM;
-.sort
-keep brackets;
-
-#call MomConserv(dotM)
-
-#if `DotExpand' == 1
-
-id dotM([x]?) = [x];
-
-.sort
-off oldFactArg;
-
-id TAG = 1;
-
-#else
-
-b dotM;
-.sort
-keep brackets;
-
-factarg dotM;
-chainout dotM;
-makeinteger dotM;
-id dotM(1) = 1;
-
-ab `Vectors', `Invariants', dotM;
-.sort
-off oldFactArg;
-
-collect dotM, dotM;
-
-#call InvSimplify(dotM)
-id dotM(0) = 0;
-
-repeat id TAG * dotM([x]?) = TAG * [x];
-id TAG = 1;
-
-*makeinteger dotM;
-*id dotM(dotM(?x)) = dotM(?x);
-
-argument dotM;
-id dotM([x]?) = dotM(nterms_([x]), [x]);
-id dotM(1, [x]?) = [x];
-id dotM([n]?, [x]?) = dotM([x]);
-argument dotM;
-toPolynomial;
-endargument;
-toPolynomial;
-endargument;
-
-makeinteger dotM;
-id dotM(1) = 1;
-id dotM([x]?^[n]?) = dotM([x])^[n];
-id dotM([x]?INVS) = [x];
-
-toPolynomial onlyfunctions dotM;
-
-.sort
-
-#endif
-
-id GF(?g) = GA(?g);
 #endprocedure
 
 ***********************************************************************
@@ -509,129 +352,25 @@ endargument;
 id Evanescent([x]?, [x]?) = 0;
 #endif
 
-#call Abbreviate
+#call Abbrev
 #endprocedure
 
 ***********************************************************************
 
-#procedure Abbreviate
+#procedure Abbrev
 .sort
 
 #call DotSimplify
 
-*----------------------------------------------------------------------
-
 if( count(cutM,1) );
-
 id q1.[p1]? = qfM(q1.[p1]);
 id e_(q1, [p1]?, [p2]?, [p3]?) = qfM(e_(q1, [p1], [p2], [p3]));
 id abbM(fermM(WeylChain(?a, q1, ?b))) = qfM(WeylChain(?a, q1, ?b));
-
 endif;
 
 .sort
 
-*----------------------------------------------------------------------
-
-id [p1]?.[p2]? = ABB(0, [p1].[p2], [p1], [p2]);
-
-id e_([mu]?, [nu]?, [ro]?, [si]?) =
-  ABB(0, Eps([mu], [nu], [ro], [si]), [mu], [nu], [ro], [si]);
-
-id d_([mu]?, [nu]?) = ABB(0, MetricTensor([mu], [nu]), [mu], [nu]);
-
-id Pol(?a) = ABB(0, Pol(?a), ?a);
-
-id [p1]?([mu]?) = ABB(0, [p1]([mu]), [p1]);
-
-repeat;
-  once ABB([s1]?, [x]?, ?a, [mu]?!fixed_, ?b) *
-       ABB([s2]?, [y]?, ?c, [mu]?, ?d) =
-    ABB([s1] + [s2], [x]*[y], ?a, ?b, ?c, ?d) * replace_([mu], N100_?);
-  renumber;
-  once ABB([s1]?, [x]?, ?a, [mu]?!fixed_, ?b, [mu]?, ?c) =
-    ABB([s1], [x], ?a, ?b, ?c) * replace_([mu], N100_?);
-  renumber;
-endrepeat;
-
-id ABB(0, [x]?, ?a) = abbM([x]);
-id ABB([i]?, [x]?, ?a) = fermM([x]);
-
-#if "`FermionChains'" != "Weyl"
-repeat id fermM([x]?) * fermM([y]?) = fermM([x] * [y]);
-argument fermM;
-toPolynomial;
-endargument;
-id fermM([x]?) = Mat(fermM([x]));
-#endif
-
-argument abbM, Mat;
-toPolynomial;
-endargument;
-
-b addM, mulM;
-moduleoption polyfun=abbM;
-.sort
-
-b abbM;
-.sort
-on oldFactArg;
-keep brackets;
-
-id abbM([x]?) = abbM(nterms_([x]), [x]);
-id abbM(1, [x]?) = TMP([x]);
-also abbM([n]?, [x]?) = abbM([x]);
-
-factarg abbM;
-chainout abbM;
-id TMP([x]?) = abbM([x]);
-
-makeinteger abbM;
-id abbM(1) = 1;
-
-b abbM;
-.sort
-off oldFactArg;
-keep brackets;
-
-toPolynomial onlyfunctions abbM;
-#endprocedure
-
-***********************************************************************
-
-#procedure CollectTerms
-collect dotM;
-
-moduleoption polyfun=dotM;
-.sort
-
-makeinteger dotM;
-id dotM([x]?) = dotM(nterms_([x]), [x]);
-id dotM(1, [x]?) = mulM([x]);
-id dotM([n]?, [x]?) = mulM(dotM([x]));
-
-argument mulM;
-toPolynomial;
-endargument;
-
-moduleoption polyfun=mulM;
-.sort
-on oldFactArg;
-
-#call Factor(mulM)
-
-b mulM;
-.sort
-off oldFactArg;
-keep brackets;
-
-argument mulM;
-toPolynomial;
-endargument;
-
-id mulM([x]?symbol_) = [x];
-
-toPolynomial onlyfunctions mulM;
+#call Abbreviate
 #endprocedure
 
 ***********************************************************************
@@ -659,32 +398,6 @@ argument MOM;
 #call kikj
 endargument;
 id MOM([x]?) = [x];
-#endprocedure
-
-***********************************************************************
-
-#procedure Fewest(foo)
-argument `foo';
-#call Neglect
-endargument;
-id `foo'([x]?, [y]?) = `foo'([x], nterms_([x])*2 - 1, [y], nterms_([y])*2);
-symm `foo' (2,1), (4,3);
-id `foo'([x]?, ?a) = `foo'([x]);
-#endprocedure
-
-***********************************************************************
-
-#procedure Factor(foo)
-id `foo'(?x) = mulM(`foo'(?x));
-argument mulM;
-factarg `foo';
-chainout `foo';
-makeinteger `foo';
-id `foo'([x]?) = `foo'(nterms_([x]), [x]);
-id `foo'(1, [x]?) = [x];
-id `foo'([n]?, [x]?) = `foo'([x]);
-endargument;
-makeinteger mulM;
 #endprocedure
 
 ***********************************************************************
@@ -817,7 +530,7 @@ s I, Pi, D, Dminus4, `Invariants';
 s Gamma5Test, Finite, MuTilde, MuTildeSq, Renumber;
 s tnj, xnj, b0nj, b1nj, b2nj;
 cf SumOver, PowerOf, Mat, Den, A0, IGram, List;
-cf MetricTensor, Eps, DiracChain, WeylChain, Evanescent;
+cf Eps, DiracChain, WeylChain, Evanescent;
 cf IndexDelta, IndexEps, IndexSum, `SUNObjs', SUNTr(c);
 f Spinor, g5M, g6M, g7M;
 i Col1,...,Col`Legs', Ind1,...,Ind9;
@@ -846,7 +559,7 @@ t [t];
 
 * variables internal to FORM
 s TAG, ETAG, QTAG, CUTRAT, JJ, KK;
-cf TMP, MOM, ABB, SUNX, ORD, NOW, CH, SIGN(antisymm);
+cf TMP, MOM, ABB, SUNX, ORD, CH, SIGN(antisymm);
 cf NEQ, NN, FF, DROP, JGRAM, D1, D2, E1, E2, HDEL;
 t NUM, EQ, DD, EPS(antisymm);
 nt GA, GB, GC, GD;
@@ -908,32 +621,32 @@ repeat;
     dirM(CC([x])*[y], [i], [k]);
   argument dirM, 1;
     argument CC;
-      id g_(sM, [mu]?) = -CC([mu]);
+      id g_(iM, [mu]?) = -CC([mu]);
       chainin CC;
       id CC(?a) = CC(reverse_(?a));
-      id g5_(sM) * CC(?a) = g_(sM, ?a, 5_);
-      id g6_(sM) * CC(?a) = g_(sM, ?a, 6_);
-      id g7_(sM) * CC(?a) = g_(sM, ?a, 7_);
-      id CC(?a) = g_(sM, ?a);
+      id g5_(iM) * CC(?a) = g_(iM, ?a, 5_);
+      id g6_(iM) * CC(?a) = g_(iM, ?a, 6_);
+      id g7_(iM) * CC(?a) = g_(iM, ?a, 7_);
+      id CC(?a) = g_(iM, ?a);
     endargument;
     id CC([x]?) = [x];
   endargument;
 endrepeat;
 
 id dirM([x]?, [i]?) * dirM([y]?, [i]?, [j]?) *
-     dirM(Spinor(?k, [s2]?)*gi_(sM), [j]?) =
+     dirM(Spinor(?k, [s2]?)*gi_(iM), [j]?) =
   dirM([x]*[y]*Spinor(?k, -[s2]), [i], [j]);
 
 $fline = 1;
 id dirM([x]?, [i]?, [i]?) = -CH([x]);
 while( count(CH,1) );
-  once CH([x]?) = TMP([x]*replace_(sM, $fline));
+  once CH([x]?) = TMP([x]*replace_(iM, $fline));
   $fline = $fline + 1;
 endwhile;
 
 $fline = 100;
 while( count(dirM,1) );
-  once dirM([x]?, ?i) = TMP([x]*replace_(sM, $fline)) * ORD(?i);
+  once dirM([x]?, ?i) = TMP([x]*replace_(iM, $fline)) * ORD(?i);
   $fline = $fline + 1;
 endwhile;
 
@@ -1476,7 +1189,7 @@ id CUTRAT = 1;
 
 #if `HaveFermions' == 0
 
-#call Abbreviate
+#call Abbrev
 
 #else
 
@@ -1555,7 +1268,7 @@ id Spinor(?s1) * GA(?g) * Spinor(?s2) =
   abbM(fermM(WeylChain(Spinor(?s1), ?g, Spinor(?s2))));
 #endif
 
-#call Abbreviate
+#call Abbrev
 
 #else
 
@@ -1652,11 +1365,16 @@ b `SUNObjs';
 .sort
 keep brackets;
 
+id SUNT([a]?, [i]?, [i]?) * SUNSum([i]?, ?n) = 0;
+id SUNTSum([i]?, [i]?, ?a) * SUNSum([i]?, ?n) = 0;
+id SUNTSum(?a, [i]?, [i]?) * SUNSum([i]?, ?n) = 0;
+
 if( count(SUNF,1) );
 
   repeat;
     once SUNF(?a, [a]?, [b]?, [c]?, [d]?) =
-      SUNF(?a, [a], [b], N100_?) * SUNF(N100_?, [c], [d]) * SUNSum(N100_?);
+      SUNF(?a, [a], [b], N100_?) * SUNF(N100_?, [c], [d]) *
+      SUNSum(N100_?, 1, 1);
     renumber;
   endrepeat;
 
@@ -1669,23 +1387,23 @@ endif;
 
 
 repeat;
-  once SUNT(?a, 0, 0) = SUNT(?a, N100_?, N100_?) * SUNSum(N100_?);
+  once SUNT(?a, 0, 0) = SUNT(?a, N100_?, N100_?) * SUNSum(N100_?, 1, 1);
   renumber;
 endrepeat;
 
 repeat;
   once SUNT(?a, [a]?, [b]?, [i]?, [j]?) =
-    SUNT(?a, [a], [i], N100_?) * SUNT([b], N100_?, [j]) * SUNSum(N100_?);
+    SUNT(?a, [a], [i], N100_?) * SUNT([b], N100_?, [j]) *
+    SUNSum(N100_?, 1, 1);
   renumber;
 endrepeat;
 
 
+id SUNT([a]?, ?i) * SUNT([a]?, ?j) * SUNSum([a]?, [n]?, ?n) =
+  SUNTSum(?i, ?j);
+
 * T^a_{ij} T^a_{kl} =
 *   1/2 (delta_{il} delta_{jk} - 1/N delta_{ij} delta_{kl})
-
-id SUNT([a]?, [i]?, [j]?) * SUNT([a]?, [k]?, [l]?) * SUNSum([a]?, ?a) =
-  1/2 * SUNT([i], [l]) * SUNT([j], [k]) -
-  1/2/(`SUNN') * SUNT([i], [j]) * SUNT([k], [l]);
 
 id SUNTSum([i]?, [j]?, [k]?, [l]?) =
   1/2 * SUNT([i], [l]) * SUNT([j], [k]) -
@@ -1698,15 +1416,15 @@ id SUNEps([i]?, [j]?, [k]?) = EPS([i], [j], [k]);
 * cleaning up, step 1: get rid of the deltas
 
 repeat;
-  id EPS([I]?, [j]?, [k]?) * EPS([I]?, [b]?, [c]?) *
-    SUNSum([I]?, [x]?) = 
+  id EPS([I]?, [j]?, [k]?) * EPS([I]?, [b]?, [c]?) * SUNSum([I]?, [n]?) =
     SUNT([j], [b])*SUNT([k], [c]) -
     SUNT([j], [c])*SUNT([k], [b]);
   repeat;
-    id SUNT([I]?, [I]?) * SUNSum([I]?, ?a) = `SUNN';
+    id SUNT([I]?, [I]?) * SUNSum([I]?, [n]?, ?n) = `SUNN';
     symm SUNT:2 1, 2;
-    once ifmatch->1 SUNT([I]?, [j]?) * SUNSum([I]?, ?a) = replace_([I], [j]);
-    once SUNT([i]?, [J]?) * SUNSum([J]?, ?a) = replace_([J], [i]);
+    once ifmatch->1 SUNT([I]?, [j]?) * SUNSum([I]?, [n]?, ?n) = 
+      replace_([I], [j]);
+    once SUNT([i]?, [J]?) * SUNSum([J]?, [n]?, ?n) = replace_([J], [i]);
     label 1;
   endrepeat;
 endrepeat;
@@ -1721,13 +1439,13 @@ id EPS([i]?, [j]?, [k]?) = sunM(SUNEps([j], [k], [i]));
 repeat;
   once SUNT(?a, [a]?, [i]?, [j]?) = TMP(?a, [a], [i], [j]);
   repeat;
-    id TMP(?a, [i]?, [j]?) * SUNT(?b, [j]?, [k]?) * SUNSum([j]?, ?c) =
+    id TMP(?a, [i]?, [j]?) * SUNT(?b, [j]?, [k]?) * SUNSum([j]?, ?n) =
       TMP(?a, ?b, [i], [k]);
-    id SUNT(?a, [i]?, [j]?) * TMP(?b, [j]?, [k]?) * SUNSum([j]?, ?c) =
+    id SUNT(?a, [i]?, [j]?) * TMP(?b, [j]?, [k]?) * SUNSum([j]?, ?n) =
       TMP(?a, ?b, [i], [k]);
   endrepeat;
 
-  id TMP(?a, [i]?, [i]?) * SUNSum([i]?, ?b) = SUNTr(?a);
+  id TMP(?a, [i]?, [i]?) * SUNSum([i]?, ?n) = SUNTr(?a);
   id SUNTr(?a) = TMP(?a, 0, 0);
 
 * special case of Tr(T^a T^b) = 1/2 delta_{ab}
@@ -1736,6 +1454,9 @@ repeat;
 
   id TMP(?a) = sunM(SUNT(?a));
 endrepeat;
+
+id SUNSum([i]?) = 1;
+id SUNSum([i]?, [n]?) = [n];
 
 symm SUNT;
 
@@ -1747,8 +1468,6 @@ id sunM(SUNT(?a, [i]?COLS[[x]], [j]?COLS[[y]])) =
 #endif
 
 repeat id sunM([x]?) * sunM([y]?) = sunM([x] * [y]);
-
-id SUNSum([i]?, [x]?) = [x];
 
 * the Mat(...) are kept at the almost outermost level (only SumOver
 * comes before), i.e. the amplitude is of the form Sum[c[i] Mat[i], i];
@@ -1908,6 +1627,7 @@ endargument;
 symm cutM;
 #endif
 
+once cutM() = cutM();
 #do n = 2, `ExtMax'
 also once cutM(<Den(?m1)*MOM([p1]?)>,...,<Den(?m`n')*MOM([p`n']?)>) =
   replace_(q1, 2*q1 - [p1]) *
@@ -1944,8 +1664,6 @@ id qfM([x]?) = [x];
 
 #call eiki
 #call ChainOrder(0)
-#call eiki
-
 #call DotSimplify
 
 id MuTildeSq = qfM(MuTildeSq);

@@ -1,19 +1,7 @@
 * process.h
 * defines all process-dependent parameters
 * this file is part of FormCalc
-* last modified 23 Oct 15 th
-
-
-* When using Dirac fermions (FermionChains -> Chiral|VA) and
-* the trace technique (HelicityME), the following flag should be 
-* defined to compute unpolarized cross-sections efficiently,
-* i.e. without actually summing up the different helicities.
-* This has no effect on the result, only on the speed of the
-* calculation.
-
-#ifndef UNPOLARIZED_DIRAC_FERMIONS
-c#define UNPOLARIZED_DIRAC_FERMIONS
-#endif
+* last modified 8 Jun 16 th
 
 
 * Possibly a colour factor, e.g.

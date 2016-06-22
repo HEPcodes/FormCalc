@@ -3,7 +3,7 @@
 	prototypes for the util functions
 	this file is part of FormCalc
 	SIMD functions by J.-N. Lang
-	last modified 11 Jan 16 th
+	last modified 7 Jun 16 th
 #endif
 
 
@@ -273,9 +273,9 @@ static inline HelType HxH(cHelType a, cHelType b) {
 #define BIT_RESET 1
 #define BIT_LOOP 2
 
-#define ARG_ID(i,x) x
-#define ARG_RE(i,x) Re(x)
-#define ARG_HEL(i,x) (1LL << (Hel0(i)+2))
+#define ARG_ID(i,x,o) x
+#define ARG_RE(i,x,o) Re(x)
+#define ARG_HEL(i,x,o) (1LL << (Hel0(i)+2))
 #define JOIN_SEQ(a,b) a,b
 #define JOIN_MUL(a,b) a*b
 #define JOIN_OCT(a,b) b+8*(a)

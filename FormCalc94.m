@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.4
 Copyright by Thomas Hahn 1996-2016
-last modified 24 May 16 by Thomas Hahn
+last modified 8 Jun 16 by Thomas Hahn
 
 Release notes:
 
@@ -285,7 +285,7 @@ BeginPackage["Form`"]
 
 { q1, MuTilde, dm4M, qfM, qcM, numM, intM, paveM, cutM, extM,
   dotM, abbM, fermM, sunM, helM, powM, addM, mulM, subM,
-  d$$, e$$, i$$, dummy$$, g5M, g6M, g7M, dirM, sM, EiKi,
+  d$$, e$$, i$$, dummy$$, g5M, g6M, g7M, dirM, iM, sM, EiKi,
   njM, tnj, xnj, bnj, b0nj, b1nj, b2nj,
   vTnj, v0nj, v1nj, v2nj, v3nj, v4nj }
 
@@ -544,6 +544,19 @@ InvSimplify::usage =
 "InvSimplify is an option of DeclareProcess.  It specifies whether FORM
 should try to simplify combinations of invariants as much as possible."
 
+MomElim::usage =
+"MomElim is an option of DeclareProcess.  It controls in which way
+momentum conservation is used to eliminate momenta.  False performs no
+elimination, an integer between 1 and the number of legs substitutes
+the specified momentum in favour of the others, and Automatic tries all
+substitutions and chooses the one resulting in the fewest terms."
+
+DotExpand::usage =
+"DotExpand is an option of DeclareProcess.  It controls whether the
+terms collected for momentum elimination are expanded again.  This
+prevents kinematical invariants from appearing in the abbreviations but
+typically leads to poorer simplification of the amplitude."
+
 Antisymmetrize::usage =
 "Antisymmetrize is an option of DeclareProcess.  It specifies whether
 Dirac chains are antisymmetrized."
@@ -570,19 +583,6 @@ is used, and 4, where constrained differential renormalization is used.
 The latter method is equivalent to dimensional reduction at the one-loop
 level.  Dimension -> 0 retains the Dminus4 terms, i.e. does not emit
 local (rational) terms."
-
-MomElim::usage =
-"MomElim is an option of CalcFeynAmp.  It controls in which way
-momentum conservation is used to eliminate momenta.  False performs no
-elimination, an integer between 1 and the number of legs substitutes
-the specified momentum in favour of the others, and Automatic tries all
-substitutions and chooses the one resulting in the fewest terms."
-
-DotExpand::usage =
-"DotExpand is an option of CalcFeynAmp.  It controls whether the terms
-collected for momentum elimination are expanded again.  This prevents
-kinematical invariants from appearing in the abbreviations but typically
-leads to poorer simplification of the amplitude."
 
 NoCostly::usage =
 "NoCostly is an option of CalcFeynAmp.  Useful for 'tough' amplitudes,
@@ -1881,7 +1881,7 @@ Begin["`Private`"]
 
 $FormCalc = 9.4
 
-$FormCalcVersion = "FormCalc 9.4 (24 May 2016)"
+$FormCalcVersion = "FormCalc 9.4 (7 Jun 2016)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -2435,7 +2435,8 @@ sumover[i:Index[Colour | Gluon, _], r__] := SUNSum[i, r]
 
 sumover[other__] := SumOver[other]
 
-SUNSum[_, _, External] = 1
+(*SUNSum[_, _, External] = 1*)
+SUNSum[i_, _, External] := SUNSum[i]
 
 
 KinFunc[
@@ -2516,7 +2517,7 @@ Block[ {c = 96, newlhs, newrhs = rhs, patt},
   (newlhs /. patt[x_] :> x <> "?") -> (newrhs /. patt[x_] :> x)
 ]
 
-FormArg[h_:Identity] := h[patt["ARG" <> FromCharacterCode[++c]]]
+FormArg[h_:Identity] := h[patt["sM" <> FromCharacterCode[++c]]]
 
 FormArgs[h_:Identity] := h["?" <> FromCharacterCode[++c]]
 
@@ -2613,6 +2614,8 @@ Options[DeclareProcess] = {
   Transverse -> True,
   Normalized -> True,
   InvSimplify -> True,
+  MomElim -> Automatic,
+  DotExpand -> False,
   Antisymmetrize -> True }
 
 Attributes[DeclareProcess] = {Listable}
@@ -2636,8 +2639,9 @@ _DeclareProcess := (Message[DeclareProcess::syntax]; Abort[])
 
 DeclP[_, opt_, opt_] = Null
 
-DeclP[proc_, opt:{onshell_, inv_, transv_, norm_, invsimp_, antisymm_}, ___] :=
-Block[ {signs, masses, kins, dot, n, neglect, square, id,
+DeclP[proc_, opt:{onshell_, inv_, transv_, norm_,
+                  invsimp_, momelim_, dotexp_, antisymm_}, ___] :=
+Block[ {signs, masses, kins, dot, n, neglect, square, id, momrange,
 invproc = {}, invs = {}, kikj = {}, eiki = {}, eiei = {}},
   CurrentProc = proc;
   CurrentOptions = opt;
@@ -2667,7 +2671,7 @@ invproc = {}, invs = {}, kikj = {}, eiki = {}, eiei = {}},
 
   If[ norm, eiei = KinFunc[e.ec -> -1]@@@ kins ];
 
-  Switch[ Legs,
+  Switch[ Length[masses],
     0 | 1,
       Null,
     2,
@@ -2693,7 +2697,7 @@ invproc = {}, invs = {}, kikj = {}, eiki = {}, eiei = {}},
 
         If[ invsimp && onshell =!= False && Legs =!= 3,
           invproc = ToForm[MapIndexed[
-            { "id `foo'(ARG?) = `foo'(ARG, ARG*replace_(",
+            { "id `foo'(sM?) = `foo'(sM, sM*replace_(",
               #1, ", ", InvSum - Plus@@ Drop[invs, #2],
               "));\n#call Fewest(`foo')\n" }&, invs ]] ];
 
@@ -2709,13 +2713,20 @@ invproc = {}, invs = {}, kikj = {}, eiki = {}, eiei = {}},
           -signs[[#]] Plus@@ Drop[n, {#}], "\"\n"}&, Legs]};
   ];
 
-  kikj = Cases[DownValues[dot], _[_[_[k__]], v_] :> Dot[k] -> v];
+  kikj = (#1[[1]] -> #2)&@@@ (DownValues[dot] /. dot -> Dot);
   FormSymbols = Flatten[{FormSymbols, Last/@ kikj}];
+
+  momrange = Range[Legs];
+  If[ momelim > 0 && momelim <= Legs,
+    momrange = Append[Delete[momrange, {momelim}], momelim] ];
 
   FormProcs = "\n\
 #define Legs \"" <> ToString[Legs] <> "\"\n\
 #define Invariants \"" <> ToSeq[Cases[invs, _Symbol]] <> "\"\n\
 #define OnShell \"" <> ToString[onshell] <> "\"\n\
+#define MomElim \"" <> ToString[momelim && Length[MomSubst] === 0] <> "\"\n\
+#define MomRange \"" <> ToSeq[momrange] <> "\"\n\
+#define DotExpand \"" <> ToBool[dotexp] <> "\"\n\
 #define Antisymmetrize \"" <> ToBool[antisymm] <> "\"\n\n" <>
     ToForm[FormProcs] <> "\n\
 #procedure Neglect\n" <>
@@ -3033,8 +3044,6 @@ Attributes[CalcFeynAmp] = {Listable}
 Options[CalcFeynAmp] = {
   CalcLevel -> Automatic,
   Dimension -> D,
-  MomElim -> Automatic,
-  DotExpand -> False,
   NoCostly -> False,
   FermionChains -> Weyl,
   FermionOrder -> Automatic,
@@ -3063,17 +3072,18 @@ implies the use of Fierz identities which are in general not \
 applicable in D dimensions.  You know what you are doing."
 
 CalcFeynAmp[FormAmp[proc_][amp___], opt___Rule] :=
-Block[ {lev, dim, momelim, dotexp, nocost, fchain, forder, evanes,
+Block[ {lev, dim, nocost, fchain, forder, evanes,
 inspol, sortden, combden, pavered, cancelq2, opp, oppmeth, oppqsl,
 g5test, g5eps, noexp, nobrk, momrul, pre, post, tag, edit, retain,
 uniq, vecs, kc = 0, hd, ic, inssym, mmains,
 indices = {}, ranges = {}, indsym, haveferm, momrange,
 intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
 
-  {lev, dim, momelim, dotexp, nocost, fchain, forder, evanes,
-    inspol, sortden, combden, pavered, cancelq2, opp, oppmeth, oppqsl,
+  { lev, dim, nocost, fchain, forder, evanes, inspol,
+    sortden, combden, pavered, cancelq2,
+    opp, oppmeth, oppqsl,
     g5test, g5eps, noexp, nobrk, momrul,
-    pre, post, tag, edit, retain} = ParseOpt[CalcFeynAmp, opt];
+    pre, post, tag, edit, retain } = ParseOpt[CalcFeynAmp, opt];
 
   opp = opp /. {True -> 1, Rational -> -1, False -> 100};
 
@@ -3165,7 +3175,7 @@ intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
   mmains = mmains /. Index -> indsym;
   ranges = Append[Union[Flatten[ranges]] /. Index -> indsym, i_ :> i == 0];
 
-  indices = Union[Flatten[ {indices, sM,
+  indices = Union[Flatten[ {indices,
     Cases[DownValues[indsym], _[_, s_Symbol] :> s],
     Cases[amps, SumOver[i_, ___] | IndexSum[_, i_, ___] :> i, Infinity],
 	(* possibly some colour or gluon indices have been fixed by
@@ -3184,19 +3194,12 @@ intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
   vars = FormVars[ If[dim === 4, 4, D],
     {amps, SUNN, Hel[], dirM[]}, indices, ranges ];
 
-  momrange = Range[Legs];
-  If[ momelim > 0 && momelim <= Legs,
-    momrange = Append[Delete[momrange, {momelim}], momelim] ];
-
   hh = OpenForm["fc-" <> tag <> "-"];
   WriteString[hh, "\
 #define Dim \"", ToString[dim], "\"\n\
 #define InsertionPolicy \"" <> ToForm[inspol] <> "\"\n\
 #define IntMax \"" <> ToForm[intmax] <> "\"\n\
 #define ExtMax \"" <> ToForm[Max[intmax, extmax]] <> "\"\n\
-#define MomElim \"" <> ToString[momelim && Length[MomSubst] === 0] <> "\"\n\
-#define MomRange \"" <> ToSeq[momrange] <> "\"\n\
-#define DotExpand \"" <> ToBool[dotexp] <> "\"\n\
 #define NoCostly \"" <> ToBool[nocost] <> "\"\n\
 #define HaveFermions \"" <> ToBool[haveferm] <> "\"\n\
 #define FermionOrder \"" <> ToSeq[forder] <> "\"\n\
@@ -3226,6 +3229,7 @@ table HEL(1:" <> ToString[Legs] <> ");\n" <>
   WriteString[hh, ".sort\ndrop;\n\n"];
   FormWrite[hh, FormCalc`Result -> res];
   WriteString[hh, "#endprocedure\n\n" <>
+    FormCode["Common.frm"] <>
     FormCode["CalcFeynAmp.frm"]];
   Close[hh];
 
@@ -3252,7 +3256,7 @@ chain[g1_, g___] := (fline = Max[fline + 1, 100];
   NonCommutativeMultiply[g1, ga[], g] /. ga -> om)
 
 dobj[g1_, g___][di__] :=
-Block[ {fline = sM},
+Block[ {fline = iM},
   dirM[NonCommutativeMultiply[g1, ga[], g] /. ga -> om, di]
 ]
 
@@ -4229,8 +4233,6 @@ Format[WeylChain[s1_Spinor, om_, g___, s2_Spinor]] :=
 
 Options[HelicityME] = {
   Dimension -> 4,
-  MomElim -> MomElim,
-  DotExpand -> DotExpand,
   EditCode -> False,
   RetainFile -> False }
 
@@ -4243,14 +4245,14 @@ CalcFeynAmp uses DiracChains with the option FermionChains -> Chiral or VA."
 HelicityME[plain_, opt___Rule] := HelicityME[plain, plain, opt]
 
 HelicityME[plain_, conj_, opt___Rule] :=
-Block[ {dim, momelim, dotexp, edit, retain,
+Block[ {dim, edit, retain,
 abbr, part, ind, ic = 0, vars, hels, helM, hh, e, mat},
 
   If[ CurrentProc === {},
     Message[HelicityME::noprocess];
     Abort[] ];
 
-  {dim, momelim, dotexp, edit, retain} =
+  {dim, edit, retain} =
     ParseOpt[HelicityME, opt] /. Options[CalcFeynAmp];
 
   abbr = Abbr[];
@@ -4279,14 +4281,14 @@ abbr, part, ind, ic = 0, vars, hels, helM, hh, e, mat},
 
   hh = OpenForm["fc-hel-"];
   WriteString[hh, "\
-#define MomElim \"" <> ToString[momelim && Length[MomSubst] === 0] <> "\"\n\
-#define DotExpand \"" <> ToBool[dotexp] <> "\"\n\n" <>
+#define FermionChains \"None\"\n\n" <>
     vars[[1]] <> "\n\
 table HEL(" <> ToString[Min[part]] <> ":" <>
                ToString[Max[part]] <> ", e?);\n" <>
     MapThread[{"fill HEL(", ToForm[#1], ") = ", ToForm[#2], ";\n"}&,
       {part, hels}] <> "\n" <>
     FormProcs <>
+    FormCode["Common.frm"] <>
     FormCode["HelicityME.frm"]];
 
   FormWrite[hh, "Mat" <> ToString/@ List@@ #1 -> #2]&@@@ mat;
@@ -4405,7 +4407,7 @@ ColourSimplify[plain_, conj_:1] :=
 Block[ {res, ind},
   {res, ind} = Reap[ plain Conjugate[conj] /.
     {IndexDelta -> idelta, SumOver -> sumover} /.
-    SUNSum[i_, _] :> (Sow[i]; 1) ];
+    SUNSum[i_, ___] :> (Sow[i]; 1) ];
   Simplify[ Expand[ res /.
     Cases[ind, i_Index :> (i -> iname@@ i), {2}] /.
     {SUNT -> sunText, SUNF -> sunF,
@@ -4576,8 +4578,6 @@ Options[PolarizationSum] = {
   SumLegs -> All,
   Dimension -> 4,
   GaugeTerms -> True,
-  MomElim -> MomElim,
-  DotExpand -> DotExpand,
   NoBracket -> NoBracket,
   EditCode -> False,
   RetainFile -> False }
@@ -4600,14 +4600,14 @@ Block[ {Hel},
 ]
 
 PolarizationSum[expr_, opt___?OptionQ] :=
-Block[ {slegs, dim, gauge, momelim, dotexp, nobrk, edit, retain,
+Block[ {slegs, dim, gauge, nobrk, edit, retain,
 fullexpr, lor, indices, legs, masses, etasubst, vars, hh},
 
   If[ CurrentProc === {},
     Message[PolarizationSum::noprocess];
     Abort[] ];
 
-  {slegs, dim, gauge, momelim, dotexp, nobrk, edit, retain} =
+  {slegs, dim, gauge, nobrk, edit, retain} =
     ParseOpt[PolarizationSum, opt] /. Options[CalcFeynAmp];
 
   fullexpr = expr //. Dispatch[Subexpr[]] //. Dispatch[Abbr[]] /.
@@ -4635,15 +4635,15 @@ fullexpr, lor, indices, legs, masses, etasubst, vars, hh},
   hh = OpenForm["fc-pol-"];
   WriteString[hh, "\
 #define Dim \"", ToString[dim], "\"\n\
-#define GaugeTerms \"" <> ToString[gauge] <> "\"\n\n\
-#define MomElim \"" <> ToString[momelim && Length[MomSubst] === 0] <> "\"\n\
-#define DotExpand \"" <> ToBool[dotexp] <> "\"\n\n" <>
+#define GaugeTerms \"" <> ToString[gauge] <> "\"\n\
+#define FermionChains \"None\"\n\n" <>
     vars[[1]] <> "\n\
 #procedure EtaSubst\n" <>
     FormId[etasubst] <> "\
 #endprocedure\n" <>
     FormProcs <>
     FormConst[vars, nobrk] <>
+    FormCode["Common.frm"] <>
     FormCode["PolarizationSum.frm"]];
 
   Write[hh, "L SquaredME = ", fullexpr, ";"];
@@ -4764,33 +4764,35 @@ InvList[_] = {}
 
 
 pdefs[proc_] :=
-Block[ {qn, fp},
-  qn = (##4&)@@@ proc;
+Block[ {qn, n = 0},
+  qn = (##4&)@@@ Level[proc, {2}];
   qn = Union[Flatten[DeleteCases[qn, _?NumberQ, Infinity]]];
-  fp = MapIndexed[{"f(", ToString@@ #2, ",",
-    FromCharacterCode[#2[[1]] + 64], ")"}&, proc];
   { "\n\n\
 #undef Compose\n\
-#define Compose(f,c", #[[{3, 4}]]&/@ fp, ") ",
-    Fold[{"c(", #1, ",", #2, ")"}&, fp[[1]], Rest[fp]],
+#define Compose(f,c", #1, ") ",
+    Fold[{"c(", #1, ",", #2, ")"}&, #2[[1]], Rest[#2]],
     MapThread[ {"\n\n\
 #undef ", #1, "\n\
 #define ", #1, "(f,c) Compose(f,c", {",", #}&/@ #2, ")"}&,
-      { Flatten[{"Generic", "Anti", "Mass", ToCode/@ qn}],
-        Transpose[pspec/@ proc] }] }
+      {Flatten[{"Generic", "Anti", "Mass", ToCode/@ qn}], {##3}} ]
+  }&@@ Transpose[Level[MapIndexed[pspec, proc, {2}], {2}]]
 ]
 
-pspec[{(s_Integer:1) p_, _, m_, q_:0}] := Flatten[{
-  ptype[p, m],
+pspec[{(s_Integer:1) p_, _, m_, q_:0}, {o_, _}] := Flatten[{
+  #,
+  "f(" <> ToString[n] <> # <> "," <> ToString[o] <> ")",
+  ptype[p, m, Hel[n]],
   ToString[s],
   ToCode[m],
-  pqnum[Plus@@ Flatten[{q}]]/@ qn }]
+  pqnum[Plus@@ Flatten[{q}]]/@ qn
+}]&[ "," <> FromCharacterCode[++n + 64] ]
 
-ptype[_V, 0] := "PHOTON";
-ptype[_V, _] := "VECTOR";
-ptype[_F, _] := "FERMION";
-ptype[_S, _] := "SCALAR";
-ptype[_U, _] := "GHOST"
+ptype[_V, 0, _] := "PHOTON";
+ptype[_V, __] := "VECTOR";
+ptype[_F, _, 0] := "UFERMION";
+ptype[_F, __] := "FERMION";
+ptype[_S, __] := "SCALAR";
+ptype[_U, __] := "GHOST"
 
 pqnum[expr_][qn_] := ToCode[Coefficient[expr, qn]]
 
@@ -5688,7 +5690,7 @@ $(LIB)($(OBJS)): " <> $MakeDeps[[1]] <> MakefileName["vars.h"] <> "\n\n"];
 #define IDENTICALFACTOR " <>
     ToString[Times@@ (Factorial[Length[#]]&)/@
       Split[DeleteCases[First/@ proc[[2]], _Symbol, {-1}]//Sort]] <>
-    pdefs[Level[proc, {2}]] <> "\n\n")&@@ ToString/@ Length/@ proc];
+    pdefs[proc] <> "\n\n")&@@ ToString/@ Length/@ proc];
 
   Close[hh];
 
@@ -7133,8 +7135,8 @@ var, decl, block = 0},
   {horner, fcoll, ffun, type, tmptype, indtype, rargs, newline} =
     ParseOpt[WriteExpr, opt];
   rargs = Alt[rargs];
-  horner = If[ horner =!= True, {},
-    p_Plus :> (HornerForm[p] /. HornerForm -> Identity) /; Depth[p] < 6 ];
+  horner = If[ horner =!= True, {}, {h_HoldForm :> h,
+    p_Plus :> (HornerForm[p] /. HornerForm -> Identity) /; Depth[p] < 6} ];
   fcoll = If[ TrueQ[fcoll], TermCollect, Identity ];
   _var = {};
   VarType[vars, type];
@@ -7243,7 +7245,7 @@ FExpr[expr_] := fcoll[ expr /.
     f:rargs[__] :> RealArgs[f] /.
     Den[p_, m_, d___] :> (p - m)^-d /.
     IGram[x_] :> 1/x /.
-    {h_HoldForm :> h, horner} ] /.
+    horner ] /.
   {h_HoldForm :> h, Times -> OptTimes} /.
   WeylChain -> SplitChain
 
@@ -7318,7 +7320,9 @@ FormSetup = "\
 #:MaxTermSize 300000\n\
 #:TermsInSmall 30000\n\
 off stats;\n\
-format 75;\n\n"
+format 75;\n\
+auto s sM;\n\
+auto i iM;\n\n"
 
 $BlockSize = 700
 

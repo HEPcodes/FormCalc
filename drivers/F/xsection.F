@@ -1,7 +1,7 @@
 * xsection.F
 * routines to compute the cross-section
 * this file is part of FormCalc
-* last modified 18 Mar 16 th
+* last modified 8 Jun 16 th
 
 #include "decl.h"
 #include "inline.h"
@@ -12,27 +12,23 @@
 * particle-type functions
 * arg 1 't' = particle type (running number, for comparison etc)
 * arg 2 'h' = helicity bit pattern (e.g. 10 = B'01010' for photon)
-* arg 3 'f' = extra factor (for unpolarized Dirac fermions)
 
-#define ARG_Ptyp(i,x) x(ARG_Xtyp)
-#define ARG_Xtyp(t,h,f) t
-#define ARG_Phel(i,x) x(ARG_Xhel)
-#define ARG_Xhel(t,h,f) h
-#define ARG_Pfac(i,x) x(ARG_Xfac)
-#define ARG_Xfac(t,h,f) f
+#define ARG_Ptyp(i,x,o) x(ARG_Xtyp,o)
+#define ARG_Xtyp(t,h,o) t
+#define ARG_Phel(i,x,o) x(ARG_Xhel,o)
+#define ARG_Xhel(t,h,o) h
+#define ARG_Pavg(i,x,o) x(ARG_Xavg,o)
+#define ARG_Xavg(i,x,o) o
 
-#define SCALAR(f) f(1,4,1)
-#define FERMION(f) f(2,10,1)
-#define PHOTON(f) f(3,10,1)
-#define VECTOR(f) f(4,14,1)
-#define GRAVITINO(f) f(5,27,1)
-#define GRAVITON(f) f(6,27,1)
-#define TENSOR(f) f(7,31,1)
-
-#ifdef UNPOLARIZED_DIRAC_FERMIONS
-#undef FERMION
-#define FERMION(f) f(2,4,2)
-#endif
+* UFERMION is an unpolarized Dirac fermion, computed with Hel[.] = 0
+#define SCALAR(f,o) f(1,4,1)
+#define FERMION(f,o) f(2,10,1)
+#define UFERMION(f,o) f(2,4,o)
+#define PHOTON(f,o) f(3,10,1)
+#define VECTOR(f,o) f(4,14,1)
+#define GRAVITINO(f,o) f(5,27,1)
+#define GRAVITON(f,o) f(6,27,1)
+#define TENSOR(f,o) f(7,31,1)
 
 #define SQRTS_EPS 1D-9
 
