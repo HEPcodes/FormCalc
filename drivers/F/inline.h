@@ -1,7 +1,7 @@
 * inline.h
 * inline util functions and computation of numerators
 * this file is part of FormCalc
-* last modified 26 Feb 16 th
+* last modified 16 Jun 16 th
 
 
 #ifndef INLINE_H
@@ -102,6 +102,15 @@ CT2Exp	ComplexType para(*)
 	integer a_, b_, c_, d_
 	RealType sqrtS_, ma_, mb_
 	ComplexType z_
+
+	integer BitCount
+	integer*8 h_, bc2, bc4, bc8
+	bc2(h_) = h_ - iand(ishft(h_, -1), int8(Z'5555555555555555'))
+	bc4(h_) = iand(h_, int8(Z'3333333333333333')) +
+     &    iand(ishft(h_, -2), int8(Z'3333333333333333'))
+	bc8(h_) = iand(h_ + ishft(h_, -4), int8(Z'0F0F0F0F0F0F0F0F'))
+	BitCount(h_) = int(ishft(
+     &    bc8(bc4(bc2(h_)))*int8(Z'0101010101010101'), -56 ))
 
 	IndexDelta(a_, b_) = merge(1, 0, a_ .eq. b_)
 

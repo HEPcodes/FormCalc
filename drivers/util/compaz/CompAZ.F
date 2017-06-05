@@ -2,7 +2,7 @@
 * compute the spectrum of a backscattered laser photon at a
 * photon collider
 * Code adapted from http://hep.fuw.edu.pl/u/zarnecki/compaz/compaz.f
-* last modified 11 Feb 16 th
+* last modified 10 Jun 16 th
 
 #include "types.h"
 
@@ -62,7 +62,7 @@
 	RealType Ee, z0, xi, z
 	RealType xmax, xmax2, g
 	RealType tot, tot2, tot3
-	RealType gflux1, gflux2, gflux3, gflux123
+	RealType gflux1, gflux2, gflux3
 	RealType pol1, pol2, pol3
 	RealType g1, g2
 	RealType ymin, yspan, ymid, y, w

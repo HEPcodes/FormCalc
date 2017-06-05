@@ -1,8 +1,33 @@
 * Common.frm
 * FORM procedures common to CalcFeynAmp, HelicityME, PolarizationSum
 * this file is part of FormCalc
-* last modified 3 Jun 16 th
+* last modified 13 Feb 17 th
 
+
+#procedure CommonDecl
+cf MetricTensor, Eps, Mat;
+t Pol;
+
+extrasymbols array subM;
+cf abbM, fermM, dotM, addM, mulM;
+
+nt GA;
+f GF;
+cf TMP, ABB;
+auto s ARG;
+s `Invariants', TAG, ETAG, QTAG;
+set INVS: `Invariants';
+set LOOPMOM: `LoopMomenta';
+
+i [mu], [nu], [ro], [si], [i];
+s <[m0]>,...,<[m20]>;
+s <[s0]>,...,<[s20]>;
+v <[p0]>,...,<[p20]>, [q1];
+s [x], [y], [n];
+t [t];
+#endprocedure
+
+***********************************************************************
 
 #procedure EiKi(e, k)
 id d_(`e', `k') = 0;
@@ -24,9 +49,9 @@ id `foo'([x]?, ?a) = `foo'([x]);
 ***********************************************************************
 
 #procedure Factor(foo)
+factarg `foo';
 id `foo'(?x) = mulM(`foo'(?x));
 argument mulM;
-factarg `foo';
 chainout `foo';
 makeinteger `foo';
 id `foo'([x]?) = `foo'(nterms_([x]), [x]);
@@ -100,7 +125,7 @@ id `foo'(0) = 0;
 
 id GA(?g) = GF(?g);
 
-id q1 = q1 * QTAG;
+id [q1]?LOOPMOM = [q1] * QTAG;
 id e_([mu]?, [nu]?, [ro]?, [si]?) =
   e_([mu], [nu], [ro], [si]) * TMP([mu], [nu], [ro], [si]) * ETAG;
 id [t]?(?i) = [t](?i) * TMP(?i);
@@ -139,7 +164,7 @@ id TAG = 1;
 
 b dotM;
 .sort
-keep brackets;
+*keep brackets;
 
 factarg dotM;
 chainout dotM;
@@ -191,9 +216,9 @@ id GF(?g) = GA(?g);
 id [p1]?.[p2]? = ABB(0, [p1].[p2], [p1], [p2]);
 
 id e_([mu]?, [nu]?, [ro]?, [si]?) =
-  ABB(0, e_([mu], [nu], [ro], [si]), [mu], [nu], [ro], [si]);
+  ABB(0, Eps([mu], [nu], [ro], [si]), [mu], [nu], [ro], [si]);
 
-id d_([mu]?, [nu]?) = ABB(0, d_([mu], [nu]), [mu], [nu]);
+id d_([mu]?, [nu]?) = ABB(0, MetricTensor([mu], [nu]), [mu], [nu]);
 
 id Pol(?a) = ABB(0, Pol(?a), ?a);
 
@@ -259,11 +284,11 @@ collect dotM;
 
 moduleoption polyfun=dotM;
 .sort
+on oldFactArg;
 
-makeinteger dotM;
-id dotM([x]?) = dotM(nterms_([x]), [x]);
-id dotM(1, [x]?) = mulM([x]);
-id dotM([n]?, [x]?) = mulM(dotM([x]));
+#call Factor(dotM)
+
+.sort
 
 argument mulM;
 toPolynomial;
@@ -271,7 +296,6 @@ endargument;
 
 moduleoption polyfun=mulM;
 .sort
-on oldFactArg;
 
 #call Factor(mulM)
 

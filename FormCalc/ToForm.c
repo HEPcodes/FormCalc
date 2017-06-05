@@ -1,20 +1,20 @@
 /*
 	ToForm.c
-		rearranges Mma's InputForm output to yield
-		acceptable FORM input
+		rearranges Mathematica's InputForm output to
+		yield acceptable FORM input
 		this file is part of FormCalc
-		last modified 15 Jan 15 th
+		last modified 28 Oct 16 th
 */
 
 #include <stdio.h>
 #include <string.h>
 
-int main()
-{
-  char in[2048], out[2048];
+int main() {
+  char in[1024], out[1024];
+  int q = 1, m = -1;
 
   while( fgets(in, sizeof in, stdin) ) {
-    char *s, *d, closing = ')', m = -1;
+    char *s, *d, closing = ')';
 
     if( in[0] == '#' ) {
       if( in[1] == '#' ) {
@@ -25,10 +25,7 @@ int main()
         continue;
       }
       m = 0xdf;
-//      fputs(in, stdout);
-//      continue;
     }
-
 
     for( s = in, d = out; *s; ++s ) {
 more:
@@ -75,11 +72,12 @@ more:
       case '=':
         if( s[-1] == *s ) break;
       default:
+        q ^= (*s == '"');
         *d++ = *s;
       }
     }
 
-	// line break not allowed inside a dot product (rare):
+	/* line break not allowed inside a dot product (rare): */
     if( d > out + 2 && d[-2] == '.' ) {
       fgets(in, sizeof in, stdin);
       s = in + strspn(in, " \t");
@@ -89,6 +87,8 @@ more:
 
     *d = 0;
     fputs(out, stdout);
+
+    m |= -q;
   }
 
   return 0;

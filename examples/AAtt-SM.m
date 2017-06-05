@@ -3,7 +3,7 @@
 		generates the Fortran code for
 		gamma gamma -> t-bar t in the electroweak SM
 		this file is part of FormCalc
-		last modified 9 May 08 th
+		last modified 3 Mar 17 th
 
 Reference: A. Denner, S. Dittmaier, and M. Strobel,
            Phys. Rev. D53 (1996) 44 [hep-ph/9507372].
@@ -91,7 +91,7 @@ amps = {born, self, vert, box}
 {born, self, vert, box} = Abbreviate[amps, 6,
   Preprocess -> OnSize[100, Simplify, 500, DenCollect] ]
 
-col = ColourME[All, born]
+col = ColourME[born, All]
 
 abbr = OptimizeAbbr[Abbr[]]
 

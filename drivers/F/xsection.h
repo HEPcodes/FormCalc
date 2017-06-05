@@ -1,7 +1,7 @@
 * xsection.h
 * common blocks for xsection.F
 * this file is part of FormCalc
-* last modified 18 Mar 16 th
+* last modified 20 Feb 17 th
 
 
 #include "decl.h"
@@ -12,24 +12,27 @@
 #define TRIVIAL MAXVAR+2
 #endif
 
+	RealType eps_sqrtS
+	parameter (eps_sqrtS = 1D-9)
+
 	integer nvars
 	parameter (nvars = MAXVAR - (MINVAR) + 1)
 
 	RealType var(8,MINVAR:TRIVIAL)
-	RealType mass(LEGS,NPID)
+	RealType mass(LEGS)
 	RealType charge(LEGS,NPID)
 	RealType colorcharge(LEGS,NPID)
-	RealType avgfac(NPID), threshold(NPID), minthreshold
 	RealType sqrtS, mass_in, mass_out, fscale
-	integer*8 helmask, helicities
+	RealType threshold, avgfac
+	integer*8 helmask
 	integer type, pid, parton1, parton2, serial
 	integer sqrtSinvalid, flags
 
 	common /xsection/ var,
      &    mass, charge, colorcharge,
-     &    avgfac, threshold, minthreshold,
      &    sqrtS, mass_in, mass_out, fscale,
-     &    helmask, helicities,
+     &    threshold, avgfac,
+     &    helmask,
      &    type, pid, parton1, parton2, serial,
      &    sqrtSinvalid, flags
 

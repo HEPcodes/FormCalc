@@ -1,7 +1,7 @@
 * SAFcut.F
 * the FormCalc wrapper for the Samurai six-point function
 * this file is part of FormCalc
-* last modified 27 Oct 15 th
+* last modified 16 Jun 16 th
 
 #include "types.h"
 
@@ -33,8 +33,6 @@
 #include "SA.h"
 
 	RealType kj(6,4), mj(6)
-	ComplexType res(-2:0), resr
-	logical ok
 
 	SAFcut = 0
 	if( hdelta .eq. 0 ) return

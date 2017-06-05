@@ -1,7 +1,7 @@
 * HelicityME.frm
 * the FORM part of the HelicityME function
 * this file is part of FormCalc
-* last modified 7 Jun 16 th
+* last modified 9 Dec 16 th
 
 
 #procedure Emit
@@ -115,27 +115,16 @@ print;
 
 ***********************************************************************
 
-cf DiracChain, Mat;
-s D, Dminus4, Dminus4Eps, `Invariants';
+#call CommonDecl
 
-i KK;
-t DD, Pol;
-nt GA;
-f RHO, RHOC, GF;
-cf TMP, ABB;
-auto s ARG;
-s TAG, ETAG, QTAG;
+s D, Dminus4, Dminus4Eps;
+cf DiracChain, helM;
+i [om], KK;
+t DD;
+f RHO, RHOC;
+
 set MOMS: k1,...,k`Legs';
 set EPSS: e1,...,e`Legs';
-set INVS: `Invariants';
-
-i [om], [mu], [nu], [ro], [si], [i];
-v [p1], [p2];
-s [m1], [m2], [s1], [s2], [x], [y], [n];
-t [t];
-
-extrasymbols array subM;
-cf abbM, fermM, dotM, helM, addM, mulM, powM;
 
 ntable CHI(0:7);
 fill CHI(0) = g_(1);

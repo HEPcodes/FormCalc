@@ -1,3 +1,60 @@
+8 Mar 17:
+
+- Fixed bug in OptimizeAbbr (typo: forgotten comma).
+
+- Restricted substitution <-6,mu,nu> <-7,mu,nu> = 0 to Dirac
+  chains with exactly two Lorentz indices.
+
+
+23 Feb 17:
+
+- Fixed another bug from returning Abbr/Subexpr with patterns
+  in issuing debug statements.
+
+
+10 Feb 17:
+
+- Rearranged SquaredME (and the FORM code for PolarizationSum)
+  to reflect the general structure of the squared amplitude,
+  i.e. the squared amplitude is written in terms of form factors
+  FF[.] or FFC[.], which are given by substitution rules.
+
+- Improved Keep function, will store just the given expression
+  if it does not depend on any Abbr[] or Subexpr[], else writes
+  out AbbrExpr[expr, abbr, subexpr].
+
+- Independent of the SetLanguage choice WriteRenConst now generates
+  two sets of declarations, for Fortran (.h.F) and C (.h.c) so that
+  Fortran drivers can conveniently be combined with generated
+  C code (and vice versa).
+
+
+24 Jan 17:
+
+- Fixed several bugs in RegisterAbbr and RegisterSubexpr
+  (introduced when Abbr/Subexpr were returned with patterns).
+
+- Enhanced the Keep function: will store/load expression only
+  if no Abbr and Subexpr are defined.
+
+- New function ExprHeads returns all non-system symbols and heads.
+
+- New function ExprParts returns all subexpressions of expr
+  which contain given symbols and functions.
+
+- New options RowIndex, ColumnIndex, ComplementFunction for
+  ApplyUnitarity.
+
+- New function Creep which applies a function only to
+  subexpressions containing given patterns.
+
+
+1 Aug 16:
+
+- Abbr[] and Subexpr[] now return lists with 'patternized' l.h.s.
+  so that they can also be used for replacing inside Mathematica.
+
+
 9 Jun 16:
 
 - Fixed non-removal of internal dot[.,.] functions in FORM code.
@@ -34,7 +91,7 @@
 - Moved FORM procedures common to CalcFeynAmp, HelicityME, 
   PolarizationSum to Common.frm (with slight adaptations).
 
-- In FormCalc.m accordingsly moved code related to momentum 
+- In FormCalc.m accordingly moved code related to momentum 
   conservation (including MomElim and DotExpand options) from 
   CalcFeynAmp, HelicityME, PolarizationSum functions to
   DeclareProcess.

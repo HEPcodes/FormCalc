@@ -2,7 +2,7 @@
 	decl.h
 	these declarations are included "everywhere"
 	this file is part of FormCalc
-	last modified 6 Jan 16 th
+	last modified 10 Feb 17 th
 #endif
 
 
@@ -31,6 +31,7 @@ typedef const integer8 cinteger8;
 
 #include "extra.h"
 #include "const.h"
+#include "generic.h"
 
 #else
 
@@ -41,7 +42,6 @@ typedef const integer8 cinteger8;
 #include "user.h"
 #include "util.h"
 
-#ifdef SQUAREDME
-#include "RenConst.h"
-#endif
+#include "RenConst.h.c"
+#include "MassShift.h.c"
 

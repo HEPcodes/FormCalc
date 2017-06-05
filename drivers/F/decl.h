@@ -1,7 +1,7 @@
 * decl.h
 * these declarations are included "everywhere"
 * this file is part of FormCalc
-* last modified 23 Dec 15 th
+* last modified 10 Feb 17 th
 
 
 #ifndef DECL_H
@@ -12,6 +12,7 @@
 #include "distrib.h"
 #include "types.h"
 #include "extra.h"
+#include "generic.h"
 
 #else
 
@@ -25,7 +26,6 @@
 #include "user.h"
 #include "util.h"
 
-#ifdef SQUAREDME
-#include "RenConst.h"
-#endif
+#include "RenConst.h.F"
+#include "MassShift.h.F"
 

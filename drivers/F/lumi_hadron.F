@@ -1,7 +1,7 @@
 * lumi_hadron.F
 * parton luminosity for a hadron collider
 * this file is part of FormCalc
-* last modified 29 Mar 16 th
+* last modified 20 Feb 17 th
 
 * This code links to the LHAPDF library.
 * The following variables are used:
@@ -72,7 +72,7 @@
 	call SetEnergy(fail, Lower(SQRTS), sqme)
 	if( fail .ne. 0 ) return
 
-	Lower(PARTON_T) = minthreshold/sqrtS
+	Lower(PARTON_T) = threshold/sqrtS
 	Upper(PARTON_T) = 1
 	Step(PARTON_T) = 0
 #endif
@@ -106,8 +106,8 @@
 
 #include "inline.h"
 
-c	tooSmall(x) = x .lt. SQRTS_EPS .or. x .gt. 1 - SQRTS_EPS
-	tooSmall(x) = abs(.5D0 - x) .gt. .5D0 - SQRTS_EPS
+c	tooSmall(x) = x .lt. eps_sqrtS .or. x .gt. 1 - eps_sqrtS
+	tooSmall(x) = abs(.5D0 - x) .gt. .5D0 - eps_sqrtS
 
 #ifndef M_INV
 	call SetEnergy(fail, Var(PARTON_T)*Var(SQRTS), sqme)

@@ -2,7 +2,7 @@
 # configure script for FormCalc
 # note: has nothing to do with GNU autoconf
 # this file is part of FormCalc
-# last modified 4 Feb 16 th
+# last modified 12 Sep 16 th
 
 
 exec 2> ${LOGFILE:-/dev/null} 3>&1
@@ -252,40 +252,44 @@ case "$1,$2,$3" in
 GNU,Fortran,[123].*)
   CONF_SIMD=0
   CONF_FFLAGS="\
-${FFLAGS-${CONF_DEBUG:--O1} ${CONF_DEBUG:+-Wall}} \
+${FFLAGS-${CONF_DEBUG:--O1}} \
+${CONF_DEBUG:+-Wall} \
 $CONF_M -g -ffixed-line-length-none \
 $CONF_STATIC"
   ;;
 GNU,Fortran,4.*)
   CONF_SIMD=0
   CONF_FFLAGS="\
-${FFLAGS-${CONF_DEBUG:--O3} ${CONF_DEBUG:+-Wall -Wno-unused-dummy-argument -Wtabs -ffpe-trap=invalid,overflow,zero} $CONF_ARCH} \
-$CONF_M -g -ffixed-line-length-none ${CONF_QUAD:+-fdefault-real-8} $CONF_AS \
+${FFLAGS-${CONF_DEBUG:--O3}} \
+${CONF_DEBUG:+-Wall -Wno-unused-dummy-argument -Wtabs -ffpe-trap=invalid,overflow,zero} \
+$CONF_ARCH $CONF_M -g -ffixed-line-length-none ${CONF_QUAD:+-fdefault-real-8} $CONF_AS \
 $CONF_STATIC ${CONF_STATIC_EXT:+-static-libgfortran -static-libgcc}"
   ;;
 GNU,Fortran,*)
   CONF_SIMD=0
   CONF_FFLAGS="\
-${FFLAGS-${CONF_DEBUG:--O3} ${CONF_DEBUG:+-Wall -Wno-unused-dummy-argument -Wno-tabs -ffpe-trap=invalid,overflow,zero} $CONF_ARCH} \
-$CONF_M -g -ffixed-line-length-none ${CONF_QUAD:+-fdefault-real-8} $CONF_AS \
+${FFLAGS-${CONF_DEBUG:--O3}} \
+${CONF_DEBUG:+-Wall -Wno-unused-dummy-argument -Wno-tabs -ffpe-trap=invalid,overflow,zero} \
+$CONF_ARCH $CONF_M -g -ffixed-line-length-none ${CONF_QUAD:+-fdefault-real-8} $CONF_AS \
 $CONF_STATIC ${CONF_STATIC_EXT:+-static-libgfortran -static-libgcc}"
   ;;
 pgf*)
   CONF_CPPLIBS=-pgc++libs
   CONF_FFLAGS="\
-${FFLAGS-${CONF_DEBUG:--O3} ${CONF_DEBUG:+-Minform=inform -Ktrap=fp} ${CONF_ARCH:+-Mvect=simd}} \
-$CONF_M -g -Mextend -g77libs \
+${FFLAGS-${CONF_DEBUG:--O3}} \
+${CONF_DEBUG:+-Minform=inform -Ktrap=fp} \
+${CONF_ARCH:+-Mvect=simd} $CONF_M -g -Mextend -g77libs \
 ${CONF_STATIC:+-Bstatic}"
   ;;
 ifort*)
   CONF_FFLAGS="\
-${FFLAGS-${CONF_DEBUG:--O3} $CONF_ARCH} \
-$CONF_M -debug -extend_source -warn truncated_source -warn nouncalled -assume bscc \
+${FFLAGS-${CONF_DEBUG:--O3}} \
+$CONF_ARCH $CONF_M -debug -extend_source -warn truncated_source -warn nouncalled -assume bscc \
 ${CONF_QUAD:+-r16 -DDBLE=QEXT -DDIMAG=QIMAG -DDCONJG=QCONJG -DDCMPLX=QCMPLX} \
 $CONF_STATIC ${CONF_STATIC_EXT:+-static-intel}"
   ;;
 *)
-  CONF_FFLAGS="${CONF_DEBUG:--O} -g"
+  CONF_FFLAGS="${FFLAGS-${CONF_DEBUG:--O}} -g"
   ;;
 esac
 
@@ -481,7 +485,8 @@ _EOF_
 eval ${LOGFILE:+cat $test.f 1>&2}
 for CONF_LIBCPP in "" -lstdc++ -lc++ $CONF_CPPLIBS ; do
   $CONF_FC $CONF_FFLAGS -o $test $test.f $LIBS $CONF_STDLIBS $CONF_LIBCPP 1>&2 && {
-    CONF_LIBS="$CONF_LIBCPP${CONF_LIBS:+ $CONF_LIBS}"
+#    CONF_LIBS="$CONF_LIBCPP${CONF_LIBS:+ $CONF_LIBS}"
+    CONF_LIBS="${CONF_LIBS:+$CONF_LIBS }$CONF_LIBCPP"
     break
   }
   CONF_LIBCPP=FAILED

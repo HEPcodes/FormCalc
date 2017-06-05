@@ -1,7 +1,7 @@
 * lumi_photon.F
 * parton luminosity for a photon collider
 * this file is part of FormCalc
-* last modified 11 Jun 15 th
+* last modified 24 Jun 16 th
 
 
 #define PARTON_T -1
@@ -35,7 +35,7 @@
 	call SetEnergy(fail, Lower(SQRTS), sqme)
 	if( fail .ne. 0 ) return
 
-	Lower(PARTON_T) = minthreshold/sqrtS
+	Lower(PARTON_T) = threshold/sqrtS
 	Upper(PARTON_T) = 1
 	Step(PARTON_T) = 0
 

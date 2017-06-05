@@ -3,7 +3,7 @@
 		generates the Fortran code for
 		e^+ e^- -> t-bar t in the MSSM
 		this file is part of FormCalc
-		last modified 9 May 08 th
+		last modified 3 Mar 17 th
 
 Reference: W. Hollik, C. Schappacher,
            Nucl. Phys. B545 (1999) 98 [hep-ph/9807427].
@@ -101,7 +101,7 @@ amps = {born, self, vert, box}
 {born, self, vert, box} = Abbreviate[amps, 6,
   Preprocess -> OnSize[100, Simplify, 500, DenCollect]]
 
-col = ColourME[All, born]
+col = ColourME[born, All]
 
 abbr = OptimizeAbbr[Abbr[]]
 

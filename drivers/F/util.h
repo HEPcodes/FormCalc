@@ -1,7 +1,7 @@
 * util.h
 * prototypes for the util functions
 * this file is part of FormCalc
-* last modified 7 Jun 16 th
+* last modified 16 Jun 16 th
 
 
 #ifndef UTIL_H
@@ -76,6 +76,9 @@
 
 #endif
 
+#define HelSet(i) ibset(0,Hel0(i)+2)
+#define HelBit(x,i,h) int(ibits(x,h-(i-LEGS)*ldQH+2,1))
+
 #define MomEncoding(f,i) iand(f,QK-1)*QK**(i-1)
 
 #define Digit(i) char(i+48)
@@ -93,15 +96,6 @@
 #define BIT_SETMASS 0
 #define BIT_RESET 1
 #define BIT_LOOP 2
-
-#define ARG_ID(i,x,o) x
-#define ARG_RE(i,x,o) Re(x)
-#define ARG_HEL(i,x,o) ibset(0,Hel0(i)+2)
-#define JOIN_SEQ(a,b) a,b
-#define JOIN_MUL(a,b) a*b
-#define JOIN_OCT(a,b) b+8*(a)
-#define JOIN_DEC(a,b) b+10*(a)
-#define JOIN_HEL(a,b) b+QH*(a)
 
 #define DEB(tag,var) print *, tag, " =", var
 

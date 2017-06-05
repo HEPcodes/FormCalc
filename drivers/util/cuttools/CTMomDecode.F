@@ -4,7 +4,7 @@
 * the momenta's (integer*1) prefactors are encoded as the
 * bytes of an integer*8
 * this file is part of FormCalc
-* last modified 26 Oct 15 th
+* last modified 18 Jul 16 th
 
 #include "types.h"
 #include "util.h"
@@ -22,8 +22,7 @@
 	integer i
 	ComplexType a(2,2)
 
-	integer*8 c
-	integer*1 f
+	integer*8 c, f
 
 	a(1,1) = 0
 	a(2,1) = 0

@@ -3,7 +3,7 @@
 		generates the Fortran code for
 		gamma gamma -> t-bar t gamma in the electroweak SM
 		this file is part of FormCalc
-		last modified 12 Feb 14 th
+		last modified 3 Mar 17 th
 
 Reference: W. Walter, Diploma thesis, Würzburg 1997.
 
@@ -48,7 +48,7 @@ DoPaint[ins, "born"];
 born = CalcFeynAmp[CreateFeynAmp[ins]]
 
 
-col = ColourME[All, born]
+col = ColourME[born, All]
 
 
 abbr = OptimizeAbbr[Abbr[]]

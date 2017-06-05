@@ -1,7 +1,7 @@
 * lumi_parton.F
 * "luminosity" for a partonic process
 * this file is part of FormCalc
-* last modified 11 Jun 15 th
+* last modified 24 Jun 16 th
 
 
 #define MINVAR SQRTS
@@ -39,7 +39,7 @@
 	  Upper(SQRTS) = mass_in
 #else
 	  if( fail .ne. 1 ) return
-	  Lower(SQRTS) = minthreshold + .01D0
+	  Lower(SQRTS) = threshold + .01D0
 c	  INFO "Adjusting sqrtS to above-threshold value ", Lower(SQRTS)
 #endif
 	enddo

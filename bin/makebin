@@ -1,6 +1,6 @@
 #! /bin/sh -x
 # get and build FORM and the MathLink executables for a given platform
-# last modified 23 May 15 th
+# last modified 20 Sep 16 th
 
 gmp=gmp-6.1.0
 zlib=zlib-1.2.8
@@ -75,12 +75,21 @@ _EOF_
 	;;
 esac
 
+test -f form.zip || {
+  git clone https://github.com/vermaseren/form.git
+  zip -rvy form.zip form
+  rm -fr form
+}
+
+test -f $zlib.tar.gz || wget http://zlib.net/$zlib.tar.gz
+
+test -f $gmp.tar.xz || wget http://ftp.gnu.org/gnu/gmp/$gmp.tar.xz
 
 src="$PWD"
 dest=/tmp/makebin-build
 rm -fr "$dest" "$src/$1"
 mkdir -p $dest/bin
-cp -pf "$src/$gmp.tar.xz" "$src/$zlib.tar.gz" "$src/form-master.zip" \
+cp -pf "$src/$gmp.tar.xz" "$src/$zlib.tar.gz" "$src/form.zip" \
   "$src/../drivers/tools/fcc" "$src/../drivers/tools/mcc" \
   "$src/../FormCalc/ReadForm.tm" "$src/../tools/ReadData.tm" $dest/
 ln -s fcc "$dest/f++"
@@ -119,23 +128,19 @@ PATH="$(PATH):." mcc $(MCFLAGS) $(CFLAGS)
 
 all: FORM ReadForm ReadData
 
-FORM: $(DEST)/lib/libgmp.a $(DEST)/lib/libz.a form-master.zip
-	unzip form-master.zip
+FORM: $(DEST)/lib/libgmp.a $(DEST)/lib/libz.a form.zip
+	unzip form.zip
 	sed -i \
 	  -e '/mmacosx-version-min/d' \
-	  -e '/LINKFLAGS/s/-s//' form-master/sources/Makefile.am
-	cd form-master && autoreconf -i
-	cd form-master && $(CONF2) --with-gmp=$(DEST) --with-zlib=$(DEST)
+	  -e '/LINKFLAGS/s/-s//' form/sources/Makefile.am
+	cd form && autoreconf -i
+	cd form && $(CONF2) --with-gmp=$(DEST) --with-zlib=$(DEST) --enable-native=no
 	sed -i \
 	  -e 's|-lz|"$(DEST)/lib/libz.a"|' \
-	  -e 's|-lgmp|"$(DEST)/lib/libgmp.a"|' form-master/sources/Makefile
-	cd form-master && $(MAKE) install
+	  -e 's|-lgmp|"$(DEST)/lib/libgmp.a"|' form/sources/Makefile
+	cd form && $(MAKE) install
 	strip $(DEST)/bin/*form$(EXE)
-	rm -fr form-master
-
-form-master.zip:
-	wget -O form-master.zip https://github.com/vermaseren/form/archive/master.zip
-	cp -p form-master.zip "$(SRC)/"
+	rm -fr form
 
 $(DEST)/lib/libgmp.a: $(GMP).tar.xz
 	tar xvf $(GMP).tar.xz
@@ -143,19 +148,11 @@ $(DEST)/lib/libgmp.a: $(GMP).tar.xz
 	cd $(GMP) && $(MAKE) install
 	rm -fr $(GMP)
 
-$(GMP).tar.xz:
-	wget http://ftp.gnu.org/gnu/gmp/$(GMP).tar.xz
-	cp -p $(GMP).tar.xz "$(SRC)/"
-
 $(DEST)/lib/libz.a: $(ZLIB).tar.gz
 	tar xvf $(ZLIB).tar.gz
 	cd $(ZLIB) && $(CONF1)
 	cd $(ZLIB) && $(MAKE) SHAREDLIBV= install
 	rm -fr $(ZLIB)
-
-$(ZLIB).tar.gz:
-	wget http://zlib.net/$(ZLIB).tar.gz
-	cp -p $(ZLIB).tar.gz "$(SRC)/"
 
 ReadForm: ReadForm.tm
 	$(MCC) -o $(DEST)/bin/ReadForm$(EXE) ReadForm.tm $(MCLIBS)

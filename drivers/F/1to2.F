@@ -1,15 +1,15 @@
 * 1to2.F
 * the kinematics for a 1 -> 2 process
 * this file is part of FormCalc
-* last modified 3 Jun 15 th
+* last modified 20 Feb 17 th
 
 
 #define LEGS 3
 #define LEGS_IN 1
 #define LEGS_OUT 2
 
-#define MASS_IN(pid) mass(1,pid)
-#define MASS_OUT(pid) mass(2,pid) + mass(3,pid)
+#define MASS_IN mass(1)
+#define MASS_OUT mass(2) + mass(3)
 
 * this defines the order of integrations:
 #define XCOSTH1 1
@@ -64,23 +64,27 @@
 #ifdef FORCE_ONSHELL
 	p = 0
 #else
-	p = dim(sqrtS, mass(1,pid))
-	if( p .gt. 1D-6 ) then
+	integer warn
+	save warn
+
+	p = dim(sqrtS, mass(1))
+	if( warn .eq. 0 .and. p .gt. eps_sqrtS ) then
+	  warn = 1
 	  INFO "Computing off-shell decay"
 	  INFO "Warning: Results correct only if decaying particle"
 	  INFO "was chosen off-shell in CalcFeynAmp"
 	endif
-	p = sqrt(p*(sqrtS + mass(1,pid)))
+	p = sqrt(p*(sqrtS + mass(1)))
 #endif
 
-	call VecSet(1, mass(1,pid), p, 0D0, 0D0, 1D0)
+	call VecSet(1, mass(1), p, 0D0, 0D0, 1D0)
 
 	p = 0
 	ex = 0
 	ey = 0
 	ez = 1
 	minv = sqrtS
-	msum = MASS_OUT(pid)
+	msum = MASS_OUT
 
 	key = 0
 #ifdef COSTH1CUT
@@ -89,9 +93,9 @@
 	key = key + Cut(CUT_COSTH, CUT_MIN + CUT_MAX)
 #endif
 
-	call Split(3, mass(3,pid), p, ex,ey,ez, minv, msum,
+	call Split(3, mass(3), p, ex,ey,ez, minv, msum,
      &    fac, key, Var(FIXED), Var(XCOSTH1), Var(TRIVIAL))
 
-	call VecSet(2, mass(2,pid), p, ex,ey,ez)
+	call VecSet(2, mass(2), p, ex,ey,ez)
 	end
 

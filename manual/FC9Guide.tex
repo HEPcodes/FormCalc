@@ -157,13 +157,13 @@ end }
 
 \newbox\titlebox\setbox\titlebox=\hbox{\underline{%
 \vrule width 0pt height 0pt depth 2ex%
-\Huge \FC~9.3~~~User's Guide}}
+\Huge \FC~9.5~~~User's Guide}}
 
 \hfill\copy\titlebox
 
 \vspace*{1ex}
 
-\hfill\hbox{May 9, 2016~~~~~Thomas Hahn}
+\hfill\hbox{Mar 10, 2017~~~~~Thomas Hahn}
 
 \bigskip
 \bigskip
@@ -480,10 +480,6 @@ applying \Code{Plus} to the outcome of \Code{CalcFeynAmp}, \ie
 \Code{Dimension} & \Code{D} &
 	the space-time dimension in which the calculation is performed
 	(\Code{D}, \Code{4}, or \Code{0}) \\
-\Code{MomElim} & \Code{Automatic} &
-	how to apply momentum conservation \\
-\Code{DotExpand} & \Code{False} &
-	whether to expand terms collected for momentum elimination \\
 \Code{NoCostly} & \Code{False} &
 	whether to turn off potentially time-consuming simplifications
 	in FORM \\
@@ -496,14 +492,14 @@ applying \Code{Plus} to the outcome of \Code{CalcFeynAmp}, \ie
 	whether to keep track of fermionic operators across Fierz
 	transformations \\
 \Code{InsertionPolicy} & \Code{Default} &
-	how the level insertions are processed
-\etab
-
-\biiitab{option}
+	how the level insertions are processed \\
 \Code{SortDen} & \Code{True} &
 	whether to sort the denominators of the loop integrals \\
 \Code{PaVeReduce} & \Code{False} &
-	whether to reduce tensor to scalar integrals \\
+	whether to analytically reduce tensor to scalar integrals
+\etab
+
+\biiitab{option}
 \Code{SimplifyQ2} & \Code{True} &
 	whether to simplify $q^2$ in the numerator \\
 \Code{OPP} & \Code{100} &
@@ -540,8 +536,6 @@ applying \Code{Plus} to the outcome of \Code{CalcFeynAmp}, \ie
 \etab%
 \indextt{CalcLevel}%
 \indextt{Dimension}%
-\indextt{MomElim}%
-\indextt{DotExpand}%
 \indextt{NoCostly}%
 \indextt{FermionChains}%
 \indextt{FermionOrder}%
@@ -617,19 +611,6 @@ discussion see \cite{HaP98}.
 	through \Code{Dminus4}.
 \end{itemize}%
 \indextt{Dminus4}
-
-\index{momentum conservation}%
-\index{cancellation of terms}%
-\Code{MomElim} controls in which way momentum conservation is used to
-eliminate momenta.  \Code{False} performs no elimination, an integer
-between 1 and the number of legs eliminates the specified momentum in
-favour of the others, and \Code{Automatic} tries all substitutions and
-chooses the one resulting in the fewest terms.
-
-\Code{DotExpand} determines whether the terms collected for momentum 
-elimination are expanded again.  This prevents kinematical invariants
-from appearing in the abbreviations but typically leads to poorer
-simplification of the amplitude.
 
 \Code{NoCostly} switches off simplifications in the FORM code which are 
 typically fast but can cause `endless' computations on certain 
@@ -835,10 +816,13 @@ meaning please see the header of \Code{ReadForm.tm}.
 \Code{CalcFeynAmp} wraps the above functions around various parts of the 
 FORM output for simplification upon return to Mathematica.  These are 
 typically relatively short expressions which can be simplified efficiently 
-in Mathematica.  The default settings try to balance execution time against 
-simplification efficiency.  Occasionally, though, Mathematica will spend 
-excessive time on simplification and in this case one or several of the 
-above should be redefined, \eg set to \Code{Identity}.
+in Mathematica.  The default settings try to balance execution time 
+against simplification efficiency.  Occasionally, though, Mathematica 
+will spend excessive time on simplification and in this case one or 
+several of the above should be redefined, \eg set to \Code{Identity}.  
+Alternately, one can use \FC's \Code{Profile} function to narrow down
+performance problems, as in: \Code{FormMat = Profile[FormMat]}.%
+\indextt{Profile}
 
 
 \subsection{\Code{DeclareProcess}}
@@ -895,14 +879,20 @@ they are not \Code{CalcFeynAmp} options.
 \Code{InvSimplify} & \Code{True} &
 	whether to simplify combinations of invariants as much as
 	possible \\
+\Code{MomElim} & \Code{Automatic} &
+	how to apply momentum conservation \\
+\Code{DotExpand} & \Code{False} &
+	whether to expand terms collected for momentum elimination \\
 \Code{Antisymmetrize} & \Code{True} &
-	whether Dirac chains are antisymmetrized
+	whether Dirac chains shall be antisymmetrized
 \etab%
 \indextt{OnShell}%
 \indextt{Invariants}%
 \indextt{Transverse}%
 \indextt{Normalized}%
 \indextt{InvSimplify}%
+\indextt{MomElim}%
+\indextt{DotExpand}%
 \indextt{Antisymmetrize}%
 
 \index{mass shell}%
@@ -949,14 +939,26 @@ Option & Action \\ \hline
 \Code{InvSimplify} controls whether \Code{CalcFeynAmp} should try to 
 simplify combinations of invariants as much as possible.
 
+\index{momentum conservation}%
+\index{cancellation of terms}%
+\Code{MomElim} controls in which way momentum conservation is used to
+eliminate momenta.  \Code{False} performs no elimination, an integer
+between 1 and the number of legs eliminates the specified momentum, and 
+\Code{Automatic} tries all substitutions and chooses the one resulting 
+in the fewest terms.
+
+\Code{DotExpand} determines whether the terms collected for momentum 
+elimination are expanded again.  This prevents kinematical invariants
+from appearing in the abbreviations but typically leads to poorer
+simplification of the amplitude.
+
 \index{antisymmetrization}%
-\Code{Antisymmetrize} determines whether Dirac chains are antisymmetrized.
-Note that this does not affect Weyl chains, \ie has an effect only if
-\Code{FermionChains\,->\,Chiral} or \Code{VA} is chosen in
-\Code{CalcFeynAmp}.  Take care that antisymmetrized and non-antisymmetrized
-Dirac chains have an indistinguishable notation.  Needless to say, one
-should not change the antisymmetrization flag between \Code{CalcFeynAmp}
-and \Code{HelicityME}.
+\Code{Antisymmetrize} determines whether to antisymmetrize Dirac chains.  
+This does not affect Weyl chains, \ie has an effect only together with
+\Code{FermionChains\,->\,Chiral} or \Code{VA}.  Antisymmetrized chains
+carry a negative chirality identifier, \eg 
+\Code{DiracChain[-6,\,$\mu$,\,$\nu$]} stands for
+$P_R\,\frac 12 (\gamma_\mu\gamma_\nu - \gamma_\nu\gamma_\mu)$.
 
 %------------------------------------------------------------------------
 
@@ -1521,6 +1523,10 @@ expanded contents have a leaf count of 77.%
 \Code{Abbr[\Var{patt}]} &
 	the list of all abbreviations including (or excluding,
 	if preceded by \Code{!}~(\Code{Not})) the pattern \Var{patt} \\
+\Code{Unabbr[\Var{expr}]} &
+	substitute back all abbreviations and subexpressions \\
+\Code{Unabbr[\Var{expr},\,\Var{patt}]} &
+	substitute back only those free of \Var{patt} \\
 \Code{OptimizeAbbr[\Va]} &
 	optimize the abbreviations \Va \\
 \Code{\$OptPrefix} &
@@ -1531,6 +1537,7 @@ expanded contents have a leaf count of 77.%
 	substitute them back into \Var{expr}
 \etab
 \indextt{Abbr}%
+\indextt{Unabbr}%
 \indextt{OptimizeAbbr}%
 \indextt{\$OptPrefix}%
 The definitions of the abbreviations can be retrieved by \Code{Abbr[]} 
@@ -1815,8 +1822,8 @@ abbreviated as \Code{F\Vi}, \eg
 In physical observables such as the cross-section, where only the square
 of the amplitude or interference terms can enter, these spinor chains can
 be evaluated without reference to a concrete representation for the
-spinors.  The point is that in terms like $|\M|^2$ or $2\Re(\M_1\M_2^*)$
-only products $(\Code{F\Vi}\,\Code{F\Vj})$ of spinor chains appear and 
+spinors.  The point is that in terms like $|\M|^2$ or $2\Re(\M_0^*\M_1)$
+only products $(\Code{F\Vi}\,\Code{F\Vj}^*)$ of spinor chains appear and 
 these can be calculated using the density matrix for spinors
 $$
 \{u_\lambda(p)\bar u_\lambda(p), v_\lambda(p)\bar v_\lambda(p)\} =
@@ -1865,16 +1872,14 @@ Technically, one can use the same formula as in the polarized case by
 putting $\lambda = 0$ and multiplying the result by 2 for each external
 fermion.
 
-\FC\ supplies the function \Code{HelicityME} to calculate these so-called 
-helicity matrix elements $(\Code{F\Vi}\,\Code{F\Vj}^*)$.
+\FC\ supplies the function \Code{HelicityME} to calculate the helicity 
+matrix elements $(\Code{F\Vi}\,\Code{F\Vj}^*)$.
 \biitab
-\Code{HelicityME[\Var{\M_1},\,\Var{\M_2^*}]} &
+\Code{HelicityME[\Var{\M_0},\,\Var{\M_1}]} &
 	calculate the helicity matrix elements for all combinations
-	of \Code{F\Vn} appearing in \Var{\M_1} and \Var{\M_2^*},
-	where, as the $*$ indicates, \Var{\M_2} is the part to be complex
-	conjugated \\
+	of \Code{F\Vn} appearing in \Var{\M_0^* M_1} \\
 \Code{All} &
-	(used as an argument of \Code{HelicityME}:)
+	(used as either argument of \Code{HelicityME}:)
 	instead of selecting the \Code{F}s which appear in an expression,
 	simply take all \Code{F}s currently in the abbreviations \\
 \Code{Mat[F\Vi,\,F\Vj]} &
@@ -1891,12 +1896,12 @@ helicity matrix elements $(\Code{F\Vi}\,\Code{F\Vj}^*)$.
 \indextt{Hel[\Vn]}%
 \indextt{s[\Vn]}%
 \index{abbreviations}%
-Note that \Code{HelicityME} does not calculate the full expression
-$\M_1\M_2^*$, but only the combinations of \Code{F}s that appear in this
-product.  These are then called \Code{Mat[F\Vi,\,F\Vj]} and depend on
-the helicities and helicity reference vectors of the external particles,
+To be sure, \Code{HelicityME} does not calculate the full expression
+$\M_0^*\M_1$, only the combinations of \Code{F}s that appear in this
+product.  These are called \Code{Mat[F\Vi,\,F\Vj]} and depend on the 
+helicities and helicity reference vectors of the external particles,
 \Code{Hel[\Vn]} and \Code{s[\Vn]}.  See Sect.\ \ref{sect:squaredme} on
-how to put together the complete expression $\M_1\M_2^*$.
+how to put together the complete expression $\M_0^*\M_1$.
 
 If possible, specific values for the \Code{Hel[\Vn]} should be fixed in
 advance, since that can dramatically speed up the calculation and also
@@ -1924,10 +1929,12 @@ after having computed amplitudes from process $B$ with
 \biiitab{option}
 \Code{Dimension} & \Code{4} &
 	the dimension to compute in \\
-\Code{MomElim} & (taken from \Code{CalcFeynAmp}) &
-	how to apply momentum conservation \\
-\Code{DotExpand} & (taken from \Code{CalcFeynAmp}) &
-	whether to expand terms collected for momentum elimination \\
+\Code{TreeSquare} & \Code{\$TreeSquare} (default: \Code{True}) &
+	whether to include the matrix elements for the computation of
+	$|\M_0|^2$ \\
+\Code{LoopSquare} & \Code{\$LoopSquare} (default: \Code{False}) &
+	whether to include the matrix elements for the computation of
+	$|\M_1|^2$ \\
 \Code{RetainFile} & \Code{False} &
 	whether to retain the temporary \FO\ command file \\
 \Code{EditCode} & \Code{False} &
@@ -1935,8 +1942,10 @@ after having computed amplitudes from process $B$ with
 	to \FO
 \etab
 \indextt{Dimension}%
-\indextt{MomElim}%
-\indextt{DotExpand}%
+\indextt{TreeSquare}%
+\indextt{\$TreeSquare}%
+\indextt{LoopSquare}%
+\indextt{\$LoopSquare}%
 \indextt{RetainFile}%
 \indextt{EditCode}%
 \Code{Dimension} is used as in \Code{CalcFeynAmp}.  Only the value
@@ -1950,9 +1959,18 @@ equivalence \Code{Dminus4Eps = Dminus4} can be unset.%
 \indextt{Dminus4}%
 \indextt{Dminus4Eps}
 
-The options \Code{MomElim}, \Code{DotExpand}, \Code{RetainFile}, and
-\Code{EditCode} are used in the same way as for \Code{CalcFeynAmp}, see
-page \pageref{retainedit}.
+The \Code{TreeSquare} and \Code{LoopSquare} options govern whether, in 
+addition to $\M_0^*\M_1$, also $|\M_0|^2$ and/or $|\M_1|^2$ will be 
+needed.  This allows to obtain all helicity matrix elements for \eg the 
+computation of $|\M_0|^2 + 2\Re\M_0^*\M_1$ with a single invocation of 
+\Code{HelicityME}.  The selections are stored in the global variables 
+\Code{\$TreeSquare} (\Code{True} by default) and \Code{\$LoopSquare} 
+(\Code{False} by default) and used as defaults in further invocations of 
+\Code{HelicityME}, \Code{ColourME}, \Code{WeylME}, and
+\Code{WriteSquaredME}.
+
+The options \Code{RetainFile}, and \Code{EditCode} are used in the same 
+way as for \Code{CalcFeynAmp}, see page \pageref{retainedit}.
 
 \bigskip
 
@@ -1965,19 +1983,36 @@ the Weyl fermion chains \Code{F\Vi} as matrix elements \Code{Mat[F\Vi]}
 \Code{Mat[F\Vi,\,F\Vj]} needed to compute the squared amplitude are then 
 computed with \Code{WeylME}.
 \biitab
-\Code{WeylME[\Var{\M_1},\,\Var{\M_2^*}]} &
-	calculate the fermion matrix elements for all combinations
-	of \Code{F\Vn} appearing inside \Code{Mat} in \Var{\M_1} and 
-	\Var{\M_2^*}, where, as the $*$ indicates, \Var{\M_2} is the 
-	part to be complex conjugated \\
-\Code{WeylME[\Var{\M_1},\,\Var{\M_2^*},\,\Vf]} &
-	the same, but additionally multiply each \Code{Mat[F\Vi,\,F\Vj]}
-	with the correction factor \Code{\Vf[F\Vi,\,F\Vj]} \\
+\Code{WeylME[\Var{\M_0},\,\Var{\M_1}]} &
+	calculate the fermion matrix elements for all combinations of
+	\Code{F\Vn} appearing inside \Code{Mat} in \Var{\M_0^*\M_1} \\
 \Code{All} &
-	(used as an argument of \Code{WeylME}:)
+	(used as either argument of \Code{WeylME}:)
 	instead of selecting the \Code{F}s which appear in an expression,
 	simply take all \Code{F}s currently in the abbreviations
 \etab
+\indextt{WeylME}
+
+Since about the only purpose of Weyl matrix elements is to insert
+correction factors in front of the \Code{Mat[F\Vi,\,F\Vj]}, there is an 
+explicit option for this.
+
+\biiitab{option}
+\Code{MatFactor} & \Code{(1 \&)} &
+	a function $f$ which determines the correction factor
+	\Code{\Vf[F\Vi,\,F\Vj]} multiplied with \Code{Mat[F\Vi,\,F\Vj]} \\
+\Code{TreeSquare} & \Code{\$TreeSquare} (default: \Code{True}) &
+	whether to include the matrix elements for the computation of
+	$|\M_0|^2$ \\
+\Code{LoopSquare} & \Code{\$LoopSquare} (default: \Code{False}) &
+	whether to include the matrix elements for the computation of
+	$|\M_1|^2$
+\etab
+\indextt{MatFactor}%
+\indextt{TreeSquare}%
+\indextt{\$TreeSquare}%
+\indextt{LoopSquare}%
+\indextt{\$LoopSquare}
 
 %------------------------------------------------------------------------
 
@@ -2010,12 +2045,12 @@ $\Code{SUNT[\Va,\,\Vb,\,$\dots$,\,0,\,0]} = \Tr(T^\Va T^\Vb\cdots)$.
 The situation is much the same as with fermionic structures: just as
 an amplitude contains open spinor chains if external fermions are
 involved, it also contains \Code{SUNT}s if external quarks or gluons are
-involved.
+involved.%
 \indextt{SUNT}%
 \index{colour indices}%
 \index{gluon indices}%
 \index{SU($N$) objects}%
-\index{Cvitanovic algorithm}%
+\index{Cvitanovic algorithm}
 
 For the \Code{SUNT} objects in the output, \FC\ introduces abbreviations
 of the type \Code{SUN\Vn}.  These abbreviations can easily be
@@ -2032,13 +2067,11 @@ Because of this close analogy, the combinations of \Code{SUN\Vi} and
 accordingly as \Code{Mat[SUN\Vi,\,SUN\Vj]}.  The function which computes 
 them is \Code{ColourME}.  It is invoked just like \Code{HelicityME}.
 \biitab
-\Code{ColourME[\Var{\M_1},\,\Var{\M_2^*}]} &
+\Code{ColourME[\Var{\M_0},\,\Var{\M_1}]} &
 	calculate the colour matrix elements for all combinations
-	of \Code{SUN\Vn} appearing in \Var{\M_1} and \Var{\M_2^*}, 
-	where, as the $*$ indicates, \Var{\M_2} is the part to be 
-	complex conjugated \\
+	of \Code{SUN\Vn} appearing in \Var{\M_0^*\M_1} \\
 \Code{All} &
-	(used as an argument of \Code{ColourME}:)
+	(used as either argument of \Code{ColourME}:)
 	instead of selecting the \Code{SUN}s which appear in an 
 	expression, simply take all \Code{SUN}s currently in 
 	abbreviations \\
@@ -2048,15 +2081,29 @@ them is \Code{ColourME}.  It is invoked just like \Code{HelicityME}.
 \etab
 \indextt{ColourME}%
 \indextt{All}%
-\indextt{Mat}%
+\indextt{Mat}
+
+\biiitab{option}
+\Code{TreeSquare} & \Code{\$TreeSquare} (default: \Code{True}) &
+	whether to include the matrix elements for the computation of
+	$|\M_0|^2$ \\
+\Code{LoopSquare} & \Code{\$LoopSquare} (default: \Code{False}) &
+	whether to include the matrix elements for the computation of
+	$|\M_1|^2$
+\etab
+\indextt{Dimension}%
+\indextt{TreeSquare}%
+\indextt{\$TreeSquare}%
+\indextt{LoopSquare}%
+\indextt{\$LoopSquare}
 
 The core function behind \Code{ColourME} can also be used directly to
 simplify colour structures.
 \biitab
 \Code{ColourSimplify[\Var{expr}]} &
 	simplify colour objects in \Var{expr} \\
-\Code{ColourSimplify[\Var{expr},\,\Var{conj}]} &
-	simplifies the colour objects in $(\Var{expr}\:\Var{conj}^*)$
+\Code{ColourSimplify[\Var{tree},\,\Var{loop}]} &
+	simplifies the colour objects in $(\Var{tree}^*\:\Var{loop})$
 \etab%
 \indextt{ColourSimplify}
 
@@ -2081,42 +2128,40 @@ of \FC, not \FA.
 Now that \Code{CalcFeynAmp} has calculated the amplitudes and
 \Code{HelicityME} and \Code{ColourME} have produced the helicity and colour
 matrix elements, the remaining step is to piece together the squared
-matrix element $|\M|^2$, or more generally products like $\M_1\M_2^*$.
-For example, $\M_1$ could be the sum of the one-loop diagrams and $\M_2$
-the sum of the tree diagrams.
+matrix element $|\M|^2$, or more generally products like $\M_0^*\M_1$.
 
-This is non-trivial only if there are helicity or colour matrix elements
-\Code{Mat[\Vi,\,\Vj]} which have to be put in the right places.
-Specifically, if $\M_1$ and $\M_2$ are written in the form
+This is non-trivial only if there are matrix elements of the form
+\Code{Mat[\Vi,\,\Vj]} around, which have to be put in the right places.
+Specifically, if $\M_0$ and $\M_1$ are written in the form
 \begin{align*}
-\M_1 &= a_{11}~\Code{F1}~\Code{SUN1} +
+\M_0 &= a_{11}~\Code{F1}~\Code{SUN1} +
         a_{21}~\Code{F2}~\Code{SUN1} + \ldots
 = \sum_{ij} a_{ij}~\Code{F}i~\Code{SUN}j
 \quad\text{and} \\
-\M_2 &= b_{11}~\Code{F1}~\Code{SUN1} +
+\M_1 &= b_{11}~\Code{F1}~\Code{SUN1} +
         b_{21}~\Code{F2}~\Code{SUN1} + \ldots
 = \sum_{ij} b_{ij}~\Code{F}i~\Code{SUN}j\,,
 \end{align*}
-$\M_1 \M_2^*$ becomes
+their product becomes
 \begin{align*}
-\M_1\M_2^* &\:\:{=}\:\:
-a_{11} b_{11}^*~\Code{Mat[F1,\,F1]}~\Code{Mat[SUN1,\,SUN1]} + \\
+\M_0^*\M_1 &\:\:{=}\:\:
+a_{11}^* b_{11}~\Code{Mat[F1,\,F1]}~\Code{Mat[SUN1,\,SUN1]} + \\
 &\:\:\hphantom{=}\:\:
-a_{21} b_{11}^*~\Code{Mat[F2,\,F1]}~\Code{Mat[SUN1,\,SUN1]} + \ldots \\
-&\:\:{=}\:\: \sum_{ijk\ell} a_{ik} b_{j\ell}^*~
-    \Code{Mat[F\Vi,\,F\Vj]}~
-    \Code{Mat[SUN\Var{k},\,SUN\Var{\ell}]}\,.
+a_{21}^* b_{11}~\Code{Mat[F1,\,F2]}~\Code{Mat[SUN1,\,SUN1]} + \ldots \\
+&\:\:{=}\:\: \sum_{ijk\ell} a_{ik}^* b_{j\ell}~
+    \Code{Mat[F\Vj,\,F\Vi]}~
+    \Code{Mat[SUN\Var{\ell},\,SUN\Var{k}]}\,.
 \end{align*}
 The coefficients $a_{ik}$ and $b_{j\ell}$ are known as form factors.
 For efficiency, they are usually computed separately in the numerical
 evaluation, so that the final expression for the squared matrix element 
 is easily summed up \eg in Fortran as
 \begin{alltt}
-        do 1 i = 1, \textrm{(\# of \Code{F}s in \Var{\M\sb{1}})}
-        do 1 j = 1, \textrm{(\# of \Code{F}s in \Var{\M\sb{2}})}
-        do 1 k = 1, \textrm{(\# of \Code{SUN}s in \Var{\M\sb{1}})}
-        do 1 l = 1, \textrm{(\# of \Code{SUN}s in \Var{\M\sb{2}})}
-          result = result + a(i,k)*Conjugate(b(j,l))*MatF(i,j)*MatSUN(k,l)
+        do 1 i = 1, \textrm{(\# of \Code{F}s in \Var{\M\sb{0}})}
+        do 1 j = 1, \textrm{(\# of \Code{F}s in \Var{\M\sb{1}})}
+        do 1 k = 1, \textrm{(\# of \Code{SUN}s in \Var{\M\sb{0}})}
+        do 1 l = 1, \textrm{(\# of \Code{SUN}s in \Var{\M\sb{1}})}
+          result = result + Conjugate(a(i,k))*b(j,l)*MatF(j,i)*MatSUN(l,k)
   1     continue
 \end{alltt}
 While this is arguably the most economic way to evaluate a squared
@@ -2124,8 +2169,8 @@ amplitude numerically, it is also possible to directly obtain the squared
 matrix element as a \mma\ expression.  The function which does this is
 \Code{SquaredME}.
 \biitab
-\Code{SquaredME[\Var{\M_1},\,\Var{\M_2^*}]} &
-	calculates $\Var{\M_1}\Var{\M_2^*}$, taking care to put the
+\Code{SquaredME[\Var{\M_0},\,\Var{\M_1}]} &
+	calculates $\Var{\M_0^*}\Var{\M_1}$, taking care to put the
 	\Code{Mat[\Vi,\,\Vj]} in the right places
 \etab
 \indextt{SquaredME}%
@@ -2133,15 +2178,23 @@ matrix element as a \mma\ expression.  The function which does this is
 Because of the number of terms that are generated, this function is most
 useful only for rather small amplitudes.
 
+\indextt{FF}%
+\indextt{FFC}%
+For clarity of output the result of \Code{SquaredME} is given as two 
+pieces: \Code{\Brac{\Var{expr},\,\Var{rul}}}, where \Var{expr} is
+the squared amplitude expressed in terms of form factors \Code{FF} and 
+\Code{FFC}, and \Var{rul} is a list of rules which provide the values
+of the \Code{FF} and \Code{FFC}.
+
 \indextt{Mat}%
-\Code{SquaredME} does not insert the actual values for the
-\Code{Mat[\Vi,\,\Vj]}.  This can easily be done later by applying the
-output of \Code{HelicityME} and \Code{ColourME}, which are lists of
-rules substituting the \Code{Mat[\Vi,\,\Vj]} by their values.  That is
-to say, \Code{SquaredME} and \Code{HelicityME} or \Code{ColourME}
-perform complementary tasks: \Code{SquaredME} builds up the squared
-amplitude in terms of the \Code{Mat[\Vi,\,\Vj]} whereas
-\Code{HelicityME} and \Code{ColourME} calculate the
+\Code{SquaredME} does not insert the actual values for the 
+\Code{Mat[\Vi,\,\Vj]}.  This can easily be done later by applying the 
+output of \Code{HelicityME}, \Code{ColourME}, or \Code{WeylME}, which 
+are lists of rules substituting the \Code{Mat[\Vi,\,\Vj]} by their 
+values.  That is to say, \Code{SquaredME} and 
+\Code{HelicityME}/\Code{ColourME}/\Code{WeylME} perform complementary 
+tasks: the former builds up the squared amplitude in terms of the 
+\Code{Mat[\Vi,\,\Vj]} whereas the latter calculate the 
 \Code{Mat[\Vi,\,\Vj]}.
 
 %------------------------------------------------------------------------
@@ -2166,8 +2219,10 @@ can be eliminated by means of the identities
 \end{align*}
 In the massless case the polarization sum is gauge dependent and $\eta$
 is an external four-vector which fulfills $\eta\cdot\varepsilon = 0$ and
-$\eta\cdot k\neq 0$.  For a gauge-invariant quantity, the
-$\eta$-dependence should ultimately cancel.
+$\eta\cdot k\neq 0$.  \FC\ makes the additional assumption 
+$\eta\cdot\eta = 0$ and also drops the $\eta^2$ term above.  For a 
+gauge-invariant quantity, the $\eta$-dependence should ultimately 
+cancel.
 
 \FC\ provides the function \Code{PolarizationSum} to apply the above 
 identities.
@@ -2177,7 +2232,7 @@ identities.
 \etab%
 \indextt{PolarizationSum}%
 It is assumed that \Var{expr} is the squared amplitude into which the
-helicity matrix elements have already been inserted.  Alternatively,
+helicity matrix elements have already been inserted.  Alternately,
 \Var{expr} may also be given as an amplitude directly, in which case
 \Code{PolarizationSum} will first invoke \Code{SquaredME} and
 \Code{HelicityME} (with \Code{\uscore Hel = 0}) to obtain the squared
@@ -2192,10 +2247,6 @@ default).
 	the dimension to compute in \\
 \Code{GaugeTerms} & \Code{True} &
 	whether to retain $\eta$-dependent terms \\
-\Code{MomElim} & (taken from \Code{CalcFeynAmp}) &
-	how to apply momentum conservation \\
-\Code{DotExpand} & (taken from \Code{CalcFeynAmp}) &
-	whether to expand terms collected for momentum elimination \\
 \Code{NoBracket} & (taken from \Code{CalcFeynAmp}) &
 	symbols not to be included in the bracketing in FORM \\
 \Code{RetainFile} & \Code{False} &
@@ -2207,8 +2258,6 @@ default).
 \indextt{SumLegs}%
 \indextt{Dimension}%
 \indextt{GaugeTerms}%
-\indextt{MomElim}%
-\indextt{DotExpand}%
 \indextt{NoBracket}%
 \indextt{RetainFile}%
 \indextt{EditCode}%
@@ -2411,10 +2460,18 @@ limited to the achievable numerical precision.
 	\Code{LeafCount[\Var{expr}] < \Var{n_2}}, etc., \linebreak
 	and \Code{\Var{f_{\text{def}}}[\Var{expr}]} if the expression
 	is still larger \\
-\Code{MapOnly[\Vh,\,\Var{syms}][\Vf,\,\Var{expr}]} &
+\Code{ExprHeads[\Var{expr}]} &
+	return all non-system symbols and heads in \Var{expr} \\
+\Code{ExprParts[\Var{expr},\,\Var{H},\,\Var{h}]} &
+	return all subexpressions of \Var{expr} which must contain the 
+	symbols and functions in \Var{H} and may contain those in 
+	\Var{h} \\
+\Code{Creep[\Vf,\,\Var{patt\dots}][\Var{expr}]} &
+	applies \Vf\ to subexpressions of \Var{expr} which contain
+	only the patterns in \Var{patt} \\
+\Code{MapOnly[\Vf,\,\Vh,\,\Var{patt\dots}][\Var{expr}]} &
 	maps \Vf\ onto subexpressions of head \Vh\ in \Var{expr}
-	which must contain one each of all items in \Var{syms} and no 
-	other symbols \\
+	which must contain each of \Var{patt} and no other symbols \\
 \Code{ApplyUnitarity[\Var{expr},\,\Var{U},\,\Vd,\,\Vs]} &
 	simplify \Var{expr} by exploiting the unitarity of the 
 	\Vd-dimensional matrix \Var{U}.  The optional argument \Vs\ 
@@ -2422,15 +2479,19 @@ limited to the achievable numerical precision.
 	(default: \Code{FullSimplify}) \\
 \Code{ExpandSums[\Var{expr}]} &
 	turns all pieces of \Var{expr} multiplied with \Code{SumOver}
-	into an actual sum
+	into an actual sum \\
+\Code{SplitTerms[\Vf,\,\Var{expr},\,\Vn]} &
+	applies \Vf\ to \Var{expr}, \Vn\ terms at a time
 \etab
 \indextt{DenCollect}%
 \indextt{TagCollect}%
 \indextt{Pool}%
 \indextt{OnSize}%
+\indextt{Creep}%
 \indextt{MapOnly}%
 \indextt{ApplyUnitarity}%
-\indextt{ExpandSums}
+\indextt{ExpandSums}%
+\indextt{SplitTerms}
 
 \Code{DenCollect} works essentially like \mma's \Code{Collect}, except 
 that it takes the denominators appearing in the expression to collect
@@ -2447,7 +2508,7 @@ such as is possible with the \Code{MultiplyDiagrams} function.
 \Code{TermCollect} and \Code{Pool} combine terms with common factors.  
 Unlike \Code{Factor}, they look at the terms pairwise and can thus do $a b 
 + a c + d \to a (b + c) + d$ fast.  Unlike \Code{Simplify}, they do not 
-modify b and c.
+modify $b$ and $c$.
 
 \Code{DotSimplify} simplifies an expression with two different functions
 depending on whether it contains any of the objects listed in the
@@ -2466,31 +2527,44 @@ applies \Code{FullSimplify} if the expression's leaf count is less than
 100, \Code{Simplify} if it is between 100 and 500, and 
 \Code{TermCollect} above.
 
-\Code{MapOnly} maps a function onto certain subexpressions (given head, 
-with given symbols) of an expression.  For example, 
-\Code{MapOnly[\Vh,\,\Va|\Vb,\,\Vc][\Vf,\,\Var{expr}]} maps \Vf\ onto all 
-subexpressions of \Var{expr} which must contain \Vc\ \underline{and} 
-\Va\ or \Vb, and may not contain symbols other than \Va, \Vb, \Vc.  
-Alternately, 
-\Code{MapOnly[\Vh,\,\Va|\Vb,\,\uscore|\Vc][\Vf,\,\Var{expr}]} maps \Vf\ 
-onto subexpressions which must contain \Va\ or \Vb\ and must not contain 
-variables other that \Va, \Vb, \Vc.
+\Code{ExprHeads} and \Code{ExprParts} can be used to determine which 
+parts of an expression are eligible \eg for simplification.  
+\Code{ExprHeads} returns all non-system symbols and heads of an 
+expression, while \Code{ExprParts} picks subexpressions in which only 
+selected heads appear.
+
+\Code{Creep} and \Code{MapOnly} have similar functionality: they deliver 
+a `payload' function to parts of an expression containing certain 
+objects only.
+\Code{Creep} `creeps' into an expression and applies its function as 
+soon as a subexpression contains only the given patterns.
+\Code{MapOnly} is more restrictive about the subexpression: For example, 
+\Code{MapOnly[\Vf,\,\Vh,\,\Va|\Vb,\,\Vc][\Var{expr}]} applies \Vf\ to
+subexpressions of head \Vh\ which must contain \Vc\ \underline{and} \Va\ 
+or \Vb, and may not contain symbols other than \Va, \Vb, \Vc.  
+Making $c$ optional,
+\Code{MapOnly[\Vf,\,\Vh,\,\Va|\Vb,\,\uscore|\Vc][\Var{expr}]} 
+maps \Vf\ onto subexpressions which must contain \Va\ or \Vb\ and must 
+not contain variables other that \Va, \Vb, \Vc.
 
 \Code{ApplyUnitarity} exploits unitarity of a given matrix to simplify 
-an expression.  The two unitarity relations $UU^\dagger = \unity$ or
-$\sum_{i = 1}^d U_{ij} U_{kj}^* = \delta_{ik}$ and $U^\dagger U =
-\unity$ or $\sum_{i = 1}^d U_{jk} U_{ji}^* = \delta_{ik}$ are used to
+an expression.  The two unitarity relations $UU^\dagger = \unity$ (or
+$\sum_{j = 1}^d U_{ij} U_{kj}^* = \delta_{ik}$) and $U^\dagger U =
+\unity$ (or $\sum_{j = 1}^d U_{jk} U_{ji}^* = \delta_{ik}$) are used to
 substitute sums of $UU^*$ elements with more than $\lceil d/2\rceil$
-terms.  For example, \Code{ApplyUnitarity[expr,\,CKM,\,3]} might replace 
-$\Code{CKM}_{12} \Code{CKM}_{13}^* + \Code{CKM}_{22} \Code{CKM}_{23}^*$ 
-by $-\Code{CKM}_{32}\Code{CKM}_{33}^*$.
+terms.  For example, \Code{ApplyUnitarity[\Var{expr},\,CKM,\,3]} might 
+replace $\Code{CKM}_{12} \Code{CKM}_{13}^* + \Code{CKM}_{22} 
+\Code{CKM}_{23}^*$ by $-\Code{CKM}_{32}\Code{CKM}_{33}^*$.
 
 \Code{ExpandSums} turns expressions where index summations are denoted 
-by a \Code{SumOver[\Vi,\,\Vr]} multiplied with the part of the 
-expression to be summed over index \Vi, such as delivered by 
-\Code{CalcFeynAmp}, into ordinary Mathematica sums.  
-\Code{ExpandSums[\Var{expr},\,\Vh]} uses head \Vh\ instead of 
-\Code{Plus}.
+by \Code{SumOver[\Vi,\,\Vr]} multiplied with the term to be summed over,
+such as appear \eg in the output of \Code{CalcFeynAmp}, into ordinary 
+Mathematica sums.  \Code{ExpandSums[\Var{expr},\,\Vh]} uses head \Vh\ 
+instead of \Code{Plus}.
+
+\Code{SplitTerms} applies a function to a sum in batches, with at most 
+the prescribed number of terms in each invocation.  For all other heads 
+the function is applied to the whole expression.
 
 
 \section{Tools for the Numerical Evaluation}
@@ -2678,6 +2752,8 @@ be done manually.
 
 \indextt{WriteSquaredME}%
 \indextt{WriteRenConst}%
+\index{squared matrix element}%
+\index{renormalization constants}%
 \FC\ contains two much more sophisticated functions for generating code, 
 \Code{WriteSquaredME} and \Code{WriteRenConst}.  The philosophy is that 
 the user should not have to modify the generated code.  This eliminates 
@@ -2766,10 +2842,10 @@ The following options can be used with \Code{WriteSquaredME}.
 \Code{ExtraRules} & \Code{\Brac{}} &
 	extra rules to be applied to the expressions before the loop
 	integrals are abbreviated \\
-\Code{TreeSquare} & \Code{True} &
+\Code{TreeSquare} & \Code{\$TreeSquare} (default: \Code{True}) &
 	whether the square of the tree-level amplitude is added to
 	the result \\
-\Code{LoopSquare} & \Code{False} &
+\Code{LoopSquare} & \Code{\$LoopSquare} (default: \Code{False}) &
 	whether the square of the one-loop amplitude is added to
 	the result \\
 \Code{Folder} & \Code{"squaredme"} &
@@ -2780,11 +2856,11 @@ The following options can be used with \Code{WriteSquaredME}.
 \Code{SymbolPrefix} & \Code{""} &
 	a string prepended to global symbols to prevent collision
 	of names when more than one process is linked \\
-\Code{FileHeader} & \Code{"\#if 0\backsl n} &
+\Code{FileHeader} & \Code{"\#if 0\backsl n\backsl} &
 	the file header \\[-\parskip]
-	& \Code{* \%f\backsl n} \\[-\parskip]
-	& \Code{* \%d\backsl n} \\[-\parskip]
-	& \rlap{\Code{* generated by FormCalc \Vm.\Vn \%t\backsl n}} \\[-\parskip]
+	& \Code{* \%f\backsl n\backsl} \\[-\parskip]
+	& \Code{* \%d\backsl n\backsl} \\[-\parskip]
+	& \rlap{\Code{* generated by FormCalc \Vm.\Vn \%t\backsl n\backsl}} \\[-\parskip]
 	& \rlap{\Code{\#endif\backsl n\backsl n"}} \\
 \Code{SubroutineIncludes} & \Code{FileIncludes} &
 	per-subroutine \Code{\#include} statements \\
@@ -2796,7 +2872,9 @@ The following options can be used with \Code{WriteSquaredME}.
 \etab%
 \indextt{ExtraRules}%
 \indextt{TreeSquare}%
+\indextt{\$TreeSquare}%
 \indextt{LoopSquare}%
+\indextt{\$LoopSquare}%
 \indextt{Folder}%
 \indextt{FilePrefix}%
 \indextt{SymbolPrefix}%
@@ -3575,7 +3653,7 @@ follows:
        CutMax(XCOSTH5) = +(1 - COSTH5CUT)
        key = key + Cut(CUT_COSTH, CUT_MIN + CUT_MAX)
 
-       call Split(5, dble(MASS5),
+       call Split(5, Re(MASS5),
      &   p, ex,ey,ez, minv, msum, fac, key,
      &   Var(XMREM5), Var(XCOSTH5), Var(TRIVIAL))
        ...
@@ -4524,6 +4602,9 @@ be used in the model file or anywhere else, even if \FC\ is not loaded.
 \Code{TreeCoupling[\Vi\,->\,\Vf]} &
 	the tree-level contribution to $\Vi\to\Vf$ without external
 	spinors \\
+\Code{VertexFunc[\Vi\,->\,\Vf]} &
+	the one-loop contribution to $\Vi\to\Vf$ without external
+	spinors \\
 \Code{LVectorCoeff[\Var{expr}]} &
 	the coefficient of $\kslash P_L$ in \Var{expr} \\
 \Code{RVectorCoeff[\Var{expr}]} &
@@ -4539,6 +4620,8 @@ be used in the model file or anywhere else, even if \FC\ is not loaded.
 \etab%
 \indextt{SelfEnergy}%
 \indextt{DSelfEnergy}%
+\indextt{TreeCoupling}%
+\indextt{VertexFunc}%
 \indextt{LVectorCoeff}%
 \indextt{RVectorCoeff}%
 \indextt{LScalarCoeff}%
@@ -4607,6 +4690,7 @@ $$
 %------------------------------------------------------------------------
 
 \subsubsection{Calculation of renormalization constants}
+\index{renormalization constants}
 
 For the actual calculation of the RCs, \FC\ provides the two functions
 \Code{CalcRenConst} and \Code{WriteRenConst}.  Both functions search the

@@ -1,7 +1,7 @@
 * SAEcut.F
 * the FormCalc wrapper for the Samurai five-point function
 * this file is part of FormCalc
-* last modified 27 Oct 15 th
+* last modified 16 Jun 16 th
 
 #include "types.h"
 
@@ -31,8 +31,6 @@
 #include "SA.h"
 
 	RealType kj(5,4), mj(5)
-	ComplexType res(-2:0), resr
-	logical ok
 
 	SAEcut = 0
 	if( hdelta .eq. 0 ) return

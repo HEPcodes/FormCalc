@@ -1,7 +1,7 @@
 * PolarizationSum.frm
 * the FORM part of the PolarizationSum function
 * this file is part of FormCalc
-* last modified 7 Jun 16 th
+* last modified 9 Dec 16 th
 
 
 #procedure Prepare
@@ -46,12 +46,12 @@ id e`i' = ET(?);
 id ec`i' = ETC(?);
 id z`i' = ET(?);
 id zc`i' = ETC(?);
-mul DF;
+mul TAG;
 
 #if `m' == "0"
 * massless case
 
-id DF * ET([mu]?) * ETC([nu]?) = -d_([mu], [nu])
+id TAG * ET([mu]?) * ETC([nu]?) = -d_([mu], [nu])
 #if "`GaugeTerms'" != "Off"
   + (d_(eta`i', [mu])*d_(k`i', [nu]) +
      d_(eta`i', [nu])*d_(k`i', [mu]))/(eta`i'.k`i')
@@ -64,20 +64,20 @@ id DF * ET([mu]?) * ETC([nu]?) = -d_([mu], [nu])
 * Instead of imposing eta.eta = 0 one can add
 * - d_(k`i', [mu])*d_(k`i', [nu])*(eta`i'.eta`i')/(eta`i'.k`i')^2
 
-also DF * Pol(e`i', [mu]?, [nu]?) * Pol(ec`i', [ro]?, [si]?) =
+also TAG * Pol(e`i', [mu]?, [nu]?) * Pol(ec`i', [ro]?, [si]?) =
   d_([mu], [ro])*d_([nu], [si]) +
   d_([mu], [si])*d_([nu], [ro]) -
   d_([mu], [nu])*d_([ro], [si]);
 
-also DF = `Dim' - 2;
+also TAG = `Dim' - 2;
 
 #else
 * massive case
 
-id DF * ET([mu]?) * ETC([nu]?) = -d_([mu], [nu]) +
+id TAG * ET([mu]?) * ETC([nu]?) = -d_([mu], [nu]) +
   k`i'([mu])*k`i'([nu])/(`m')^2;
 
-also DF = `Dim' - 1;
+also TAG = `Dim' - 1;
 
 #call Square
 #endif
@@ -126,7 +126,7 @@ id D = Dminus4Eps + 4;
 b SumOver, Conjugate, Den;
 .sort
 
-collect mulM;
+collect mulM, mulM;
 makeinteger mulM;
 
 argument mulM;
@@ -150,26 +150,14 @@ print +s;
 
 ***********************************************************************
 
-#define LoopInt "A0, A00, B0, B1, B00, B11, B001, B111, A0i, B0i, C0i, D0i, E0i, F0i"
+#call CommonDecl
 
-cf SumOver, Den, Conjugate, Mat, `LoopInt';
-s D, Dminus4, Dminus4Eps, `Invariants';
-
-nt GA;
-f GF;
-s DF, TAG, ETAG, QTAG;
-t ET, ETC, Pol;
-cf TMP, ABB;
-auto s ARG;
-set LOOPINT: `LoopInt';
-set INVS: `Invariants';
-
-i [mu], [nu], [ro], [si], [i];
-v [p1], [p2];
-s [s1], [s2], [x], [y], [n];
-t [t];
+s D, Dminus4, Dminus4Eps;
+cf SumOver, Den, Conjugate;
 cf [f];
+t ET, ETC;
 
-extrasymbols array subM;
-cf abbM, fermM, dotM, addM, mulM, powM;
+#define LoopInt "A0, A00, B0, B1, B00, B11, B001, B111, A0i, B0i, C0i, D0i, E0i, F0i"
+cf `LoopInt';
+set LOOPINT: `LoopInt';
 

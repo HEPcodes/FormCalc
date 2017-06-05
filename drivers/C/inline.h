@@ -350,6 +350,13 @@ HelFun ChainB8(SpiSpec(iL,eL), cinteger a, cinteger b, cinteger c,
              BxVxBxVxS2(e, f, g, h, SpiRB(eR,iR)));
 }
 
+static inline integer BitCount(integer8 h) {
+  h = h - ((h >> 1) & 0x5555555555555555LL);
+  h = (h & 0x3333333333333333LL) + ((h >> 2) & 0x3333333333333333LL);
+  h = (h + (h >> 4)) & 0x0F0F0F0F0F0F0F0FLL;
+  return (h*0x0101010101010101LL) >> 56;
+}
+
 static inline integer IndexDelta(cinteger a, cinteger b) {
   return a == b;
 }

@@ -1,15 +1,15 @@
 * 2to2.F
 * the kinematics for a 2 -> 2 process
 * this file is part of FormCalc
-* last modified 3 Jun 15 th
+* last modified 24 Jun 16 th
 
 
 #define LEGS 4
 #define LEGS_IN 2
 #define LEGS_OUT 2
 
-#define MASS_IN(pid) mass(1,pid) + mass(2,pid)
-#define MASS_OUT(pid) mass(3,pid) + mass(4,pid)
+#define MASS_IN mass(1) + mass(2)
+#define MASS_OUT mass(3) + mass(4)
 
 * this defines the order of integrations:
 #define XCOSTH1 1
@@ -64,18 +64,18 @@
 
 #include "inline.h"
 
-	p = ThreeMom(sqrtS, mass(1,pid), mass(2,pid))
+	p = ThreeMom(sqrtS, mass(1), mass(2))
 
-	call VecSet(1, mass(1,pid), p, 0D0, 0D0, 1D0)
+	call VecSet(1, mass(1), p, 0D0, 0D0, 1D0)
 
-	call VecSet(2, mass(2,pid), p, 0D0, 0D0, -1D0)
+	call VecSet(2, mass(2), p, 0D0, 0D0, -1D0)
 
 	p = 0
 	ex = 0
 	ey = 0
 	ez = 1
 	minv = sqrtS
-	msum = MASS_OUT(pid)
+	msum = MASS_OUT
 
 	key = 0
 #ifdef COSTH1CUT
@@ -84,9 +84,9 @@
 	key = key + Cut(CUT_COSTH, CUT_MIN + CUT_MAX)
 #endif
 
-	call Split(3, mass(3,pid), p, ex,ey,ez, minv, msum,
+	call Split(3, mass(3), p, ex,ey,ez, minv, msum,
      &    fac, key, Var(FIXED), Var(XCOSTH1), Var(TRIVIAL))
 
-	call VecSet(4, mass(4,pid), p, ex,ey,ez)
+	call VecSet(4, mass(4), p, ex,ey,ez)
 	end
 

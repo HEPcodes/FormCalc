@@ -1,7 +1,7 @@
 * softradiation.F
 * routines for the treatment of soft-photon or soft-gluon radiation
 * this file is part of FormCalc
-* last modified 26 Oct 15 th
+* last modified 18 Jun 16 th
 
 
 ************************************************************************
@@ -16,7 +16,7 @@
 #include "xsection.h"
 
 	integer i, j
-	RealType r, loglambda, chsi, chsj, psint
+	RealType loglambda, chsi, chsj, psint
 	RealType mi, ki0, ki, kidelta, kilog
 	RealType mj, kj0, kj, kjdelta, kjlog
 	RealType kikj, alpha, d, vi

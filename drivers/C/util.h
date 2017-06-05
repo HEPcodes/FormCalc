@@ -3,7 +3,7 @@
 	prototypes for the util functions
 	this file is part of FormCalc
 	SIMD functions by J.-N. Lang
-	last modified 7 Jun 16 th
+	last modified 17 Jun 16 th
 #endif
 
 
@@ -63,9 +63,13 @@ struct {
 
 #define NaN (NAN + I*NAN)
 
-#define QH 32LL
+#define ldQH 5
+#define QH (1<<ldQH)
 #define ldQK 8
 #define QK (1<<ldQK)
+
+#define HelSet(i) (1LL << (Hel0(i)+2))
+#define HelBit(x,i,h) ((x >> (h-(i-LEGS)*ldQH+2)) & 1)
 
 #define MomEncoding(f,i) ((integer8)((f) & (QK-1)) << (i-1)*ldQK)
 
@@ -272,15 +276,6 @@ static inline HelType HxH(cHelType a, cHelType b) {
 #define BIT_SETMASS 0
 #define BIT_RESET 1
 #define BIT_LOOP 2
-
-#define ARG_ID(i,x,o) x
-#define ARG_RE(i,x,o) Re(x)
-#define ARG_HEL(i,x,o) (1LL << (Hel0(i)+2))
-#define JOIN_SEQ(a,b) a,b
-#define JOIN_MUL(a,b) a*b
-#define JOIN_OCT(a,b) b+8*(a)
-#define JOIN_DEC(a,b) b+10*(a)
-#define JOIN_HEL(a,b) b+QH*(a)
 
 #define DEBr " %.13lg"
 #define DEBc " (%.13lg,%.13lg)"

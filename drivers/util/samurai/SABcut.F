@@ -1,7 +1,7 @@
 * SABcut.F
 * the FormCalc wrapper for the Samurai two-point function
 * this file is part of FormCalc
-* last modified 27 Oct 15 th
+* last modified 16 Jun 16 th
 
 #include "types.h"
 
@@ -27,8 +27,6 @@
 #include "SA.h"
 
 	RealType kj(2,4), mj(2)
-	ComplexType res(-2:0), resr
-	logical ok
 
 	SABcut = 0
 	if( hdelta .eq. 0 ) return
