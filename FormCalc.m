@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.5
 Copyright by Thomas Hahn 1996-2017
-last modified 13 Apr 17 by Thomas Hahn
+last modified 20 Oct 17 by Thomas Hahn
 
 Release notes:
 
@@ -328,6 +328,12 @@ k^2 of the self-energy with incoming particle from and outgoing particle
 to, taken at k^2 = mass^2.  DSelfEnergy[f] calculates the self-energy of
 particle f on its mass shell.  DSelfEnergy[..., opt] specifies options
 for CreateTopologies and/or InsertFields to be used in the computation."
+
+$RCTop::usage = $RCIns::usage = $RCAmp::usage =
+"$RCTop, $RCIns, and $RCAmp respectively contain the output of
+CreateTopologies, InsertFields, and CreateFeynAmp produced by the last
+call to SelfEnergy, DSelfEnergy, VertexFunc, or TreeCoupling for
+inspection and debugging."
 
 ReTilde::usage =
 "ReTilde[expr] takes the real part of loop integrals occurring in expr."
@@ -1161,14 +1167,15 @@ FermionicQ::usage =
 False otherwise."
 
 IndexIf::usage =
-"IndexIf[cond, a, b] is identical to If[cond, a, b], except that a
-and b are not held unevaluated.  IndexIf[cond, a] is equivalent to
-IndexIf[cond, a, 0] and IndexIf[cond1, a1, cond2, a2, ...] is
-equivalent to IndexIf[cond1, a1, IndexIf[cond2, a2, ...]]."
+"IndexIf[cond, a, b] is identical to If[cond, a, b] except that a
+and b are not held unevaluated.  IndexIf[cond1, a1, cond2, a2, ...]
+represents a sequence of if-statements (like Which) and is equivalent
+to IndexIf[cond1, a1, IndexIf[cond2, a2, ...]].  IndexIf[cond, a, b]
+is converted to the Which-like syntax IndexIf[cond, a, True, b]."
 
 MapIf::usage =
-"MapIf[foo, i] maps foo over the expression parts only (i.e. not over
-the conditions) if i is an IndexIf expression.  For all other types of
+"MapIf[f, i] maps f over the expression parts only (i.e. not over the
+conditions) if i is an IndexIf expression.  For all other types of
 expressions, MapIf is equivalent to Map."
 
 IndexDiff::usage =
@@ -1666,8 +1673,18 @@ NArgs is not quite the same as N: while it changes 1 to 1., it leaves
 m[1] intact so that array indices remain integers."
 
 Newline::usage =
-"Newline is an option of WriteExpr.  It specifies a string to be printed
-after each Fortran statement."
+"Newline is an option of WriteExpr.  It initializes the value of
+$Newline, which is the string printed after each code statement."
+
+$Newline::usage =
+"$Newline is the string printed after each code statement by WriteExpr.
+For finer control conditional expressions may be used which depend on
+variables set by Hold[var = ...] insertions in the output stream, such
+as $IndexIf and $DoLoop."
+
+$IndexIf::usage = $DoLoop::usage =
+"$IndexIf and $DoLoop are integers defined inside WriteExpr which
+indicate the expression depth in IndexIf and DoLoop, respectively."
 
 Optimize::usage =
 "Optimize is an option of PrepareExpr.  With Optimize -> True, variables
@@ -1984,7 +2001,7 @@ Begin["`Private`"]
 
 $FormCalc = 9.5
 
-$FormCalcVersion = "FormCalc 9.5 (13 Apr 2017)"
+$FormCalcVersion = "FormCalc 9.5 (20 Oct 2017)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -2499,21 +2516,20 @@ IndexIf[True, a_, ___] := a
 
 IndexIf[False, _, b___] := IndexIf[b]
 
-IndexIf[_, a_, a_] := a
+IndexIf[if__, else_] := IndexIf[if, True, else] /; EvenQ[Length[{if}]]
 
-IndexIf[a__] := IndexIf[a, 0] /; EvenQ[Length[{a}]]
+IndexIf[_, a_, True, a_] := a
 
-IndexIf[cond_, 0, a_] := IndexIf[!cond, a, 0]
+IndexIf[cond_, {}, True, a_] := IndexIf[!cond, a]
 
-IndexIf[cond1_, IndexIf[cond2_, a_, 0], 0] := IndexIf[cond1 && cond2, a, 0]
+IndexIf[cond1_, IndexIf[cond2_, a_]] := IndexIf[cond1 && cond2, a]
 
-IndexIf[a___, i_IndexIf] := IndexIf[a, Sequence@@ i]
+IndexIf[a___, i_IndexIf] := Level[{{a}, i}, {2}, IndexIf]
 
 
-MapIf[foo_, i_IndexIf] := MapAt[foo, i,
-  List/@ Append[Range[2, # - 1, 2], #]]& @ Length[i]
+MapIf[f_, i_IndexIf] := MapAt[f, i, Table[{j}, {j, 2, Length[i], 2}]]
 
-MapIf[foo_, other_] := foo/@ other
+MapIf[f_, other_] := f/@ other
 
 
 Off[Optional::opdef]
@@ -2613,16 +2629,6 @@ isum[expr_, {i_, f_:1, t_, s_:1}] :=
 isum[expr_, {i_, 1, t_}] := isum[expr, {i, t}]
 
 isum[x__] := IndexSum@@ Flatten[{x}]
-
-
-sumover[i_, 1, r_] := sumover[i, r]
-
-sumover[i:Index[Colour | Gluon, _], r__] := SUNSum[i, r]
-
-sumover[other__] := SumOver[other]
-
-(*SUNSum[_, _, External] = 1*)
-SUNSum[i_, _, External] := SUNSum[i]
 
 
 KinFunc[
@@ -3103,23 +3109,30 @@ Block[ {t, c},
 ]
 
 
+Attributes[sumover] = {HoldAll}
+
+sumover[sum_, _][i:Index[Colour | Gluon, _], r__] := sum[i, r]
+
+sumover[_, sum_][i__] := sum[i]
+
+
+SUNSum[i_, _, External] := SUNSum[i]
+
+
 TrivialSums[ins_ -> _] := TrivialSums[ins]
 
 TrivialSums[ins_] := ins /; FreeQ[ins, SumOver]
 
-TrivialSums[ins_] :=
-Block[ {test = ins /. _SumOver -> 1},
-  ins /. SumOver -> CarryOut
-]
+TrivialSums[ins_] := ins /. SumOver -> CarryOut[ins /. _SumOver -> 1]
 
-CarryOut[i_, n_, r___] := (
-  ranges = {i -> i == n, ranges};
-  sumover[i, n, r]
-) /; !FreeQ[test, i]
 
-CarryOut[_, v_, External] := Sqrt[v]
+CarryOut[test_][i_, n_, r___] :=
+  sumover[SUNSum, (ranges = {i -> i == n, ranges}; SumOver)][i, n, r] /;
+  !FreeQ[test, i]
 
-CarryOut[_, v_, ___] := v
+_CarryOut[_, v_, External] := Sqrt[v]
+
+_CarryOut[_, v_, ___] := v
 
 
 Attributes[OffShell] = {Listable}
@@ -3363,7 +3376,8 @@ intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
 	(* possibly some colour or gluon indices have been fixed by
 	   the user in FeynArts; these would by default be declared
 	   as symbols and not be seen by FORM: *)
-    Cases[amps, SUNObjs[o__] :> Cases[{o}, _Symbol], Infinity]} ]];
+    Cases[Cases[amps, SUNObjs[__], Infinity] /. SUNSum -> (#1 &),
+      _Symbol, {-1}]} ]];
 
   If[ Head[forder] === Colour,
     indices = Join[#, Complement[indices, #]]&[
@@ -4645,8 +4659,7 @@ Conjugate[f_SUNF] ^:= f
 ColourSimplify[tree_:1, loop_] :=
 Block[ {res, ind},
   {res, ind} = Reap[ Conjugate[tree] loop /.
-    {IndexDelta -> idelta, SumOver -> sumover} /.
-    SUNSum[i_, ___] :> (Sow[i]; 1) ];
+    {IndexDelta -> idelta, SumOver -> sumover[(Sow[#1]; 1)&, SumOver]} ];
   Simplify[ Expand[ res /.
     Cases[ind, i_Index :> (i -> iname@@ i), {2}] /.
     {SUNT -> sunText, SUNF -> sunF,
@@ -4708,8 +4721,9 @@ squaredME[0, _] = squaredME[_, 0] = 0
 
 squaredME[tree_, loop_] :=
 Block[ {ffdef = {}, ff, ffc},
-  {ff, ffc} = (matFF[#1]/@ ToList[Collect[#2, _Mat, FF]])&@@@
-    {FF -> loop, FFC -> UniqIndices[tree, loop]};
+  {ff, ffc} = (#1/@ ToList[Collect[#2, _Mat, FF]])&@@@ {
+    matFF[FF, Identity] -> loop,
+    matFF[FFC, Conjugate] -> UniqIndices[tree, loop] };
   { TermCollect[Plus@@ (FF[#] Plus@@ matSq[#]/@ ffc &)/@ ff],
     Flatten[ffdef] }
 ]
@@ -4719,9 +4733,9 @@ matSq[m_Symbol][mc_] := FFC[mc] Mat[m, mc]
 matSq[m_][mc_] := FFC[mc] Inner[Mat, m, mc, Times]
 
 
-matFF[h_][FF[f_] Mat[m_]] := (ffdef = {ffdef, h[m] -> f}; m)
+matFF[h_, c_][FF[f_] Mat[m_]] := (ffdef = {ffdef, h[m] -> c[f]}; m)
 
-matFF[h_][other_] := (ffdef = {ffdef, h[1] -> other}; 1)
+matFF[h_, c_][other_] := (ffdef = {ffdef, h[1] -> c[other]}; 1)
 
 
 Unprotect[Conjugate]
@@ -4729,8 +4743,7 @@ Unprotect[Conjugate]
 Format[ Conjugate[x_] ] := Superscript[x, "*"]
 
 (*
-Format[ Conjugate[t_Times] ] :=
-  Superscript[SequenceForm["(", t, ")"], "*"]
+Format[ Conjugate[t_Times] ] := Superscript[SequenceForm["(", t, ")"], "*"]
 *)
 
 Conjugate[D] = D
@@ -4849,9 +4862,9 @@ mainexpr, rul},
   {slegs, dim, gauge, nobrk, edit, retain} =
     ParseOpt[PolarizationSum, opt] /. Options[CalcFeynAmp];
 
-  fexpr = Flatten[{expr}] /. (h:FF | FFC | Mat)[a__] :>
-    StringJoin[ToString/@ Level[{h, a}, {-1}]];
-  fexpr = UnAbbr[fexpr] /. FinalFormRules;
+  fexpr = Flatten[{expr}] /. h:(FF | FFC | Mat)[__] :>
+    "\\[" <> ToString[h, CForm] <> "\\]";
+  fexpr = Unabbr[fexpr] /. FinalFormRules;
   lor = Cases[fexpr, _Lor, Infinity] //Union;
   indices = FormIndices[[ Level[lor, {2}] ]];
   fexpr = fexpr /. Thread[lor -> indices];
@@ -5231,9 +5244,10 @@ fromTicket[x_] := x
 opo[li_] :=
 Block[ {c = 0, l = Length[li], Dep, Ticket, posmap, prev},
   Attributes[Dep] = {HoldFirst};
-  Block[#,
+  Block[{##, AddrOf},
+    _AddrOf = 4711;
     posmap = Hold@@ Evaluate[toTicket/@ li]
-  ]& @ Union[Kind/@ li];
+  ]&@@ Union[Kind/@ li];
   Ticket[v_, x_] := (v = Random[]; ++c) /; FreeQ[x, Dep];
   Ticket[x_] := ++c /; FreeQ[x, Dep];
   While[ c < l,
@@ -5257,9 +5271,9 @@ OnePassOrder[li_List] :=
 Block[ {jf, jd},
   $OnePassDebug = {};
   Attributes[jf] = {HoldFirst};
-  jf[v_ -> IndexIf[a__, b_]] := jf[v, Transpose[Partition[{a, 0, b}, 2]]];
-  jf[v_, {cond_, x_}] := (
-    jf[w_, {cond, y_}] := (jd[cond] = {jd[cond], w -> y}; {});
+  jf[v_ -> IndexIf[a__]] := jf[ v, {a}[[1;;;;2]], {a}[[2;;;;2]] ];
+  jf[v_, cond_, x_] := (
+    jf[w_, cond, y_] := (jd[cond] = {jd[cond], w -> y}; {});
     jd[cond] = v -> x;
     jx[cond] );
   jf[other_] := other;
@@ -6721,11 +6735,11 @@ CalcSelfEnergy[expr_, _] := expr
 CalcProcess[loop_, proc_] :=
 Block[ {amp, Neglect, FormSub = RCSub},
   ClearProcess[];
-  amp = CreateTopologies[loop, Length[Flatten[{#}]]&/@ proc];
-  amp = InsertFieldsHook[amp, proc];
-  OptPaint[amp];
-  amp = CreateFeynAmpHook[amp, Truncated -> !FreeQ[proc, F]];
-  UnAbbr[ Plus@@ CalcFeynAmp[amp,
+  $RCTop = CreateTopologies[loop, Length[Flatten[{#}]]&/@ proc];
+  $RCIns = InsertFieldsHook[$RCTop, proc];
+  OptPaint[$RCIns];
+  $RCAmp = CreateFeynAmpHook[$RCIns, Truncated -> !FreeQ[proc, F]];
+  UnAbbr[ Plus@@ CalcFeynAmp[$RCAmp,
     OnShell -> False, Transverse -> False,
       FermionChains -> Chiral, FermionOrder -> None,
       OPP -> False, FileTag -> "rc"] ] /.
@@ -7241,10 +7255,6 @@ process, doloop, new, vars, tmps, tmp, dup, dupc = 0},
 
 Attributes[addDebug] = {Listable}
 
-addDebug[s_String] := s
-
-addDebug[0] = 0
-
 addDebug[DoLoop[expr_, ind__]] := DoLoop[
   { DebLine[1, debug, DebTag[debtag][(#1&@@@ {ind}) -> DoLoop]],
     addDebug[expr] },
@@ -7255,6 +7265,8 @@ addDebug[i_IndexIf] := MapIf[addDebug, i]
 addDebug[ru:_Rule | _RuleAdd] := {
   DebLine[-2, ##], ru, DebLine[1, ##], DebLine[2, ##]
 }&[ debug, DebTag[debtag] @ DebPatt[ru] ]
+
+addDebug[other_] := other
 
 
 DebLine[__, {}] = {}
@@ -7289,7 +7301,7 @@ Attributes[Prep] = {Listable}
 
 Prep[DoLoop[expr_, ind__]] := doloop[process[expr], ind]
 
-Prep[i_IndexIf] := MapIf[Prep, i]
+Prep[i_IndexIf] := MapIf[process, i]
 
 Prep[(ru:Rule | RuleAdd)[var_, i_IndexIf]] :=
   MapIf[process[ru[var, #]]&, i]
@@ -7434,15 +7446,16 @@ Options[WriteExpr] = {
 WriteExpr[_, _[], ___] = {}
 
 WriteExpr[hh_, CodeExpr[vars_, tmpvars_, expr_], opt___Rule] :=
-Block[ {horner, fcoll, ffun, type, tmptype, indtype, rargs, newline,
-var, decl, block = 0},
-  {horner, fcoll, ffun, type, tmptype, indtype, rargs, newline} =
+Block[ {horner, fcoll, ffun, type, tmptype, indtype, rargs, $Newline,
+var, decl, $DoLoop, $IndexIf},
+  {horner, fcoll, ffun, type, tmptype, indtype, rargs, $Newline} =
     ParseOpt[WriteExpr, opt];
   rargs = Alt[rargs];
   horner = If[ horner =!= True, {}, {h_HoldForm :> h,
     p_Plus :> (HornerForm[p] /. HornerForm -> Identity) /; Depth[p] < 6} ];
   fcoll = If[ TrueQ[fcoll], TermCollect, Identity ];
   _var = {};
+  $DoLoop = $IndexIf = 0;
   varType[vars, type];
   varType[tmpvars, tmptype /. Type -> type];
   varType[Union[DoIndex/@
@@ -7494,7 +7507,11 @@ DebStatement[var_, cmd_, tag_] := "!" <>
 
 Attributes[WriteBlock] = {Listable}
 
-WriteBlock[hh_, s_String] := (WriteString[hh, s <> newline]; s)
+WriteBlock[_, Hold[expr_]] := (expr; {})
+
+WriteBlock[hh_, s_String] := (WriteString[hh, s <> $Newline]; s)
+
+WriteBlock[_, DebugLine[_]] = {}
 
 WriteBlock[hh_, DebugLine[i_, var_, tag___]] :=
   WriteBlock[hh, $DebugPre[i] <>
@@ -7502,17 +7519,24 @@ WriteBlock[hh_, DebugLine[i_, var_, tag___]] :=
       StringJoin[({ToString[#], ":"}&)/@ {tag}]] <>
     $DebugPost[i]]
 
-WriteBlock[hh_, DoLoop[expr_, ind__]] :=
-  WriteBlock[hh, {#1, expr, #2}]&@@ DoDecl[ind]
+WriteBlock[hh_, DoLoop[expr_, ind__]] := WriteBlock[hh, {
+  Hold[++$DoLoop],
+  #1, expr,
+  Hold[--$DoLoop],
+  #2
+}]&@@ DoDecl[ind]
 
-WriteBlock[hh_, IndexIf[cond_, a_, r___]] := WriteBlock[hh, {
-  $CodeIf <> ToCode[cond] <> $CodeThen,
-  a, ElseIf[r],
-  $CodeEndIf }]
+WriteBlock[hh_, i_IndexIf] := WriteBlock[hh, {
+  Hold[++$IndexIf],
+  $CodeIf <> ToCode[#1] <> $CodeThen,
+  #2, ElseIf[##3],
+  Hold[--$IndexIf],
+  $CodeEndIf
+}]&@@ i
 
-ElseIf[0] = ElseIf[RuleAdd[_, 0]] = {}
+ElseIf[] = ElseIf[True, RuleAdd[_, 0]] = {}
 
-ElseIf[a_] := {$CodeElse, a}
+ElseIf[True, a_] := {$CodeElse, a}
 
 ElseIf[cond_, a_, r___] := {
   $CodeElseIf <> ToCode[cond] <> $CodeThen,
@@ -7525,20 +7549,25 @@ WriteBlock[_, RuleAdd[_, 0]] := Sequence[]
 
 WriteBlock[hh_, RuleAdd[var_, expr_]] := (
   Write[hh, $CodeIndent, var -> ffun[var + FExpr[expr]], $CodeEoln];
-  WriteString[hh, newline];
+  WriteString[hh, $Newline];
   var -> var + expr
 )
 
 WriteBlock[hh_, var_ -> expr_Call] := (
   Write[hh, $CodeCall, ffun[FExpr@@ expr], $CodeEoln];
-  WriteString[hh, newline];
+  WriteString[hh, $Newline];
   var -> expr
 )
 
 WriteBlock[hh_, var_ -> expr_] := (
   Write[hh, $CodeIndent, var -> ffun[FExpr[expr]], $CodeEoln];
-  WriteString[hh, newline];
+  WriteString[hh, $Newline];
   var -> expr
+)
+
+WriteBlock[hh_, other_] := (
+  Write[hh, FExpr[other]];
+  other
 )
 
 

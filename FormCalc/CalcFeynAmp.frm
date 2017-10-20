@@ -1,7 +1,7 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 7 Mar 17 th
+* last modified 18 Sep 17 th
 
 
 #procedure Contract
@@ -397,6 +397,7 @@ symm MOM (2,1) (4,3) (6,5);
 
 #procedure MomSquare
 #call MomReduce
+id MOM(0, ?p) = 0;
 id MOM([p1]?, ?p) = MOM([p1].[p1]);
 argument MOM;
 #call kikj

@@ -2,7 +2,7 @@
 * all parameters for the MSSM are initialized here
 * this file is part of FormCalc
 * Christian Schappacher, 17 Feb 99
-* last modified 22 Nov 16 th
+* last modified 06 Jun 17 cs
 
 
 * The input parameters for model_mssm are:
@@ -953,16 +953,17 @@
 #include "decl.h"
 
 	integer mssmpart, fieldren, tanbren, higgsmix, p2approx
-	integer looplevel, runningMT, botResum, tlCplxApprox
+	integer looplevel, loglevel, runningMT, botResum, tlCplxApprox
 	parameter (mssmpart = 4)
 	parameter (fieldren = 0)
 	parameter (tanbren = 0)
 	parameter (higgsmix = 2)
-	parameter (p2approx = 0)
+	parameter (p2approx = 4)
 	parameter (looplevel = 2)
+	parameter (loglevel = 0)
 	parameter (runningMT = 1)
 	parameter (botResum = 1)
-	parameter (tlCplxApprox = 3)
+	parameter (tlCplxApprox = 0)
 
 	RealType scalefactor
 	RealType Qtau, Qt, Qb
@@ -973,14 +974,15 @@
 
 	ComplexType SAeff
 
-	call FHSetFlags(fail, mssmpart, fieldren, tanbren, higgsmix,
-     &    p2approx, looplevel, runningMT, botResum, tlCplxApprox)
+	call FHSetFlags(fail, mssmpart, fieldren, tanbren,
+     &    higgsmix, p2approx, looplevel, loglevel, runningMT,
+     &    botResum, tlCplxApprox)
 	if( fail .ne. 0 ) return
 
 	call FHSetSMPara(fail,
-     &    1/Alfa, AlfasMZ, GF,
+     &    1/Alfa, 1/AlfaMZ, AlfasMZ, GF,
      &    ME, MU, MD, MM, MC, MS, ML, MBatMB,
-     &    MW, MZ,
+     &    MW, MZ, GammaW, GammaZ,
 #ifdef NO_CKM
      &    0D0, 0D0, 0D0, 0D0)
 #else
@@ -999,7 +1001,7 @@
      &    Af(2,1,1), Af(3,1,1), Af(4,1,1),
      &    Mino1, Mino2, Mino3,
      &    Qtau, Qt, Qb)
-        if( fail .ne. 0 ) return
+	if( fail .ne. 0 ) return
 
 #if FV >= 2
 	call FHSetLFV(fail,

@@ -1,7 +1,7 @@
 * model_sm.h
 * declarations for model_sm.F
 * this file is part of FormCalc
-* last modified 29 Dec 15 th
+* last modified 06 Jun 17 cs
 
 
 #ifndef CKMC
@@ -15,10 +15,13 @@
 	parameter (CKMetabar = .345D0)
 
 	RealType MZ, MZ2, MW, MW2, CW, CW2, SW2
+	RealType GammaW, GammaZ
 	parameter (MZ = 91.1876D0, MZ2 = MZ**2)
 	parameter (MW = 80.385D0, MW2 = MW**2)
 	parameter (CW = MW/MZ, CW2 = CW**2)
 	parameter (SW2 = (1 - CW)*(1 + CW))
+	parameter (GammaW = 2.1180D0)   
+	parameter (GammaZ = 2.4952D0)
 
 	RealType GF, Alfa0, AlfaGF, AlfaMZ, Alfa, Alfa2
 	RealType DeltaAlfa5Had, AlfasMZ

@@ -1,3 +1,26 @@
+13 Jun 17:
+
+- Fixed conjugation problem in SquaredME.
+
+- Updated FeynHiggs interface to 2.13.
+
+
+13 Apr 17:
+
+- IMPORTANT CHANGE: HelicityME, ColourME, WeylME, SquaredME now take
+  arguments in the order "Mtree, Mloop".  This is now (finally) the
+  same as with WriteSquaredME but different than before.
+
+- Abbr[] and Subexpr[] now return lists with 'patternized' l.h.s. so
+  that they can also be used for replacing inside Mathematica.
+
+- New functions Creep, ExprHeads, ExprParts.
+
+- Enhancements to ApplyUnitarity, Keep.
+
+- Internally restructured HelicityME, PolarizedSum.
+
+
 8 Mar 17:
 
 - Fixed bug in OptimizeAbbr (typo: forgotten comma).
