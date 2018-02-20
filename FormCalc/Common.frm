@@ -1,7 +1,7 @@
 * Common.frm
 * FORM procedures common to CalcFeynAmp, HelicityME, PolarizationSum
 * this file is part of FormCalc
-* last modified 13 Feb 17 th
+* last modified 13 Feb 18 th
 
 
 #procedure CommonDecl
@@ -50,15 +50,16 @@ id `foo'([x]?, ?a) = `foo'([x]);
 
 #procedure Factor(foo)
 factarg `foo';
-id `foo'(?x) = mulM(`foo'(?x));
-argument mulM;
+id `foo'(?x) = TMP(`foo'(?x));
+argument TMP;
 chainout `foo';
 makeinteger `foo';
 id `foo'([x]?) = `foo'(nterms_([x]), [x]);
 id `foo'(1, [x]?) = [x];
 id `foo'([n]?, [x]?) = `foo'([x]);
 endargument;
-makeinteger mulM;
+makeinteger TMP;
+id TMP(?a) = mulM(?a);
 #endprocedure
 
 ***********************************************************************

@@ -3,7 +3,7 @@
 		rearranges Mathematica's InputForm output to
 		yield acceptable FORM input
 		this file is part of FormCalc
-		last modified 28 Oct 16 th
+		last modified 7 Nov 17 th
 */
 
 #include <stdio.h>
@@ -71,6 +71,7 @@ more:
       case '*':
       case '=':
         if( s[-1] == *s ) break;
+        __attribute__ ((fallthrough));
       default:
         q ^= (*s == '"');
         *d++ = *s;

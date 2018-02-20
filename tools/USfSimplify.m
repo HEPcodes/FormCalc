@@ -3,7 +3,7 @@
 		simplify the sfermion mixing matrices
 		using unitarity as much as possible
 		this file is part of FormCalc
-		last modified 23 Feb 15 th
+		last modified 8 Jan 18 th
 *)
 
 
@@ -22,6 +22,7 @@ USfMatch[USfC[1,1, r___], USf[2,2, r___]] := UCSfC[3,3, r];
 USfMatch[USf[1,2, r___], USfC[2,1, r___]] := UCSf[3,4, r];
 USfMatch[USfC[1,2, r___], USf[2,1, r___]] := UCSfC[3,4, r]
 
+(*
 USfMatch[USf[a__], USf[a__]] := UUSf[a];
 USfMatch[USfC[a__], USfC[a__]] := UUSfC[a];
 
@@ -35,25 +36,30 @@ USfMatch[USf[1,1, r___], USf[2,2, r___]] := UUSf[3,3, r];
 USfMatch[USfC[1,1, r___], USfC[2,2, r___]] := UUSfC[3,3, r];
 USfMatch[USf[1,2, r___], USf[2,1, r___]] := UUSf[3,4, r];
 USfMatch[USfC[1,2, r___], USfC[2,1, r___]] := UUSfC[3,4, r]
+*)
 
 
-USfProd/: USfProd[i__] USfProd[j__] := USfProd[i, j]
+USfProd/: USfProd[s_][i__] USfProd[s_][j__] := USfProd[s][i, j]
 
 
 USfSimplify[expr_] := expr /.
   { Abs[USf[a__]]^2 :> USf[a] USfC[a],
     Abs[USf[a__]]^-2 :> 1/UCSf[a] } /.
-  { u_USf^n_.  :> USfProd@@ Table[u, {n}],
-    u_USfC^n_. :> USfProd@@ Table[u, {n}] } /.
-  p_Plus u:USfProd[_] :> Distribute[p u] /; !FreeQ[p, USfProd[_]] /.
-  USfProd -> USfMatch /.
-  USfMatch -> Times
+  { u_USf^n_.  :> USfProd[Sign[n]]@@ Table[u, {Abs[n]}],
+    u_USfC^n_. :> USfProd[Sign[n]]@@ Table[u, {Abs[n]}] } //.
+  p_Plus u:USfProd[_][___] :> Distribute[p u] /; !FreeQ[p, USfProd] /.
+  USfProd[s_][x__] :> USfMatch[x]^s /.
+  USfMatch -> Times /.
+  x_. UCSf[a__]^2 + y_. UCSf[b__]^2 :>
+    x (UCSf[a] - UCSf[b]) (UCSf[a] + UCSf[b]) /; Expand[x + y] == 0
 
 
 i1[1] = 1;	i2[1] = 1;
 i1[2] = 2;	i2[2] = 2;
 i1[3] = 1;	i2[3] = 2;
-i1[4] = 2;	i2[4] = 1
+i1[4] = 2;	i2[4] = 1;
+i1[s_Symbol] := s;
+i2[s_Symbol] := s;
 
 USfRev[UCSf[i_,j_, r___]] := USf[i1[i],i1[j], r] USfC[i2[i],i2[j], r];
 USfRev[UCSfC[i_,j_, r___]] := USfC[i1[i],i1[j], r] USf[i2[i],i2[j], r];
@@ -92,7 +98,7 @@ UCSf[2,1, r___] := UCSf[1,2, r]
 UCSf[2,2, r___] := UCSf[1,1, r]
 
 (* 1a *)
-UCSf/: UCSf[1,j1:1|2, r___] + n_. UCSf[1,j2:1|2, r___] :=
+UCSf/: UCSf[1,j1:1|2, r___] + (n_Integer:1) UCSf[1,j2:1|2, r___] :=
   1 + (n - 1) UCSf[1,j2, r] /; j1 != j2 && n > 0;
 UCSf/: UCSf[1,j:1|2, r___] - 1 := -UCSf[1,3-j, r];
 
@@ -157,6 +163,11 @@ UCSfC/: UCSfC[3,j:1|2, r___] UUSfC[3,j_, r___] := UUSfC[1,j, r] UCSf[2,j, r]
 UCSf/: UCSf[i:1|2,3, r___] UUSf[i_,3, r___] := UUSf[i,1, r] UCSf[i,2, r];
 UCSfC/: UCSfC[i:1|2,3, r___] UUSfC[i_,3, r___] := UUSfC[i,1, r] UCSf[i,2, r]
 
+
+UCSfC[1,1, r___] := UCSf[1,1, r];
+UCSfC[1,2, r___] := UCSf[1,2, r];
+UCSfC[2,1, r___] := UCSf[2,1, r];
+UCSfC[2,2, r___] := UCSf[2,2, r];
 
 Conjugate[UCSf[a___]] ^:= UCSfC[a];
 Conjugate[UCSfC[a___]] ^:= UCSf[a];

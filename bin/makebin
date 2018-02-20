@@ -2,8 +2,8 @@
 # get and build FORM and the MathLink executables for a given platform
 # last modified 20 Sep 16 th
 
-gmp=gmp-6.1.0
-zlib=zlib-1.2.8
+gmp=gmp-6.1.2
+zlib=zlib-1.2.11
 
 cc=gcc
 cxx=g++

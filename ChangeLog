@@ -1,3 +1,77 @@
+12 Feb 2018:
+
+- (Hopefully) fixed the dreaded NumberMalloc problem in FORM.
+
+
+10 Feb 2018:
+
+- Added missing end-braces in C's $CodeElse, $CodeElseIf.
+
+- Added Declarations option to PrepareExpr.
+
+
+26 Jan 2018:
+
+- Improvements to several scripts in drivers/tools, especially pnuglot.
+
+- Fixed bug in WriteExpr for debug lines in DoLoops.
+
+
+5 Jan 2018:
+
+- Added $RCRes (like $RCTop, $RCIns, $RCAmp) for better diagnostics
+  in [D]SelfEnergy, *RC, RenConst, etc.
+
+- Added SEHook to intercept final calculation of a [D]SelfEnergy and
+  replacement of K2 by m2.
+
+- Generalized SubstSimpleAbbr to SubstAbbr, of which SubstSimpleAbbr
+  is now only a special case.
+
+- Added Enum and ClearEnum which allow determination of array bounds
+  with named constants in the code generation.
+
+- Renamed OptPaint to PaintSE (function corresponding to $PaintSE).
+
+- Added PutSE which saves the four components of the calculation of
+  a RenConst, {$RCTop, $RCIns, $RCAmp, $RCRes}, in files, with
+  filename conventions analogous to PaintSE.  Variable $PutSE
+  sets the default path/prefix, analogous to $PaintSE.
+
+- Added ToVars function which introduces variables for all
+  subexpressions matching a pattern.
+
+- Added MakeTmp option for PrepareExpr, which specifies a function
+  to introduce user-defined temporary variables, e.g. using ToVars.
+
+- Added DeclIf option for WriteExpr.  For DeclIf -> "var" the
+  output is structured like
+	#ifndef var
+	#define var
+	[declarations]
+	#else
+	[code]
+	#endif
+   i.e. in a language that requires separation of declarations
+   and code (like Fortran) the same file can be included once
+   in the declarations section and once in the code section.
+
+- Added the NoDebug wrapper for statements given to PrepareExpr,
+  i.e. a statement of the form NoDebug[var -> expr] does not
+  produce a debug line.
+
+- Added Unexpr[expr, !patt] to not expand abbreviations and
+  subexpressions inside objects matching patt.
+
+- Fixed the (rather special) case where PolarizationSum is used to
+  square an amplitude that does not contain matrix elements.
+  PolarizationSum now retains Mat[...] not substituted by the user
+  (though a warning is issued if the Mat contain polarization
+  vectors).
+
+- Improved tools/USfSimplify.m.
+
+
 13 Jun 17:
 
 - Fixed conjugation problem in SquaredME.

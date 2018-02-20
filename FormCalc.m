@@ -1,8 +1,8 @@
 (*
 
-This is FormCalc, Version 9.5
-Copyright by Thomas Hahn 1996-2017
-last modified 20 Oct 17 by Thomas Hahn
+This is FormCalc, Version 9.6
+Copyright by Thomas Hahn 1996-2018
+last modified 10 Feb 18 by Thomas Hahn
 
 Release notes:
 
@@ -68,7 +68,7 @@ BeginPackage["LoopTools`"]
 
 PaVeIntegral = A0i | B0i | C0i | D0i | E0i | F0i |
   A0 | A00 | B0 | B1 | B00 | B11 | B001 | B111 |
-  DB0 | DB1 | DB00 | DB11
+  DB0 | DB1 | DB00 | DB11 | C0 | D0 | E0 | F0
 
 { Nbb, bb0, bb1, bb00, bb11, bb001, bb111, dbb0, dbb1, dbb00, dbb11,
   Ncc, cc0, cc00, cc001, cc002, cc0000, cc0011, cc0022, cc0012,
@@ -308,32 +308,44 @@ EndPackage[]
 TreeCoupling::usage =
 "TreeCoupling[from -> to] calculates the tree-level contribution to
 the process from -> to.  TreeCoupling[..., opt] specifies options for
-CreateTopologies and/or InsertFields to be used in the computation."
+CreateTopologies, InsertFields, and CreateFeynAmp to be used in the
+computation."
 
 VertexFunc::usage =
 "VertexFunc[from -> to] calculates the one-loop contribution to the
 process from -> to.  VertexFunc[..., opt] specifies options for
-CreateTopologies and/or InsertFields to be used in the computation."
+CreateTopologies, InsertFields, and CreateFeynAmp to be used in the
+computation."
 
 SelfEnergy::usage =
 "SelfEnergy[from -> to, mass] calculates the self-energy with incoming
 particle from and outgoing particle to, taken at k^2 = mass^2. 
 SelfEnergy[f] calculates the self-energy of particle f on its mass
-shell.  SelfEnergy[..., opt] specifies options for CreateTopologies
-and/or InsertFields to be used in the computation."
+shell.  SelfEnergy[..., opt] specifies options for CreateTopologies,
+InsertFields, and CreateFeynAmp to be used in the computation."
 
 DSelfEnergy::usage =
 "DSelfEnergy[from -> to, mass] calculates the derivative with respect to
 k^2 of the self-energy with incoming particle from and outgoing particle
 to, taken at k^2 = mass^2.  DSelfEnergy[f] calculates the self-energy of
 particle f on its mass shell.  DSelfEnergy[..., opt] specifies options
-for CreateTopologies and/or InsertFields to be used in the computation."
+for CreateTopologies, InsertFields, and CreateFeynAmp to be used in the
+computation."
 
-$RCTop::usage = $RCIns::usage = $RCAmp::usage =
-"$RCTop, $RCIns, and $RCAmp respectively contain the output of
-CreateTopologies, InsertFields, and CreateFeynAmp produced by the last
-call to SelfEnergy, DSelfEnergy, VertexFunc, or TreeCoupling for
-inspection and debugging."
+K2::usage =
+"K2 represents the momentum squared in SelfEnergy and DSelfEnergy."
+
+SEHook::usage =
+"SEHook[se, amp, k2 -> m2] provides a hook on the final step on the
+computation of (the derivative of) a self-energy.  It should replace
+k2 -> m2 in amp.  Take care that evaluating the first argument unchanged
+results in a recursion."
+
+$RCTop::usage = $RCIns::usage = $RCAmp::usage = $RCRes::usage =
+"$RCTop, $RCIns, $RCAmp, and $RCRes respectively contain the output of
+CreateTopologies, InsertFields, CreateFeynAmp, and CalcFeynAmp produced
+by the last call to SelfEnergy, DSelfEnergy, VertexFunc, or
+TreeCoupling for inspection and debugging."
 
 ReTilde::usage =
 "ReTilde[expr] takes the real part of loop integrals occurring in expr."
@@ -369,7 +381,8 @@ MassRC::usage =
 f.  MassRC[f1, f2] computes the one-loop mass renormalization constant
 for the f1-f2 transition.  For fermions the output is a list
 {left-handed RC, right-handed RC}.  MassRC[..., opt] specifies options
-for CreateTopologies and/or InsertFields to be used in the computation."
+for CreateTopologies, InsertFields, and CreateFeynAmp to be used in the
+computation."
 
 FieldRC::usage =
 "FieldRC[f] computes the one-loop field renormalization constant of
@@ -377,18 +390,18 @@ field f.  FieldRC[f1, f2] computes the one-loop field renormalization
 constant for the f1-f2 transition.  FieldRC[f1, f2, c] subtracts c from
 the self-energy entering into the calculation.  For fermions the output
 is a list {left-handed RC, right-handed RC}.  FieldRC[..., opt]
-specifies options for CreateTopologies and/or InsertFields to be used
-in the computation."
+specifies options for CreateTopologies, InsertFields, and CreateFeynAmp
+to be used in the computation."
 
 TadpoleRC::usage =
 "TadpoleRC[f] computes the one-loop tadpole renormalization constant of
-field f.  TadpoleRC[..., opt] specifies options for CreateTopologies
-and/or InsertFields to be used in the computation."
+field f.  TadpoleRC[..., opt] specifies options for CreateTopologies,
+InsertFields, and CreateFeynAmp to be used in the computation."
 
 WidthRC::usage =
 "WidthRC[f] computes the one-loop width of field f.  WidthRC[..., opt]
-specifies options for CreateTopologies and/or InsertFields to be used
-in the computation."
+specifies options for CreateTopologies, InsertFields, and CreateFeynAmp
+to be used in the computation."
 
 $RenConst::usage =
 "$RenConst lists the functions under which renormalization constants are
@@ -811,7 +824,8 @@ patt.  Patterns prefixed by ! (Not) are excluded."
 
 Unabbr::usage =
 "Unabbr[expr] expands all abbreviations and subexpressions in expr. 
-Unabbr[expr, patt] expands only those free of patt."
+Unabbr[expr, patt] expands only those free of patt.
+Unabbr[expr, !f [, patt]] does not expand inside objects that match f."
 
 UnAbbr = Unabbr
 
@@ -898,12 +912,13 @@ $OptPrefix::usage =
 "$OptPrefix specifies the prefix for additional abbreviations introduced
 by OptimizeAbbr, i.e. the Opt in Opt123."
 
+SubstAbbr::usage =
+"SubstAbbr[exprlist, patt] removes abbreviations matching patt and 
+substitutes them back into exprlist."
+
 SubstSimpleAbbr::usage =
-"SubstSimpleAbbr[{expr, abbr}] removes `simple' abbreviations from abbr
-and substitutes them back into expr. 
-SubstSimpleAbbr[CodeExpr[var, tmpvar, expr]] removes `simple'
-abbreviations from expr and deletes them from the variable lists var
-and tmpvar."
+"SubstSimpleAbbr[exprlist] removes `simple' abbreviations of the form
+var -> s where s is a number or a symbol times a number."
 
 ExtractInt::usage =
 "ExtractInt[expr] extracts the loop integrals from expr for evaluation
@@ -954,6 +969,15 @@ expr."
 RenumberRules::usage =
 "RenumberRules[expr, vars] gives the rules used for the substitution
 in Renumber[expr, vars]."
+
+Enum::usage =
+"Enum[ind] associates the indices ind with integers which are used for
+determining array dimensions while the indices themselves are kept in
+symbolic form.  The syntax is similar to C, e.g. Enum[a, b, c -> 5, d]
+assigns a -> 1, b -> 2, c -> 5, d -> 6."
+
+ClearEnum::usage =
+"ClearEnum[] clears all Enum values."
 
 MaxDims::usage =
 "MaxDims[args] returns a list of all distinct functions in args with the
@@ -1462,9 +1486,15 @@ in expr.  CalcRenConst[expr, h] calculates only those of type h."
 WriteRenConst::usage =
 "WriteRenConst[expr, dir] calculates the renormalization constants
 appearing in expr and generates code from the results.  The resulting 
-files (the Fortran program itself and the corresponding declarations) 
-are written to the directory dir.
+files (the code itself and the corresponding declarations) are written
+to the directory dir.
 WriteRenConst[expr, h, dir] writes only those of type h."
+
+CreateTopologiesHook::usage =
+"CreateTopologiesHook[l, i -> o] is the function called by SelfEnergy
+and DSelfEnergy to create l-loop topologies with i incoming and
+o outgoing legs.  It is normally equivalent to CreateTopologies, but
+may be redefined to change the way the topologies are created."
 
 InsertFieldsHook::usage =
 "InsertFieldsHook[tops, proc] is the function called by SelfEnergy and
@@ -1487,29 +1517,44 @@ ClearSE::usage =
 "ClearSE[] clears the internal definitions of already calculated
 self-energies."
 
-OptPaint::usage =
-"OptPaint[ins, True] invokes Paint[ins]. 
-OptPaint[ins, pre] invokes Paint[ins], saving the graphics in files
-with names constructed from ProcName[ins], prefixed with the
-string pre (which may include a directory). 
-OptPaint[ins, pre, suf] further appends suf to the file name. 
-OptPaint[ins] executes OptPaint[ins, $PaintSE]."
-
 ProcName::usage =
 "ProcName[amp] constructs a string suitable as symbol or filename for
 the inserted topology or amplitude list amp which is unique to the model
 and particle selection."
 
+PaintSE::usage =
+"PaintSE[ins, True] invokes Paint[ins]. 
+PaintSE[ins, pre] invokes Paint[ins], saving the graphics in files with
+names constructed from ProcName[ins], prefixed with the string pre which
+may include a directory. 
+PaintSE[ins, pre, suf] further appends suf to the filename. 
+PaintSE[ins] executes PaintSE[ins, $PaintSE]."
+
 $PaintSE::usage =
-"$PaintSE determines whether SelfEnergy paints the diagrams it generates
-to compute the self-energies.  $PaintSE can be True, False, or a string
-which indicates that the output should be saved in a PostScript file
-instead of being displayed on screen, and is prepended to the filename."
+"$PaintSE is the default second argument of PaintSE and controls painting
+of diagrams in SelfEnergy, DSelfEnergy, VertexFunc, and TreeCoupling.
+Admissible values are True, False, pre, or {pre, suf}, where pre and suf
+are strings used to construct the filename."
+
+PutSE::usage =
+"PutSE[{top, ins, amp, res}, pre] saves the outputs respectively of
+{CreateTopologies, InsertFields, CreateFeynAmp, CalcFeynAmp} to
+{file.top, file.ins, file.amp, file.res}, where file is constructed
+from ProcName[ins], prefixed with the string pre which may include a
+directory.
+PutSE[{...}, pre, suf] further appends suf to the filename.
+PutSE[{...}] executes PutSE[{...}, $PutSE]."
+
+$PutSE::usage =
+"$PutSE is the default second argument of PutSE and controls saving
+of results in SelfEnergy, DSelfEnergy, VertexFunc, and TreeCoupling.
+Admissible values are pre or {pre, suf}, where pre and suf are strings
+used to construct the filename."
 
 $LongitudinalSE::usage =
 "$LongitudinalSE specifies that the longitudinal rather than the
-transverse part of the vector-boson self-energies is taken in
-SelfEnergy and DSelfEnergy."
+transverse part of the vector-boson self-energies is taken in SelfEnergy
+and DSelfEnergy."
 
 
 (* low-level code output functions *)
@@ -1568,11 +1613,11 @@ TimeStamp::usage =
 
 BlockSplit::usage =
 "BlockSplit[var -> expr] tries to split the calculation of expr into
-subexpressions each of which has a leaf count less than $BlockSize."
+subexpressions each of which has a LeafCount less than $BlockSize."
 
 FileSplit::usage =
 "FileSplit[exprlist, mod, writemod, (writeall)] splits exprlist into
-batches with leaf count less than $FileSize.  If there is only one
+batches with LeafCount less than $FileSize.  If there is only one
 batch, writemod[batch, mod] is invoked to write it to file.  Otherwise,
 writemod[batch, modN] is invoked on each batch, where modN is mod
 suffixed by a running number, and in the end writeall[mod, res] is
@@ -1605,10 +1650,20 @@ AddrOf::usage =
 "AddrOf[var] is written out by WriteExpr as the address-of operator
 applied to var, e.g. &var in C."
 
+ToVars::usage =
+"ToVars[patt, symname][exprlist] introduces variables for all
+subexpressions in exprlist matching patt.  The names for the
+variables are determined by the function symname which receives the
+expression being abbreviated and must return a symbol name for it.
+If symname is a string, NewSymbol[symname, 0] is taken as naming
+function, i.e. the variable names will be symname1, symname2, ...
+The numbering is consecutive across ToVars calls but can be reset
+by assigning SymbolNumber[symname] = 0."
+
 PrepareExpr::usage =
 "PrepareExpr[{var1 -> expr1, var2 -> expr2, ...}] prepares a list of
-variable assignments for write-out to a Fortran file.  Expressions with a
-leaf count larger than $BlockSize are split into several pieces, as in\n
+variable assignments for code generation.  Expressions with a LeafCount
+larger than $BlockSize are split into several pieces, as in\n
 \tvar = part1\n\
 \tvar = var + part2\n\
 \t...\n
@@ -1622,17 +1677,15 @@ $WriteExprDebug::usage =
 the last invocation of WriteExpr."
 
 WriteExpr::usage =
-"WriteExpr[file, exprlist] writes a list of variable assignments in
-Fortran format to file.  The exprlist can either be a CodeExpr object
-or a list of expressions of the form {var1 -> expr1, var2 -> expr2,
-...}, which is first converted to a CodeExpr object using
-PrepareExpr.  WriteExpr returns a list of the subexpressions that were
-actually written."
+"WriteExpr[file, exprlist] writes a list of variable assignments to
+file.  The exprlist can either be a CodeExpr object or a list of
+expressions of the form {var1 -> expr1, var2 -> expr2, ...}, which is
+first converted to a CodeExpr object using PrepareExpr.  WriteExpr
+returns a list of the subexpressions that were actually written."
 
 HornerStyle::usage =
-"HornerStyle is an option of WriteExpr.  It specifies whether
-expressions are arranged in Horner form before writing them out as
-Fortran code."
+"HornerStyle is an option of WriteExpr.  It specifies whether polynomial
+expressions are written out in Horner form."
 
 FinalCollect::usage =
 "FinalCollect is an option of WriteExpr.  It specifies whether common
@@ -1657,6 +1710,22 @@ IndexType::usage =
 "IndexType is an option of WriteExpr.  It is the counterpart of Type
 for do-loop indices.  IndexType -> Type uses the settings of the Type
 option."
+
+DeclIf::usage =
+"DeclIf is an option of WriteExpr.  With DeclIf -> var, where var is a
+string suitable for a preprocessor variable, preprocessor statements of
+the form
+	#ifndef var
+	#define var
+	[declarations]
+	#else
+	[code]
+	#endif
+are generated to separate declarations and code, i.e. a file so generated
+is supposed to be included once in the declarations section and once in
+the code part.  This can be necessary in particular in Fortran, if e.g.
+non-declaration statements such as statement functions need to be placed
+between declarations and code."
 
 RealArgs::usage =
 "RealArgs is an option of WriteExpr.  It specifies a list of functions
@@ -1722,6 +1791,15 @@ Any other value is understood as a function which is queried for each
 variable assignment and its output, True, False, or a string,
 individually determines generation of the debug statement."
 
+MakeTmp::usage =
+"MakeTmp is an option of PrepareExpr.  It specifies a function for
+introducing user-defined temporary variables, e.g. ToVars."
+
+Declarations::usage =
+"Declarations is an option of PrepareExpr.  It specifies a pattern suitable
+for Cases (i.e. patt, patt -> rhs, or patt :> rhs) that selects all objects
+to be declared as variables."
+
 FinalTouch::usage =
 "FinalTouch is an option of PrepareExpr.  It specifies a function which
 is applied to each final subexpression, just before write-out to file."
@@ -1730,12 +1808,15 @@ ResetNumbering::usage =
 "ResetNumbering is an option of PrepareExpr.  It restarts numbering
 of variable names for temporary and duplicate expressions at zero."
 
+NoDebug::usage =
+"NoDebug[var -> expr] does not generate a debug statement in PrepareExpr."
+
 CodeExpr::usage =
 "CodeExpr[vars, tmpvars, exprlist] is the output of PrepareExpr and
-contains a list of expressions ready to be written to a Fortran file,
+contains a list of expressions ready to be written to a code file,
 where vars are the original variables and tmpvars are temporary
-variables introduced in order to shrink individual expressions to a size
-small enough for Fortran."
+variables introduced in order to shrink individual expressions to a
+small enough size."
 
 DebugLine::usage =
 "DebugLine[i, var] emits a debugging statement (print-out of variable
@@ -1849,19 +1930,17 @@ Extern::usage =
 into a declaration for an external function."
 
 DoDecl::usage =
-"DoDecl[v, m] returns two strings with the do/enddo declarations of a
-Fortran loop over v from 1 to m.  DoDecl[v, {a, b}] returns the same for
-a loop from a to b.  DoDecl[v] invokes Dim[v] to determine the upper
-bound on v."
+"DoDecl[v, m] returns two strings with the declarations for a loop over
+v from 1 to m.  DoDecl[v, {a, b}] returns the same for a loop from a to b. 
+DoDecl[v] invokes Dim[v] to determine the upper bound on v."
 
 CallDecl::usage =
-"CallDecl[names] returns a string with the invocations of the
-subroutines names in Fortran, taking into account possible loops
-indicated by DoLoop."
+"CallDecl[names] returns a string with the invocations of the subroutines
+names, taking into account possible loops indicated by DoLoop."
 
 $SymbolPrefix::usage =
 "$SymbolPrefix is a string prepended to all externally visible symbols
-in the generated Fortran code to avoid symbol collisions."
+in the generated code to avoid symbol collisions."
 
 
 (* symbols used in the generated code *)
@@ -1883,10 +1962,10 @@ TInvariant::usage =
 invariant formed from the momenta ki and kj, i.e. t_{ij} = (ki - kj)^2."
 
 exp::usage =
-"exp[x] is the exponential function in Fortran."
+"exp[x] is the exponential function in Fortran and C."
 
 cI::usage =
-"cI represents the imaginary unit in Fortran."
+"cI represents the imaginary unit in Fortran and C."
 
 SplitChain::usage =
 "SplitChain[w] prepares WeylChain[w] for numerical evaluation."
@@ -1903,8 +1982,8 @@ ChainV3::usage = ChainB3::usage =
 ChainV4::usage = ChainB4::usage =
 ChainV5::usage = ChainB5::usage =
 ChainV6::usage = ChainB6::usage =
-"ChainXn[sL,epsL, vec..., epsR,sR] is the Fortran representation of
-the spinor chain <sL|epsL|vec...|epsR|sR>.  The spinors sL and
+"ChainXn[sL,epsL, vec..., epsR,sR] is the representation of the spinor
+chain <sL|epsL|vec...|epsR|sR> in Fortran and C.  The spinors sL and
 sR are multiplied by the spinor metric if epsL,R = 1, respectively. 
 ChainVn starts with a sigma, ChainBn with a sigma-bar."
 
@@ -1984,24 +2063,24 @@ are separated by a vertical bar (|)."
 
 $DriversDir::usage =
 "$DriversDir is the path where the driver programs for the generated
-Fortran code are located."
+code are located."
 
 $BlockSize::usage =
-"$BlockSize is the maximum LeafCount a single Fortran statement written
+"$BlockSize is the maximum LeafCount a single code statement written
 out by WriteExpr may have.  Any expression with LeafCount > $BlockSize
-will be chopped up before being written to the Fortran file."
+will be chopped up before being written to the code file."
 
 $FileSize::usage =
 "$FileSize gives the maximum LeafCount the expressions in a single
-Fortran file may have.  If the expressions grow larger than $FileSize,
+code file may have.  If the expressions grow larger than $FileSize,
 the file is split into several pieces."
 
 
 Begin["`Private`"]
 
-$FormCalc = 9.5
+$FormCalc = 9.6
 
-$FormCalcVersion = "FormCalc 9.5 (20 Oct 2017)"
+$FormCalcVersion = "FormCalc 9.6 (10 Feb 2018)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -2103,7 +2182,7 @@ RPad[s_, n_] := s <> Table[" ", {n - StringLength[s]}]
 
 _SymbolNumber = 0
 
-next[stub_] := stub <> ToString[++SymbolNumber[stub]]
+next[stub_] := ToString[stub] <> ToString[++SymbolNumber[stub]]
 
 NewSymbol[stub_, 0] := ToExpression[next[stub]]
 
@@ -2182,6 +2261,20 @@ Alt[s_] := s
 Alt[s___] := Alternatives[s]
 
 
+ClearEnum[] := (Clear[enum]; enum[i_] := i)
+
+ClearEnum[]
+
+Enum[ind__] :=
+Block[ {enumc = 0},
+  enumSet/@ Flatten[{ind}]
+]
+
+enumSet[i_ -> c_] := i -> (enum[i] = enumc = c)
+
+enumSet[i_] := i -> (enum[i] = ++enumc)
+
+
 MaxDims[args__] := hRan/@
   Split[Union[Flatten[{args}]], Head[#1] === Head[#2]&]
 
@@ -2194,9 +2287,7 @@ hRan[x_] := x[[1,0]]@@ MapThread[iRan, List@@@ x]
 
 iRan[i__HelAll] := HelDim[Level[{i}, {2}, iRan]]
 
-iRan[i___] := Level[Unran/@ {i}, {-1}, Ran@@ Sort[{##}]&]
-
-iRan[i___] := Ran@@ Sort[Flatten[Unran/@ {i}]]
+iRan[i___] := Ran@@ SortBy[Flatten[Unran/@ {i}], enum]
 
 
 Ran[i:Except[1], ___, j_] := i ;; j
@@ -3824,10 +3915,15 @@ abbsel[{need__}, {omit__}] := Select[all,
 abbsel[{need__}, ___] := Select[all, !FreeQ[#, Alternatives[need]]&]
 
 
-Unabbr[expr_] := expr //. Dispatch[Join[Subexpr[], Abbr[]]]
+Unabbr[expr_, args___] := expr //.
+  Dispatch[abbrList[Flatten[{Subexpr[], Abbr[]}]][args]]
 
-Unabbr[expr_, patt_] :=
-  expr //. Dispatch[Select[Join[Subexpr[], Abbr[]], FreeQ[#, patt]&]]
+abbrList[abbr__][] := Flatten[{abbr}]
+
+abbrList[abbr__][!patt_, r___] := abbrList[x:patt :> x, abbr][r]
+
+abbrList[pre___, abbr_][patt_, r___] :=
+  abbrList[pre, Select[abbr, FreeQ[#, patt]&]][r]
 
 
 IndexHeader[h_, {}] := h
@@ -4230,19 +4326,17 @@ OptimizeAbbr[rul:{__Rule}, simp_:Simplify] := Flatten @
     ToCat[3, AbbrCat/@ rul] }]
 
 
-Attributes[simple] = {Listable}
+Attributes[selectdef] = {Listable}
 
-simple[r:(_ -> _?NumberQ)] := subst[r] = Sequence[]
+selectdef[patt_] := select[r:patt] := subst[r] = Sequence[]
 
-simple[r:(_ -> n_. _Symbol)] := (subst[r] = Sequence[]) /; NumberQ[n]
-
-simple[CodeExpr[vars__, expr_]] := CodeExpr[vars, simple[expr]]
-
-simple[other_] := other
-
-SubstSimpleAbbr[arg_] :=
-Block[ {subst, new = arg, rul},
-  While[ ( new = simple[new];
+SubstAbbr[exprlist_, patt__] :=
+Block[ {select, subst, new = exprlist, rul},
+  Attributes[select] = {Listable};
+  selectdef[{patt}];
+  select[CodeExpr[vars__, expr_]] := CodeExpr[vars, select[expr]];
+  select[other_] := other;
+  While[ ( new = select[new];
            Length[rul = (#[[1,1,1]]&)/@ DownValues[subst]] > 0 ),
     new = new /. CodeExpr[var_, tmpvar_, expr_] :>
       (CodeExpr[DeleteCases[var, #], DeleteCases[tmpvar, #], expr]&[
@@ -4251,6 +4345,10 @@ Block[ {subst, new = arg, rul},
   ];
   new
 ]
+
+SubstSimpleAbbr[exprlist_] := SubstAbbr[exprlist,
+  _ -> _Symbol | _?NumberQ | _?NumberQ _Symbol,
+  (lhs_ -> rhs_) /; LeafCount[lhs] >= LeafCount[rhs]]
 
 
 (* UV and IR finiteness checks *)
@@ -4728,9 +4826,9 @@ Block[ {ffdef = {}, ff, ffc},
     Flatten[ffdef] }
 ]
 
-matSq[m_Symbol][mc_] := FFC[mc] Mat[m, mc]
+matSq[m_List][mc_] := FFC[mc] Inner[Mat, m, mc, Times]
 
-matSq[m_][mc_] := FFC[mc] Inner[Mat, m, mc, Times]
+matSq[m_][mc_] := FFC[mc] Mat[m, mc]
 
 
 matFF[h_, c_][FF[f_] Mat[m_]] := (ffdef = {ffdef, h[m] -> c[f]}; m)
@@ -4822,6 +4920,8 @@ RealQ[_Real] = True
 
 RealQ[p_Plus] := VectorQ[List@@ p, RealQ]
 
+RealQ[t_Times] := VectorQ[List@@ t, RealQ]
+
 
 (* performing the polarization sum analytically *)
 
@@ -4838,6 +4938,10 @@ PolarizationSum works only after DeclareProcess or CalcFeynAmp."
 
 PolarizationSum::incomp = "PolarizationSum used on an amplitude \
 other than the last one set up by DeclareProcess or CalcFeynAmp."
+
+PolarizationSum::polchain =
+"Warning: Input contains polarization vectors in fermion chains.  \
+Result likely not correct, please insert HelicityME first."
 
 PolarizationSum[amp:Amp[_][___].., opt___?OptionQ] :=
 Block[ {Hel},
@@ -4862,9 +4966,14 @@ mainexpr, rul},
   {slegs, dim, gauge, nobrk, edit, retain} =
     ParseOpt[PolarizationSum, opt] /. Options[CalcFeynAmp];
 
-  fexpr = Flatten[{expr}] /. h:(FF | FFC | Mat)[__] :>
-    "\\[" <> ToString[h, CForm] <> "\\]";
-  fexpr = Unabbr[fexpr] /. FinalFormRules;
+  fexpr = Flatten[{expr}];
+  fexpr = fexpr /. Cases[fexpr, (lhs_ -> _) :>
+    lhs -> "\\[" <> ToString[lhs, CForm] <> "\\]"];
+  fexpr = Unabbr[fexpr, !_Mat, DiracChain | WeylChain] /.
+    FinalFormRules;
+  If[ !FreeQ[Unabbr[fexpr], (DiracChain | WeylChain)[__, _e, __]],
+    Message[PolarizationSum::polchain] ];
+
   lor = Cases[fexpr, _Lor, Infinity] //Union;
   indices = FormIndices[[ Level[lor, {2}] ]];
   fexpr = fexpr /. Thread[lor -> indices];
@@ -5133,14 +5242,13 @@ Block[ {hh},
   hh = OpenCode[ModName[fmod]];
   WriteString[hh,
     Hdr["form factors for " <> name] <>
-    fincl <>
+    vPre <> fPost <>
     SubroutineDecl[mod] <>
-    sincl[[1]] ];
-  WriteExpr[hh, {sincl[[2]], ff, sincl[[3]]},
+    vPre ];
+  WriteExpr[hh, {sPost, ff, sEnd, SubroutineEnd[]},
     TmpType -> helType,
     Optimize -> True,
     DebugLines -> $DebugFF, DebugLabel -> fmod];
-  WriteString[hh, SubroutineEnd[]];
   Close[hh];
   {fmod, mod}
 ]
@@ -5295,10 +5403,10 @@ Block[ {hh},
   hh = OpenCode[ModName[mod]];
   WriteString[hh,
     Hdr["abbreviations for " <> name] <>
-    fincl <>
+    vPre <> fPost <>
     SubroutineDecl[mod] <>
-    sincl[[1]] ];
-  WriteExpr[hh, {sincl[[2]], abbr, sincl[[3]]},
+    vPre ];
+  WriteExpr[hh, {sPost, abbr, sEnd},
     TmpType -> tmpType[cat],
     DebugLines -> $DebugAbbr[cat], DebugLabel -> mod];
   WriteString[hh, SubroutineEnd[]];
@@ -5321,7 +5429,7 @@ Block[ {hh},
   hh = OpenCode[ModName[mod]];
   WriteString[hh,
     Hdr["numerators for " <> name] <>
-    fincl ];
+    vPre <> fPost ];
   WriteNum[hh]/@ expr;
   Close[hh];
   mod
@@ -5367,19 +5475,19 @@ writeNumF[hh_][type_, name_, expr__] := (
   WriteString[hh, "\
 \t" <> type <> "Function(" <> name <> ")\n\
 \timplicit none\n"];
-  WriteExpr[hh, {
-      sincl[[1]] <> "\n\
-#define C" <> type <> "\n" <>
-      sincl[[2]] <> "\
-#undef C" <> type <> "\n\n\
-!" <> type <> "Debug(\"" <> name <> "\")\n",
+  WriteExpr[hh,
+    { vPre <>
+      "#define C" <> type <> "\n\n" <>
+      sPost <>
+      "#undef C" <> type <> "\n\n\
+!" <> type <> "Debug(\"" <> name <> "\")\n\n",
       expr,
-      sincl[[3]] },
+      sEnd,
+      "\tend\n\n\n" },
     Type -> helType,
     FinalTouch -> Simplify,
     FinalCollect -> True,
-    DebugLines -> $DebugNum, DebugLabel -> name];
-  WriteString[hh, "\tend\n\n\n"]
+    DebugLines -> $DebugNum, DebugLabel -> name]
 )
 
 $DebugNum = 0
@@ -5540,13 +5648,20 @@ subroutineDeclC[name_, decl___String] :=
     decl <> "\n"
 
 
-DeclIf[var_, d1_, d2_] := {
-  "#ifndef ", var, "\n#define ", var, "\n\n",
-  d1, "#else\n\n", d2, "#endif\n\n" }
+newline[""] = newline[{}] = ""
 
-declIfF[var_, com_, d1_, d2_, x___] := DeclIf[var, d1, {d2, com, x}]
+newline[s_] := s <> "\n"
 
-declIfC[var_, com_, d1_, d2_, ___] := DeclIf[var, {d1, com}, d2]
+
+IfDecl[var_String, if_, else_] := {
+  "#ifndef " <> var <> "\n#define " <> var <> "\n\n" <> if <> "#else\n\n",
+  else, "#endif\n\n" }
+
+IfDecl[_, decl_, expr_] := {decl, expr}
+
+ifDeclF[var_, com_, fdecl_, sdecl_, x___] := IfDecl[var, fdecl, {sdecl, com, x}]
+
+ifDeclC[var_, com_, fdecl_, sdecl_, ___] := IfDecl[var, {fdecl, com}, sdecl]
 
 
 CallDecl[li_List] := StringJoin[CallDecl/@ li]
@@ -5736,6 +5851,17 @@ comlim[defs_, end_] :=
   ToCode[{Kind[First[Flatten[{defs, end -> 0}]]], end}]
 
 
+fDecl[{s___}] := fDecl[s]
+
+fDecl[pre_String:"", post___String] :=
+  {newline[pre], newline[StringJoin[post]] <> "\n"}
+
+sDecl[{s___}] := sDecl[s]
+
+sDecl[pre_String:"", post_String:"", end_String:""] :=
+  {newline[pre], newline[post], newline[end]}
+
+
 Attributes[WriteSquaredME] = {HoldAll}
 
 Options[WriteSquaredME] = {
@@ -5766,7 +5892,7 @@ WriteSquaredME[tree_, loop_, dir_, opt___?OptionQ] :=
 
 WriteSquaredME[tree_, loop_, abbr__, dir_, opt___?OptionQ] :=
 Block[ {folder, xrules, prefix, symprefix, header, fincl, sincl,
-fincl1, sincl1, hincl, ModName, Hdr, 
+vPre, fPre, fPost, sPre, sPost, sEnd, ModName, Hdr, 
 proc = Sequence[], name, legs, invs, $SymbolPrefix,
 mat, nums, abrs, matsel, matsub, defcat, angledep,
 abbrsel, Dim, abbint, lint = {}, lintc = 0, cutc = 0, masc = 0,
@@ -5778,11 +5904,9 @@ ffmods, nummods, abbrmods, com, helrul, hmax, hfun},
     header, fincl, sincl} =
     ParseOpt[WriteSquaredME, opt] //. Options[WriteRenConst];
 
-  hincl = "#include \"" <> prefix <> "vars.h\"\n";
-  ( fincl1 = #1;
-    fincl = {hincl, ##2 <> "\n\n"} )&@@ Flatten[{fincl, "", ""}];
-  ( sincl1 = #1;
-    sincl = {hincl, #2, #3} )&@@ Flatten[{sincl, "", "", ""}];
+  vPre = "#include \"" <> prefix <> "vars.h\"\n";
+  {fPre, fPost} = fDecl[fincl];
+  {sPre, sPost, sEnd} = sDecl[sincl];
 
   abbint[f_] := AbbrevInt[f];
 
@@ -5920,10 +6044,9 @@ ffmods, nummods, abbrmods, com, helrul, hmax, hfun},
 
   hh = OpenCode[ModName["vars", ".h"]];
   WriteString[hh, Hdr["variable declarations"] <>
-    declIf["vars_h", com, {"\
+    ifDecl["vars_h", com, "\
 #define SQUAREDME\n\
-#define LEGS ", ToString[legs], "\n\n", fincl1, "\n"},
-      {sincl1, "\n"}]];
+#define LEGS " <> ToString[legs] <> "\n\n" <> fPre, sPre]];
   Close[hh];
 
 (* Part 4: the makefile *)
@@ -6079,7 +6202,7 @@ Block[ {jtree, jloop, ffcode, ffind = {}},
 *#define CHECK\n\n" <>
     Hdr["assembly of squared matrix element"] <> "\
 #include \"" <> prefix <> "specs.h\"\n" <>
-    fincl <> "\
+    vPre <> fPost <> "\
 ************************************************************************\n\n\
 \tsubroutine " <> $SymbolPrefix <> "SquaredMEHel(" <>
       vxCode["HelInd(vmax,res)", "res"] <> ", flags)\n\
@@ -6088,7 +6211,7 @@ Block[ {jtree, jloop, ffcode, ffind = {}},
 \tSIMD_ONLY(integer vmax)\n"] <> "\
 \t" <> resType <> vxCode[" res(HelDim(*))", " res(*)"] <> "\n\
 \tinteger flags\n\n" <>
-    sincl[[1]] <> "\n\
+    vPre <> "\n\
 \t" <> helType <> " amp\n\
 \t" <> resType <> " ampsq\n" <>
     VarDecl[Union[Flatten[ffind]], "integer"] <>
@@ -6116,7 +6239,7 @@ Block[ {jtree, jloop, ffcode, ffind = {}},
 \tRealType result(*)\n\
 \tinteger*8 helicities\n\
 \tinteger flags\n\n" <>
-    sincl[[1]] <> "\n\
+    vPre <> "\n\
 * " <> prefix <> "BEGIN VAR_DECL\n\
 \tinteger*8 hbits, hlast\n\
 \tinteger seq(2)\n\
@@ -6146,7 +6269,7 @@ Block[ {jtree, jloop, ffcode, ffind = {}},
 \tsave hseltest, hselmin, hseli\n\
 * " <> prefix <> "END HSEL_DECL\n\n" <>
     ({"\tdata ", #1, " /", ToCode[#3[Times@@ #2]], "/\n"}&@@@ mats) <> "\n" <>
-    sincl[[2]] <> "\n\
+    sPost <> "\
 * " <> prefix <> "BEGIN SETMASS\n\
 \tTEST(flags, BIT_SETMASS)" <>
     MapIndexed[{"\n\tresult(", ToString[ #2[[1]] ], ") = ",
@@ -6286,7 +6409,7 @@ Block[ {jtree, jloop, ffcode, ffind = {}},
 \tstop\n\
 #endif\n\n\
 \thlast = helicities\n\n" <>
-    sincl[[3]] <> "\n\
+    sEnd <> "\
 \tend\n\n"];
 ]
 
@@ -6329,7 +6452,7 @@ Block[ {jtree, jloop, ffcode, ffind = {}, Global`h},
     Hdr["assembly of squared matrix element"] <> "\
 #include <math.h>\n\
 #include \"" <> prefix <> "specs.h\"\n" <>
-    fincl <> "\
+    vPre <> fPost <> "\
 #if NOUNDERSCORE\n\
 #define " <> $SymbolPrefix <> "SquaredME " <> $SymbolPrefix <> "squaredme\n\
 #else\n\
@@ -6351,7 +6474,7 @@ Block[ {jtree, jloop, ffcode, ffind = {}, Global`h},
 static void " <> $SymbolPrefix <> "SquaredMEHel(" <>
       vxCode["HelArg(cinteger vmax, ResType *res)",
              "RealType *res"] <> ", cinteger *pflags) {\n\n" <>
-    sincl[[1]] <> "\n\
+    vPre <> "\n\
   cinteger flags = *pflags;\n\
   " <> helType <> " amp;\n\
   " <> resType <> " ampsq;\n" <>
@@ -6375,7 +6498,7 @@ static void " <> $SymbolPrefix <> "SquaredMEHel(" <>
 /**********************************************************************/\n\n\
 void " <> $SymbolPrefix <>
     "SquaredME(RealType *result, integer8 *phelicities, cinteger *pflags) {\n\n" <>
-    sincl[[1]] <> "\n\
+    vPre <> "\n\
 // " <> prefix <> "BEGIN VAR_DECL\n\
   cinteger flags = *pflags;\n\
   integer8 helicities, hbits;\n\
@@ -6405,7 +6528,7 @@ void " <> $SymbolPrefix <>
   static RealType hselmin;\n\
   static integer hseli;\n\
 // " <> prefix <> "END HSEL_DECL\n\n" <>
-    sincl[[2]] <> "\n\
+    sPost <> "\
 // " <> prefix <> "BEGIN SETMASS\n\
   TEST(flags, BIT_SETMASS)" <>
     MapIndexed[{"\n  result[", ToString[#2[[1]] - 1], "] = ",
@@ -6532,7 +6655,7 @@ void " <> $SymbolPrefix <>
 !exit(1);\n\
 #endif\n\n\
   hlast = helicities;\n\n" <>
-    sincl[[3]] <> "\n\
+    sEnd <> "\
 }\n"];
 ]
 
@@ -6553,13 +6676,20 @@ WithOpt[foo_] := (Needs["FeynArts`"]; foo)
 
 WithOpt[foo_, opt__] := (
   Needs["FeynArts`"];
-  (Options[CreateTopologies] = #1; Options[InsertFields] = #2; #3)&[
-    Options[CreateTopologies], Options[InsertFields],
+  (Options[CreateTopologies] = #1;
+   Options[InsertFields] = #2;
+   Options[CreateFeynAmp] = #3;
+   #4)&[
+    Options[CreateTopologies],
+    Options[InsertFields],
+    Options[CreateFeynAmp],
     SetOptions[CreateTopologies,
       ExcludeTopologies -> Internal,
       FilterOpt[CreateTopologies, opt]];
     SetOptions[InsertFields,
       FilterOpt[InsertFields, opt]];
+    SetOptions[CreateFeynAmp,
+      FilterOpt[CreateFeynAmp, opt]];
     foo
   ] )
 
@@ -6689,24 +6819,34 @@ VertexFunc[proc_Rule, opt___Rule] :=
   WithOpt[CalcProcess[1, proc], opt]
 
 
+Attributes[SEHook] = {HoldAll}
+
+SEHook[se_, amp_, rul_] := (
+  FCPrint[2, HoldForm[se]];
+  amp /. rul
+)
+
+
 Attributes[SelfEnergy] = {HoldRest}
 
-SelfEnergy[proc_Rule, m_, opt___Rule] := (# /. K2 -> m^2)& @
-  WithOpt[CalcSelfEnergy[proc], opt]
+se:SelfEnergy[proc_Rule, m_, opt___Rule] := SEHook[se,
+  WithOpt[CalcSelfEnergy[proc], opt], K2 -> m^2]
 
-SelfEnergy[f_, opt___Rule] := SelfEnergy[f -> f, TheMass[f], opt]
+SelfEnergy[f:Except[_Rule], opt___Rule] :=
+  SelfEnergy[f -> f, TheMass[f], opt]
 
-SelfEnergy[f_, m__] := SelfEnergy[f -> f, m]
+SelfEnergy[f:Except[_Rule], m__] := SelfEnergy[f -> f, m]
 
 
 Attributes[DSelfEnergy] = {HoldRest}
 
-DSelfEnergy[proc_Rule, m_, opt___Rule] := (# /. K2 -> m^2)& @
-  WithOpt[D[CalcSelfEnergy[proc], K2], opt]
+se:DSelfEnergy[proc_Rule, m_, opt___Rule] := SEHook[se,
+  WithOpt[D[CalcSelfEnergy[proc], K2], opt], K2 -> m^2]
 
-DSelfEnergy[f_, opt___Rule] := DSelfEnergy[f -> f, TheMass[f], opt]
+DSelfEnergy[f:Except[_Rule], opt___Rule] :=
+  DSelfEnergy[f -> f, TheMass[f], opt]
 
-DSelfEnergy[f_, m__] := DSelfEnergy[f -> f, m]
+DSelfEnergy[f:Except[_Rule], m__] := DSelfEnergy[f -> f, m]
 
 
 RCSub = Simplify
@@ -6733,32 +6873,56 @@ CalcSelfEnergy[expr_, _] := expr
 
 
 CalcProcess[loop_, proc_] :=
-Block[ {amp, Neglect, FormSub = RCSub},
+Block[ {Neglect, FormSub = RCSub},
+  FCPrint[2, "calculating ", loop, "-loop ", proc];
   ClearProcess[];
-  $RCTop = CreateTopologies[loop, Length[Flatten[{#}]]&/@ proc];
+  $RCTop = CreateTopologiesHook[loop, Length[Flatten[{#}]]&/@ proc];
   $RCIns = InsertFieldsHook[$RCTop, proc];
-  OptPaint[$RCIns];
+  PaintSE[$RCIns];
   $RCAmp = CreateFeynAmpHook[$RCIns, Truncated -> !FreeQ[proc, F]];
-  UnAbbr[ Plus@@ CalcFeynAmp[$RCAmp,
+  $RCRes = Unabbr @ CalcFeynAmp[$RCAmp,
     OnShell -> False, Transverse -> False,
-      FermionChains -> Chiral, FermionOrder -> None,
-      OPP -> False, FileTag -> "rc"] ] /.
-    Mat -> Identity
+    FermionChains -> Chiral, FermionOrder -> None,
+    OPP -> False, FileTag -> "rc"];
+  PutSE[{$RCTop, $RCIns, $RCAmp, $RCRes}];
+  Plus@@ $RCRes /. Mat -> Identity
 ]
 
+
+CreateTopologiesHook[args__] := CreateTopologies[args]
 
 InsertFieldsHook[args__] := InsertFields[args]
 
 CreateFeynAmpHook[args__] := CreateFeynAmp[args]
 
 
-OptPaint[ins_] := OptPaint[ins, $PaintSE]
+PaintSE[ins_] := PaintSE[ins, Sequence@@ $PaintSE]
 
-OptPaint[ins_, True, ___] := Paint[ins]
+PaintSE[ins_, True, ___] := (
+  Paint[ins];
+  ins
+)
 
-OptPaint[ins_, prefix_String, suffix___String] :=
-Block[ {file = ChkExist[prefix, ProcName[ins] <> suffix <> ".ps"]},
-  Paint[ins, DisplayFunction -> (Export[file, #]&)]
+PaintSE[ins_, prefix_String, suffix___String] :=
+Block[ {file = ChkExist[prefix <> ProcName[ins] <> suffix <> ".ps"]},
+  FCPrint[2, "diagrams in ", file];
+  Paint[ins, DisplayFunction -> (Export[file, #]&)];
+  ins
+]
+
+PaintSE[ins_, __] := ins
+
+
+PutSE[expr_] := PutSE[expr, Sequence@@ $PutSE]
+
+PutSE[{top_, ins_, amp_, res_}, prefix_String, suffix___String] :=
+Block[ {base = ChkExist[prefix <> ProcName[ins] <> suffix]},
+  FCPrint[2, "results in ", base];
+  Put[top, base <> ".top"];
+  Put[ins, base <> ".ins"];
+  Put[amp, base <> ".amp"];
+  Put[res, base <> ".res"];
+  res
 ]
 
 
@@ -6888,11 +7052,11 @@ Block[ {hh},
   hh = OpenCode[ModName[mod]];
   WriteString[hh,
     Hdr["renormalization constants"] <>
-    fincl[[1]] <> fincl[[2]] <>
+    fPre <> fPost <>
     SubroutineDecl[mod] <>
-    sincl[[1]] <> "\n" <>
+    sPre <> "\n" <>
     VarDecl[Union[Cases[rcs, SumOver[i_, _] :> i, Infinity]], "integer"]];
-  WriteExpr[hh, {sincl[[2]], rcs, sincl[[3]]},
+  WriteExpr[hh, {sPost, rcs, sEnd},
     Optimize -> True,
     DebugLines -> $DebugRC, DebugLabel -> mod];
   WriteString[hh, SubroutineEnd[]];
@@ -6908,7 +7072,7 @@ Block[ {hh},
   hh = OpenCode[ModName[mod]];
   WriteString[hh,
     Hdr["RC invocations"] <>
-    fincl[[1]] <> "\n\n" <>
+    fPre <> "\n\n" <>
     SubroutineDecl[mod] <>
     ({"\n\tcall ", $SymbolPrefix, #}&/@ mods) <>
     "\n" <> SubroutineEnd[]];
@@ -6924,11 +7088,11 @@ Block[ {fname = fname /. Automatic :> ToString[h], rcmods},
   Block[ {varDecl, hh},
     varDecl = varDeclF;
     hh = OpenFortran[ModName[fname, ".h.F"]];
-    WriteString[hh, #1 <> DeclIf[#2, {}, VarDecl[#3]]];
+    WriteString[hh, #1 <> IfDecl[#2, {}, VarDecl[#3]]];
     Close[hh];
     varDecl = varDeclC;
     hh = OpenC[ModName[fname, ".h.c"]];
-    WriteString[hh, #1 <> DeclIf[#2, VarDecl[#3], {}]];
+    WriteString[hh, #1 <> IfDecl[#2, VarDecl[#3], {}]];
     Close[hh]
   ]&[ Hdr["RC declarations"],
     fname <> "_h",
@@ -6962,14 +7126,14 @@ WriteRenConst[expr_, h___Symbol, dir_, opt___Rule] :=
 
 WriteRenConst[rcs_, dir_, opt___Rule] :=
 Block[ {folder, xrules, prefix, $SymbolPrefix, fname, fincl, sincl,
-header, ModName, Hdr, file, hh, mkcmds},
+fPre, fPost, sPre, sPost, sEnd, header, ModName, Hdr, file, hh, mkcmds},
 
   {folder, xrules, prefix, $SymbolPrefix, fname, header, fincl, sincl} =
     ParseOpt[WriteRenConst, opt] //. Options[WriteSquaredME];
 
-  fincl = {"#define RENCONST\n\n" <> #1, ##2 <> "\n\n"}&@@
-    Flatten[{fincl, "", ""}];
-  sincl = Flatten[{sincl, "", "", ""}];
+  {fPre, fPost} = fDecl[fincl];
+  fPre = "#define RENCONST\n\n" <> fPre;
+  {sPre, sPost, sEnd} = sDecl[sincl];
 
   FCPrint[2, "writing renconst modules"];
 
@@ -7001,13 +7165,13 @@ SetLanguage["C"] := (
   SubroutineDecl = subroutineDeclC;
   SubroutineEnd[] = "}\n\n";
   callDecl = callDeclC;
+  ifDecl = ifDeclC;
   helDim = helDimC;
   helType = "HelType";
   resType = "ResType";
   vxCode[s_, ___] := s;
   vx = vec;
   vxrul = {Times -> vtimes, Plus -> vplus};
-  declIf = declIfC;
   writeSquaredME = writeSquaredMEC;
   writeNum = writeNumC;
   OpenCode = OpenC;
@@ -7018,8 +7182,8 @@ SetLanguage["C"] := (
   $CodeEoln = ";";
   $CodeIf = "  if( ";
   $CodeThen = " ) {\n";
-  $CodeElseif = "  else if( ";
-  $CodeElse = "  else {\n";
+  $CodeElseif = "  }\n  else if( ";
+  $CodeElse = "  }\n  else {\n";
   $CodeEndIf = "  }\n";
   $CodeCall = "  ";
   $Code = "C";
@@ -7031,6 +7195,7 @@ SetLanguage["Fortran"] = (
   SubroutineDecl = subroutineDeclF;
   SubroutineEnd[] = "\tend\n\n";
   callDecl = callDeclF;
+  ifDecl = ifDeclF;
   helDim = helDimF;
   helType = "HelType";
   resType = "ResType";
@@ -7038,7 +7203,6 @@ SetLanguage["Fortran"] = (
   vxCode[s_, ___] := s;
   vx = Identity;
   vxrul = {};
-  declIf = declIfF;
   writeSquaredME = writeSquaredMEF;
   writeNum = writeNumF;
   OpenCode = OpenFortran;
@@ -7227,13 +7391,15 @@ Options[PrepareExpr] = {
   MinLeafCount -> 10,
   DebugLines -> 0,
   DebugLabel -> True,
+  MakeTmp -> Identity,
+  Declarations -> (Rule | RuleAdd)[var_, _] :> var,
   FinalTouch -> Identity,
   ResetNumbering -> True }
 
 PrepareExpr[expr_, opt___Rule] :=
-Block[ {optim, expen, minleaf, debug, debtag, final, reset,
+Block[ {optim, expen, minleaf, debug, debtag, optfun, final, decl, reset,
 process, doloop, new, vars, tmps, tmp, dup, dupc = 0},
-  {optim, expen, minleaf, debug, debtag, final, reset} =
+  {optim, expen, minleaf, debug, debtag, mktmp, decl, final, reset} =
     ParseOpt[PrepareExpr, opt];
   process = RhsMap[final, Flatten[SplitExpr @ Prep[#]]] &;
   If[ TrueQ[optim], process = process /. p_Prep :> RemoveDups[p] ];
@@ -7241,15 +7407,14 @@ process, doloop, new, vars, tmps, tmp, dup, dupc = 0},
   tmp[] := NewSymbol["tmp", 0];
   doloop = Hoist@@ Flatten[{expen}];
   new = unpatt[Flatten[{expr}]];
-  vars = Cases[new, (Rule | RuleAdd)[var_, _] :> var, Infinity];
+  vars = Cases[new, decl, Infinity];
   If[ debug > 0, new = addDebug[new] ];
-  new = process[new];
+  new = process[mktmp[new]];
   dup[c_] := dup[c] = NewSymbol["dup", 0];
-  new = new /. CodeExpr[_, t_, x_] :>
-    (vars = DeleteCases[vars, Alt@@ t]; x);
-  tmps = Cases[new, (ru:Rule | RuleAdd)[var_, _] :> var, Infinity];
+  new = new /. CodeExpr[_, t_, x_] :> (vars = Complement[vars, t]; x);
+  tmps = Cases[new, decl, Infinity];
   If[ debug < 0, new = addDebug[new] ];
-  CodeExpr[MaxDims[vars], Complement[tmps, vars], Flatten[new]]
+  CodeExpr[MaxDims[vars], MaxDims[Complement[tmps, vars]], Flatten[new]]
 ]
 
 
@@ -7261,6 +7426,8 @@ addDebug[DoLoop[expr_, ind__]] := DoLoop[
   ind ]
 
 addDebug[i_IndexIf] := MapIf[addDebug, i]
+
+addDebug[NoDebug[ru_]] := ru
 
 addDebug[ru:_Rule | _RuleAdd] := {
   DebLine[-2, ##], ru, DebLine[1, ##], DebLine[2, ##]
@@ -7360,6 +7527,36 @@ hdo[expr_, i_ -> {}] := DoLoop[expr, i]
 hdo[expr_, i_ -> {t__}] := DoLoop[{t, expr}, i]
 
 
+Attributes[xvar] = {Listable}
+
+xvar[DoLoop[expr_, i__], patt_] :=
+Block[ {ind = Alt@@ First/@ {i}, new, dv, pos},
+  new = xvar[expr, patt];
+  dv = DownValues[var];
+  pos = List/@ Union[First/@ Position[dv, ind]];
+  DownValues[var] = Delete[dv, pos];
+  DoLoop[Flatten[{
+    Cases[Extract[dv, pos], _[_[_[val_]], s_Symbol] :> s -> val],
+    new}], i]
+]
+
+xvar[r:(_ -> expr_), patt_] := r /; MatchQ[expr, patt]
+
+xvar[expr_, patt_] := expr /. x:patt :> var[x]
+
+
+ToVars[patt_, stub_String] := ToVars[patt, stub &]
+
+ToVars[patt_, namefun_][expr_] :=
+Block[ {var, new},
+  var[x_] := var[x] = NewSymbol[namefun[x], 0];
+  new = xvar[expr, Alt[patt]];
+  Flatten[{
+    Cases[DownValues[var], _[_[_[val_]], s_Symbol] :> s -> val],
+    new }]
+]
+
+
 SplitSums[li_List, wrap___] := SplitSums[Plus@@ li, wrap]
 
 SplitSums[x_, wrap_:Identity] := {wrap[x]} /; FreeQ[x, SumOver]
@@ -7439,6 +7636,7 @@ Options[WriteExpr] = {
   Type -> False,
   TmpType -> (*Type*) "ComplexType",
   IndexType -> False,
+  DeclIf -> False,
   RealArgs -> Level[{PaVeIntegral, CutIntegral, CutMasters,
     Bput, Cput, Dput, Eput, Fput, Log, Sqrt}, {-1}],
   Newline -> "\n" }
@@ -7446,9 +7644,9 @@ Options[WriteExpr] = {
 WriteExpr[_, _[], ___] = {}
 
 WriteExpr[hh_, CodeExpr[vars_, tmpvars_, expr_], opt___Rule] :=
-Block[ {horner, fcoll, ffun, type, tmptype, indtype, rargs, $Newline,
+Block[ {horner, fcoll, ffun, type, tmptype, indtype, declif, rargs, $Newline,
 var, decl, $DoLoop, $IndexIf},
-  {horner, fcoll, ffun, type, tmptype, indtype, rargs, $Newline} =
+  {horner, fcoll, ffun, type, tmptype, indtype, declif, rargs, $Newline} =
     ParseOpt[WriteExpr, opt];
   rargs = Alt[rargs];
   horner = If[ horner =!= True, {}, {h_HoldForm :> h,
@@ -7461,9 +7659,8 @@ var, decl, $DoLoop, $IndexIf},
   varType[Union[DoIndex/@
     Cases[expr, DoLoop[_, i__] :> i, Infinity]], indtype];
   _var =.;
-  decl = VarDecl[ Flatten[#2], #1[[1,1]] ]&@@@ DownValues[var];
-  If[ Length[decl] > 0, WriteString[hh, decl <> "\n"] ];
-  Flatten[{WriteBlock[hh, expr]}]
+  decl = newline[VarDecl[ Flatten[#2], #1[[1,1]] ]&@@@ DownValues[var]];
+  Flatten[{WriteBlock[hh, IfDecl[declif, decl, expr]]}]
 ]
 
 WriteExpr[hh_, expr_, opt___Rule] := WriteExpr[hh,
@@ -7491,11 +7688,11 @@ $DebugPost[1] = "#endif\n"
 
 _$DebugPre = _$DebugPost = ""
 
-$DebugCmd[1] = "DEB(\"````\", ``)\n"
+$DebugCmd[1] = "DEB(\"`1``2`\", `3`)\n"
 
 $DebugCmd[-2] = "CHK_PRE(`3`)\n"
 
-$DebugCmd[2] = "CHK_POST(\"````\", ``)\n"
+$DebugCmd[2] = "CHK_POST(\"`1``2`\", `3`)\n"
 
 
 Attributes[DebStatement] = {Listable}
@@ -7509,37 +7706,40 @@ Attributes[WriteBlock] = {Listable}
 
 WriteBlock[_, Hold[expr_]] := (expr; {})
 
-WriteBlock[hh_, s_String] := (WriteString[hh, s <> $Newline]; s)
+WriteBlock[hh_, s_String] := (WriteString[hh, s]; s)
+
+WriteBlock[hh_, Newline[s___]] := WriteBlock[hh, s <> $Newline]
 
 WriteBlock[_, DebugLine[_]] = {}
 
-WriteBlock[hh_, DebugLine[i_, var_, tag___]] :=
-  WriteBlock[hh, $DebugPre[i] <>
-    DebStatement[var, StringJoin[$DebugCmd[i]],
-      StringJoin[({ToString[#], ":"}&)/@ {tag}]] <>
-    $DebugPost[i]]
+WriteBlock[hh_, DebugLine[i_, var_, tag___]] := WriteBlock[hh, Newline[
+  $DebugPre[i],
+  DebStatement[var, StringJoin[$DebugCmd[i]],
+    StringJoin[({ToString[#], ":"}&)/@ {tag}]],
+  $DebugPost[i] ]]
 
 WriteBlock[hh_, DoLoop[expr_, ind__]] := WriteBlock[hh, {
   Hold[++$DoLoop],
-  #1, expr,
+  Newline[#1],
+  expr,
   Hold[--$DoLoop],
-  #2
+  Newline[#2]
 }]&@@ DoDecl[ind]
 
 WriteBlock[hh_, i_IndexIf] := WriteBlock[hh, {
   Hold[++$IndexIf],
-  $CodeIf <> ToCode[#1] <> $CodeThen,
+  Newline[$CodeIf, ToCode[#1], $CodeThen],
   #2, ElseIf[##3],
   Hold[--$IndexIf],
-  $CodeEndIf
+  Newline[$CodeEndIf]
 }]&@@ i
 
 ElseIf[] = ElseIf[True, RuleAdd[_, 0]] = {}
 
-ElseIf[True, a_] := {$CodeElse, a}
+ElseIf[True, a_] := {Newline[$CodeElse], a}
 
 ElseIf[cond_, a_, r___] := {
-  $CodeElseIf <> ToCode[cond] <> $CodeThen,
+  Newline[$CodeElseIf, ToCode[cond], $CodeThen],
   a, ElseIf[r] }
 
 WriteBlock[hh_, ru_[var_, {sub__, expr_}]] :=
@@ -7666,6 +7866,8 @@ $MaxFunctionName = 30
 $RecursionLimit = 1024
 
 $PaintSE = False
+
+$PutSE = False
 
 EndPackage[]
 

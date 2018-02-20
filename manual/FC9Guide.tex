@@ -1,17 +1,23 @@
 \documentclass[twoside,11pt]{article}
 \usepackage{a4wide,amsmath,amssymb,array,axodraw2,makeidx,alltt,graphicx,mathpple}
-\usepackage{colordvi}
+%\usepackage{colordvi}
+\usepackage{pstricks}
 
 \graphicspath{{figures/}}
 
-\special{!TeXDict begin
-/Blue{0 0 1 setrgbcolor}DC
-/Red{1 0 0 setrgbcolor}DC
-/PastelRed{1 .8 .8 setrgbcolor}DC
-/PastelBlue{.8 .8 1 setrgbcolor}DC
-/PastelGreen{.54 .9 .54 setrgbcolor}DC
-/OliveGreen{.216 .60 .030 setrgbcolor}DC
-end }
+
+%\special{!TeXDict begin
+%/Blue{0 0 1 setrgbcolor}DC
+%/Red{1 0 0 setrgbcolor}DC
+%/PastelRed{1 .8 .8 setrgbcolor}DC
+%/PastelBlue{.8 .8 1 setrgbcolor}DC
+%/PastelGreen{.54 .9 .54 setrgbcolor}DC
+%/OliveGreen{.216 .60 .030 setrgbcolor}DC
+%end }
+
+\newrgbcolor{PastelRed}{1 .8 .8}
+\newrgbcolor{PastelBlue}{.8 .8 1}
+\newrgbcolor{PastelGreen}{.54 .9 .54}
 
 \makeindex
 \def\indextt#1{\index{#1@\texttt{#1}}}
@@ -124,6 +130,7 @@ end }
 \def\Brac#1{\lbrac#1\rbrac}
 \def\uscore{\symbol{95}}
 \def\backsl{\symbol{92}}
+\def\pipe{\symbol{124}}
 \def\home{\symbol{126}}
 \def\power{\symbol{94}}
 \def\ri{\mathrm{i}}
@@ -157,13 +164,13 @@ end }
 
 \newbox\titlebox\setbox\titlebox=\hbox{\underline{%
 \vrule width 0pt height 0pt depth 2ex%
-\Huge \FC~9.5~~~User's Guide}}
+\Huge \FC~9.6~~~User's Guide}}
 
 \hfill\copy\titlebox
 
 \vspace*{1ex}
 
-\hfill\hbox{Mar 10, 2017~~~~~Thomas Hahn}
+\hfill\hbox{Feb 12, 2018~~~~~Thomas Hahn}
 
 \bigskip
 \bigskip
@@ -352,20 +359,12 @@ To run \FC\ you need \mma\ 5 or above, a Fortran compiler, and
    ./compile
 \end{alltt}
 \ebox
-The last line compiles the C programs that come with \FC.  The
-\Code{compile} script puts the binaries in a system-dependent
-directory, \eg \Code{Linux}.  A single \FC\ installation can thus be
-NFS-mounted on different systems once \Code{compile} has been run on
+The last line compiles the C programs that come with \FC.  The 
+\Code{compile} script puts the binaries in a system-dependent directory, 
+\eg \Code{Linux-x86-64}.  A single \FC\ installation can thus be 
+NFS-mounted on different systems once \Code{compile} has been run on 
 each.%
 \index{compiling}
-
-\FC\ by default invokes the executable \Code{form} to run \FO.  If
-\FO\ is installed under a different name on your system, edit
-\Code{FormCalc.m} and change the following line:
-\begin{verbatim}
-$FormCmd = "form"
-\end{verbatim}%
-\indextt{\$FormCmd}
 
 
 \section{Generating the Diagrams}
@@ -387,9 +386,9 @@ diagrams with insertions.  The former are produced by \FA\ if only one
 level is requested (via \Code{InsertionLevel}, \Code{AmplitudeLevel}, or
 \Code{PickLevel}; see the \FA\ manual).  While both types of input
 eventually produce the same results, it is important to understand that
-it is the generic amplitude which is the most costly part to simplify, so
-using the latter type of diagrams, where many insertions are derived from
-one generic amplitude, can significantly speed up the calculation.
+it is the generic amplitude which is the most `costly' part to simplify,
+so using the latter type of diagrams, where many insertions are derived
+from one generic amplitude, can significantly speed up the calculation.
 
 Usually it is also helpful to organize the diagrams into classes like
 self-energies, vertex corrections and box corrections; it will also make
@@ -401,11 +400,11 @@ the amplitudes easier to handle since it reduces their size.
 
 \subsection{\Code{CalcFeynAmp}}
 
-\FA\ always produces purely symbolic amplitudes and refrains from
-simplifying them in any way so as not to be restricted to a certain class
-of theories.  Needless to say, the resulting expressions cannot be used
-directly \eg in a Fortran program, but must first be simplified
-algebraically.  The function for this is \Code{CalcFeynAmp}.
+\FA\ always produces purely symbolic amplitudes and refrains from 
+simplifying them in any way so as not to be restricted to a certain 
+class of theories.  The resulting expressions cannot be used directly 
+\eg in a Fortran program, but must first be simplified algebraically.  
+The function for this is \Code{CalcFeynAmp}.
 \biitab
 \Code{CalcFeynAmp[\Var{a_1},\,\Var{a_2},\,$\dots$]} &
 	calculate the sum of amplitudes $\Var{a_1} + \Var{a_2} + \ldots$ \\
@@ -1527,19 +1526,24 @@ expanded contents have a leaf count of 77.%
 	substitute back all abbreviations and subexpressions \\
 \Code{Unabbr[\Var{expr},\,\Var{patt}]} &
 	substitute back only those free of \Var{patt} \\
+\Code{Unabbr[\Var{expr},\,!\Vf} \greyed{[\Code{,\,\Var{patt}}]}\Code{]} &
+	do not substitute inside objects matching \Vf \\
 \Code{OptimizeAbbr[\Va]} &
 	optimize the abbreviations \Va \\
 \Code{\$OptPrefix} &
 	the prefix for additional abbreviations introduced by
 	\Code{OptimizeAbbr} \\
-\Code{SubstSimpleAbbr[\Var{expr},\,\Var{abbr}]} &
-	remove `simple' abbreviations from \Var{abbr} and
-	substitute them back into \Var{expr}
+\Code{SubstAbbr[\Var{exprlist},\,\Var{patt}]} &
+	expand out abbreviations matching \Var{patt} in \Var{exprlist} \\
+\Code{SubstSimpleAbbr[\Var{exprlist}]} &
+	expand out `simple' abbreviations in \Var{exprlist}
 \etab
 \indextt{Abbr}%
 \indextt{Unabbr}%
 \indextt{OptimizeAbbr}%
 \indextt{\$OptPrefix}%
+\indextt{SubstAbbr}%
+\indextt{SubstSimpleAbbr}%
 The definitions of the abbreviations can be retrieved by \Code{Abbr[]} 
 which returns a list of rules such that
 \begin{verbatim}
@@ -1584,12 +1588,17 @@ abbreviations introduced by \Code{OptimizeAbbr}, \ie the \Code{Opt} in
 the \Code{Opt\Var{N}} in the example above, can be chosen through the 
 global variable \Code{\$OptPrefix}.
 
-\Code{SubstSimpleAbbr[\Var{expr},\,\Var{abbr}]} removes `simple' 
-abbreviations the list of abbreviations \Var{abbr} and substitutes them 
-back into \Var{expr}.  Abbreviations of the form \Var{(number)} and 
-$\Var{(number)}\cdot\Var{(symbol)}$ are considered simple.  Such 
-expressions may show up in the abbreviation list \eg after further 
-simplification.
+\Code{SubstAbbr[\Var{exprlist},\,\Var{patt}]} expands out all 
+abbreviations matching \Var{patt} in \Var{exprlist}; \eg if the 
+abbreviation \Code{\Va\,->\,\Vb} matches, the definition 
+\Code{\Va\,->\,\Vb} is removed and all \Va\ in \Var{exprlist} are 
+substituted by \Vb, and the definition \Code{\Va\,->\,\Vb}.
+
+\Code{SubstSimpleAbbr[\Var{exprlist}]} expands out `simple' 
+abbreviations in \Var{exprlist}.  Abbreviations are `simple' if they are 
+of the form \Var{(number)} or $\Var{(number)}\cdot\Var{(symbol)}$, or if 
+the rhs's LeafCount is not larger than the lhs's.  Such expressions may 
+show up in the abbreviation list \eg after further simplification.
 
 %------------------------------------------------------------------------
 
@@ -4739,41 +4748,119 @@ the \Code{WriteSquaredME} options.
 \indextt{FileIncludes}%
 \indextt{SubroutineIncludes}
 
-At this point it is necessary to discuss how selections of diagrams can be
-made for the self-energies.  The functions \Code{SelfEnergy} and
-\Code{DSelfEnergy}, which are used in the definitions of the RCs, are 
-invoked when the RCs are calculated.  They generally use what options of
-\Code{InsertFields}, \Code{CreateFeynAmp}, and \Code{CalcFeynAmp} are in 
-place at that time.  Additionally, they provide a hook for the user to
-customize the exact use of \Code{InsertFields}.  That is, \Code{SelfEnergy}
-and \Code{DSelfEnergy} do not call \Code{InsertFields} directly, but a
-function called \Code{InsertFieldsHook} whose default definition is
+The calculation of the RCs and the underlying self-energies can be 
+influenced and inspected in various ways.
+
+The functions \Code{SelfEnergy} and \Code{DSelfEnergy}, used in the 
+definitions of the RCs, are invoked when the RCs are calculated.  They 
+call \Code{CreateTopologies}, \Code{InsertFields}, \Code{CreateFeynAmp}, 
+and \Code{CalcFeynAmp} and use whatever options have been set with 
+\Code{SetOptions} at that time.  Computing the RCs with the same options 
+as the virtual diagrams is just the right thing in most cases.  For 
+finer control, the amplitude generation can be modified in two ways.
+
+Firstly, hooks are provided for \Code{CreateTopologies}, 
+\Code{InsertFields}, and \Code{CreateFeynAmp}.
+\biitab
+\Code{CreateTopologiesHook[\Var{args}]} &
+	\Code{CreateTopologies} for \Code{[D]SelfEnergy} \\
+\Code{InsertFieldsHook[\Var{args}]} &
+	\Code{InsertFields} for \Code{[D]SelfEnergy} \\
+\Code{CreateFeynAmpHook[\Var{args}]} &
+	\Code{CreateFeynAmp} for \Code{[D]SelfEnergy}
+\etab
+\indextt{CreateTopologiesHook}%
+\indextt{InsertFieldsHook}%
+\indextt{CreateFeynAmpHook}%
+For example, \Code{[D]SelfEnergy} does not call \Code{InsertFields} 
+directly, but the intermediate function \Code{InsertFieldsHook} which 
+by default simply redirects to the \FA\ function:
 \begin{verbatim}
-   InsertFieldsHook[tops_, proc_] := InsertFields[tops, proc]
+   InsertFieldsHook[args__] := InsertFields[args]
 \end{verbatim}
-which simply inserts fields into the topologies \Code{tops} for the process 
-\Code{proc}.  The function \Code{InsertFieldsHook} can be redefined either 
-generally or for a specific process, \eg
+\Code{InsertFieldsHook} can be redefined either generally or for a 
+specific process, \eg
 \begin{verbatim}
    InsertFieldsHook[tops_, f1_F -> f2_F] :=
      InsertFields[tops, f1 -> f2, ExcludeParticles -> V[1]]
 \end{verbatim}
-would exclude photons in fermion self-energies.  One could also imagine
-more complicated definitions, \eg involving \Code{DiagramSelect}.
+would exclude photons in fermion self-energies.
 
-Furthermore, it is possible to have the diagrams painted by setting the
-variable \Code{\$PaintSE}.  \Code{\$PaintSE} can be \Code{True}, \Code{False},
-or a string which indicates that the output should be saved in a
-PostScript file instead of being displayed on screen.  If a string is
-given, it is used as a prefix for the name of the PostScript file, hence
-it is possible to specify \eg a path.
-
-Finally, it is possible to specify options for individual RCs, as in
+Secondly, it is possible to specify options for individual RCs, as in
 \begin{verbatim}
    Options[ dMWsq1 ] = {Restrictions -> NoSUSYParticles}
 \end{verbatim}
-These options are taken as \Code{InsertFields} options which apply only to
-the calculation of this particular renormalization constant.
+Any \Code{CreateTopologies}, \Code{InsertFields}, and 
+\Code{CreateFeynAmp} options may be given here and apply only to
+the calculation of this particular renormalization constant.%
+\indextt{Options}%
+\index{renormalization constants!options for}
+
+The \Code{SEHook} function finally governs setting the computed 
+self-energy on-shell.
+\biitab
+\Code{SEHook[\Var{se},\,\Var{amp},\,K2 -> $\Vm^2$]} &
+	returns \Var{amp} with \Code{K2} replaced by $\Vm^2$
+\etab
+\indextt{SEHook}%
+Attention: \Code{SEHook} has attribute \Code{HoldAll} (otherwise it 
+would not be very useful).  The \Var{se} argument contains the original 
+\Code{[D]SelfEnergy} call and is for pattern matching or printout (in 
+\Code{HoldForm}) only -- it will recurse if evaluated directly.  The 
+\Var{amp} argument should not be evaluated more than once, as it 
+triggers the computation of the self-energy.  The $\Vm^2$ argument 
+should be evaluated after \Var{amp} as it likely contains instances of 
+\Code{TheMass} which can successfully be resolved only after model 
+initialization in \Var{amp}.
+
+The various intermediate results are stored in global variables where
+they can be inspected immediately after calling \Code{[D]SelfEnergy}.
+\biitab
+\Code{\$RCTop} & the output of \Code{CreateTopologies}\dots \\
+\Code{\$RCIns} & the output of \Code{InsertFields}\dots \\
+\Code{\$RCAmp} & the output of \Code{CreateFeynAmp}\dots \\
+\Code{\$RCRes} & the output of \Code{CalcFeynAmp}\dots \\
+&	\dots in the last invocation of \Code{[D]SelfEnergy}
+\etab
+\indextt{\$RCTop}%
+\indextt{\$RCIns}%
+\indextt{\$RCAmp}%
+\indextt{\$RCRes}%
+
+During the calculation, \Code{PaintSE[\$RCIns]} and 
+\Code{PutSE[\Brac{\$RCTop,\$RCIns,\$RCAmp,\$RCRes}]} are called, which
+allows to paint the diagrams and store the intermediate results by 
+setting \Code{\$PaintSE} and \Code{\$PutSE}, respectively.
+\biitab
+\Code{PaintSE[\Var{ins}]} &
+	same as \Code{PaintSE[\Var{ins},\,\$PaintSE]} \\
+\Code{PaintSE[\Var{ins},\,True]} &
+	paint the diagrams \Var{ins} \\
+\Code{PaintSE[\Var{ins},\,\Var{pre}]} &
+	paint the diagrams \Var{ins} and store the output in
+	\Code{\Var{pre}\Var{N}.ps},
+	where \Var{N} = \Code{ProcName[\Var{ins}]} \\
+\Code{PutSE[\Brac{\Var{top},\,\Var{ins},\,\Var{amp},\,\Var{res}}]} &
+	same as 
+	\Code{PutSE[\Brac{\Var{top},\Var{ins},\Var{amp},\Var{res}},\,\$PutSE]} \\
+\Code{PutSE[\Brac{\Var{top},\Var{ins},\Var{amp},\Var{res}},\,\Var{pre}]} &
+	store the results in
+	\Code{\Var{pre}\Var{N}.\Brac{top,ins,amp,res}},
+	where \Var{N} = \Code{ProcName[\Var{ins}]}
+\etab
+\indextt{PaintSE}%
+\indextt{PutSE}%
+\biiitab{variable}
+\Code{\$PaintSE} & \Code{False} &
+	whether to paint the diagrams \\
+\Code{\$PutSE} & \Code{False} &
+	whether to save the intermediate results
+\etab
+\indextt{\$PaintSE}%
+\indextt{\$PutSE}%
+If a string is given for \Code{\$PaintSE} or \Code{\$PutSE} it is used 
+as a prefix for the filename and may include a path name, where
+subdirectories are created as needed.
 
 For performance reasons, \Code{SelfEnergy} and \Code{DSelfEnergy} remember
 the values they have computed.  In unlikely cases it may happen that the
@@ -5149,17 +5236,19 @@ turns a sum of items into a list of items.
 \index{C output}
 
 \biitab
-\Code{PrepareExpr[\Var{exprs}]} &
-	prepare \Var{exprs} for write-out to code \\
-\Code{WriteExpr[\Var{file},\,\Var{exprs}]} &
-	write \Var{exprs} to \Var{file} \\
-\Code{CodeExpr[\Vv,\,\Vt,\,\Var{exprs}]} &
-	the expressions \Var{exprs} with variables \Vv\ and temporary 
+\Code{PrepareExpr[\Var{exprlist}]} &
+	prepare \Var{exprlist} for write-out to code \\
+\Code{WriteExpr[\Var{file},\,\Var{exprlist}]} &
+	write \Var{exprlist} to \Var{file} \\
+\Code{CodeExpr[\Vv,\,\Vt,\,\Var{exprlist}]} &
+	the expressions \Var{exprlist} with variables \Vv\ and temporary 
 	variables \Vt\ in a form ready for write-out by \Code{WriteExpr} \\
 \Code{RuleAdd[\Va,\Vb]} &
 	same as \Code{\Va\ -> \Va\ + \Vb} \\
 \Code{DebugLine[\Vs]} &
 	a debugging statement for variable \Vs \\
+\Code{NoDebug[\Var{expr}]} &
+	do not generate a debugging statement for \Var{expr} \\
 \Code{\$SymbolPrefix} &
 	a string prepended to all externally visible symbols
 	to avoid symbol conflicts
@@ -5169,6 +5258,7 @@ turns a sum of items into a list of items.
 \indextt{CodeExpr}%
 \indextt{RuleAdd}%
 \indextt{DebugLine}%
+\indextt{NoDebug}%
 \indextt{\$SymbolPrefix}
 
 \Code{PrepareExpr[\Brac{\Var{var_1} -> \Var{expr_1},\,\Var{var_2} -> \Var{expr_2},\,$\dots$}]}
@@ -5207,10 +5297,12 @@ individual expressions to a size small enough for Fortran.
 \Code{DebugLine[\Vs]} translates to a debugging statement for variable
 \Vs\ (print-out of variable \Vs) in the code.
 
+Assignments of the form \Code{NoDebug[\Var{var} -> \Var{expr}]} never
+generate debugging/checking statements, regardless of the value of
+\Code{DebugLines} or \Code{DebugLabel}.
+
 \Code{\$SymbolPrefix} is a string prepended to all externally visible
 symbols in the generated code to avoid symbol collisions.
-
-\pagebreak
 
 \biiitab{PrepareExpr option}
 \Code{Optimize} & \Code{False} &
@@ -5228,6 +5320,10 @@ symbols in the generated code to avoid symbol collisions.
 \Code{DebugLabel} & \Code{True} &
 	whether and which label to use in debugging/checking
 	statements \\
+\Code{MakeTmp} & \Code{Identity} &
+	a function for introducing user-defined temporary variables \\
+\Code{Declarations} & \rlap{\Code{(Rule\,\pipe\,RuleAdd)[\Vv\uscore,\,\uscore] :> \Vv}} \\
+&&	a \Code{Cases} pattern for selecting variable declarations \\
 \Code{FinalTouch} & \Code{Identity} &
 	a function which is applied to the final subexpressions \\
 \Code{ResetNumbering} & \Code{True} &
@@ -5239,6 +5335,8 @@ symbols in the generated code to avoid symbol collisions.
 \indextt{MinLeafCount}%
 \indextt{DebugLines}%
 \indextt{DebugLabel}%
+\indextt{MakeTmp}%
+\indextt{Declarations}%
 \indextt{FinalTouch}%
 \indextt{ResetNumbering}
 
@@ -5309,6 +5407,12 @@ to enable debugging, as in:
 Here debugging would be activated at compile time if the preprocessor 
 variable \Code{DEBUG} (debug level) is larger than 2.
 
+\Code{MakeTmp} specifies a function for introducing user-defined 
+temporary variables, \eg \Code{ToVars}.
+
+\Code{Declarations} specifies a pattern suitable for use in \Code{Cases}
+that selects all objects to be declared as variables.
+
 \Code{FinalTouch} gives a function which is applied to each final
 subexpression, just before write-out to file.
 
@@ -5338,6 +5442,9 @@ simply hands them down to \Code{PrepareExpr}.  They cannot be set using
 	the type of temporary variables \\
 \Code{IndexType} & \Code{False} &
 	the type of indices \\
+\Code{DeclIf} & \Code{False} &
+	whether to separate declarations and code by \Code{\#if}
+	statements \\
 \Code{RealArgs} & \Code{\lbrac A0,A00,B0,B1,} &
 	functions whose arguments must be \\
 	& \Code{B00,B11,B001,} &
@@ -5357,6 +5464,7 @@ simply hands them down to \Code{PrepareExpr}.  They cannot be set using
 \indextt{Type}%
 \indextt{TmpType}%
 \indextt{IndexType}%
+\indextt{DeclIf}%
 \indextt{RealArgs}%
 \indextt{Newline}
 
@@ -5382,6 +5490,21 @@ option.
 
 \Code{IndexType} likewise determines the generation of declarations 
 for do-loop indices.
+
+\Code{DeclIf -> \Var{var}}, where \Var{var} is a string suitable for a 
+preprocessor variable, separates declarations and code in the form
+\begin{alltt}
+   #ifndef \Var{var}
+   #define \Var{var}
+   \textrm{[declarations]}
+   #else
+   \textrm{[code]}
+   #endif
+\end{alltt}
+A file so generated is supposed to be included once in the declarations 
+section and once in the code part.  This can be necessary in particular 
+in Fortran, if \eg non-declaration statements such as statement 
+functions need to be placed between declarations and code.
 
 \Code{RealArgs} gives a list of functions whose numerical arguments must 
 be of a guaranteed type, usually real (double precision).  For example, 
@@ -5443,6 +5566,57 @@ definitions in \Var{r_i} further to the right.  For example,
 \Code{MoveDepsLeft[\Brac{a\,->\,b}, \Brac{b\,->\,5}]} produces
 \Code{\Brac{\Brac{b\,->\,5, a\,->\,b}, \Brac{}}}, \ie it moves
 \Code{b\,->\,5} to the left list because that depends on \Code{b}.
+
+\biitab
+\Code{ToVars[\Var{patt},\,\Var{name}][\Var{exprlist}]} &
+	introduce variables for all subexpressions in \Var{exprlist}
+	matching \Var{patt}
+\etab
+\indextt{ToVars}
+
+\Code{ToVars[\Var{patt},\,\Var{name}][\Var{exprlist}]} introduces 
+variables for subexpressions matching \Var{patt} and expects to be used 
+on an expression list such as given to \Code{PrepareExpr}.  To make the 
+new variables temporary (in the \Code{CodeExpr} sense), \Code{ToVars} 
+should be applied through \Code{PrepareExpr}'s \Code{MakeTmp} option.  
+Unlike with \Code{Abbreviate}, the variables introduced are not 
+subscripted by loop indices and hence also not hoisted outside a 
+\Code{DoLoop}.  The new variable definitions are inserted at the right 
+places into the \Var{exprlist}.
+
+Why move certain subexpressions to variables at all?  Firstly, it 
+makes it easier to inspect/ debug their values, using the 
+\Code{DebugLine} option.  Secondly, and in contrast to abbreviations 
+introduced for optimization reasons (\eg by the \Code{Expensive} or 
+\Code{Optimize} options), it can improve the readability of the 
+generated code by well-chosen variable names.
+
+The names for the variables are determined by the function \Var{name} 
+which receives the expression being abbreviated and must return a symbol 
+name for it.  If \Var{name} is a string instead, 
+\Code{NewSymbol[\Var{name},\,0]} is taken as naming function, \ie the 
+variable names will be \Code{\Var{name}1}, \Code{\Var{name}2}, etc.  The 
+numbering is consecutive across \Code{ToVars} calls but can be reset by 
+assigning \Code{SymbolNumber[\Var{name}] = 0}.
+
+For example, \Code{PrepareExpr[\Var{exprlist}, MakeTmp -> 
+ToVars[LoopIntegral[\uscore\uscore],\,Head]]} introduces variables for 
+all loop integrals in \Var{exprlist}, with names like
+\Code{B0i1}, \Code{B0i2}, etc.
+
+\biitab
+\Code{PaVeIntegral} &
+	a pattern matching the head of all one-loop Passarino--Veltman
+	integrals (\Code{A0i}, \Code{B0i}, etc.) \\
+\Code{CutIntegral} &
+	a pattern matching the head of all one-loop OPP integrals
+	(\Code{Acut}, \Code{Bcut}, etc.) \\
+\Code{LoopIntegral} &
+	the union of \Code{PaVeIntegral} and \Code{CutIntegral}
+\etab
+\indextt{PaVeIntegral}%
+\indextt{CutIntegral}%
+\indextt{LoopIntegral}
 
 \biitab
 \Code{SplitSums[\Var{expr}]} &
@@ -5613,7 +5787,11 @@ foo[2,\,1]]} returns \Code{\Brac{foo[2,\,2]}}.
 \Code{CallDecl[\Var{subs}]} &
 	the invocations of subroutines \Var{subs} \\
 \Code{Dim[\Vi]} &
-	the highest value the index \Vi\ takes on
+	the highest value the index \Vi\ takes on \\
+\Code{Enum[\Var{names}]} &
+	set up \Var{names} as named indices \\
+\Code{ClearEnum[]} &
+	clear \Code{Enum} definitions
 \etab%
 \indextt{SubroutineDecl}%
 \indextt{VarDecl}%
@@ -5622,7 +5800,9 @@ foo[2,\,1]]} returns \Code{\Brac{foo[2,\,2]}}.
 \indextt{NotEmpty}%
 \indextt{DoDecl}%
 \indextt{CallDecl}%
-\indextt{Dim}
+\indextt{Dim}%
+\indextt{Enum}%
+\indextt{ClearEnum}
 
 \Code{SubroutineDecl[\Var{name}]} returns a string with the declaration
 of the subroutine \Var{name}.
@@ -5655,6 +5835,13 @@ string with the invocations of the subroutines \Var{sub_1}, \Var{sub_2},
 
 \Code{Dim[\Vi]} returns the highest value the index \Vi\ takes on, as 
 determined from the amplitude currently being processed.
+
+\Code{Enum} associates index names with integers, used for determining 
+array bounds during code generation (the index names themselves remain 
+unchanged).  The syntax is similar to that of C's \Code{enum}, \eg 
+\Code{Enum[\Va,\,\Vb,\,\Vc\,->\,5,\,\Vd]} associates $\Va\to 1$,
+$\Vb\to 2$, $\Vc\to 5$, $\Vd\to 6$.  \Code{ClearEnum[]} removes any 
+\Code{Enum} assignments previously made.
 
 %------------------------------------------------------------------------
 

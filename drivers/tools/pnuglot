@@ -1,9 +1,7 @@
-#! /bin/sh
-
-#	pnuglot
-#		makes a plotting script from data files
-#		this file is part of FormCalc
-#		last modified 31 May 13 th
+#! /bin/bash
+# makes a plotting script from data files
+# this file is part of FormCalc
+# last modified 26 Jan 18 th
 
 # This program works in two steps:
 #
@@ -21,51 +19,49 @@
 # (not pnuglot!) again for the changes to take effect.
 
 
-out=""
-files=""
-loop=1
-tree=1
-data=`dirname $0`/data
+out=
+files=()
+plotfmt=($' \\\n  "%s"' ' u 1:2 t "tree"' $', \\\n  ""' ' u 1:($2+$3) t "loop"')
 
 while test $# -gt 0 ; do
   case $1 in
-  -o)	out=`dirname $2`/`basename $2 .gpl`.gpl
+  -o)	out="${2%.gpl}.gpl"
 	shift
 	;;
-  -2)	loop=0
+  -2)	plotfmt[2]= plotfmt[3]=
 	;;
-  -3)	tree=0
+  -3)	plotfmt[1]= plotfmt[2]=
 	;;
-  *)	file=$1
-	if test -d $1 ; then
-	  file=`dirname $1/x`.data
-	  $data $1 || exit 1
-	fi
-	if (file $file | grep -q -i -e script -e PostScript) ; then
+  *)	file="$1"
+	test -d "$file" && {
+	  "${0%/*}" "$file" || exit 1
+	  file="${file%%/}.data"
+	}
+	[[ `file --mime-type "$file"` =~ *(postscript|pdf) ]] && {
 	  echo "ignored: $file"
-	else
-	  files="$files $file"
-	  test -z "$out" && out=`dirname $file`/`basename $file .data`.gpl
-	fi
+	} || {
+	  files+=("$file")
+	  test -z "$out" && out="${file%.data}.gpl"
+	}
 	;;
   esac
   shift
 done
 
-if test -z "$files" ; then
-  echo "Usage:  $0 [-2 -3 -o outfile] datafile(s)"
-  echo ""
-  echo "Plots datafile(s) with gnuplot.  The options are:"
-  echo "  -2             uses only columns 1:2 for plotting"
-  echo "  -3             uses only columns 1:3 for plotting"
-  echo "  -o outfile     gives the name of the output file"
-  echo ""
+test "${#files[@]}" -eq 0 && {
+  cat << _EOF_
+Usage:  $0 [-2] [-3] [-o outfile] datafile(s)
+Plots datafile(s) with gnuplot.  The options are:
+  -2             uses only columns 1:2 for plotting
+  -3             uses only columns 1:3 for plotting
+  -o outfile     gives the name of the output file
+_EOF_
   exit 1
-fi
+}
 
 
 cat << \_TEMPLATE_ > $out
-#! /bin/sh
+#! /bin/bash
 
 trap "rm -f tmpgpl.*" 0 1 2 3 15
 
@@ -104,37 +100,10 @@ set style data lines
 
 _TEMPLATE_
 
-if (echo "test\c"; echo 1,2,3) | grep c > /dev/null ; then
-  if (echo -n test; echo 1,2,3) | grep n > /dev/null ; then
-    echo_n=
-    echo_c='
-'
-  else
-    echo_n=-n
-    echo_c=
-  fi
-else
-  echo_n=
-  echo_c='\c'
-fi
-
-specs='u 1:2 t "tree", \
-  "" u 1:($2 + $3) t "loop"'
-test $tree = 0 && specs='u 1:($2 + $3) t "loop"'
-test $loop = 0 && specs='u 1:2 t "tree"'
-
-delim='plot \
-'
-
-for file in $files ; do
-  echo $echo_n "$delim  \"$file\" $specs$echo_c" >> $out
-  delim=', \
-'
-done
-
+IFS= eval 'printf -v plotcmd "${plotfmt[*]}" "${files[@]}"'
+echo "plot$plotcmd" >> $out
 
 cat << \_TEMPLATE_ >> $out
-
 
 # ----- The gnuplot commands end here -----
 
@@ -153,19 +122,22 @@ _EOF_
 
 sed /endinput/d tmpgpl.pslatex >> tmpgpl.tex
 
-cat << \_EOF_ >> tmpgpl.tex
-\end{document}
-_EOF_
+echo '\end{document}' >> tmpgpl.tex
 
-epsfile="`dirname $0`/`basename $0 .gpl`.eps"
+base="${0%.gpl}"
 latex tmpgpl.tex
-dvips -Ppdf -E -o $epsfile tmpgpl.dvi
+dvips -Ppdf -E -o "$base.eps" tmpgpl.dvi
+epstopdf "$base.eps"
 
-grep -q '3\.5\.8' `which gv` && eq=' ' || eq='='
-gv -scale${eq}2 $epsfile &
+open=xdg-open
+case `uname` in
+Darwin) open=open ;;
+CYG*) open=cygstart ;;
+esac
+$open "$base.pdf"
 
 _TEMPLATE_
 
-chmod 755 $out
-exec `dirname $out`/`basename $out`
+chmod 755 "$out"
+exec `dirname "$out"`/`basename "$out"`
 
