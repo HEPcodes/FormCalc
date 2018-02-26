@@ -1,3 +1,13 @@
+21 Feb 2018:
+
+- Fixed SquaredME problem with amplitudes containing no Mat.
+
+
+20 Feb 2018:
+
+- Fixed SquaredME problem with threading of Mat.
+
+
 12 Feb 2018:
 
 - (Hopefully) fixed the dreaded NumberMalloc problem in FORM.

@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.6
 Copyright by Thomas Hahn 1996-2018
-last modified 10 Feb 18 by Thomas Hahn
+last modified 21 Feb 18 by Thomas Hahn
 
 Release notes:
 
@@ -2080,7 +2080,7 @@ Begin["`Private`"]
 
 $FormCalc = 9.6
 
-$FormCalcVersion = "FormCalc 9.6 (10 Feb 2018)"
+$FormCalcVersion = "FormCalc 9.6 (21 Feb 2018)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -4826,14 +4826,16 @@ Block[ {ffdef = {}, ff, ffc},
     Flatten[ffdef] }
 ]
 
-matSq[m_List][mc_] := FFC[mc] Inner[Mat, m, mc, Times]
+matSq[1][mc_] := FFC[mc]
+
+matSq[m_Times][mc_] := FFC[mc] Inner[Mat, m, mc, Times]
 
 matSq[m_][mc_] := FFC[mc] Mat[m, mc]
 
 
 matFF[h_, c_][FF[f_] Mat[m_]] := (ffdef = {ffdef, h[m] -> c[f]}; m)
 
-matFF[h_, c_][other_] := (ffdef = {ffdef, h[1] -> c[other]}; 1)
+matFF[h_, c_][FF[f_]] := (ffdef = {ffdef, h[1] -> c[f]}; 1)
 
 
 Unprotect[Conjugate]
