@@ -1,3 +1,31 @@
+19 Mar 2018:
+
+- More efficient collecting of terms in PolarizationSum.
+
+
+15 Mar 2018:
+
+- PrepareExpr now generates `individualized' tmp and dup var names,
+  e.g. C0tmp1 for an abbreviated C0.  Can choose prefixes with
+  $TmpPrefix and $DupPrefix, too.
+
+
+7 Mar 2018:
+
+- Added DoDim (like Dim) which collects the index dimensions
+  gathered from SumOvers during amplitude evaluation.
+
+- Manual assignments to Dim make for correct array decls,
+  assignments to DoDim also generate loops.
+
+
+5 Mar 2018:
+
+- Fixed problem with DenyNoExp and SUN objects.
+
+- (Hopefully) improved IndexSimplify for terms containing IndexDeltas.
+
+
 21 Feb 2018:
 
 - Fixed SquaredME problem with amplitudes containing no Mat.

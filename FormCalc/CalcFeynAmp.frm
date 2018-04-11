@@ -1,7 +1,7 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 18 Sep 17 th
+* last modified 5 Mar 18 th
 
 
 #procedure Contract
@@ -414,31 +414,6 @@ repeat id powM([x]?, [y]?)^2 = powM([x], 2*[y]);
 repeat id powM([x]?, [y]?) * powM([x]?, [z]?) = powM([x], [y] + [z]);
 id powM([x]?, [y]?int_) = [x]^[y];
 
-moduleoption polyfun=mulM;
-.sort
-#ifdef `Inserted'
-#if `NoCostly' == 1
-on oldFactArg;
-#endif
-#endif
-
-argument mulM;
-#call Neglect
-endargument;
-
-argument;
-argument;
-#call Square
-endargument;
-#call Square
-endargument;
-
-id mulM(0) = 0;
-#call Factor(mulM)
-
-.sort
-off oldFactArg;
-
 repeat;
   once IndexSum([x]?, [i]?, ?n) =
     TMP([x] * replace_([i], N100_?) * SumOver(N100_?, ?n, Renumber));
@@ -487,6 +462,31 @@ once TMP([I]?) = replace_([I], Ind`i');
 #enddo
 
 id EPS([i]?, [j]?, [k]?) = IndexEps([j], [k], [i]);
+
+moduleoption polyfun=mulM;
+.sort
+#ifdef `Inserted'
+#if `NoCostly' == 1
+on oldFactArg;
+#endif
+#endif
+
+argument mulM;
+#call Neglect
+endargument;
+
+argument;
+argument;
+#call Square
+endargument;
+#call Square
+endargument;
+
+id mulM(0) = 0;
+#call Factor(mulM)
+
+.sort
+off oldFactArg;
 
 argument mulM;
 toPolynomial;

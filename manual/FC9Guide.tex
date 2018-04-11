@@ -170,7 +170,7 @@
 
 \vspace*{1ex}
 
-\hfill\hbox{Feb 12, 2018~~~~~Thomas Hahn}
+\hfill\hbox{Mar 15, 2018~~~~~Thomas Hahn}
 
 \bigskip
 \bigskip
@@ -5422,6 +5422,12 @@ created by \Code{PrepareExpr}, \ie variables of the form \Code{dup\Vn}
 at $\Vn = 1$.  It may be necessary to disable this reset \eg if more 
 than one generated expression shall be put in the same program unit.
 
+The prefixes for temporary and optimization variables, \ie the
+\Code{tmp} in \Code{tmp123} and the \Code{dup} in \Code{dup123}, may
+respectively be changed with \Code{\$TmpPrefix} and \Code{\$DupPrefix}.%
+\indextt{\$TmpPrefix}
+\indextt{\$DupPrefix}
+
 \bigskip
 
 \emph{Note:} these options may also be given to \Code{WriteExpr} which 
@@ -5788,6 +5794,9 @@ foo[2,\,1]]} returns \Code{\Brac{foo[2,\,2]}}.
 	the invocations of subroutines \Var{subs} \\
 \Code{Dim[\Vi]} &
 	the highest value the index \Vi\ takes on \\
+\Code{DoDim[\Vi]} &
+	like \Code{Dim[\Vi]} but including indices from \Code{SumOver}
+	in the amplitudes \\
 \Code{Enum[\Var{names}]} &
 	set up \Var{names} as named indices \\
 \Code{ClearEnum[]} &
@@ -5801,6 +5810,7 @@ foo[2,\,1]]} returns \Code{\Brac{foo[2,\,2]}}.
 \indextt{DoDecl}%
 \indextt{CallDecl}%
 \indextt{Dim}%
+\indextt{DoDim}%
 \indextt{Enum}%
 \indextt{ClearEnum}
 
@@ -5833,8 +5843,12 @@ string with the invocations of the subroutines \Var{sub_1}, \Var{sub_2},
 \dots, taking into account possible loops indicated by 
 \Code{DoLoop}.
 
-\Code{Dim[\Vi]} returns the highest value the index \Vi\ takes on, as 
-determined from the amplitude currently being processed.
+\Code{Dim[\Vi]} and \Code{DoDim[\Vi]} return the highest value the index
+\Vi\ takes on, excluding (\Code{Dim}) or including (\Code{DoDim})
+indices found in \Code{SumOver} statements of amplitudes evaluated
+so far.  A manual assignment \Code{Dim[\Vi]\,=\,\Vn} generates correct
+array dimensions for index \Vi\ only.  A manual assignment
+\Code{DoDim[\Vi]\,=\,\Vn} also generates a loop over index \Vi.
 
 \Code{Enum} associates index names with integers, used for determining 
 array bounds during code generation (the index names themselves remain 

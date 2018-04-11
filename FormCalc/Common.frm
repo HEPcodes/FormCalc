@@ -1,7 +1,7 @@
 * Common.frm
 * FORM procedures common to CalcFeynAmp, HelicityME, PolarizationSum
 * this file is part of FormCalc
-* last modified 13 Feb 18 th
+* last modified 19 Mar 18 th
 
 
 #procedure CommonDecl
@@ -165,12 +165,12 @@ id TAG = 1;
 
 b dotM;
 .sort
-*keep brackets;
+keep brackets;
 
 factarg dotM;
 chainout dotM;
+id dotM([n]?number_) = [n];
 makeinteger dotM;
-id dotM(1) = 1;
 
 ab `Vectors', `Invariants', dotM;
 .sort

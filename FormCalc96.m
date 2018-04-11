@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.6
 Copyright by Thomas Hahn 1996-2018
-last modified 21 Feb 18 by Thomas Hahn
+last modified 19 Mar 18 by Thomas Hahn
 
 Release notes:
 
@@ -421,7 +421,8 @@ LoopIntegral = Join[PaVeIntegral, Blank/@ CutIntegral]
 
 { FormKins, FormProcs, KinFunc, InvSum, PairRules,
   CurrentProc, LastAmps, DenList, DenMatch,
-  FormSetup, ToFPlus, UnitarityDebug }
+  FormSetup, ToFPlus, UnitarityDebug, SUNObjs,
+  DenyNoExp, DenyHide }
 
 
 (* symbols appearing in the output *)
@@ -1660,6 +1661,14 @@ function, i.e. the variable names will be symname1, symname2, ...
 The numbering is consecutive across ToVars calls but can be reset
 by assigning SymbolNumber[symname] = 0."
 
+$TmpPrefix::usage =
+"$TmpPrefix specifies the prefix for temporary variables introduced
+by PrepareExpr and WriteExpr, i.e. the tmp in tmp123."
+
+$DupPrefix::usage =
+"$DupPrefix specifies the prefix for variables introduced through
+Optimize -> True in PrepareExpr and WriteExpr, i.e. the dup in dup123."
+
 PrepareExpr::usage =
 "PrepareExpr[{var1 -> expr1, var2 -> expr2, ...}] prepares a list of
 variable assignments for code generation.  Expressions with a LeafCount
@@ -1863,8 +1872,15 @@ DoLoop::usage =
 expr is to be summed over the indices ind."
 
 Dim::usage =
-"Dim[i] returns the highest value the index i takes on, as determined
-from the amplitude currently being processed."
+"Dim[i] returns the highest value the index i takes on.
+A manual assignment Dim[i] = n generates correct array dimensions for
+index i.  To have do-loops generated, too, assign to DoDim instead."
+
+DoDim::usage =
+"DoDim[i] returns the highest value the index i takes on, for all
+indices collected during amplitude evaluation from SumOver statements.
+A manual assignment DoDim[i] = n generates both correct array dimensions
+and a loop over index i."
 
 MoveDepsRight::usage =
 "MoveDepsRight[r1, ..., rn] shuffles variable definitions (var -> value)
@@ -1932,7 +1948,7 @@ into a declaration for an external function."
 DoDecl::usage =
 "DoDecl[v, m] returns two strings with the declarations for a loop over
 v from 1 to m.  DoDecl[v, {a, b}] returns the same for a loop from a to b. 
-DoDecl[v] invokes Dim[v] to determine the upper bound on v."
+DoDecl[v] invokes DoDim[v] to determine the upper bound on v."
 
 CallDecl::usage =
 "CallDecl[names] returns a string with the invocations of the subroutines
@@ -2080,7 +2096,7 @@ Begin["`Private`"]
 
 $FormCalc = 9.6
 
-$FormCalcVersion = "FormCalc 9.6 (21 Feb 2018)"
+$FormCalcVersion = "FormCalc 9.6 (19 Mar 2018)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -2139,7 +2155,7 @@ FCPrint[v_Integer, s__] := Print[s] /; v <= $FCVerbose
 
 $NumberMarks = False
 
-Off[General::spell1, General::spell]
+Off[General::spell1, General::spell, Pattern::patv]
 
 
 If[ $VersionNumber < 6,
@@ -2182,14 +2198,16 @@ RPad[s_, n_] := s <> Table[" ", {n - StringLength[s]}]
 
 _SymbolNumber = 0
 
+next[stub_[h_]] :=
+  ToString[h] <> ToString[stub] <> ToString[++SymbolNumber[stub[h]]]
+
 next[stub_] := ToString[stub] <> ToString[++SymbolNumber[stub]]
+
+NewSymbol[stub_[h_], i___] := NewSymbol[stub, i] /; Context[h] === "System`"
 
 NewSymbol[stub_, 0] := ToExpression[next[stub]]
 
-NewSymbol[stub_] :=
-  Block[{sym = next[stub]}, ToExpression[sym] /; !NameQ[sym]]
-
-NewSymbol[stub_] := NewSymbol[stub]
+NewSymbol[stub_] := ToExpression[NestWhile[next, next[stub], NameQ]]
 
 
 Attributes[ToArray] = {Listable}
@@ -2436,9 +2454,11 @@ ToFPlus := Plus :>
   (If[ TrueQ[Re[ (4711 #1 _)[[1]] ] < 0], -FPlus@@ -{##}, FPlus[##]]&)
 
 TermCollect[x_, wrap_:Identity] := x /. ToFPlus //.
-  FPlus[a_ b_, a_ c_] :> a FPlus[b, c] /.
+  { FPlus[a_ b_, a_ c_] :> a FPlus[b, c],
+    FPlus[a_, a_ b_] :> a FPlus[1, b] } /.
   FPlus :> (wrap[Plus[##]]&) //.
-  a_ b_ + a_ c_ :> a wrap[b + c]
+  { a_ b_ + a_ c_ :> a wrap[b + c],
+    a_ + a_ b_ :> a wrap[1 + b] }
 
 
 SplitTerms[f_, p_Plus, n_Integer] := Plus@@ f/@
@@ -3320,8 +3340,8 @@ helM[_, _Hel] = 1
 
 SUNObjs = SUNSum | SUNT | SUNTSum | SUNF | SUNEps
 
-DenyNoExp = Level[{ga, Spinor, Den, A0i, B0i, C0i, D0i, E0i, F0i,
-  IndexSum, SumOver, PowerOf, SUNObjs, "replace_"}, {-1}]
+DenyNoExp = Level[{ga, Spinor, Den, intM, PowerOf,
+  (*IndexDelta,*) IndexSum, SumOver, SUNObjs, "replace_"}, {-1}]
 
 DenyHide = Level[{SumOver, PowerOf, IndexDelta, IndexEps, SUNObjs},
   {-1}, Alternatives]
@@ -3387,8 +3407,8 @@ intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
     } //Flatten] ];
 
   NoExpandRule = {
-    p_Plus :> (p /. Plus -> addM) /; !FreeQ[p, #1] && FreeQ[p, #2],
-    p_Plus^n_?Negative :> (p /. Plus -> addM)^n /; FreeQ[p, #2]
+    p_Plus :> (TermCollect[p] /. Plus -> addM) /; !FreeQ[p, #1] && FreeQ[p, #2],
+    p_Plus^n_?Negative :> (TermCollect[p] /. Plus -> addM)^n /; FreeQ[p, #2]
   }&[ Alt[noexp],
       Alt[{FormLoopMomenta, FormVectors, DenyNoExp}] ];
 
@@ -3463,7 +3483,8 @@ intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
 
   indices = Union[Flatten[ {indices, iM,
     Cases[DownValues[indsym], _[_, s_Symbol] :> s],
-    Cases[amps, SumOver[i_, ___] | IndexSum[_, i_, ___] :> i, Infinity],
+    Cases[amps, SumOver[i_, ___] | IndexSum[_, i_, ___] |
+                IndexDelta[i__] | IndexEps[i__] :> i, Infinity],
 	(* possibly some colour or gluon indices have been fixed by
 	   the user in FeynArts; these would by default be declared
 	   as symbols and not be seen by FORM: *)
@@ -3930,10 +3951,9 @@ IndexHeader[h_, {}] := h
 
 IndexHeader[h_, {i__}] := h[i]
 
-IndexHeader[h_[i___], expr__] :=
-  IndexHeader[h, Flatten[{i,
-    Select[ Union @ Symbols[Level[{expr}, {-2}]],
-      Head[Dim[#]] =!= Dim & ]}]]
+IndexHeader[h_[i___], expr__] := IndexHeader[h, Flatten[{i,
+  Select[Union @ Symbols[Level[{expr}, {-2}]],
+    Head[Dim[#]] =!= DoDim &]}]]
 
 
 MomEncode[other_] := other /; FreeQ[other, k]
@@ -4087,7 +4107,7 @@ Block[ {minleaf, deny, fuse, pre},
   {minleaf, deny, fuse, pre} = ParseOpt[Abbreviate, opt];
   subdef[minleaf, Alt[deny], fuse, pre,
     Union[Cases[expr, SumOver[i_, ___] :> i, Infinity],
-      DimInd[], FormInd]];
+      LoopInd[], FormInd]];
 ]
 
 
@@ -5011,11 +5031,11 @@ mainexpr, rul},
     FormCode["PolarizationSum.frm"]];
 
   FormWrite[hh, fexpr];
-  WriteString[hh, ".sort\ndrop;\n\n"];
+  WriteString[hh, "#call Prepare\n\n"];
   Write[hh, "L SquaredME = ", Plus@@ DeleteCases[fexpr, _Rule], ";"];
 
   WriteString[hh,
-    "\n#call Prepare\n" <>
+    "\n#call eiei\n" <>
     MapThread[{"\n#call PolSum(", ToString[#1], ", ", ToForm[#2], ", ",
         ToString[If[FreeQ[fexpr, (z | zc)[#1]], dim, Dminus4]], ")"}&,
       {legs, masses}] <>
@@ -5086,7 +5106,9 @@ Block[ {drivers, path, files = {}},
 
 Dim[i_Integer] := i
 
-DimInd[] := #[[1,1,1]]&/@ Select[DownValues[Dim], FreeQ[#, Pattern]&]
+Dim[i_] := DoDim[i]
+
+LoopInd[] := #[[1,1,1]]&/@ Select[DownValues[DoDim], FreeQ[#, Pattern]&]
 
 
 FunctionNames[base_, ind___] := {
@@ -5227,7 +5249,8 @@ FFWrite[0, __] = {}
 
 FFWrite[amp_, array_, file_] :=
 Block[ {ind, ff, mods},
-  ind = Union[Cases[amp, SumOver[i_, r_] :> (Dim[i] = r; i), Infinity]];
+  ind = Union[Cases[amp,
+    SumOver[i_, r_] :> (inds = {inds, i}; DoDim[i] = r; i), Infinity]];
   ff = amp /. unused[array] -> 0 /. xrules /. {
     _SumOver -> 1,
     int:LoopIntegral[__] :> abbint[int] };
@@ -5509,7 +5532,7 @@ varArgs[s_String, r___][d___] := varArgs[r][d, s]
 varArgs[vars_List, type_, r___][d___] := varArgs[r][d, chkDecl[
   DeleteCases[
     Replace[unpatt[vars],
-      i_Symbol :> Dim[i], {2, Infinity}] /. Dim -> Identity,
+      i_Symbol :> Dim[i], {2, Infinity}] /. DoDim -> Identity,
     (*_[0] |*) _[] ],
   type ]]
 
@@ -5678,9 +5701,9 @@ callDeclC[name_] :=  "  " <> $SymbolPrefix <> name <> "();\n"
 callDeclF[name_] := "\tcall " <> $SymbolPrefix <> name <> "\n"
 
 
-DoDecl[{var_}] := DoDecl[{var, Dim[var]}]
+DoDecl[{var_}] := DoDecl[{var, DoDim[var]}]
 
-DoDecl[{_, _Dim}] := {{}, {}}
+DoDecl[{_, _DoDim}] := {{}, {}}
 
 DoDecl[{var_, Span[i__]}] := DoDecl[{var, i}]
 
@@ -5688,7 +5711,7 @@ DoDecl[{var_, from_:1, to_, step_:1}] := {
   "!LOOP(" <> ToCode[var] <> ", " <> ToCode[{from, to, step}] <> ")\n",
   "!ENDLOOP(" <> ToCode[var] <> ")\n" }
 
-DoDecl[var_] := DoDecl[{var, Dim[var]}]
+DoDecl[var_] := DoDecl[{var, DoDim[var]}]
 
 DoDecl[vars__] := {StringJoin[#1], StringJoin[Reverse[#2]]}&@@
   Transpose[DoDecl/@ ReverseDo[{vars}]]
@@ -5897,8 +5920,8 @@ Block[ {folder, xrules, prefix, symprefix, header, fincl, sincl,
 vPre, fPre, fPost, sPre, sPost, sEnd, ModName, Hdr, 
 proc = Sequence[], name, legs, invs, $SymbolPrefix,
 mat, nums, abrs, matsel, matsub, defcat, angledep,
-abbrsel, Dim, abbint, lint = {}, lintc = 0, cutc = 0, masc = 0,
-defs, Indices, pos, file, files, hh,
+abbint, lint = {}, lintc = 0, cutc = 0, masc = 0,
+inds = {}, defs, Indices, pos, file, files, hh,
 unused, maxmat, mats, mmat, nmat, mat1, dfCode, ntree, nloop,
 ffmods, nummods, abbrmods, com, helrul, hmax, hfun},
 
@@ -6017,7 +6040,7 @@ ffmods, nummods, abbrmods, com, helrul, hmax, hfun},
                       invs, "RealType"],
       Common["varXh"][helDim@@@ defs[[3,1]], helType,
                       helDim@@@ defs[[3,2]], helType] },
-    Common["indices"][DimInd[], "integer"],
+    Common["indices"][Union[Flatten[inds]], "integer"],
     Common["formfactors"][
       helDim/@ Join[ ff[[1]], mats[[1]] ], helType,
       Join[ ff[[2]], mats[[2]] ], "ComplexType" ],
@@ -6985,7 +7008,7 @@ FindRenConst[expr_] := FindRenConst[expr, $RenConst]
 
 FindRenConst[expr_, h_] :=
 Block[ {test, orbit, isym, rcs, x, SelfEnergy, DSelfEnergy},
-  test = x[expr] //. Dispatch[Subexpr[]];
+  test = x[expr] /. Rule -> (#2 &) //. Dispatch[Subexpr[]];
 
   Needs["FeynArts`"];
   If[ $Model === "",
@@ -6995,7 +7018,7 @@ Block[ {test, orbit, isym, rcs, x, SelfEnergy, DSelfEnergy},
       GenericModel -> (GenericModel /. Options[InsertFields]),
       Reinitialize -> False ] ];
 
-  Scan[(isym[#] = x)&, DimInd[]];
+  Scan[(isym[#] = x)&, LoopInd[]];
   isym[other_] := other;
 
   orbit[other_] := other;
@@ -7330,7 +7353,7 @@ Block[ {size = $FileSize, m = mod /. Dot -> StringJoin},
 FileSplit[other_, r__] := FileSplit[{other}, r]
 
 
-isdup[x_, {i_, j__}] := {x -> dup[++dupc], Min[First/@ {i, j}]}
+isdup[expr_, {i_, j__}] := {expr -> dup[expr], Min[First/@ {i, j}]}
 
 _isdup = {}
 
@@ -7360,7 +7383,15 @@ Attributes[TmpList] = {HoldFirst}
 
 TmpList[expr_] := Reverse[Reap[expr]]
 
-ToTmp[expr_] := (Sow[# -> expr]; #)& @ tmp[]
+ToTmp[expr_] := (Sow[# -> expr]; #)& @ tmp[expr]
+
+$TmpPrefix = "tmp"
+
+$DupPrefix = "dup"
+
+tmp[expr_] := NewSymbol[$TmpPrefix[Head[expr]], 0]
+
+dup[expr_] := NewSymbol[$DupPrefix[Head[expr]], 0]
 
 
 Attributes[SplitExpr] = {Listable}
@@ -7399,20 +7430,19 @@ Options[PrepareExpr] = {
   ResetNumbering -> True }
 
 PrepareExpr[expr_, opt___Rule] :=
-Block[ {optim, expen, minleaf, debug, debtag, optfun, final, decl, reset,
-process, doloop, new, vars, tmps, tmp, dup, dupc = 0},
+Block[ {optim, expen, minleaf, debug, debtag, mktmp, decl, final, reset,
+process, doloop, new, vars, tmps},
   {optim, expen, minleaf, debug, debtag, mktmp, decl, final, reset} =
     ParseOpt[PrepareExpr, opt];
   process = RhsMap[final, Flatten[SplitExpr @ Prep[#]]] &;
   If[ TrueQ[optim], process = process /. p_Prep :> RemoveDups[p] ];
-  If[ reset, SymbolNumber["dup"] = SymbolNumber["tmp"] = 0 ];
-  tmp[] := NewSymbol["tmp", 0];
-  doloop = Hoist@@ Flatten[{expen}];
-  new = unpatt[Flatten[{expr}]];
+  If[ reset, DownValues[SymbolNumber] = Select[DownValues[SymbolNumber],
+    FreeQ[#, $TmpPrefix | $DupPrefix]&] ];
+  doloop = Hoist[Alt[expen]];
+  new = unpatt[expr];
   vars = Cases[new, decl, Infinity];
   If[ debug > 0, new = addDebug[new] ];
   new = process[mktmp[new]];
-  dup[c_] := dup[c] = NewSymbol["dup", 0];
   new = new /. CodeExpr[_, t_, x_] :> (vars = Complement[vars, t]; x);
   tmps = Cases[new, decl, Infinity];
   If[ debug < 0, new = addDebug[new] ];
@@ -7501,8 +7531,6 @@ IniLHS[_, lhs_][rhs_, _] := RuleAdd[lhs, rhs]
 
 Hoist[] = DoLoop
 
-Hoist[a_, b__] := Hoist[a | b]
-
 Hoist[patt_][expr_, i__] :=
 Block[ {veto, abb, got = {}, c},
   veto = Alt@@ Union[
@@ -7510,10 +7538,8 @@ Block[ {veto, abb, got = {}, c},
     Cases[expr, SumOver[j_, ___] :> j, Infinity] ];
   abb = Cases[expr, x:patt /; FreeQ[x, veto], Infinity] //Union;
   abb = (got = Join[got, c = Complement[#2, got]]; #1 -> c)&@@@
-    Sort[hsel[abb]/@ {i}, Length[ #1[[2]] ] < Length[ #2[[2]] ]&];
-  abb[[1,2]] = {};
-  abb = (#1 -> (tmp[] -> # &)/@ #2)&@@@ abb;
-  Fold[hdo, expr /. Reverse/@ Flatten[Last/@ abb], abb]
+    SortBy[hsel[abb]/@ {i}, Length[ #[[2]] ]&];
+  Fold[hdo, expr, ReplacePart[abb, {1,2} -> {}]]
 ]
 
 
@@ -7526,33 +7552,41 @@ hdo[DoLoop[expr_, j__], i_ -> {}] := DoLoop[expr, i, j]
 
 hdo[expr_, i_ -> {}] := DoLoop[expr, i]
 
-hdo[expr_, i_ -> {t__}] := DoLoop[{t, expr}, i]
+hdo[expr_, i_ -> abb_] :=
+  DoLoop[RotateLeft[Flatten[Fold[htmp, expr, abb]], 1], i]
 
 
-Attributes[xvar] = {Listable}
+htmp[expr_, abb_] := htmp[expr, abb,
+  Position[expr, _ -> abb, Infinity, 1, Heads -> False]]
 
-xvar[DoLoop[expr_, i__], patt_] :=
-Block[ {ind = Alt@@ First/@ {i}, new, dv, pos},
-  new = xvar[expr, patt];
+htmp[expr_, abb_, {}] := {expr /. abb -> #, # -> abb}& @ tmp[abb]
+
+htmp[expr_, abb_, pos_] := {Delete[expr, pos], Extract[expr, pos]}
+
+
+vdoloop[expr_, ind__] :=
+Block[ {dv, pos},
   dv = DownValues[var];
-  pos = List/@ Union[First/@ Position[dv, ind]];
+  pos = List/@ Union[First/@ Position[dv, Alt@@ First/@ {ind}]];
   DownValues[var] = Delete[dv, pos];
   DoLoop[Flatten[{
     Cases[Extract[dv, pos], _[_[_[val_]], s_Symbol] :> s -> val],
-    new}], i]
+    expr}], ind]
 ]
-
-xvar[r:(_ -> expr_), patt_] := r /; MatchQ[expr, patt]
-
-xvar[expr_, patt_] := expr /. x:patt :> var[x]
 
 
 ToVars[patt_, stub_String] := ToVars[patt, stub &]
 
+ToVars[patt_List, f_] := ToVars[ToAlt[patt], f]
+
 ToVars[patt_, namefun_][expr_] :=
-Block[ {var, new},
+Block[ {var, process, doloop = vdoloop, new},
   var[x_] := var[x] = NewSymbol[namefun[x], 0];
-  new = xvar[expr, Alt[patt]];
+
+  process[ru:(Rule | RuleAdd)[_, patt]] := ru;
+  process[x_] := x /. p:patt :> var[p];
+
+  new = Prep[expr];
   Flatten[{
     Cases[DownValues[var], _[_[_[val_]], s_Symbol] :> s -> val],
     new }]
@@ -7586,11 +7620,11 @@ Attributes[ivalid] = {HoldRest}
 
 ivalid[i_, i_] := Sequence[]
 
-ivalid[_, Dim[s_]] := s
+ivalid[_, DoDim[s_]] := s
 
 
 FindIndices[var_ -> _] :=
-  Union[Cases[var, s_Symbol :> ivalid[Dim[s], Dim[s]]]]
+  Union[Cases[var, s_Symbol :> ivalid[DoDim[s], DoDim[s]]]]
 
 FindIndices[t_Times] := Cases[t, SumOver[i__] :> {i}]
 
