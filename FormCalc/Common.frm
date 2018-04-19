@@ -1,7 +1,7 @@
 * Common.frm
 * FORM procedures common to CalcFeynAmp, HelicityME, PolarizationSum
 * this file is part of FormCalc
-* last modified 19 Mar 18 th
+* last modified 13 Apr 18 th
 
 
 #procedure CommonDecl
@@ -138,7 +138,6 @@ id ETAG^[n]?{>1} = ETAG;
 
 ab k1,...,k`Legs';
 .sort
-on oldFactArg;
 
 collect dotM, dotM, 50;
 makeinteger dotM;
@@ -157,7 +156,6 @@ keep brackets;
 id dotM([x]?) = [x];
 
 .sort
-off oldFactArg;
 
 id TAG = 1;
 
@@ -165,6 +163,7 @@ id TAG = 1;
 
 b dotM;
 .sort
+on oldfactarg;
 keep brackets;
 
 factarg dotM;
@@ -174,7 +173,7 @@ makeinteger dotM;
 
 ab `Vectors', `Invariants', dotM;
 .sort
-off oldFactArg;
+off oldfactarg;
 
 collect dotM, dotM, 50;
 
@@ -256,7 +255,7 @@ moduleoption polyfun=abbM;
 
 b abbM;
 .sort
-on oldFactArg;
+on oldfactarg;
 keep brackets;
 
 id abbM([x]?) = abbM(nterms_([x]), [x]);
@@ -272,7 +271,7 @@ id abbM(1) = 1;
 
 b abbM;
 .sort
-off oldFactArg;
+off oldfactarg;
 keep brackets;
 
 toPolynomial onlyfunctions abbM;
@@ -285,7 +284,7 @@ collect dotM;
 
 moduleoption polyfun=dotM;
 .sort
-on oldFactArg;
+on oldfactarg;
 
 #call Factor(dotM)
 
@@ -302,7 +301,7 @@ moduleoption polyfun=mulM;
 
 b mulM;
 .sort
-off oldFactArg;
+off oldfactarg;
 keep brackets;
 
 argument mulM;

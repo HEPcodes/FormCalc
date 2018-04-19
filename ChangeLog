@@ -1,3 +1,11 @@
+16 Apr 2018:
+
+- Fixed `mysterious' problem in simplification code in PolarizationSum.frm
+  introduced by last release.
+
+- Removed bottleneck behavior in TermCollect.
+
+
 19 Mar 2018:
 
 - More efficient collecting of terms in PolarizationSum.

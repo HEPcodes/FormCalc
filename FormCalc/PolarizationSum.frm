@@ -1,7 +1,7 @@
 * PolarizationSum.frm
 * the FORM part of the PolarizationSum function
 * this file is part of FormCalc
-* last modified 16 Mar 18 th
+* last modified 16 Apr 18 th
 
 
 #procedure Prepare
@@ -18,15 +18,14 @@ toPolynomial onlyfunctions;
 endargument;
 
 .sort
+on oldfactarg;
 
 #call Factor(mulM)
 
 .sort
+off oldfactarg;
 
 toPolynomial onlyfunctions mulM;
-
-.sort
-drop;
 #endprocedure
 
 ***********************************************************************
@@ -118,11 +117,15 @@ id D = Dminus4Eps + 4;
 #call DotSimplify
 #call Abbreviate
 
+#ifndef `Prepared'
+#call Prepare
+#endif
+
 .sort
 
 #write "%X"
 
-b `Vectors', Mat, SumOver;
+b SumOver, Den, Mat;
 print +s;
 .end
 #endprocedure

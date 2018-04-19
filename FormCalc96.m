@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.6
 Copyright by Thomas Hahn 1996-2018
-last modified 19 Mar 18 by Thomas Hahn
+last modified 16 Apr 18 by Thomas Hahn
 
 Release notes:
 
@@ -2096,7 +2096,7 @@ Begin["`Private`"]
 
 $FormCalc = 9.6
 
-$FormCalcVersion = "FormCalc 9.6 (19 Mar 2018)"
+$FormCalcVersion = "FormCalc 9.6 (16 Apr 2018)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -2457,8 +2457,8 @@ TermCollect[x_, wrap_:Identity] := x /. ToFPlus //.
   { FPlus[a_ b_, a_ c_] :> a FPlus[b, c],
     FPlus[a_, a_ b_] :> a FPlus[1, b] } /.
   FPlus :> (wrap[Plus[##]]&) //.
-  { a_ b_ + a_ c_ :> a wrap[b + c],
-    a_ + a_ b_ :> a wrap[1 + b] }
+  { a_ b_ + a_ c_ :> a wrap[b + c] (*,
+    a_ + a_ b_ :> a wrap[1 + b] *) }
 
 
 SplitTerms[f_, p_Plus, n_Integer] := Plus@@ f/@
@@ -4963,7 +4963,7 @@ other than the last one set up by DeclareProcess or CalcFeynAmp."
 
 PolarizationSum::polchain =
 "Warning: Input contains polarization vectors in fermion chains.  \
-Result likely not correct, please insert HelicityME first."
+Result likely not correct, please insert the HelicityME first."
 
 PolarizationSum[amp:Amp[_][___].., opt___?OptionQ] :=
 Block[ {Hel},
@@ -4993,7 +4993,7 @@ mainexpr, rul},
     lhs -> "\\[" <> ToString[lhs, CForm] <> "\\]"];
   fexpr = Unabbr[fexpr, !_Mat, DiracChain | WeylChain] /.
     FinalFormRules;
-  If[ !FreeQ[Unabbr[fexpr], (DiracChain | WeylChain)[__, _e, __]],
+  If[ !FreeQ[Unabbr[fexpr], (DiracChain | WeylChain)[__, _e | _ec, __]],
     Message[PolarizationSum::polchain] ];
 
   lor = Cases[fexpr, _Lor, Infinity] //Union;
@@ -5030,8 +5030,13 @@ mainexpr, rul},
     FormCode["Common.frm"] <>
     FormCode["PolarizationSum.frm"]];
 
-  FormWrite[hh, fexpr];
-  WriteString[hh, "#call Prepare\n\n"];
+  If[ MemberQ[fexpr, _Rule],
+    FormWrite[hh, fexpr];
+    WriteString[hh, "\
+#call Prepare\n\
+#define Prepared\n\
+.sort\n\
+drop;\n\n"] ];
   Write[hh, "L SquaredME = ", Plus@@ DeleteCases[fexpr, _Rule], ";"];
 
   WriteString[hh,
