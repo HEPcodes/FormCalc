@@ -1,13 +1,13 @@
 * run.F
 * defines parameter settings for one run, then includes main.F
 * this file is part of FormCalc
-* last modified 22 Jan 16 th
+* last modified 28 Jul 18 th
 
 
-* Whether to run in debugging mode
+* Whether to run in testing mode
 
-#ifndef DEBUG
-#define DEBUG 1
+#ifndef TESTRUN
+#define TESTRUN 1
 #endif
 
 * Uncomment the following to check UV- and IR-finiteness
@@ -125,7 +125,7 @@ c#define NO_EXCLUSION_LIMITS
 #define SQRTSSTEP 10
 
 #define COSTH1CUT .01D0
-#ifdef DEBUG
+#ifdef TESTRUN
 #define XCOSTH1STEP 1/3D0
 #else
 #define XCOSTH1STEP .02D0

@@ -3,7 +3,7 @@
 		rearranges Mathematica's InputForm output to
 		yield acceptable FORM input
 		this file is part of FormCalc
-		last modified 7 Nov 17 th
+		last modified 19 Jul 18 th
 */
 
 #include <stdio.h>
@@ -31,10 +31,8 @@ int main() {
 more:
       switch( *s & m ) {
       case '\\':
-        if( s[1] == '\n' ) {
-          fgets(s, in + sizeof in - s, stdin);
-          goto more;
-        }
+        if( s[1] == '\n' &&
+            fgets(s, in + sizeof in - s, stdin) > 0 ) goto more;
         break;
       case '"':
         break;
@@ -79,8 +77,7 @@ more:
     }
 
 	/* line break not allowed inside a dot product (rare): */
-    if( d > out + 2 && d[-2] == '.' ) {
-      fgets(in, sizeof in, stdin);
+    if( d > out + 2 && d[-2] == '.' && fgets(in, sizeof in, stdin) > 0 ) {
       s = in + strspn(in, " \t");
       --d;
       goto more;

@@ -7,7 +7,7 @@
 		  (i.e. does not touch preprocessor statements)
 		- replaces the continuation character (if any) by &
 		this file is part of FormCalc
-		last modified 23 Sep 15 th
+		last modified 7 Jul 18 th
 */
 
 #include <stdio.h>
@@ -43,6 +43,8 @@ int main()
     *eol = 0;
 
     if( *s == '*' ) continue;
+
+    if( strspn(s, " ") > 7 ) *(s += 7) = '\t';
 
     si = s;
     while( (p = strpbrk(si, quotedigits)) ) {

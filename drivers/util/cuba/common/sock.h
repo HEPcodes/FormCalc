@@ -2,12 +2,12 @@
 	sock.h
 		socket read/write
 		by Thomas Hahn
-		last modified 27 May 14 th
+		last modified 28 Jul 18 th
 */
 
 #include <sys/socket.h>
 
-#ifdef DEBUG
+#ifdef COMM_DEBUG
 #define TERM_RED "\e[31m"
 #define TERM_BLUE "\e[34m"
 #define TERM_RESET "\e[0m\n"
@@ -22,7 +22,7 @@ fprintf(stderr, TERM_BLUE ROUTINE " worker %d(%d): " s TERM_RESET, core, getpid(
 #define DEB_ONLY(...)
 #endif
 
-#ifdef LOW_LEVEL_DEBUG
+#ifdef COMM_DETAILED_DEBUG
 #define TERM_GREEN "\e[32m"
 #define TERM_MAGENTA "\e[35m"
 #define READ(s, ...) \

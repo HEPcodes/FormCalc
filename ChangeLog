@@ -1,3 +1,145 @@
+8 Mar 2019:
+
+- Moved partial fractioning of loop denominators...
+	loop[a___, Den[p_, m1_], b___, Den[p_, m2_], c___] :=
+	  loop[a, Den[p, m1] - Den[p, m2], b, c]/(m1 - m2) /;
+	  m1 =!= m2
+  ... to CalcFeynAmp.frm since m1 =!= m2 cannot reliably be evaluated
+  before IndexSimplify.
+
+
+18 Feb 2019:
+
+- Introduced $KeepAbbr = False to not save the Subexpr/Abbr in Keep.
+  Take care: expressions saved this way cannot not in general be fully
+  reconstructed later.
+
+
+29 Jan 2019:
+
+- More quirks in the Generic name mangling removed.
+
+
+28 Jan 2019:
+
+- Fixed name issue with Generic object 'MetricTensor'.
+
+- Improved persistent names for Generic objects.
+
+
+21 Jan 2019:
+
+- Fixed bug in CalcFeynAmp for explicit Dirac indices.
+
+- Version number now available as
+  $FormCalc = {major, minor},
+  $FormCalcVersionNumber = major.minor
+  $FormCalcVersion = "FormCalc major.minor (rev date)"
+
+
+29 Dec 2018:
+
+- Fixed issue with Mass[..., Loop] in Generic diagram simplification.
+
+
+24 Dec 2018:
+
+- Fixed compatibility issue with Mathematica version 9 and below.
+
+
+4 Dec 2018:
+
+- Introduced persistent names for Generic objects (couplings, masses etc.).
+
+
+18 Sep 2018:
+
+- ColourSimplify now observes SumOver for Colour and Gluon indices.
+  This is needed for 'hand' calculations only since amplitudes from
+  CalcFeynAmp never have explicit Colour/Gluon SumOvers.
+
+
+3 Sep 2018:
+
+- Fixed trivial error (duplicate variable in Block) in PolarizationSum.
+
+
+17 Aug 2018:
+
+- Type of dup variables in FF modules dynamically determined
+  (no longer always HelType, wrong if HelicityME used).
+
+- More settings for Type, TmpType, IndexType options.
+
+
+4 Aug 2018:
+
+- Fixed wrong detection of Dirac chains in the counting of the
+  d.o.f. in the helicity loop of WriteSquaredME.
+
+
+3 Aug 2018:
+
+- Removed substituted vars from CodeExpr in Subst[Simple]Abbr.
+
+
+2 Aug 2018:
+
+- Improved Subst[Simple]Abbr: now also looks inside IndexIf.
+
+
+30 Jul 2018:
+
+- Fixed indexing problem in OptimizeAbbr.
+
+
+27 Jul 2018:
+
+- Added VarSort and Prio for better control of sort order of lists
+  of definitions (var -> val).
+
+
+23 Jul 2018:
+
+- Fixed bug in WeylME.
+
+
+19 Jul 2018:
+
+- (Again) disabled SIMD detection for gfortran.
+
+
+16 Jul 2018:
+
+- Fixed two small issues with library detection in configure.
+
+
+11 Jul 2018:
+
+- SubstAbbr, SubstSimpleAbbr accept a further optional 'deny' argument.
+  Variables are substituted only if they do not match 'deny'.
+
+- Added HoldCode[expr] which preserves expr until write-out to
+  Fortran or C.  Similar to HoldForm except that argument is
+  not held unevaluated.
+
+
+7 Jul 2018:
+
+- Extended Abbreviate[expr, func] so that func can return True and False
+  (as before) and also a subexpression of its argument, for which the
+  abbreviation is then introduced.
+
+- New function FindDeps finds all variables in a list of definitions
+  whose rhs directly or indirectly depends on a given pattern.
+
+
+27 Jun 2018:
+
+- Added f @ m notation for {Mass,Field,Width}RC, as in:
+  MassRC[S[3] @ MA0tree].
+
+
 16 Apr 2018:
 
 - Fixed `mysterious' problem in simplification code in PolarizationSum.frm

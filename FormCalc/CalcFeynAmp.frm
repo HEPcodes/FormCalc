@@ -1,7 +1,7 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 5 Mar 18 th
+* last modified 8 Mar 19 th
 
 
 #procedure Contract
@@ -783,6 +783,10 @@ also intM([n]?, ?d) = cutM(?d)
 #endif
   ;
 #endif
+
+id intM(?a, Den([p1]?, [m1]?), ?b, Den([p1]?, [m2]?!{[m1]?}), ?c) =
+  (intM(?a, Den([p1], [m1]), ?b, ?c) - intM(?a, Den([p1], [m2]), ?b, ?c))/
+  ([m1] - [m2]);
 
 argument intM;
 id Den([p1]?, ?m) = Den(?m)*MOM([p1]);

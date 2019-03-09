@@ -2,7 +2,7 @@
 	ModelSpecific.m
 		global definitions for specific models
 		this file is part of FormCalc
-		last modified 10 May 16 th
+		last modified 21 Dec 18 th
 
 Note: This file is read by FormCalc only if $NoModelSpecific is not True.
 
@@ -233,12 +233,13 @@ MSSMSimplify = MSSMShorten[Simplify];
 MSSMFullSimplify = MSSMShorten[FullSimplify]
 
 MSSMTrig[expr_, simp_:Simplify] := SUSYTrigFullReduce @
-  MapOnly[Plus, _ | a | b][simp, SUSYTrigFullExpand[expr]]
+  MapOnly[Plus, simp, _ | a | b] @ SUSYTrigFullExpand[expr]
 
 MSSMTrig2[expr_, simp_:Simplify] := MapOnly[Plus,
+  SUSYTrigFullSimplify[#, simp]&,
   _ | CB | SB | CB2 | SB2 | C2B | S2B | TB |
   CA | SA | CA2 | SA2 | C2A | S2A |
-  CAB | CBA | CBA2 | SBA2][SUSYTrigFullSimplify[#, simp]&, expr]
+  CAB | CBA | CBA2 | SBA2] @ expr
 
 
 SUSYTrigFullExpand[expr_] := expr /. {

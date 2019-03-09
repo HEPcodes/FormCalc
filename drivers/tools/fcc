@@ -1,13 +1,13 @@
 #! /bin/sh
 # script to compile C programs that are linked 
 # against Fortran libraries
-# last modified 28 May 15 th
+# last modified 31 Jan 18 th
 
 args=
 compileonly=
 objs=
 ldflags=
-fldflags=
+fldflags=-lpthread
 
 cc="${REALCC:-cc}"
 cxx="${REALCXX:-c++}"

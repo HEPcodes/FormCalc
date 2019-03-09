@@ -4,8 +4,6 @@ suave := $(DIR)suave
 divonne := $(DIR)divonne
 cuhre := $(DIR)cuhre
 
-CFLAGS += -I$(common) -I$(@D) -DHAVE_CONFIG_H
-
 COMMON_DEPS := $(common)/stddecl.h \
   $(common)/ChiSquare.c $(common)/Erf.c \
   $(common)/CSample.c $(common)/Parallel.c $(common)/sock.h
@@ -35,8 +33,11 @@ CUHRE_DEPS := $(COMMON_DEPS) \
 
 CUBA := $(VEGAS_C) $(SUAVE_C) $(DIVONNE_C) $(CUHRE_C) \
   $(common)/Fork.c $(common)/Global.c $(common)/Data.c
+CUBA_OBJS = $(CUBA:.c=.o)
 
-OBJS += $(CUBA:.c=.o)
+OBJS += $(CUBA_OBJS)
+
+$(UTILLIB)($(CUBA_OBJS)): CFLAGS += -I$(common) -I$(@D) -DHAVE_CONFIG_H
 
 $(UTILLIB)($(VEGAS_C:.c=.o)): $(VEGAS_C) $(VEGAS_DEPS) 
 $(UTILLIB)($(SUAVE_C:.c=.o)): $(SUAVE_C) $(SUAVE_DEPS) 

@@ -1,8 +1,8 @@
 (*
 
-This is FormCalc, Version 9.6
-Copyright by Thomas Hahn 1996-2018
-last modified 16 Apr 18 by Thomas Hahn
+This is FormCalc, Version 9.7
+Copyright by Thomas Hahn 1996-2019
+last modified 8 Mar 19 by Thomas Hahn
 
 Release notes:
 
@@ -46,7 +46,7 @@ BeginPackage["FeynArts`"]
 
 { Topology, TopologyList, FeynAmp, FeynAmpList,
   Process, GraphID, FieldPoint, Incoming, Outgoing,
-  Generic, Classes, Particles, S, F, U, V, T,
+  Generic, Classes, Particles,
   Insertions, G, Mass, GaugeXi, VertexFunction,
   PropagatorDenominator, FeynAmpDenominator,
   FourMomentum, Internal, External, TheMass,
@@ -58,6 +58,8 @@ BeginPackage["FeynArts`"]
   ExcludeParticles, ExcludeFieldPoints, LastSelections,
   Restrictions, CreateFeynAmp, Truncated,
   RenConst, MassShift, Paint, DiagramGrouping }
+
+P$Field = (F | S | V | T | U | _Mix | _Rev)[__]
 
 EndPackage[]
 
@@ -377,21 +379,23 @@ LVectorCoeff, RVectorCoeff, LScalarCoeff, RScalarCoeff for fermion
 self-energies, and Identity otherwise."
 
 MassRC::usage =
-"MassRC[f] computes the one-loop mass renormalization constant of field
-f.  MassRC[f1, f2] computes the one-loop mass renormalization constant
-for the f1-f2 transition.  For fermions the output is a list
-{left-handed RC, right-handed RC}.  MassRC[..., opt] specifies options
-for CreateTopologies, InsertFields, and CreateFeynAmp to be used in the
-computation."
+"MassRC[f] computes the one-loop mass renormalization constant of field f. 
+MassRC[f1, f2] computes the one-loop mass renormalization constant for
+the f1-f2 transition. 
+Field specifications of the form f @ m use mass m instead of TheMass[f]. 
+For fermions the output is a list {left-handed RC, right-handed RC}. 
+MassRC[..., opt] specifies options for CreateTopologies, InsertFields,
+and CreateFeynAmp to be used in the computation."
 
 FieldRC::usage =
 "FieldRC[f] computes the one-loop field renormalization constant of
 field f.  FieldRC[f1, f2] computes the one-loop field renormalization
 constant for the f1-f2 transition.  FieldRC[f1, f2, c] subtracts c from
-the self-energy entering into the calculation.  For fermions the output
-is a list {left-handed RC, right-handed RC}.  FieldRC[..., opt]
-specifies options for CreateTopologies, InsertFields, and CreateFeynAmp
-to be used in the computation."
+the self-energy entering into the calculation. 
+Field specifications of the form f @ m use mass m instead of TheMass[f]. 
+For fermions the output is a list {left-handed RC, right-handed RC}. 
+FieldRC[..., opt] specifies options for CreateTopologies, InsertFields,
+and CreateFeynAmp to be used in the computation."
 
 TadpoleRC::usage =
 "TadpoleRC[f] computes the one-loop tadpole renormalization constant of
@@ -399,9 +403,10 @@ field f.  TadpoleRC[..., opt] specifies options for CreateTopologies,
 InsertFields, and CreateFeynAmp to be used in the computation."
 
 WidthRC::usage =
-"WidthRC[f] computes the one-loop width of field f.  WidthRC[..., opt]
-specifies options for CreateTopologies, InsertFields, and CreateFeynAmp
-to be used in the computation."
+"WidthRC[f] computes the one-loop width of field f. 
+A field specification of the form f @ m uses mass m instead of TheMass[f]. 
+WidthRC[..., opt] specifies options for CreateTopologies, InsertFields,
+and CreateFeynAmp to be used in the computation."
 
 $RenConst::usage =
 "$RenConst lists the functions under which renormalization constants are
@@ -850,11 +855,12 @@ abbreviations introduced for different processes are in general not
 compatible."
 
 Abbreviate::usage =
-"Abbreviate[expr, x] introduces abbreviations for subexpressions
-in expr.  If x is an integer, abbreviations are introduced for sums
-from level x downward.  Otherwise, x is taken as a function name and
-abbreviations are introduced for all subexpressions for which
-x[subexpr] returns True."
+"Abbreviate[expr, f] introduces abbreviations for subexpressions
+in expr.  If f is an integer, abbreviations are introduced for sums
+from level f downward.  Otherwise, f is taken as a function where
+f[subexpr] is invoked for the subexpressions of expr and returns
+True if an abbreviation shall be introduced for it, False if not,
+or the part of subexpr for which an abbreviation shall be introduced."
 
 AbbrevSet::usage =
 "AbbrevSet[expr] sets up the AbbrevDo function that introduces
@@ -862,11 +868,11 @@ abbreviations for subexpressions.  The expression given here is not
 itself abbreviated but used for determining the summation indices."
 
 AbbrevDo::usage =
-"AbbrevDo[expr, x] invokes the abbreviationing function defined with
-AbbrevSet on expr.  If x is an integer, abbreviations are introduced
-from level x downward.  Otherwise, x is taken as a function name and
-abbreviations are introduced for all subexpressions for which
-x[subexpr] returns True."
+"AbbrevDo[expr, lev], where lev is an integer, introduces abbreviations
+for subexpressions appearing at level lev of expr or deeper.
+AbbrevDo[expr, fun], where fun is a function, introduces abbreviations
+for all subexpressions of expr for which fun[subexpr] returns True.
+AbbrevDo must first be defined by AbbrevSet."
 
 Deny::usage =
 "Deny is an option of Abbreviate.  It specifies items which must not be
@@ -915,22 +921,34 @@ by OptimizeAbbr, i.e. the Opt in Opt123."
 
 SubstAbbr::usage =
 "SubstAbbr[exprlist, patt] removes abbreviations matching patt and 
-substitutes them back into exprlist."
+substitutes them back into exprlist.
+SubstAbbr[exprlist, patt, deny] does not substitute variables matching deny."
 
 SubstSimpleAbbr::usage =
-"SubstSimpleAbbr[exprlist] removes `simple' abbreviations of the form
-var -> s where s is a number or a symbol times a number."
+"SubstSimpleAbbr[exprlist] removes (substitutes back) abbreviations which
+match P$SimpleAbbr.
+SubstSimpleAbbr[exprlist, deny] does not substitute variables matching deny."
+
+P$SimpleAbbr::usage =
+"P$SimpleAbbr is a pattern which matches a `simple' abbreviation of the
+form var -> s where s is a number or a symbol times a number."
 
 ExtractInt::usage =
 "ExtractInt[expr] extracts the loop integrals from expr for evaluation
-with LoopTools/OPP.  It output is a list {lint, abbrexpr}, where lint
-is the list of loop integrals and abbrexpr is expr with the loop
-integrals substituted by the identifiers in integrals."
+with LoopTools/OPP.  It output is a list {loopint, abbrexpr}, where
+loopint is the list of loop integrals and abbrexpr is expr with the
+loop integrals substituted by the variables on the l.h.s. of loopint."
 
-$IntPrefix::usage =
-"$IntPrefix[f] specifies the prefix for integrals abbreviated by
-WriteSquaredME and ExtractInt, where f is the head of the loop integral,
-e.g. B0i or Ccut."
+VarSort::usage =
+"VarSort[list] sorts the list of variable definitions (var -> val),
+taking into account explicit priorities (var -> Prio[p][val]) and the
+running numbers of variable names, e.g. abb100 is sorted after abb11."
+
+Prio::usage =
+"var -> Prio[p][val] tells VarSort that the definition var -> val is to
+be sorted with priority p, i.e. after definitions with priority p - 1 and
+before definitions with priority p + 1, where 100 is the default priority.
+VarSort strips the Prio[p] part from the definition."
 
 Pair::usage =
 "Pair[a, b] represents the contraction of the two four-vectors or
@@ -995,6 +1013,11 @@ Keep[lhs = rhs] is short for lhs = Keep[rhs, \"lhs\"]."
 $KeepDir::usage =
 "$KeepDir specifies the default directory for storing intermediate
 expressions with Keep."
+
+$KeepAbbr::usage =
+"$KeepAbbr = False instructs Keep to not store the Subexpr[] and
+Abbr[] necessary to compute abbreviated expressions.  Note that
+Keep may be unable to fully recover saved expressions this way."
 
 AbbrExpr::usage =
 "AbbrExpr[expr, subexpr, abbr] contains an expression including its
@@ -1223,6 +1246,10 @@ Square::usage =
 NClear::usage =
 "NClear[patt] clears the NValues of all symbols matching patt. 
 NClear[] is equivalent to NClear[\"Global`*\"]."
+
+HoldCode::usage =
+"HoldCode[expr] preserves expr until write-out to a Fortran or C file. 
+Unlike Hold or HoldForm it does not inhibit the evaluation of expr."
 
 ColourSimplify::usage =
 "ColourSimplify[expr] simplifies the colour objects in expr.
@@ -1589,6 +1616,8 @@ for use in a preprocessor #define."
 ToFortran::usage =
 "ToFortran has been superseded by ToCode."
 
+ToFortran = ToCode
+
 SetLanguage::usage =
 "SetLanguage[lang] sets the language for source code, currently
 \"Fortran\" or \"C\"."
@@ -1706,9 +1735,19 @@ FinalFunction::usage =
 applied to the final expressions, just before write-out to Fortran or C."
 
 Type::usage =
-"Type is an option of WriteExpr.  If a string is given, e.g. Type ->
-\"double precision\", WriteExpr writes out declarations of that type for
-the given expressions.  Otherwise no declarations are produced."
+"Type is an option of WriteExpr.  Admissible values are a string, rules,
+a function, or False. 
+If a string is given, e.g. \"RealType\", declarations of that type are
+written out for all variables.
+If rules are given, e.g. {x -> \"RealType\", y -> \"ComplexType\"}, they
+are applied to the list of variables and any string in the result is 
+taken as the type of the corresponding variable. 
+If a function f is given, f[v] is formed for each variable v and if it
+evaluates to a string, that string is taken as the type of variable v.  
+Otherwise f[v][defs] is formed, where defs are the definitions involving
+v and if the output is a string, that is taken as the type of v.
+No declarations are produced for all f[v][defs] that do not evaluate to
+a string, or if an explicit False is given."
 
 TmpType::usage =
 "TmpType is an option of WriteExpr.  It is the counterpart of Type for
@@ -1825,7 +1864,7 @@ CodeExpr::usage =
 contains a list of expressions ready to be written to a code file,
 where vars are the original variables and tmpvars are temporary
 variables introduced in order to shrink individual expressions to a
-small enough size."
+small-enough size."
 
 DebugLine::usage =
 "DebugLine[i, var] emits a debugging statement (print-out of variable
@@ -1896,6 +1935,10 @@ not depend on definitions in ri further to the right.  For example,
 MoveDepsLeft[{a -> b}, {b -> 5}] produces {{b -> 5, a -> b}, {}}, i.e.
 it moves b -> 5 to the left list because that depends on b."
 
+JoinDeps::usage =
+"JoinDeps is the function with which the dependent abbreviations
+are joined with the given lists in MoveDepsRight and MoveDepsLeft."
+
 OnePassOrder::usage =
 "OnePassOrder[r] orders a list of interdependent rules so that the
 definition of each item (item -> ...) comes before its use in the
@@ -1905,6 +1948,10 @@ $OnePassDebug::usage =
 "When OnePassOrder detects a recursion among the definitions of a list,
 it deposits the offending rules in an internal format in $OnePassDebug
 as debugging hints."
+
+FindDeps::usage =
+"FindDeps[list, patt] finds all variables in the list of definitions
+(var -> val) whose r.h.s. directly or indirectly depend on patt."
 
 Tag::usage =
 "Tag[t, expr] tags expr with t (possibly empty).  This tag is 
@@ -2053,10 +2100,13 @@ $EditorModal::usage =
 non-detached (modal) window."
 
 $FormCalc::usage =
-"$FormCalc contains the version number of FormCalc."
+"$FormCalc gives the FormCalc version as integers {major, minor}."
+
+$FormCalcVersionNumber::usage =
+"$FormCalcVersionNumber gives the FormCalc version as a real number."
 
 $FormCalcVersion::usage =
-"$FormCalcVersion is a string that gives the version of FormCalc."
+"$FormCalcVersion gives the FormCalc version as human-readable string."
 
 $FormCalcDir::usage =
 "$FormCalcDir is the directory from which FormCalc was loaded."
@@ -2094,9 +2144,11 @@ the file is split into several pieces."
 
 Begin["`Private`"]
 
-$FormCalc = 9.6
+$FormCalc = {9, 7}
 
-$FormCalcVersion = "FormCalc 9.6 (16 Apr 2018)"
+$FormCalcVersionNumber = 9.7
+
+$FormCalcVersion = "FormCalc 9.7 (21 Feb 2019)"
 
 $FormCalcDir = DirectoryName[ File /.
   FileInformation[System`Private`FindFile[$Input]] ]
@@ -2184,7 +2236,7 @@ FilterOpt[f_, opt___] := Sequence@@
   Cases[Flatten[{opt}], _[Alternatives@@ First/@ Options[f], _]]
 
 ParseOpt[f_, opt___] := (
-  Message[func::optx, #, f]&/@ Complement[First/@ {opt}, #];
+  Message[f::optx, #, f]&/@ Complement[First/@ {opt}, #];
   # //. Level[{{opt}, Options[f]}, {2}]
 )&[ First/@ Options[f] ]
 
@@ -2210,29 +2262,56 @@ NewSymbol[stub_, 0] := ToExpression[next[stub]]
 NewSymbol[stub_] := ToExpression[NestWhile[next, next[stub], NameQ]]
 
 
+Kind[Tag[___, x_]] := Kind[x]
+
+Kind[h_ -> _] := kind[h]
+
+_Kind = Sequence[]
+
+kind[h_[___], ___] := h
+
+kind[h_, ___] := h
+
+
+VarSort[li_List] := Last/@ Sort[VarPrio/@ li]
+
+VarPrio[elem_] :=
+Block[ {prio = 100, sortas},
+  {prio, sortas, #}& @ VarOrd[elem]
+]
+
+VarOrd[Tag[t___, r_]] := Tag[t, VarOrd[r]]
+
+VarOrd[lhs_ -> Prio[p_][rhs_]] := (prio = p; VarOrd[lhs -> rhs])
+
+VarOrd[lhs_ -> rhs_] := (sortas = SymSplit[kind[lhs]]; lhs -> rhs)
+
+VarOrd[other_] := sortas = other
+
+
+Attributes[SymSplit] = {HoldRest}
+
+SymSplit[sym_, cmd___] :=
+Block[ {s = ToString[sym], i},
+  i = Position[DigitQ/@ Characters[s], False][[-1,1]];
+  {s, i} = StringTake[s, {{1, i}, {i + 1, -1}}];
+  cmd;
+  ToExpression[s][ToExpression[i]]
+]
+
+
 Attributes[ToArray] = {Listable}
 
-ToArray[sym_Symbol] :=
-Block[ {t = ToString[sym], p},
-  p = Position[DigitQ/@ Characters[t], False][[-1,1]];
-  ToExpression[StringTake[t, p]] @ ToExpression[StringDrop[t, p]]
-]
+ToArray[sym_Symbol] := SymSplit[sym]
 
 ToArray[other_] := other
 
 ToArray[expr_, vars__] := expr /. Dispatch[ToArrayRules[expr, vars]]
 
 ToArrayRules[expr_, vars__] :=
-Block[ {v = ToString/@ Flatten[{vars}], t, p, h},
-  Flatten[(
-    t = ToString[#];
-    p = Position[DigitQ/@ Characters[t], False][[-1,1]];
-    h = StringTake[t, p];
-    If[ MemberQ[v, h],
-      # -> ToExpression[h] @ ToExpression[StringDrop[t, p]],
-      {} ]
-  )&/@ Symbols[expr]]
-]
+  Flatten[ToArraySym[ToString/@ Flatten[{vars}]]/@ Symbols[expr]]
+
+ToArraySym[vars_][sym_] := SymSplit[sym, If[!MemberQ[vars, s], Return[{}]]]
 
 
 Renumber[expr_, vars__] := expr /. Dispatch[RenumberRules[expr, vars]]
@@ -2259,17 +2338,6 @@ xran[i_] := i
 
 xran[i_, n_, ___] := {i, n}
 
-
-
-Kind[Tag[___, x_]] := Kind[x]
-
-Kind[h_ -> _] := kind[h]
-
-_Kind = Sequence[]
-
-kind[h_[___], ___] := h
-
-kind[h_, ___] := h
 
 
 Alt[l_List] := Alt@@ Flatten[l]
@@ -2340,17 +2408,20 @@ Keep[cmd_] := Keep[cmd, ToString[Hash[Hold[cmd]]], $KeepDir]
 Keep[cmd_, name_String] := Keep[cmd, name, $KeepDir]
 
 Keep[cmd_, name_String, prefix_String] :=
-Block[ {file = ChkExist[prefix, name <> ".m"], res, subexpr, abbr},
+Block[ {file = ChkExist[prefix, name <> ".m"], save, res, subexpr, abbr},
   If[ FileType[file] === File,
     FCPrint[1, "loading ", file];
     KeepGet[Get[file]],
   (* else *)
-    res = cmd;
-    subexpr = Subexpr[];
-    If[ FreeQ[res, Alt[Kind/@ subexpr]], subexpr = {} ];
-    abbr = Abbr[];
-    If[ FreeQ[{res, subexpr}, Alt[Kind/@ abbr]], abbr = {} ];
-    Put[AbbrExpr[res, subexpr, abbr], file];
+    save = res = cmd;
+    If[ $KeepAbbr =!= False,
+      subexpr = Subexpr[];
+      If[ FreeQ[res, Alt[Kind/@ subexpr]], subexpr = {} ];
+      abbr = Abbr[];
+      If[ FreeQ[{res, subexpr}, Alt[Kind/@ abbr]], abbr = {} ];
+      save = AbbrExpr[res, subexpr, abbr];
+    ];
+    Put[save, file];
     FCPrint[1, "saved in ", file];
     res ]
 ]
@@ -2401,8 +2472,6 @@ ToCode[x_String] := x
 ToCode[x_List] := StringTake[toCode[x], {6, -2}]
 
 ToCode[x_] := toCode[x]
-
-ToFortran[x_] := ToCode[x]	(* legacy *)
 
 ToDef[x_] := StringReplace[ToCode[x], {" " -> "", "\"" -> ""}]
 
@@ -2690,11 +2759,11 @@ FormKins = Apply[#1&, FromFormRules, {2}]
 FromFormRules = Flatten[FromFormRules]
 
 
-MomThread[i_Index, foo_] := foo[i]
+MomThread[f_][i_Index] := f[i]
 
-MomThread[p_Symbol, foo_] := foo[p]
+MomThread[f_][p_Symbol] := f[p]
 
-MomThread[p_, foo_] := Replace[MomReduce[p], k_Symbol :> foo[k], {-1}]
+MomThread[f_][p_] := Replace[MomReduce[p], k_Symbol :> f[k], {-1}]
 
 
 MomReduce[p_Plus] := Fewest[p, p + MomSum, p - MomSum]
@@ -2711,7 +2780,7 @@ Fewest[a_] := a
 
 fvec[p_] := (vecs = {vecs, Symbols[p]}; MomReduce[p])
 
-fvec[p_, mu_] := (vecs = {vecs, Symbols[p]}; MomThread[p, #[mu]&])
+fvec[p_, mu_] := (vecs = {vecs, Symbols[p]}; MomThread[#[mu]&][p])
 
 
 iname[type_, n_] := iname[type, n] =
@@ -2766,7 +2835,7 @@ scalar[0, _] = 0
 
 scalar[a_Symbol, b_Symbol] := a . b
 
-scalar[a_, p:_[__]] := MomThread[p, scalar[a, #]&]
+scalar[a_, p:_[__]] := MomThread[scalar[a, #]&][p]
 
 
 prop[0, m_Symbol, d___] := -m^(-2 d)
@@ -2776,12 +2845,14 @@ prop[p_, m__] := prop[-p, m] /; !FreeQ[p, -q1]
 prop[p_, m_, d___] := Den[p, m^2, d]
 
 
+(*
 loop[a___, Den[p_, m_], b___, Den[p_, x_ m_], c___] :=
   loop[a, Den[p, m] - Den[p, x m], b, c] Den[m, 0]/(1 - x)
 
 loop[a___, Den[p_, m1_], b___, Den[p_, m2_], c___] :=
   loop[a, Den[p, m1] - Den[p, m2], b, c]/(m1 - m2) (* *Den[m1, m2]*) /;
   m1 =!= m2
+*)
 
 (*
 loop[a___, Den[p_, m_, d1___], b___, Den[p_, m_, d2___], c___] :=
@@ -3101,8 +3172,8 @@ t_ToIndex[i__] := Sequence@@ t/@ {i}
 
 
 LevelSelect[_][id_, _, amp_] :=
-  {# -> TrivialSums[ampden[GenNames[amp]]], #}& @
-    AmpName[Select[id, FreeQ[#, Number]&]]
+  AmpName[Select[id, FreeQ[#, Number]&]] ->
+    {FLines[TrivialSums[ampden[amp /. toGen]]], {}}
 
 LevelSelect[Automatic][r__, gm_ -> ins_] := LevelSelect[
   Which[
@@ -3112,24 +3183,25 @@ LevelSelect[Automatic][r__, gm_ -> ins_] := LevelSelect[
 ][r, gm -> ins]
 
 LevelSelect[Generic][id_, _, gen_, ___] :=
-  {# -> ampden[GenNames[gen]], #}& @
-    AmpName[Select[id, FreeQ[#, Classes | Particles | Number]&]]
+  AmpName[Select[id, FreeQ[#, Classes | Particles | Number]&]] ->
+    {FLines[ampden[gen /. toGen]], {}}
 
-LevelSelect[lev_][id_, _, gen_, gm_ -> ins_] :=
-Block[ {old, new, amp, name = AmpName[id], pc},
+LevelSelect[lev_][id_, _, gen_, gm_ -> levins_] :=
+Block[ {ins, red, amp, pc},
   _pc = 0;
-  old = TrivialSums/@ Cases[{ins}, Insertions[lev][r__] :> r, Infinity];
-  old = ampden[GetDen[gen], gm]/@ old;
-  new = Thread[Flatten[ReduceIns[gm, Transpose[old]]], Rule];
-  amp = gen /. new[[1]] /.
-    {d_Den :> (d /. small[m_] :> m), _small -> 0};
-  { name -> amp,
-    If[ Length[ new[[2]] ] === 0,
-      Length[old] name,
-    (* else *)
-      "i" <> name -> name Plus@@ (Level[#, {2}, "replace_"]&)/@
-        Transpose[ Thread/@ new[[2]] ] ] }
+  ins = TrivialSums/@ Cases[{levins}, Insertions[lev][r__] :> r, Infinity];
+  ins = ampden[GetDen[gen], gm]/@ ins;
+  red = Thread[Flatten[ReduceIns[gm, Transpose[ins]]], Rule];
+  amp = gen /. red[[1]] /. {d_Den :> (d /. small[m_] :> m), _small -> 0};
+  If[ Length[ red[[2]] ] === 0, amp *= Length[ins] ];
+  AmpName[id] -> {FLines[amp], red[[2]]}
 ]
+
+
+FormIns[name_ -> {}] := name
+
+FormIns[name_ -> ins_] := "i" <> name -> name *
+  Plus@@ (Level[#, {2}, "replace_"]&)/@ Transpose[Thread/@ ins]
 
 
 AmpDen[amp_] := amp GetDen[amp]
@@ -3340,8 +3412,8 @@ helM[_, _Hel] = 1
 
 SUNObjs = SUNSum | SUNT | SUNTSum | SUNF | SUNEps
 
-DenyNoExp = Level[{ga, Spinor, Den, intM, PowerOf,
-  (*IndexDelta,*) IndexSum, SumOver, SUNObjs, "replace_"}, {-1}]
+DenyNoExp = {_String, Spinor, Den, intM, PowerOf,
+  (*IndexDelta,*) IndexSum, SumOver, Sequence@@ SUNObjs}
 
 DenyHide = Level[{SumOver, PowerOf, IndexDelta, IndexEps, SUNObjs},
   {-1}, Alternatives]
@@ -3389,7 +3461,7 @@ Block[ {lev, dim, nocost, fchain, forder, evanes,
 inspol, sortden, combden, pavered, cancelq2, opp, oppmeth, oppqsl,
 g5test, g5eps, noexp, nobrk, momrul, pre, post, tag, edit, retain,
 uniq, vecs, kc = 0, hd, ic, inssym, mmains,
-indices = {}, ranges = {}, indsym, haveferm, momrange,
+indices = {}, ranges = {}, haveferm = False, indsym, momrange,
 intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
 
   { lev, dim, nocost, fchain, forder, evanes, inspol,
@@ -3433,23 +3505,23 @@ intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
     PolarizationVector | PolarizationTensor -> pvt /.
     Prepend[momrul,
       (DiracSpinor | MajoranaSpinor)[s_. p_Symbol, m_] :>
-        Spinor[p, Neglect[m], s]];
-  amps = amps /.
+        Spinor[p, Neglect[m], s]] /.
     { LeviCivita -> Eps,
       ScalarProduct -> scalar,
       PropagatorDenominator -> prop,
       FeynAmpDenominator -> loop,
-      FourVector -> fvec };
+      FourVector -> fvec,
+      g:G[_][_][__][_] :> g,	(* for gn *)
+      ChiralityProjector[c_] :> ga[(13 - c)/2],
+      (DiracSlash | DiracMatrix) -> MomThread[ga],
+      NonCommutative -> noncomm,
+      MetricTensor[mu_, _]^2 :> "d_"[mu, mu],
+      MetricTensor -> "d_" };
 
   ampden = If[ combden === False, IdDen,
-    DenList = Sort[DenList, Length[#1] >= Length[#2] &];
+    DenList = Reverse[SortBy[DenList, Length]];
     AmpDen ];
-  amps = LevelSelect[lev]@@@ amps /. {
-    ChiralityProjector[c_] :> ga[(13 - c)/2],
-    (DiracSlash | DiracMatrix)[p_] :> MomThread[p, ga],
-    NonCommutative -> noncomm,
-    MetricTensor[mu_, _]^2 :> "d_"[mu, mu],
-    MetricTensor -> "d_" };
+  amps = LevelSelect[lev]@@@ amps;
   Apply[ (amps[[##,0]] = DenExtend)&,
     Sort[Thread[-Length@@@ Extract[amps, #] -> #]& @
       Position[amps, _ExtDen]], {2} ];
@@ -3467,17 +3539,15 @@ intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
 
   hd = Amp[Apply[{#1, k[++kc], ##3}&, proc /. Index -> indsym, {2}]];
 
-  amps = DeleteCases[amps, {___, _ -> 0, __}];
+  amps = DeleteCases[amps, {_ -> {0, _}}];
   If[ Length[amps] === 0, Return[hd[0]] ];
 
   mmains = Cases[DownValues[inssym], _[_[_[ins_]], s_Symbol] :> s == ins];
 
-  amps = ToCat[2, amps] /. NoExpandRule;
-  If[ FreeQ[amps[[2]], Rule], inspol = Begin ];
+  amps = ToCat[2, Thread/@ amps] /. NoExpandRule;
+  If[ Position[amps[[2]], _Rule, {3}, 1] === {}, inspol = Begin ];
 
-  haveferm = !FreeQ[amps, FermionChain];
-
-  amps = FLines[amps /. Index -> indsym] /. FinalFormRules;
+  amps = amps /. Index -> indsym /. FinalFormRules;
   mmains = mmains /. Index -> indsym;
   ranges = Append[Union[Flatten[ranges]] /. Index -> indsym, i_ :> i == 0];
 
@@ -3504,7 +3574,7 @@ intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
 
   hh = OpenForm["fc-" <> tag <> "-"];
   WriteString[hh, "\
-#define Dim \"", ToString[dim], "\"\n\
+#define Dim \"" <> ToString[dim] <> "\"\n\
 #define InsertionPolicy \"" <> ToForm[inspol] <> "\"\n\
 #define IntMax \"" <> ToForm[intmax] <> "\"\n\
 #define ExtMax \"" <> ToForm[Max[intmax, extmax]] <> "\"\n\
@@ -3533,7 +3603,7 @@ table HEL(1:" <> ToString[Legs] <> ");\n" <>
     FormProcs <>
     FormConst[vars, nobrk] <>
     "#procedure Insertions\n"];
-  res = Plus@@ FormWrite[ hh, amps[[2]] ];
+  res = Plus@@ FormWrite[ hh, FormIns/@ amps[[2]] ];
   WriteString[hh, ".sort\ndrop;\n\n"];
   FormWrite[hh, FormCalc`Result -> res];
   WriteString[hh, "#endprocedure\n\n" <>
@@ -3561,6 +3631,7 @@ trace[g__] := (traces = Max[traces, ++fline];
   } /. ga -> om)
 
 chain[g1_, g___] := (fline = Max[fline + 1, 100];
+  haveferm = True;
   NonCommutativeMultiply[g1, ga[], g] /. ga -> om)
 
 dobj[g1_, g___][di__] :=
@@ -3582,18 +3653,14 @@ om[q1] := "g_"[fline, q1] + I "g5_"[fline] MuTilde /; oppqsl
 om[li___] := "g_"[fline, li]
 
 
-Attributes[FLines] = {Listable}
-
-FLines[lhs_ -> rhs_] :=
+FLines[expr_] :=
 Block[ {fline = 0},
-  lhs -> (rhs /.
+  expr /.
     MatrixTrace -> trace /.
     FermionChain -> chain /.
     DiracObject -> dobj /.
-    NonCommutativeMultiply[a_] :> a)
+    NonCommutativeMultiply[a_] :> a
 ]
-
-FLines[other_] := other
 
 
 Attributes[FormWrite] = {Listable}
@@ -3707,7 +3774,7 @@ $FormAbbrDepth = 3
 
 FormPre = AbbrevSet[#, Preprocess -> FormMat]&
 
-FormSub = AbbrevDo[#, 0]&
+FormSub = AbbrevDo
 
 FormDot = DotSimplify[Simplify, TermCollect]
 
@@ -3970,76 +4037,102 @@ MomEncode[f_. k[i_]] := MomEncoding[f, i]
    For the latter the LoopTools functions [BCDEF]put are used to
    compute all tensor coefficients at once. *)
 
-$IntPrefix[f_] := {"Aa", f}
+IntSym[f_, i___] := ToSymbol[f, i, ++intc[f]]
 
-Function[ {X0i, Xput, Nxx, xx0},
+Function[ {X0i, Xput, Nxx},
   AbbrevInt[X0i[i_, args__]] :=
   Block[ {abb},
-    abb[id_] = IndexHeader[ToSymbol[$IntPrefix[X0i], ++lintc][id], args];
+    abb[id_] = IndexHeader[IntSym[X0i][id], args];
     abbint[X0i[id_, args]] = abb[Epsi[id]];
-    lint = {lint, Rule@@ {abb[Nxx_], Call[Xput[AddrOf[abb[xx0]], args]]}};
+    lint = {lint, Rule@@ {abb[Nxx_], Call[Xput[AddrOf[abb[1]], args]]}};
     abb[Epsi[i]]
   ] ]@@@
-{ {B0i, Bput, Nbb, bb0},
-  {C0i, Cput, Ncc, cc0},
-  {D0i, Dput, Ndd, dd0},
-  {E0i, Eput, Nee, ee0},
-  {F0i, Fput, Nff, ff0} }
+{ {B0i, Bput, Nbb},
+  {C0i, Cput, Ncc},
+  {D0i, Dput, Ndd},
+  {E0i, Eput, Nee},
+  {F0i, Fput, Nff} }
 
-Function[ {Xcut, Xmas, Mxx, xx0},
+Function[ {Xcut, Xmas, Mxx},
   AbbrevInt[Xcut[margs__][nargs__]] :=
     abbint[Xcut[abbint[Xmas[margs]], nargs]];
   AbbrevInt[Xcut[args__]] :=
   Block[ {abb},
-    abbint[Xcut[args]] = abb =
-      IndexHeader[ToSymbol[$IntPrefix[Xcut], ++cutc][], args];
+    abbint[Xcut[args]] = abb = IndexHeader[IntSym[Xcut][], args];
     lint = {lint, abb -> MomEncode/@ Xcut[args]};
     abb
   ];
   AbbrevInt[Xmas[args__]] :=
   Block[ {abb},
-    abb[id_] = IndexHeader[ToSymbol[$IntPrefix[Xmas], ++masc][id], args];
+    abb[id_] = IndexHeader[IntSym[Xmas][id], args];
     lint = {lint, Rule@@ {abb[Mxx_], Call[Xmas[AddrOf[abb[1]], args]]}};
     abbint[Xmas[args]] = abb[1]
   ] ]@@@
-{ {Bcut, Bmas, Mbb, bb0},
-  {Ccut, Cmas, Mcc, cc0},
-  {Dcut, Dmas, Mdd, dd0},
-  {Ecut, Emas, Mee, ee0},
-  {Fcut, Fmas, Mff, ff0} }
+{ {Bcut, Bmas, Mbb},
+  {Ccut, Cmas, Mcc},
+  {Dcut, Dmas, Mdd},
+  {Ecut, Emas, Mee},
+  {Fcut, Fmas, Mff} }
 
 AbbrevInt[func_] :=
-Block[ {abb = IndexHeader[ToSymbol[$IntPrefix[Head[func]], ++lintc][], func]},
+Block[ {abb = IndexHeader[IntSym[Head[func], "i"][], func]},
   lint = {lint, abb -> func};
   abbint[func] = abb
 ]
 
 
 ExtractInt[expr_] :=
-Block[ {abbint, new, lint = {}, lc = 0},
+Block[ {abbint, intc, new, lint = {}},
   abbint[f_] := AbbrevInt[f];
+  _intc = 0;
   new = expr /. int:LoopIntegral[__] :> abbint[int];
   {Flatten[lint], new}
 ]
 
 
-GenNames[amp_] := amp /. {
-  g:G[_][_][__][__] :> coup[g],
-  m_Mass :> mass[m],
-  x_GaugeXi :> xi[x],
-  v:VertexFunction[_][__] :> vf[v] }
+toGen = x:(G[_][_][__][__] | _Mass | _GaugeXi | VertexFunction[_][__]) :>
+  gn[x /. Internal | External | Loop :> Sequence[]]
 
-coup[g_] := coup[g] = NewSymbol["Coupling"]
+gn[G[_][cto_][fi__][kin__]] := gn[G[_][cto][fi][kin]] =
+  Gsym["G", Gfi[fi], Gkin[kin]]
 
-mass[m_] := mass[m] = NewSymbol["Mass"]
+gn[Mass[fi_]] := gn[Mass[fi]] =
+  Gsym["M", Gfi[fi]]
 
-xi[x_] := xi[x] = NewSymbol["GaugeXi"]
+gn[GaugeXi[fi_]] := gn[GaugeXi[fi]] =
+  Gsym["X", Gfi[fi]]
 
-vf[v_] := vf[v] = NewSymbol["VertexFunction"]
+gn[VertexFunction[cto_][fi__]] := gn[VertexFunction[cto][fi]] =
+  Gsym["V", cto, Gfi[fi]]
 
 
-GenericList[] := Flatten @
-  Apply[dv, DownValues/@ {coup, mass, xi, vf}, {2}]
+Gsym[h_, r___] := ToSymbol[h,
+  DeleteCases[Level[{r}, {-1}, Heads -> True],
+    s_Symbol /; Context[s] == "System`"]]
+
+
+Gfi[fi__] := gfi/@ {fi} /. i_Index :> FromCharacterCode[Mod[Hash[i], 26] + 97]
+
+gfi[(s:2 | -2) sv_[i__]] := gfi[s/2 (sv /. {SV -> VS, VS -> SV})[i]]
+
+gfi[-fi_[i__]] := fi["b", i]
+
+gfi[fi_] := fi
+
+
+Gkin[kin__] := {kin} /. {
+  KI1 | KI2 | KI3 | KI4 | KI5 | KI6 |
+  SI1 | SI2 | SI3 | SI4 | SI5 | SI6 -> Identity,
+  -Mom[i_] :> StringTake["KPQRUV", {i}],
+  Mom[i_] :> StringTake["kpqruv", {i}],
+  MetricTensor -> "g",
+  DiracSlash | DiracMatrix -> "ga",
+  ChiralityProjector[-1] -> "L",
+  ChiralityProjector[+1] -> "R",
+  FourVector | NonCommutative -> Dot }
+
+
+GenericList[] := Flatten[dv@@@ DownValues[gn]]
 
 
 Options[ClearProcess] = {
@@ -4066,35 +4159,30 @@ zap[p_, s_Symbol[__]] := (Unset[p]; zapf[s]) /; FreeQ[p, Pattern]
 
 
 subdef[minleaf_, deny_, fuse_, pre_, ind_] := (
-  DownValues[subadd] = {
-    HoldPattern[subadd[x_^2 - y_^2]] :> subadd[x - y] subadd[x + y],
-    HoldPattern[subadd[x_]] :> (abbsub@@ Select[ind, !FreeQ[x, #]&])[x] /;
-      LeafCount[x] > minleaf && FreeQ[x, deny],
-    HoldPattern[subadd[x_]] :> x
-  } /. {
-    HoldPattern[abbsub@@ Select[{}, _]] -> abbsub[],
-    HoldPattern[x_ && FreeQ[_, _[]]] :> x };
+  DownValues[subabb] = {
+    HoldPattern[subabb[x_]] :> (abbsub@@ Select[ind, !FreeQ[x, #]&])[pre[x]]
+  } /. HoldPattern[abbsub@@ Select[{}, _]] -> abbsub[];
+
+  DownValues[subcond] = {
+    HoldPattern[subcond[x_]] :> LeafCount[x] > minleaf && FreeQ[x, deny]
+  } /. HoldPattern[x_ && FreeQ[_, _[]]] :> x;
 
   DownValues[subfun] = {
     HoldPattern[subfun[x_]] :>
-      (abbsub@@ Select[ind, !FreeQ[x, #]&])[pre[x]] /;
-      subF[x] && LeafCount[x] > minleaf && FreeQ[x, deny],
+      Block[{try = subtry[subF[x], x]}, try /; try =!= False],
     HoldPattern[subfun[s_SumOver x_]] :> s subfun[x],
     HoldPattern[subfun[h_[x_]]] :> h[subfun[x]],
     HoldPattern[subfun[h_[x__]]] :> h[
-      subfun[Select[h[x], !subF[#]&], h],
+      subfun[Select[h[x], subF[#] =!= True &], h],
       subfuse[Select[h[x], subF], h]
     ] /; Length[Intersection[Attributes[h], {Flat, Orderless}]] === 2,
     HoldPattern[subfun[x_]] :> subfun/@ x,
     HoldPattern[subfun[h_[x___], h_]] :> subfun/@ h[x],
     HoldPattern[subfun[x_, _]] :> subfun[x]
-  } /. {
-    HoldPattern[abbsub@@ Select[{}, _]] -> abbsub[],
-    HoldPattern[x__ && FreeQ[_, _[]]] :> And[x],
-    HoldPattern[subfuse[x_, _]] :> subadd[x] /; fuse };
+  } /. HoldPattern[subfuse[x_, _]] :> subadd[x] /; fuse;
 
   DownValues[AbbrevDo] = {
-    HoldPattern[AbbrevDo[expr_, lev_Integer]] :>
+    HoldPattern[AbbrevDo[expr_, lev_Integer:0]] :>
       Replace[expr, Plus -> sublev, {lev, Infinity}, Heads -> True],
     HoldPattern[AbbrevDo[expr_, f_]] :>
       Block[{subF = f}, subfun[expr]]
@@ -4123,7 +4211,7 @@ Options[Abbreviate] = {
   Preprocess -> Identity }
 
 Abbreviate[expr_, x_:2, opt___Rule] :=
-Block[ {subadd, subfun, AbbrevDo},
+Block[ {subabb, subcond, subfun, AbbrevDo},
   AbbrevSet[expr, opt];
   AbbrevDo[expr, x]
 ]
@@ -4139,6 +4227,24 @@ sublev[p___] := subadd[Plus[p]]
 subfuse[h_[x___], h_] := subadd/@ h[x]
 
 subfuse[x_, _] := subadd[x]
+
+
+subadd[x_^2 - y_^2] := subadd[x - y] subadd[x + y]
+
+subadd[x_] := subabb[x] /; subcond[x]
+
+subadd[x_] := x
+
+
+subtry[False, _] := False
+
+subtry[True, x_] := subabb[x] /; subcond[x]
+
+subtry[f_[___], _] := False /; f === subF
+
+subtry[fx_, x_] := (x /. fx -> subabb[fx]) /; subcond[fx]
+
+_subtry = False
 
 
 $AbbPrefix = "Sub"
@@ -4301,8 +4407,7 @@ _CSE[] = {}
 CSE[h_, defH_, comH_, rulH_, simp_][abbr__] :=
 Block[ {lot, alias, var, def, com, tmp, new = {}},
   Attributes[lot] = {Flat, Orderless};
-  {var, def, alias} = ToCat[3, defH@@@
-    Sort[{abbr}, Length[ #1[[2]] ] <= Length[ #2[[2]] ] &]];
+  {var, def, alias} = ToCat[3, defH@@@ SortBy[{abbr}, Length[ #[[2]] ]&]];
   def = def /. alias;
 
   Do[
@@ -4319,7 +4424,7 @@ Block[ {lot, alias, var, def, com, tmp, new = {}},
         def[[tmp,0]] = set,
       (* else *)
         tmp = newvar@@ Select[ Union[Level[Take[var, {i, i + 1}], {2}]],
-          !FreeQ[com, #]& ];
+          !FreeQ[com, unpatt[#]]& ];
         new = {new, tmp -> h@@ com};
         def = def /. rulH[com, unpatt[tmp]] ]
     ],
@@ -4346,29 +4451,42 @@ OptimizeAbbr[rul:{__Rule}, simp_:Simplify] := Flatten @
     ToCat[3, AbbrCat/@ rul] }]
 
 
-Attributes[selectdef] = {Listable}
-
-selectdef[patt_] := select[r:patt] := subst[r] = Sequence[]
-
-SubstAbbr[exprlist_, patt__] :=
-Block[ {select, subst, new = exprlist, rul},
-  Attributes[select] = {Listable};
-  selectdef[{patt}];
-  select[CodeExpr[vars__, expr_]] := CodeExpr[vars, select[expr]];
-  select[other_] := other;
-  While[ ( new = select[new];
-           Length[rul = (#[[1,1,1]]&)/@ DownValues[subst]] > 0 ),
-    new = new /. CodeExpr[var_, tmpvar_, expr_] :>
-      (CodeExpr[DeleteCases[var, #], DeleteCases[tmpvar, #], expr]&[
-        First/@ rul ]) //. rul;
-    Clear[subst]
-  ];
-  new
+oneSubst[exprlist_] :=
+Block[ {subst, new, subs},
+  new = select[exprlist];
+  subs = #[[1,1,1]]&/@ DownValues[subst];
+  If[ Length[subs] === 0, Throw[new] ];
+  allsubs = {allsubs, subs};
+  new //. subs
 ]
 
-SubstSimpleAbbr[exprlist_] := SubstAbbr[exprlist,
-  _ -> _Symbol | _?NumberQ | _?NumberQ _Symbol,
-  (lhs_ -> rhs_) /; LeafCount[lhs] >= LeafCount[rhs]]
+nestSubst[exprlist_] := Catch[Nest[oneSubst, exprlist, 10]]
+
+SubstAbbr[exprlist_, patt_, deny___] :=
+Block[ {select, glob = Null, rm, substAbbr, allsubs = {}, subvars, pos},
+  Attributes[select] = {Listable};
+  Scan[(select[r:(# -> _)] := r)&, {deny}];
+  select[r:(var_ -> _)] := r /; !FreeQ[glob, var];
+  select[r:patt] := subst[r] = Sequence[];
+  select[CodeExpr[vars_, tmps_, expr_]] :=
+    CodeExpr[rm[vars], rm[tmps], select[expr]];
+  select[i_IndexIf] := MapIf[substAbbr, i];
+  select[other_] := other;
+  subvars := subvars = Union[First/@ Flatten[allsubs]];
+  NestWhile[
+    ( glob = ReplacePart[#, Null &, pos] /. CodeExpr -> (#3 &);
+      ReplacePart[#, nestSubst, pos] )&,
+    nestSubst[exprlist],
+    Length[pos = Position[#, substAbbr, Infinity, 1]] > 0 &
+  ] /. rm[vars_] :> Complement[vars, subvars]
+]
+
+P$SimpleAbbr =
+  (_ -> _Symbol | _?NumberQ | _?NumberQ _Symbol) |
+  ((lhs_ -> rhs_) /; LeafCount[lhs] >= LeafCount[rhs])
+
+SubstSimpleAbbr[exprlist_, deny___] :=
+  SubstAbbr[exprlist, P$SimpleAbbr, deny]
 
 
 (* UV and IR finiteness checks *)
@@ -4608,7 +4726,7 @@ HelicityME[tree_, opt___?OptionQ] := HelicityME[tree, tree, opt]
 
 HelicityME[tree_, loop_, opt___?OptionQ] :=
 Block[ {dim, edit, retain,
-abbr, part, vars, hels, helM, hh, e, mat},
+abbr, ferm, vars, hels, helM, hh, e, mat},
   If[ CurrentProc === {},
     Message[HelicityME::noprocess];
     Abort[] ];
@@ -4622,7 +4740,7 @@ abbr, part, vars, hels, helM, hh, e, mat},
     SelectAbbr[HelicityME][abbr, DiracChain[_Spinor, ___], loop, tree],
     Return[{}] ];
 
-  part = Union[Cases[abbr, Spinor[k[i_], __] :> i, Infinity]];
+  ferm = Union[Cases[abbr, Spinor[k[i_], __] :> i, Infinity]];
 
   abbr = MapIndexed[ConjF, abbr, {2}] /. Lor -> FormLor /.
     Reverse/@ FromFormRules /. Eps -> "e_" /.
@@ -4632,7 +4750,7 @@ abbr, part, vars, hels, helM, hh, e, mat},
 
   FCPrint[1, "> ", Length[mat], " helicity matrix elements"];
 
-  hels = HelTab/@ Hel/@ part;
+  hels = HelTab/@ Hel/@ ferm;
   dim = If[dim === 0, D, 4];
   abbr = Level[abbr, {3}];
   vars = FormVars[dim, {Last/@ abbr, hels}];
@@ -4641,10 +4759,10 @@ abbr, part, vars, hels, helM, hh, e, mat},
   WriteString[hh, "\
 #define FermionChains \"None\"\n\n" <>
     vars[[1]] <> "\n\
-table HEL(" <> ToString[Min[part]] <> ":" <>
-               ToString[Max[part]] <> ", e?);\n" <>
+table HEL(" <> ToString[Min[ferm]] <> ":" <>
+               ToString[Max[ferm]] <> ", e?);\n" <>
     MapThread[{"fill HEL(", ToForm[#1], ") = ", ToForm[#2], ";\n"}&,
-      {part, hels}] <> "\n" <>
+      {ferm, hels}] <> "\n" <>
     FormProcs <>
     FormCode["Common.frm"] <>
     FormCode["HelicityME.frm"]];
@@ -4658,7 +4776,7 @@ table HEL(" <> ToString[Min[part]] <> ":" <>
   WriteString[hh, "#call Emit\n"];
   Close[hh];
 
-  (e[#] = s[#])&/@ part;
+  (e[#] = s[#])&/@ ferm;
   helM[i_, s_] := Hel[i] + s;
 
   FormPre[mat];
@@ -4667,8 +4785,8 @@ table HEL(" <> ToString[Min[part]] <> ":" <>
 ]
 
 
-WeylSq[fac_][f_ -> s_, fc_ -> sc_] :=
-  Mat[f, fc] -> f Conjugate[fc] fac[s, sc]
+WeylSq[fac_][f_ -> _, fc_ -> _] :=
+  Mat[f, fc] -> f Conjugate[fc] fac[f, fc]
 
 
 Options[WeylME] = {
@@ -4774,18 +4892,36 @@ Conjugate[t_SUNT] ^:= RotateLeft[Reverse[t], 2]
 Conjugate[f_SUNF] ^:= f
 
 
+sunOver[i:Index[Colour, _], n_:SUNN, ___] := sunSum[i, n]
+
+sunOver[i:Index[Gluon, _], n_:(SUNN^2 - 1), ___] := sunSum[i, n]
+
+sunOver[i__] := SumOver[i]
+
+
+Attributes[sunExpand] = {Listable}
+
+sunExpand[expr_] := expr /; FreeQ[expr, sunSum]
+
+sunExpand[expr_. sunSum[i_, n_]] := sunExpand[n expr] /; FreeQ[expr, i]
+
+sunExpand[expr_ sunSum[i_, _]] := sunExpand[expr /. i -> iname@@ i]
+
+sunExpand[expr_] := sunExpand/@ expr
+
+
 ColourSimplify[tree_:1, loop_] :=
-Block[ {res, ind},
-  {res, ind} = Reap[ Conjugate[tree] loop /.
-    {IndexDelta -> idelta, SumOver -> sumover[(Sow[#1]; 1)&, SumOver]} ];
-  Simplify[ Expand[ res /.
-    Cases[ind, i_Index :> (i -> iname@@ i), {2}] /.
+Block[ {res},
+  res = sunExpand[Conjugate[tree] loop /.
+    {IndexDelta -> idelta, SumOver -> sunOver}];
+  res = Expand[res /. 
     {SUNT -> sunText, SUNF -> sunF,
      SUNEps -> sunEps, SUNTSum -> sunTsum} /.
-    sunTrace[a__]^n_. :> Times@@ Table[sunTr[a], {n}]
-  ] /. {sunT[i_, j_] :> Sort[SUNT[i, j]],
-        sunT[g__, i_, i_] :> SUNT[g, 0, 0],
-        sunT -> SUNT, sunEps -> SUNEps} ]
+    sunTrace[a__]^n_. :> Times@@ Table[sunTr[a], {n}]];
+  Simplify[res] /. {
+    sunT[i_, j_] :> Sort[SUNT[i, j]],
+    sunT[g__, i_, i_] :> SUNT[g, 0, 0],
+    sunT -> SUNT, sunEps -> SUNEps}
 ]
 
 
@@ -4860,10 +4996,10 @@ matFF[h_, c_][FF[f_]] := (ffdef = {ffdef, h[1] -> c[f]}; 1)
 
 Unprotect[Conjugate]
 
-Format[ Conjugate[x_] ] := Superscript[x, "*"]
+Format[Conjugate[x_]] := Superscript[x, "*"]
 
 (*
-Format[ Conjugate[t_Times] ] := Superscript[SequenceForm["(", t, ")"], "*"]
+Format[Conjugate[t_Times]] := Superscript[SequenceForm["(", t, ")"], "*"]
 *)
 
 Conjugate[D] = D
@@ -4907,6 +5043,8 @@ Conjugate[s[n_]] := s[n]
 Conjugate[Lor[n_]] := Lor[n]
 
 Conjugate[(x_?RealQ)^n_.] := x^n
+
+Conjugate[HoldCode[x_]] := HoldCode[Conjugate[x]]
 
 Protect[Conjugate]
 
@@ -4978,8 +5116,8 @@ Block[ {Hel},
 
 PolarizationSum[expr_, opt___?OptionQ] :=
 Block[ {slegs, dim, gauge, nobrk, edit, retain,
-fexpr, lor, indices, legs, masses, etasubst, vars, hh,
-mainexpr, rul},
+fexpr, lor, indices, legs, masses, e, ferm = {},
+etasubst, vars, hh},
 
   If[ CurrentProc === {},
     Message[PolarizationSum::noprocess];
@@ -5005,7 +5143,8 @@ mainexpr, rul},
   If[ slegs =!= All, legs = Intersection[legs, Flatten[{slegs}]] ];
   masses = Masses[CurrentProc][[legs]];
 
-  fexpr = fexpr /. s -> e /. Reverse/@ FromFormRules /.
+  fexpr = fexpr /. s[i_] :> (ferm = {ferm, i}; e[i]) /.
+    Reverse/@ FromFormRules /.
     {Eps -> "e_", MetricTensor -> "d_", Pair -> Dot} /.
     NoExpandRule /.
     FinalFormRules;
@@ -5048,6 +5187,7 @@ drop;\n\n"] ];
   Close[hh];
 
   nobrk = Alt[nobrk];	(* for DotSimplify *)
+  (e[#] = s[#])&/@ Union[Flatten[ferm]];
   FormPre[fexpr];
 
   Plus@@ FormOutput[][edit, retain][[1]]
@@ -5274,9 +5414,9 @@ Block[ {hh},
     Hdr["form factors for " <> name] <>
     vPre <> fPost <>
     SubroutineDecl[mod] <>
-    vPre ];
+    vPre];
   WriteExpr[hh, {sPost, ff, sEnd, SubroutineEnd[]},
-    TmpType -> helType,
+    TmpType -> dupType,
     Optimize -> True,
     DebugLines -> $DebugFF, DebugLabel -> fmod];
   Close[hh];
@@ -5330,6 +5470,7 @@ markdep[v_ -> x_] := (v = TAG[++c]; {}) /; !FreeQ[x, TAG]
 
 markdep[r_] := {} /; !FreeQ[r, TAG]
 
+
 MoveDepsRight[li_List] := {li}
 
 MoveDepsRight[f__List, li_List] :=
@@ -5340,10 +5481,12 @@ Block[ {pos, c = 0, cc = 0},
     While[c != cc, cc = c; pos = pos]
   ]&[ Union@@ Map[Kind, {f, li}, {2}] ];
   pos = Position[pos, {}, {2}, Heads -> False];
-  Append[
-    MoveDepsRight@@ Delete[{f}, pos],
-    Flatten[{li, Extract[{f}, pos]}] ]
+  { Sequence@@ MoveDepsRight@@ Delete[{f}, pos],
+    JoinDeps[li, Extract[{f}, pos]] }
 ]
+
+
+JoinDeps = Join
 
 
 depcat[expr_][r:Tag[___, v_ -> _]] := (cpos = 1; {r, {}}) /; FreeQ[expr, v]
@@ -5351,6 +5494,7 @@ depcat[expr_][r:Tag[___, v_ -> _]] := (cpos = 1; {r, {}}) /; FreeQ[expr, v]
 depcat[expr_][r:(v_ -> _)] := (cpos = 1; {r, {}}) /; FreeQ[expr, v]
 
 depcat[_][r_] := (cnew = 1; {{}, r})
+
 
 MoveDepsLeft[li_List] := {li}
 
@@ -5361,7 +5505,8 @@ Block[ {pos = {f}, old = {}, new = li, cpos = 1, cnew = 1},
     cpos = cnew = 0;
     {pos, new} = Transpose[ ToCat[2, depcat[new]/@ #1]&/@ pos ];
     new = Flatten[new] ];
-  Prepend[MoveDepsLeft@@ pos, Flatten[{new, old}]]
+  { JoinDeps[new, Flatten[old]],
+    Sequence@@ MoveDepsLeft@@ pos }
 ]
 
 
@@ -5421,8 +5566,44 @@ Block[ {jf, jd},
     {2}, IndexIf] ]
 ]
 
+OnePassOrder[i_IndexIf] :=
+Block[ {defs, com, lcom, rcom},
+  defs = (List@@ i)[[2;;;;2]];
+  com = First/@ Intersection@@ defs;
+  defs = fromIf/@ defs;
+  lcom = OnePassOrder[Intersection@@ First/@ defs];
+  rcom = OnePassOrder[Intersection@@ Last/@ defs];
+  Flatten[{lcom, Level[
+    MapThread[toIf[lcom, rcom], {(List@@ i)[[1;;;;2]], defs}],
+    {2}, IndexIf ], rcom}]
+]
 
-VarSort[li_] := Last/@ Sort[{ToArray[Kind[#]], #}&/@ li]
+comQ[def:_[(Tag[___, var_] | var_), _]] := {def, {}} /; MemberQ[com, var]
+
+comQ[def_] := {{}, def}
+
+fromIf[li_] :=
+Block[ {l, m, r},
+  {l, m} = ToCat[2, comQ/@ li];
+  {l, m, r} = Block[{JoinDeps = Sequence}, MoveDepsRight[l, m]];
+  {m, r} = MoveDepsLeft[m, r];
+  {l, m, r}
+]
+
+toIf[lmin_, rmin_][cond_, {l_, m_, r_}] := {cond,
+  OnePassOrder[Flatten[{Complement[l, lmin], m, Complement[r, rmin]}]]}
+
+
+FindDeps[li_, patt_] :=
+Block[ {rul, p = patt, old = {}},
+  rul = depsow@@@ Cases[li, _Rule, Infinity];
+  While[ Length[ new = Reap[rul = rul /. p -> Indeterminate][[2]] ] > 0,
+    old = {old, new};
+    p = Alt[new] ];
+  Union[Flatten[old]]
+]
+
+depsow[var_, val_] := (Sow[var]; 0) /; !FreeQ[val, Indeterminate]
 
 
 _AbbrMod[{}, _] := Sequence[]
@@ -5774,9 +5955,9 @@ Assort[m_Mat, x_] := {m -> x, {}, {}}
 
 Assort[v_, n_Num] := {{}, v -> n, {}}
 
-Assort[_, x_] := {{}, {}, {}} /; !FreeQ[x, DiracChain | SUNT]
+Assort[v_, x_] := {{}, {}, v -> x} /; FreeQ[x, DiracChain | SUNT]
 
-Assort[v_, x_] := {{}, {}, v -> x}
+_Assort := Sequence[]
 
 
 ChainHead[om_, n_] := ChainHead[om, n] =
@@ -5922,13 +6103,14 @@ WriteSquaredME[tree_, loop_, dir_, opt___?OptionQ] :=
 
 WriteSquaredME[tree_, loop_, abbr__, dir_, opt___?OptionQ] :=
 Block[ {folder, xrules, prefix, symprefix, header, fincl, sincl,
-vPre, fPre, fPost, sPre, sPost, sEnd, ModName, Hdr, 
+vPre, fPre, fPost, sPre, sPost, sEnd, dfCode, ModName, Hdr, 
 proc = Sequence[], name, legs, invs, $SymbolPrefix,
 mat, nums, abrs, matsel, matsub, defcat, angledep,
-abbint, lint = {}, lintc = 0, cutc = 0, masc = 0,
+abbint, intc, lint = {},
 inds = {}, defs, Indices, pos, file, files, hh,
-unused, maxmat, mats, mmat, nmat, mat1, dfCode, ntree, nloop,
-ffmods, nummods, abbrmods, com, helrul, hmax, hfun},
+unused, maxmat, mats, mmat, nmat, mat1, ntree, nloop,
+ffmods, nummods, abbrmods,
+com, helrul, helvars, dupType, hmax, hfun},
 
   {$TreeSquare, $LoopSquare, folder, xrules, prefix, symprefix,
     header, fincl, sincl} =
@@ -5939,6 +6121,12 @@ ffmods, nummods, abbrmods, com, helrul, hmax, hfun},
   {sPre, sPost, sEnd} = sDecl[sincl];
 
   abbint[f_] := AbbrevInt[f];
+  _intc = 0;
+
+  Attributes[dfCode] = {HoldAll};
+  If[ FreeQ[{abbr}, DiracChain],
+    dfCode[_, x___] := x,
+    dfCode[x_, ___] := x ];
 
   {mat, nums, abrs} = ToCat[3, Assort@@@ Flatten[{abbr}]];
 
@@ -5960,7 +6148,7 @@ ffmods, nummods, abbrmods, com, helrul, hmax, hfun},
     Message[WriteSquaredME::empty]; Return[{}] ];
 
   abrs = abrs /. xrules /. int:LoopIntegral[__] :> abbint[int];
-  lint = Flatten[lint];
+  lint = RhsMap[Prio[1], Flatten[lint]];
 
   mmat = Split[Union[Flatten[#]], #1[[1,0]] === #2[[1,0]]&]&/@
     {maxmat[Cloop], maxmat[Ctree]};
@@ -6037,7 +6225,10 @@ ffmods, nummods, abbrmods, com, helrul, hmax, hfun},
   abrs = First/@ Join[abrs, lint];
   defs = Map[Select[#, MemberQ[abrs, First[#]]&]&, defs, {2}];
 
-  {com, helrul} = Reap[helDim[Hel[1]]; VarDecl[
+  helvars = Alt[kind/@ First/@ Flatten[ defs[[3]] ]];
+  _dupType = If[FreeQ[#, helvars], "ComplexType", helType]&;
+
+  {com, helrul} = Reap[helDim/@ Array[Hel, legs]; VarDecl[
     { Common["varXs"][defs[[1,1]], "ComplexType",
                       defs[[1,2]], "ComplexType"],
       Common["varXa"][defs[[2,1]], "ComplexType",
@@ -6052,11 +6243,8 @@ ffmods, nummods, abbrmods, com, helrul, hmax, hfun},
     NotEmpty["#ifndef NUM_H\n",
       Last/@ nums, Extern,
       "#endif\n\n"] ]];
-  helrul = Dispatch[Flatten[helrul]];
+  helrul = Dispatch[Flatten[helrul] //Union];
   mats = Level[MapIndexed[matnan, mats, {2}], {2}];
-
-  Attributes[dfCode] = {HoldAll};
-  If[ FreeQ[mats, "MatF"], dfCode[_, x___] := x, dfCode[x_, ___] := x ];
 
   FCPrint[2, "writing code modules"];
 
@@ -6781,64 +6969,63 @@ FermionRC[se_, m_, a_, b_] :=
 BosonRC[se_] := SEPart[Identity, se]
 
 
-MassRC[f_F, opt___Rule] :=
-  FermionRC[ReTilde[SelfEnergy[f, opt]], TheMass[f], 1/2, 1/2]
+RCArg[(f:P$Field)[k_]] := f :> k
 
-MassRC[f_, opt___Rule] := BosonRC[ReTilde[SelfEnergy[f, opt]]]
+RCArg[f:P$Field] := f :> TheMass[f]
+
+RCArg[other_] := other
+
 
 MassRC[f_, f_, opt___Rule] := MassRC[f, opt]
 
-MassRC[f1_, f2_, opt___Rule] :=
-  1/2 (BosonRC[ReTilde[SelfEnergy[f2 -> f1, TheMass[f1], opt]]] +
-       BosonRC[ReTilde[SelfEnergy[f2 -> f1, TheMass[f2], opt]]])
+MassRC[f__, opt___Rule] := (RCArg/@ massRC[f])[opt]
 
+massRC[f_F :> m_][opt___] :=
+  FermionRC[ReTilde[SelfEnergy[f, m, opt]], m, 1/2, 1/2]
 
-FieldRC[f_F, opt___Rule] :=
-Block[ {m, se},
-  se = ReTilde[SelfEnergy[f, opt]];
-  m = TheMass[f];
-  -{SEPart[LVectorCoeff, se], SEPart[RVectorCoeff, se]} -
-    FermionRC[ReTilde[DSelfEnergy[f]], m, m, m]
-]
+massRC[f_ :> m_][opt___] := BosonRC[ReTilde[SelfEnergy[f, m, opt]]]
 
-FieldRC[f_, opt___Rule] := -BosonRC[ReTilde[DSelfEnergy[f, opt]]]
+massRC[f1_ :> m1_, f2_ :> m2_][opt___] :=
+  1/2 (BosonRC[ReTilde[SelfEnergy[f2 -> f1, m1, opt]]] +
+       BosonRC[ReTilde[SelfEnergy[f2 -> f1, m2, opt]]])
+
 
 FieldRC[f_, f_, opt___Rule] := FieldRC[f, opt]
 
-FieldRC[f1_, f2_, opt___Rule] := FieldRC[f1, f2, 0, opt]
+FieldRC[f__, opt___Rule] := (RCArg/@ fieldRC[f])[opt]
 
-FieldRC[f1_, f2_, c_, opt___Rule] := OnlyIf[
-  And@@ MapThread[Equal, Flatten[{##}]&@@@ {f1, f2}],
-  FieldRC[f1, opt],
-  FieldRC2[f1, f2, c, opt]
+fieldRC[f_F :> m_][opt___] := (
+  -{SEPart[LVectorCoeff, #1], SEPart[RVectorCoeff, #1]} - FermionRC[#2, m, m, m]
+)&[ ReTilde[SelfEnergy[f, m, opt]], ReTilde[DSelfEnergy[f, m, opt]] ]
+
+fieldRC[f_ :> m_][opt___] := -BosonRC[ReTilde[DSelfEnergy[f, m, opt]]]
+
+fieldRC[f1_, f2_, c_:0][opt___] := OnlyIf[
+  And@@ MapThread[Equal, Flatten[{##}]&@@@ {First[f1], First[f2]}],
+  fieldRC[f1][opt],
+  fieldRC2[f1, f2, c][opt]
 ]
 
-FieldRC2[f1_F, f2_F, c_, opt___Rule] :=
-Block[ {se, m1, m2},
-  se = ReTilde[SelfEnergy[f2 -> f1, TheMass[f2], opt]];
-  m1 = TheMass[f1];
-  m2 = TheMass[f2];
-  2/(m1^2 - m2^2) (FermionRC[se, m2, {m2, m1}, {m1, m2}] - c)
-]
+fieldRC2[f1_F :> m1_, f2_F :> m2_, c_][opt___] := (
+  2/(m1^2 - m2^2) (FermionRC[#, m2, {m2, m1}, {m1, m2}] - c)
+)&[ ReTilde[SelfEnergy[f2 -> f1, m2, opt]] ]
 
-FieldRC2[f1_, f2_, c_, opt___Rule] :=
-Block[ {se, m1, m2},
-  se = ReTilde[SelfEnergy[f2 -> f1, TheMass[f2], opt]];
-  m1 = TheMass[f1];
-  m2 = TheMass[f2];
-  2/(m1^2 - m2^2) (BosonRC[se] - c)
-]
+fieldRC2[f1_ :> m1_, f2_ :> m2_, c_][opt___] := (
+  2/(m1^2 - m2^2) (BosonRC[#] - c)
+)&[ ReTilde[SelfEnergy[f2 -> f1, m2, opt]] ]
 
 
 TadpoleRC[f_, opt___Rule] :=
   -BosonRC[ReTilde[SelfEnergy[f -> {}, Indeterminate, opt]]]
 
 
-WidthRC[f_F, opt___Rule] :=
-  FermionRC[ImTilde[SelfEnergy[f, opt]], TheMass[f], 1, 1]
+WidthRC[f_, opt___Rule] := widthRC[RCArg[f]][opt]
 
-WidthRC[f_, opt___Rule] :=
-  BosonRC[ImTilde[SelfEnergy[f, opt]]]/TheMass[f]
+widthRC[f_F :> m_][opt___] :=
+  FermionRC[ImTilde[SelfEnergy[f, m, opt]], m, 1, 1]
+
+widthRC[f_ :> m_][opt___] :=
+  BosonRC[ImTilde[SelfEnergy[f, m, opt]]]/m
 
 
 TreeCoupling[proc_Rule, opt___Rule] :=
@@ -7007,7 +7194,7 @@ General::nodefs = "Warning: no definitions for `` found."
 Off[MassShift::nodefs]
 
 FindRenConst::nodef =
-"Warning: `` might be renormalization constants, but have no definition."
+"Warning: `` might be renormalization constants but have no definition."
 
 FindRenConst[expr_] := FindRenConst[expr, $RenConst]
 
@@ -7569,32 +7756,25 @@ htmp[expr_, abb_, {}] := {expr /. abb -> #, # -> abb}& @ tmp[abb]
 htmp[expr_, abb_, pos_] := {Delete[expr, pos], Extract[expr, pos]}
 
 
-vdoloop[expr_, ind__] :=
-Block[ {dv, pos},
-  dv = DownValues[var];
-  pos = List/@ Union[First/@ Position[dv, Alt@@ First/@ {ind}]];
-  DownValues[var] = Delete[dv, pos];
-  DoLoop[Flatten[{
-    Cases[Extract[dv, pos], _[_[_[val_]], s_Symbol] :> s -> val],
-    expr}], ind]
-]
-
-
 ToVars[patt_, stub_String] := ToVars[patt, stub &]
 
 ToVars[patt_List, f_] := ToVars[ToAlt[patt], f]
 
 ToVars[patt_, namefun_][expr_] :=
-Block[ {var, process, doloop = vdoloop, new},
-  var[x_] := var[x] = NewSymbol[namefun[x], 0];
+Block[ {var, mkvar, process, doloop = DoLoop, new, varc = 0},
+  var[val_] := var[val] =
+    (Sow[#1[++varc, #2 -> val]]; #2)&[#, NewSymbol[#, 0]]& @ namefun[val];
 
-  process[ru:(Rule | RuleAdd)[_, patt]] := ru;
-  process[x_] := x /. p:patt :> var[p];
+  Attributes[mkvar] = {Listable};
+  mkvar[(ru:Rule | RuleAdd)[lhs_, rhs:Except[patt]]] :=
+    {Last/@ Sort[Flatten[#2]], #1}&@@
+      Reap[ru[lhs, rhs /. p:patt :> var[p]]];
+  mkvar[other_] := other;
 
-  new = Prep[expr];
-  Flatten[{
-    Cases[DownValues[var], _[_[_[val_]], s_Symbol] :> s -> val],
-    new }]
+  process = First[{mkvar[Prep[#1]], DownValues[var] = #2}]&[
+    #, DownValues[var] ]&;
+
+  Flatten[{process[expr]}]
 ]
 
 
@@ -7695,10 +7875,10 @@ var, decl, $DoLoop, $IndexIf},
   fcoll = If[ TrueQ[fcoll], TermCollect, Identity ];
   _var = {};
   $DoLoop = $IndexIf = 0;
-  varType[vars, type];
-  varType[tmpvars, tmptype /. Type -> type];
+  varType[vars, type, expr];
+  varType[tmpvars, tmptype /. Type -> type, expr];
   varType[Union[DoIndex/@
-    Cases[expr, DoLoop[_, i__] :> i, Infinity]], indtype];
+    Cases[expr, DoLoop[_, i__] :> i, Infinity]], indtype, expr];
   _var =.;
   decl = newline[VarDecl[ Flatten[#2], #1[[1,1]] ]&@@@ DownValues[var]];
   Flatten[{WriteBlock[hh, IfDecl[declif, decl, expr]]}]
@@ -7709,18 +7889,21 @@ WriteExpr[hh_, expr_, opt___Rule] := WriteExpr[hh,
   FilterOpt[WriteExpr, opt]]
 
 
-varType[_, False] = 0
+varType[_, False, _] = 0
 
-varType[v:{__}, s:_String | {__String}] := var[s] = {var[s], v}
+varType[v:{__}, s:_String | {__String}, _] := var[s] = {var[s], v}
 
-varType[v_List, r:_Rule | {__Rule}] :=
-  MapThread[varSet, {v, Replace[v, r, {1}]}]
+varType[v_List, r:_Rule | {__Rule}, _] :=
+  MapThread[varSet[], {v, Replace[v, r, {1}]}]
 
-varType[v_List, f_] := MapThread[varSet, {v, f/@ v}]
+varType[v_List, f_, expr_] := MapThread[varSet[expr], {v, f/@ v}]
 
-varSet[v_, v_] = 0
 
-varSet[v_, s:_String | {__String}] := var[s] = {var[s], v}
+_varSet[v_, v_] = 0
+
+_varSet[v_, s:_String | {__String}] := var[s] = {var[s], v}
+
+varSet[expr_][v_, f_] := varSet[][v, f[Cases[expr, _[v, _]]]]
 
 
 $DebugPre[1, level_:4] := "#if DEBUG >= " <> ToString[level] <> "\n"
@@ -7789,7 +7972,8 @@ WriteBlock[hh_, ru_[var_, {sub__, expr_}]] :=
 WriteBlock[_, RuleAdd[_, 0]] := Sequence[]
 
 WriteBlock[hh_, RuleAdd[var_, expr_]] := (
-  Write[hh, $CodeIndent, var -> ffun[var + FExpr[expr]], $CodeEoln];
+  Write[hh, $CodeIndent,
+    (var -> HoldForm[var + #])& @ ffun[FExpr[expr]], $CodeEoln];
   WriteString[hh, $Newline];
   var -> var + expr
 )
@@ -7864,6 +8048,9 @@ Format[s_Symbol^2, CForm] := HoldForm[s s];
 Format[s_Symbol^-2, CForm] := 1/HoldForm[s s]
 
 Protect[Rule, Rational, Power]
+
+Format[HoldCode[x_], FortranForm] := HoldForm[x];
+Format[HoldCode[x_], CForm] := HoldForm[x]
 
 
 OptTimes[t__] :=

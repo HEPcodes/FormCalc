@@ -1,6 +1,6 @@
-#! /bin/sh
+#! /bin/bash
 # compile script for the C programs used by FormCalc
-# last modified 23 May 16 th
+# last modified 16 Oct 18 th
 
 # If this compile script doesn't work on your system, check these things:
 #
@@ -15,46 +15,49 @@
 #    in the environment variable MCC, e.g.
 #    setenv MCC /opt/Wolfram/Mathematica/10.0/Executables/mcc
 
-CC=${CC:-gcc}
+CC="${CC:-gcc}"
 
-CXX=${CXX:-g++}
+CXX="${CXX:-g++}"
 
-MCC=${MCC:-mcc}
+MCC="${MCC:-mcc}"
+
+MATH="${MATH:-math}"
 
 CFLAGS="${CFLAGS:--O3 -fomit-frame-pointer -ffast-math -Wall -Wextra} $@"
 
 SRC="${SRC:-`dirname $0`}"
 
-mathcmd=math
+os="`uname`"
 exe=
-shopt -s nullglob > /dev/null 2>&1
-set --
-case `uname -s` in
-Darwin)
+test "${os::3}" = CYG && exe=.exe
+
+test -z "$DEST" && {
+  mathcmd="$MATH"
+  shopt -s nullglob
+  set --
+  case "$os" in
+  Darwin)
 	mathcmd=MathKernel
 	set -- /Applications/Mathematica*/Contents/MacOS \
 	       $HOME/Desktop/Mathematica*/Contents/MacOS ;;
-CYG*)
+  CYG*)
 	exe=.exe
-	export nodosfilewarning=1
-	set -- "$ProgramW6432/Wolfram Research/Mathematica"/* \
-               "$PROGRAMFILES/Wolfram Research/Mathematica"/* ;;
-esac
-
-test -z "$DEST" && {
-  for dir in "$@" ; do
-    path=`cd "$dir"; pwd`:"$path"
-  done
-  mathcmd="`PATH=\"$PATH:$path\" which $mathcmd`"
-
-  set -- `"$mathcmd" -run 'Print[$SystemID]; Exit[]' < /dev/null | tr '\r' ' ' | tail -1`
-
-  test $? -ne 1 || {
+	w64="`cygpath -u "${ProgramW6432:-/cygdrive/c/Program Files}"`"
+	w32="`cygpath -u "${PROGRAMFILES:-/cygdrive/c/Program Files (x86)}"`"
+	eval set -- `ls -tdQ {"$w64","$w32"}/"Wolfram Research"/Mathematica/*` ;;
+  esac
+  mathcmd="`IFS=:
+    PATH="$PATH:$*" which "$mathcmd"`"
+  test -z "$mathcmd" && {
+    echo "No 'math' command found" 1>&2
+    exit 1
+  }
+  [[ `"$mathcmd" -run 'Print[7 673, $SystemID]; Exit[]' < /dev/null` =~ 4711([^$'\r\n']*) ]] || {
     echo "Cannot determine Mathematica's system ID using $mathcmd" 1>&2
     exit 1
   }
 
-  DEST="$1"
+  DEST="${BASH_REMATCH[1]}"
 }
 
 BIN="$DEST"

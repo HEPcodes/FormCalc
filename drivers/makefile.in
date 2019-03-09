@@ -1,7 +1,7 @@
 # makefile.in
 # makefile template used by configure
 # this file is part of FormCalc
-# last modified 1 Jul 16 th
+# last modified 29 Jul 18 th
 
 # Note: make permanent changes only in makefile.in,
 # changes in makefile will be overwritten by configure.
@@ -23,7 +23,6 @@ RANLIB = $(SRC)/tools/ranlib
 DIR = $(dir $(lastword $(MAKEFILE_LIST)))
 LIB = $(subst /,_,$(patsubst $(SRC)/%,%,$(DIR:/=))).a
 LIBS :=
-INCS :=
 VPATH := .:$(SRC):$(SRC)/include
 
 -include $(SRC)/renconst/*akefile
@@ -34,29 +33,20 @@ CLEANLIBS := $(LIBS)
 
 -include $(SRC)/util/*akefile
 
+INCLUDE := $(patsubst %,-I%,$(subst :, ,$(VPATH):$(INCPATH)))
+FINCLUDE = -I$(SRC)/F $(INCLUDE)
+CINCLUDE = -I$(SRC)/C $(INCLUDE)
+
+DEB := $(if $(filter 0,$(DEBUG)),OPT,DEB)
+FFLAGS += $(FINCLUDE)
+CFLAGS += $(CINCLUDE)
+
+
 libs: $(LIBS)
 	$(RANLIB)
 
 build:
 	$(RANLIB)
-
-
-INCLUDE := $(patsubst %,-I%,$(subst :, ,$(VPATH):$(INCPATH)))
-FINCLUDE := -I$(SRC)/F $(INCLUDE)
-CINCLUDE := -I$(SRC)/C $(INCLUDE)
-
-FFLAGS += $(FINCLUDE)
-CFLAGS += $(CINCLUDE)
-
-ifdef DEBUG
-FFLAGS += -g $(DEF)DEBUG=$(DEBUG)
-CFLAGS += -g -DDEBUG=$(DEBUG)
-endif
-
-export FC
-export FFLAGS
-export CC
-export CFLAGS
 
 
 DEPS := $(wildcard *.d)
@@ -92,8 +82,8 @@ PREFIX :=
 
 ifeq ($(MMA), 0)
 %$(EXE):: $(SRC)/%.F %.d $(SRC)/tools/mktm
-	$(FC) $(FFLAGS) $(DEF)MMA $(DEF)PREFIX=$(PREFIX) -E $< | $(SRC)/tools/mktm $*.tm
-	$(FC) $(FFLAGS) $(DEF)MMA $(DEF)PREFIX=$(PREFIX) -c $<
+	$(FC) $(FFLAGS) -DMMA -DPREFIX=$(PREFIX) -E $< | $(SRC)/tools/mktm $*.tm
+	$(FC) $(FFLAGS) -DMMA -DPREFIX=$(PREFIX) -c $<
 	CC="$(SRC)/tools/fcc" REALCC="$(CC) $(CFLAGS)" \
 	CXX="$(SRC)/tools/f++" REALCXX="$(CXX) $(CXXFLAGS)" \
 	  PATH="$(PATH):$(SRC)/tools" \
@@ -101,7 +91,7 @@ ifeq ($(MMA), 0)
 	-$(RM) $*.o $*.tm.c
 else
 %$(EXE):: $(SRC)/%.F %.d
-	$(FC) $(FFLAGS) $(DEF)PREFIX=$(PREFIX) -o $@ $< $(LIBS) $(STDLIBS)
+	$(FC) $(FFLAGS) -DPREFIX=$(PREFIX) -o $@ $< $(LIBS) $(STDLIBS)
 	-$(RM) $*.o
 endif
 
