@@ -7,10 +7,10 @@ zlib=zlib-1.2.11
 
 cc=gcc
 cxx=g++
-clang --version > /dev/null 2>&1 && {
-  cc=clang
-  cxx=clang++
-}
+#clang --version > /dev/null 2>&1 && {
+#  cc=clang
+#  cxx=clang++
+#}
 
 cflags="-O3 -fomit-frame-pointer -ffast-math"
 lin_cflags="$cflags -static"
@@ -88,7 +88,8 @@ test -f $gmp.tar.xz || wget http://ftp.gnu.org/gnu/gmp/$gmp.tar.xz
 src="$PWD"
 dest=/tmp/makebin-build
 rm -fr "$dest" "$src/$1"
-mkdir -p $dest/bin
+mkdir -p "$dest/bin" "$dest/lib"
+ln -s lib "$dest/lib64"
 cp -pf "$src/$gmp.tar.xz" "$src/$zlib.tar.gz" "$src/form.zip" \
   "$src/../drivers/tools/fcc" "$src/../drivers/tools/mcc" \
   "$src/../FormCalc/ReadForm.tm" "$src/../tools/ReadData.tm" $dest/

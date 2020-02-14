@@ -1,7 +1,7 @@
 * run.F
 * defines parameter settings for one run, then includes main.F
 * this file is part of FormCalc
-* last modified 28 Jul 18 th
+* last modified 25 Mar 19 th
 
 
 * Whether to run in testing mode
@@ -137,11 +137,11 @@ c#define NO_EXCLUSION_LIMITS
 * The following are veto cuts, i.e. the cross-section is kept if the
 * cut conditions apply (set to zero otherwise).  They are formulated
 * in terms of the CUT_... macros in cuts.F, e.g.
-*   #define CUT1 CUT_kT(3) .gt. 10
+*   #define CUT1 CUT_kT(3) > 10
 * The CUT1..20 together make up a single logical expression in Fortran
 * and may include logical operators, e.g.
-*   #define CUT1 CUT_kT(3) .gt. 10
-*   #define CUT2 .and. CUT_kT(4) .gt. 10
+*   #define CUT1 CUT_kT(3) > 10
+*   #define CUT2 .and. CUT_kT(4) > 10
 
 #define CUT1 .TRUE.
 #define CUT2

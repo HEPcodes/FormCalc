@@ -1,7 +1,7 @@
 * SAEcut.F
 * the FormCalc wrapper for the Samurai five-point function
 * this file is part of FormCalc
-* last modified 16 Jun 16 th
+* last modified 18 Mar 19 th
 
 #include "types.h"
 
@@ -33,24 +33,17 @@
 	RealType kj(5,4), mj(5)
 
 	SAEcut = 0
-	if( hdelta .eq. 0 ) return
+	if( hdelta == 0 ) return
 
-	kj(1,1) = 0
-	kj(1,2) = 0
-	kj(1,3) = 0
-	kj(1,4) = 0
+	kj(1,:) = 0
 	call SAMomDecode(k1, kj(2,1),5)
 	call SAMomDecode(k2, kj(3,1),5)
 	call SAMomDecode(k3, kj(4,1),5)
 	call SAMomDecode(k4, kj(5,1),5)
 
-	mj(1) = m1
-	mj(2) = m2
-	mj(3) = m3
-	mj(4) = m4
-	mj(5) = m5
+	mj = [m1, m2, m3, m4, m5]
 
-#if SEDEBUG >= 5
+#if SADEBUG >= 5
 	print *, "  rank =", rank
 	print '("   k1: ",Z8.8)', k1
 	print *, "  k1 =", kj(2,4)

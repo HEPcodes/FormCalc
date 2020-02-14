@@ -1,7 +1,7 @@
 * AsMSbar2DRbar.F
 * turn an MSbar into a DRbar alpha_s via Eq. (18) in arXiv:0706.2953
 * this file is part of FormCalc
-* last modified 24 Dec 15 th
+* last modified 18 Mar 19 th
 
 #include "types.h"
 
@@ -19,12 +19,12 @@
 
 	Lq = 2*log(Q/Qsusy)
 
-	if( nf .eq. 6 ) then
+	if( nf == 6 ) then
 	  z1 = -Lq
 	  z2 = Lq*(Lq - 5/2D0) - 65/32D0
-	else if( nf .eq. 5 ) then
+	else if( nf == 5 ) then
 	  Lt = 2*log(Q/Mquark(6))
-	  z1 = -Lt/6D0 - Lq
+	  z1 = -Lt/6 - Lq
 	  tq = Mquark(6)/Qsusy
 	  Ltq = 2*log(tq)
 	  z2 = -215/96D0 - 19/24D0*Lt - 5/2D0*Lq + z1**2 +
@@ -42,6 +42,6 @@
 	as = as*(1 +
      &    ifLoop(iloop,1)*as/pi*(.25D0 - z1 +
      &      ifLoop(iloop,2)*as/pi*(11/8D0 - nf/12D0 -
-     &        2*z1*(.25D0 - z1) - z2)))
+     &        2*z1*(1/4D0 - z1) - z2)))
         end
 

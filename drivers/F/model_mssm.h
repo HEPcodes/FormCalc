@@ -68,10 +68,6 @@
 	equivalence (XHiggs(1,1,1), UHiggs)
 	equivalence (XHiggs(1,1,2), ZHiggs)
 
-	RealType Af_flat(3*3*3), Xf_flat(3*3*3)
-	equivalence (Af, Af_flat)
-	equivalence (Xf, Xf_flat)
-
 	RealType ReImAtau(2), ReAtau, ImAtau
 	equivalence (Atau, ReImAtau)
 	equivalence (ReImAtau(1), ReAtau), (ReImAtau(2), ImAtau)

@@ -1,7 +1,7 @@
 * CTFcut.F
 * the FormCalc wrapper for the CutTools six-point function
 * this file is part of FormCalc
-* last modified 27 Oct 15 th
+* last modified 18 Mar 19 th
 
 #include "types.h"
 
@@ -39,24 +39,16 @@
 	external CTmpnum
 
 	CTFcut = 0
-	if( hdelta .eq. 0 ) return
+	if( hdelta == 0 ) return
 
-	kj(0,1) = 0
-	kj(1,1) = 0
-	kj(2,1) = 0
-	kj(3,1) = 0
+	kj(:,1) = 0
 	call CTMomDecode(k1, kj(0,2))
 	call CTMomDecode(k2, kj(0,3))
 	call CTMomDecode(k3, kj(0,4))
 	call CTMomDecode(k4, kj(0,5))
 	call CTMomDecode(k5, kj(0,6))
 
-	mj(1) = m1
-	mj(2) = m2
-	mj(3) = m3
-	mj(4) = m4
-	mj(5) = m5
-	mj(6) = m6
+	mj = [m1, m2, m3, m4, m5, m6]
 
 #if CTDEBUG >= 2
 	print *, "  rank =", rank
@@ -92,7 +84,7 @@
 	call ctsxcut(imode, rootsvalue, muscale, 6, num, CTmpnum,
      &    rank, kj, mj, res(0), res(1), res(2), stable)
 	CTFcut = res(epsi)
-	if( epsi .eq. 0 ) then
+	if( epsi == 0 ) then
 	  call setscaloop(4)
 	  call ctsxcut(imode, rootsvalue, muscale, 6, numeps, CTmpnum,
      &      rank, kj, mj, res(0), res(1), res(2), stable)

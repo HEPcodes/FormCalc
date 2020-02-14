@@ -2,7 +2,7 @@
 * compute the spectrum of a backscattered laser photon at a
 * photon collider
 * Code adapted from http://hep.fuw.edu.pl/u/zarnecki/compaz/compaz.f
-* last modified 10 Jun 16 th
+* last modified 18 Mar 19 th
 
 #include "types.h"
 
@@ -132,18 +132,18 @@
 
 
 * Check input flag
-	if( .NOT. ((icase .ge. 0  .and. icase .le. 3 ) .or.
-     &             (icase .ge. 10 .and. icase .le. 13) .or.
-     &             (icase .ge. 20 .and. icase .le. 22)) )
+	if( .NOT. ((icase >= 0  .and. icase <= 3 ) .or.
+     &             (icase >= 10 .and. icase <= 13) .or.
+     &             (icase >= 20 .and. icase <= 22)) )
      &    stop "CompAZ: Invalid icase flag"
 
 * Check input energy
-	if( E .lt. 50 .or. E .gt. 500 )
+	if( E < 50 .or. E > 500 )
      &    stop "CompAZ: Beam energy outside range 50..500"
 
 * Polarisation calculation flag
 
-	DoPolar = icase .ge. 10 .and. icase .le. 13
+	DoPolar = icase >= 10 .and. icase <= 13
 
 * Set parameter values for given energy
 * -------------------------------------
@@ -165,11 +165,11 @@
 	xmax2 = 2*z/(1 + 2*z)
 
 	res = z
-	if( icase .eq. 20 ) return
+	if( icase == 20 ) return
 	res = xmax
-	if( icase .eq. 21 ) return
+	if( icase == 21 ) return
 	res = xmax2
-	if( icase .eq. 22 ) return
+	if( icase == 22 ) return
 
 * Leading Compton term
 * --------------------
@@ -177,16 +177,16 @@
 	gflux1 = 0
 	pol1 = 0
 	tot = totfun(Ee)
-	if( x .gt. 0 .and. x .le. xmax .and. tot .gt. 0 ) then
+	if( x > 0 .and. x <= xmax .and. tot > 0 ) then
 	  g = dim(z/x, z + 1)
 	  gflux1 = tot*CompAZc(x, z, pole*polL)*exp(-Br2*g)
 	  if( DoPolar ) pol1 = CompAZp(x, z, pole, polL)
 	endif
 
 	res = gflux1
-	if( icase .eq. 1 ) return
+	if( icase == 1 ) return
 	res = pol1
-	if( icase .eq. 11) return
+	if( icase == 11) return
 
 * Scattering on 2 photons
 * -----------------------
@@ -194,16 +194,16 @@
 	gflux2 = 0
 	pol2 = 0
 	tot2 = tot*c2fun(xi)
-	if( x .gt. 0 .and. x .lt. xmax2 .and. tot2 .gt. 0 ) then
+	if( x > 0 .and. x < xmax2 .and. tot2 > 0 ) then
 	  g = dim(2*z/x, 2*z + 1)
 	  gflux2 = tot2*CompAZc(x, 2*z, pole*polL)*exp(-Br2*g)*g**gpow
 	  if( DoPolar ) pol2 = CompAZp(max(x, xmax), 2*z, pole, polL)
 	endif
 
 	res = gflux2
-	if( icase .eq. 2 ) return
+	if( icase == 2 ) return
 	res = pol2
-	if( icase .eq. 12 ) return
+	if( icase == 12 ) return
 
 * Electron rescattering
 * ---------------------
@@ -211,10 +211,10 @@
 	gflux3 = 0
 	pol3 = 0
 	tot3 = tot*c3fun(Ee)
-	if( x .gt. 0 .and. x .le. xmax .and. tot3 .gt. 0 ) then
+	if( x > 0 .and. x <= xmax .and. tot3 > 0 ) then
 	  ymin = max(.5D0*x*(1 + sqrt(4/(x*z) + 1)), 1/(z + 1))
 	  yspan = .5D0*(1 - ymin)
-	  if( yspan .gt. 0 ) then
+	  if( yspan > 0 ) then
 	    ymid = ymin + yspan
 	    do n = 1, nodes
 	      y = yspan*gaussdata(1,n)
@@ -231,15 +231,15 @@
 	endif
 
 	res = gflux3
-	if( icase .eq. 3 ) return
-	if( icase .eq. 13 ) then
+	if( icase == 3 ) return
+	if( icase == 13 ) then
 	  if( res .ne. 0 ) res = pol3/res
 	  return
 	endif
 
 	res = gflux1 + gflux2 + gflux3
-	if( icase .eq. 0 ) return
-	if( icase .eq. 10 ) then
+	if( icase == 0 ) return
+	if( icase == 10 ) then
 	  if( res .ne. 0 ) res = (gflux1*pol1 + gflux2*pol2 + pol3)/res
 	  return
 	endif

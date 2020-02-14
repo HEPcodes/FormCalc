@@ -1,7 +1,7 @@
 * SAFcut.F
 * the FormCalc wrapper for the Samurai six-point function
 * this file is part of FormCalc
-* last modified 16 Jun 16 th
+* last modified 18 Mar 19 th
 
 #include "types.h"
 
@@ -35,24 +35,16 @@
 	RealType kj(6,4), mj(6)
 
 	SAFcut = 0
-	if( hdelta .eq. 0 ) return
+	if( hdelta == 0 ) return
 
-	kj(1,1) = 0
-	kj(1,2) = 0
-	kj(1,3) = 0
-	kj(1,4) = 0
+	kj(1,:) = 0
 	call SAMomDecode(k1, kj(2,1),6)
 	call SAMomDecode(k2, kj(3,1),6)
 	call SAMomDecode(k3, kj(4,1),6)
 	call SAMomDecode(k4, kj(5,1),6)
 	call SAMomDecode(k5, kj(6,1),6)
 
-	mj(1) = m1
-	mj(2) = m2
-	mj(3) = m3
-	mj(4) = m4
-	mj(5) = m5
-	mj(6) = m6
+	mj = [m1, m2, m3, m4, m5, m6]
 
 #if SADEBUG >= 6
 	print *, "  rank =", rank
@@ -86,6 +78,7 @@
 	print *, "  m3 =", mj(3)
 	print *, "  m4 =", mj(4)
 	print *, "  m5 =", mj(5)
+	print *, "  m6 =", mj(6)
 	call flush(6)
 #endif
 

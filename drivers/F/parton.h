@@ -2,7 +2,7 @@
 * setup for a single partonic process
 * is included by partonic.h for every partonic process
 * this file is part of FormCalc
-* last modified 14 Jun 16 th
+* last modified 18 Mar 19 th
 
 #undef CPall
 #if defined CPini || defined CPxs
@@ -26,11 +26,11 @@ CPall	type = Generic(ARG_Ptyp,JOIN_OCT)
 CPxs	avgfac = Re(COLOURFACTOR)/(IDENTICALFACTOR)
 
 #ifdef PHOTONRADIATION
-CPini	call SetArray(charge(1,pid), Charge(ARG_RE,JOIN_SEQ))
+CPini	charge(:,pid) = [Charge(ARG_RE,JOIN_SEQ)]
 #endif
 
 #ifdef GLUONRADIATION
-CPini	call SetArray(colorcharge(1,pid), ColorCharge(ARG_RE,JOIN_SEQ))
+CPini	colorcharge(:,pid) = [ColorCharge(ARG_RE,JOIN_SEQ)]
 #endif
 
 CPini	PartonicIni(SQUAREDME_FUNC)

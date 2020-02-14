@@ -3,7 +3,7 @@
 * code is transcribed from RunDec's AsRunDec,
 * see Eqs. (5) & (25) in hep-ph/0004189
 * this file is part of FormCalc
-* last modified 22 Dec 15 th
+* last modified 25 Mar 19 th
 
 #include "types.h"
 
@@ -40,7 +40,7 @@
      &    ifLoop(iloop,2)*as**2*s*(d2 +
      &      ifLoop(iloop,3)*as*(d30 - nl*d31))
 
-	if( Q .lt. Mquark(3) )
+	if( Q < Mquark(3) )
      &    stop "AlphaS not implemented below s-quark mass"
 
 	iloop = encLoop(nloop)
@@ -49,7 +49,7 @@
 	t0 = log(MZ**2)
 	t1 = t0
 
-	if( Q .ge. Mquark(6) ) then
+	if( Q >= Mquark(6) ) then
 	  t0 = log(Mquark(6)**2)
 	  if( .not. btest(asx, 5) ) then
 	    asx = ibset(asx, 5)
@@ -63,7 +63,7 @@
 	endif
 
 	nf = 5
-	if( Q .ge. Mquark(5) ) goto 1
+	if( Q >= Mquark(5) ) goto 1
 
 	t0 = log(Mquark(5)**2)
 	if( .not. btest(asx, 4) ) then
@@ -74,7 +74,7 @@
 	endif
 	as = asthr(0,4)
 	nf = 4
-	if( Q .ge. Mquark(4) ) goto 1
+	if( Q >= Mquark(4) ) goto 1
 
 	t1 = t0
 	t0 = log(Mquark(4)**2)

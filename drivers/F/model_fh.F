@@ -1,7 +1,7 @@
 * model_fh.F
 * parameter initialization via FeynHiggs
 * this file is part of FormCalc
-* last modified 14 Jan 16 th
+* last modified 18 Mar 19 th
 
 
 #ifndef MB_SCHEME
@@ -63,16 +63,16 @@
 	character*16 flags
 	data flags /"400202113"/
 
-	if( argc .lt. 1 .or. argc .gt. 2 )
+	if( argc < 1 .or. argc > 2 )
      &    stop "model_fh: need arguments <file> [<flags>]"
 
-	if( argc .ge. 2 ) flags = argv(2)
+	if( argc >= 2 ) flags = argv(2)
 	call FHSetFlagsString(error, flags)
-	if( error .ne. 0 ) stop
+	if( error /= 0 ) stop
 
 	call FHReadRecord(error, record, slhadata, argv(1))
 * 0 = SLHA, 2 = FH file, all others are true errors
-	if( ibclr(error, 1) .ne. 0 ) stop
+	if( ibclr(error, 1) /= 0 ) stop
 
 * turn on verbose mode:   
 	record(iAdmin,iStep) = 1
@@ -96,20 +96,20 @@
 #endif
 
 	call FHLoopRecord(fail, record)
-	if( fail .ne. 0 ) return
+	if( fail /= 0 ) return
 
 	call FHSetRecord(fail, record)
-	if( fail .ne. 0 ) return
+	if( fail /= 0 ) return
 
 	call FHRetrieveSMPara(fail,
      &    invAlfaMZ, AlfasMZ, GF,
      &    ME, MU, MD, MM, MC, MS, ML, MBatMB,
      &    MW, MZ,
      &    CKMlambda, CKMA, CKMrhobar, CKMetabar)
-	if( fail .ne. 0 ) return
+	if( fail /= 0 ) return
 
 	call FHGetSMPara(fail, CKM)
-	if( fail .ne. 0 ) return
+	if( fail /= 0 ) return
 
 	call FHRetrieveOSPara(fail, scalefactor,
      &    MT, TB, MA0, MHp,
@@ -121,53 +121,53 @@
      &    Afd(2,2), Afd(3,2), Afd(4,2),
      &    Afd(2,1), Afd(3,1), Afd(4,1),
      &    Mino1, Mino2, Mino3)
-	if( fail .ne. 0 ) return
+	if( fail /= 0 ) return
 
 	call FHGetPara(fail, fv, MSf, USf, MASf, UASf,
      &    MCha, UCha, VCha, MNeu, ZNeu, Deltab, MGl,
      &    MHtree, SA)
-	if( fail .ne. 0 ) return
+	if( fail /= 0 ) return
 
 	call FHGetFV(fail, MSS2, Kf)
-	if( fail .ne. 0 ) return
+	if( fail /= 0 ) return
 
 #ifndef NO_EXCLUSION_LIMITS
-	if( MSf(1,4,3) .lt. MSbottom_LOWERBOUND ) then
+	if( MSf(1,4,3) < MSbottom_LOWERBOUND ) then
 	  Error(fail, "MSf(1,4,3) < MSbottom_LOWERBOUND")
 	  return
 	endif
 
-	if( MSf(1,3,3) .lt. MStop_LOWERBOUND ) then
+	if( MSf(1,3,3) < MStop_LOWERBOUND ) then
 	  Error(fail, "MSf(1,3,3) < MStop_LOWERBOUND")
 	  return
 	endif
 
-	if( MSf(1,2,1) .lt. MSlepton_LOWERBOUND ) then
+	if( MSf(1,2,1) < MSlepton_LOWERBOUND ) then
 	  Error(fail, "MSf(1,2,1) < MSlepton_LOWERBOUND")
 	  return
 	endif
 
-	if( MSf(1,3,1) .lt. MSquark_LOWERBOUND ) then
+	if( MSf(1,3,1) < MSquark_LOWERBOUND ) then
 	  Error(fail, "MSf(1,3,1) < MSquark_LOWERBOUND")
 	  return
 	endif
 
-	if( MCha(1) .lt. MCha_LOWERBOUND ) then
+	if( MCha(1) < MCha_LOWERBOUND ) then
 	  Error(fail, "MCha(1) < MCha_LOWERBOUND")
 	  return
 	endif
 
-	if( MNeu(1) .lt. MNeu_LOWERBOUND ) then
+	if( MNeu(1) < MNeu_LOWERBOUND ) then
 	  Error(fail, "MNeu(1) < MNeu_LOWERBOUND")
 	  return
 	endif
 #endif
 
 	call FHHiggsCorr(fail, MHiggs, SAeff, UHiggs, ZHiggs)
-	if( fail .ne. 0 ) return
+	if( fail /= 0 ) return
 
 #ifndef NO_EXCLUSION_LIMITS
-	if( Mh0 .lt. Mh0_LOWERBOUND ) then
+	if( Mh0 < Mh0_LOWERBOUND ) then
 	  Error(fail, "Mh0 < Mh0_LOWERBOUND")
 	  return
 	endif
@@ -176,24 +176,16 @@
      &    MWMSSM, MWSM, SW2MSSM, SW2SM,
      &    edmeTh, edmn, edmHg)
 
-	if( DeltaRho .gt. DeltaRho_UPPERBOUND ) then
+	if( DeltaRho > DeltaRho_UPPERBOUND ) then
 	  Error(fail, "DeltaRho > DeltaRho_UPPERBOUND")
 	  return
 	endif
 #endif
 
-	ME2 = ME**2
-	MM2 = MM**2
-	ML2 = ML**2
-	MU2 = MU**2
-	MC2 = MC**2
-	MT2 = MT**2
-	MD2 = MD**2
-	MS2 = MS**2
-
 	call AlphaS(asMB, nf, MBatMB)
 	MB = MBatMB*sqrt(1 + 4*2/(3*pi)*asMB)
-	MB2 = MB**2
+
+	Mf2 = Mf**2
 
 	MW2 = MW**2
 	MZ2 = MZ**2
@@ -211,34 +203,16 @@
 	Alfa2 = Alfa**2
 	EL = sqrt(4*pi*Alfa)
 
-	Mh0tree2 = Mh0tree**2
-	MHHtree2 = MHHtree**2
-	MA0tree2 = MA0tree**2
-	MHptree2 = MHptree**2
-
 	MH = Mh0
 	MH2 = MH**2
 
-	Mh02 = Mh0**2
-	MHH2 = MHH**2
-	MA02 = MA0**2
-	MHp2 = MHp**2
+	MHiggs2 = MHiggs**2
+	MHtree2 = MHtree**2
 
-	do i = 1, 6*4
-	  MSf2_flat(i) = MSf_flat(i)**2
-	enddo
-
-	do i = 1, 6*4
-	  MASf2_flat(i) = MASf_flat(i)**2
-	enddo
-
-	MCha2(1) = MCha(1)**2
-	MCha2(2) = MCha(2)**2
-
-	MNeu2(1) = MNeu(1)**2
-	MNeu2(2) = MNeu(2)**2
-	MNeu2(3) = MNeu(3)**2
-	MNeu2(4) = MNeu(4)**2
+	MSf2 = MSf**2
+	MASf2 = MASf**2
+	MCha2 = MCha**2
+	MNeu2 = MNeu**2
 
 	TB2 = TB**2
 	CB2 = 1/(1 + TB2)

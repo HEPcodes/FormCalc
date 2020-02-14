@@ -1,7 +1,7 @@
 * SABcut.F
 * the FormCalc wrapper for the Samurai two-point function
 * this file is part of FormCalc
-* last modified 16 Jun 16 th
+* last modified 18 Mar 19 th
 
 #include "types.h"
 
@@ -29,16 +29,12 @@
 	RealType kj(2,4), mj(2)
 
 	SABcut = 0
-	if( hdelta .eq. 0 ) return
+	if( hdelta == 0 ) return
 
-	kj(1,1) = 0
-	kj(1,2) = 0
-	kj(1,3) = 0
-	kj(1,4) = 0
-	call SAMomDecode(k, kj(2,1), 2)
+	kj(1,:) = 0
+	call SAMomDecode(k, kj(2,1),2)
 
-	mj(1) = m1
-	mj(2) = m2
+	mj = [m1, m2]
 
 #if SADEBUG >= 2
 	print *, "  rank =", rank

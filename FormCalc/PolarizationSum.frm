@@ -1,7 +1,7 @@
 * PolarizationSum.frm
 * the FORM part of the PolarizationSum function
 * this file is part of FormCalc
-* last modified 16 Apr 18 th
+* last modified 12 Apr 19 th
 
 
 #procedure Prepare

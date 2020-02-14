@@ -1,7 +1,7 @@
 * SVD.F
 * singular value decomposition of an m-by-n matrix
 * this file is part of the Diag library
-* last modified 21 Aug 15 th
+* last modified 25 Mar 19 th
 
 #include "diag-f.h"
 
@@ -23,78 +23,48 @@
 	ComplexType A(ldA,*), V(ldV,*), W(ldW,*)
 	RealType d(*)
 
-	integer nx, nm, p, q, px, qx, j, rev, pi(MAXDIM)
+	integer nx, nm, p, q, px, qx, j, rev, pi(min(m,n))
 	RealType red, off, thresh
 	RealType t, dv, dw, xv, xw, invc
 	ComplexType App, Apq, Aqp, Aqq
 	ComplexType x, y, sv, sw, tv, tw, f
-	ComplexType VW(MAXDIM,MAXDIM,0:2)
+	ComplexType VW(max(m,n),max(m,n),0:2)
 
-* note: for better cache efficiency, the Vx, Wx arrays
+* note: for better cache efficiency, the V_, W_ arrays
 * contain the *transpose* of the transformation matrices
-	ComplexType V_(MAXDIM,MAXDIM)
-	ComplexType W_(MAXDIM,MAXDIM)
-	ComplexType A_(MAXDIM,MAXDIM)
-	equivalence (VW(1,1,0), V_)
-	equivalence (VW(1,1,1), W_)
-	equivalence (VW(1,1,2), A_)
+#define V_(i,j) VW(i,j,0)
+#define W_(i,j) VW(i,j,1)
+#define A_(i,j) VW(i,j,2)
 
 	integer sweep
 	common /nsweeps/ sweep
 
 	nx = max(m, n)
 
-	if( nx .gt. MAXDIM ) then
-	  print *, "Dimension too large"
-	  d(1) = -999
-	  return
-	endif
+	VW = 0
+	forall(p = 1:nx) VW(p,p,0:1) = 1
 
-	do p = 1, nx
-	  do q = 1, nx
-	    V_(q,p) = 0
-	    W_(q,p) = 0
-	    A_(q,p) = 0
-	  enddo
-	  V_(p,p) = 1
-	  W_(p,p) = 1
-	enddo
-
-	rev = ibits(m - n, 15, 1)
-	if( rev .eq. 1 ) then
-	  do p = 1, n
-	    do q = 1, m
-	      A_(p,q) = A(q,p)
-	    enddo
-	  enddo
+	rev = merge(1, 0, m < n)
+	if( rev == 1 ) then
+	  A_(1:n,1:m) = transpose(A(1:m,1:n))
 	else
-	  do p = 1, n
-	    do q = 1, m
-	      A_(q,p) = A(q,p)
-	    enddo
-	  enddo
+	  A_(1:m,1:n) = A(1:m,1:n)
 	endif
 
 	red = .01D0/nx**4
 
 	do sweep = 1, 50
-	  off = 0
-	  do q = 2, nx
-	    do p = 1, q - 1
-	      off = off + Sq(A_(p,q)) + Sq(A_(q,p))
-	    enddo
-	  enddo
-	  if( .not. off .gt. EPS ) goto 1
+	  off = sum([(Sq(A_(1:q-1,q)) + Sq(A_(q,1:q-1)), q = 2,n)])
+	  if( .not. off > EPS ) goto 1
 
 	  thresh = 0
-	  if( sweep .lt. 4 ) thresh = off*red
+	  if( sweep < 4 ) thresh = off*red
 
 	  do q = 2, nx
 	    do p = 1, q - 1
 	      px = p
 	      qx = q
-	      if( Sq(A_(p,p)) + Sq(A_(q,q)) .lt.
-     &            Sq(A_(p,q)) + Sq(A_(q,p)) ) then
+	      if( Sq(A_(p,p)) + Sq(A_(q,q)) < Sq(A_(p,q)) + Sq(A_(q,p)) ) then
 	        px = q
 	        qx = p
 	      endif
@@ -104,15 +74,15 @@
 	      Apq = A_(px,q)
 	      Aqp = A_(qx,p)
 	      off = Sq(Apq) + Sq(Aqp)
-	      if( sweep .gt. 4 .and.
-     &            off .lt. EPS*(Sq(App) + Sq(Aqq)) ) then
+	      if( sweep > 4 .and.
+     &            off < EPS*(Sq(App) + Sq(Aqq)) ) then
 	        A_(px,q) = 0
 	        A_(qx,p) = 0
-	      else if( off .gt. thresh ) then
+	      else if( off > thresh ) then
 	        xv = Re((App - Aqq)*Conjugate(App + Aqq))
 	        xw = Re((Apq - Aqp)*Conjugate(Apq + Aqp))
-	        dv = .5D0*(xv + xw)
-	        dw = .5D0*(xv - xw)
+	        dv = (xv + xw)/2
+	        dw = (xv - xw)/2
 
 	        tv = Conjugate(App)*Aqp + Aqq*Conjugate(Apq)
 	        tw = Conjugate(App)*Apq + Aqq*Conjugate(Aqp)
@@ -121,7 +91,7 @@ c	        t = sqrt(dv**2 + Sq(tv))
 
 	        xv = min(abs(dv + t), abs(dw + t))
 	        xw = min(abs(dv - t), abs(dw - t))
-	        if( xv + xw .gt. DBL_EPS ) then
+	        if( xv + xw > DBL_EPS ) then
 	          t = sign(t, xv - xw)
 	          tv = tv/(dv + t)
 	          tw = tw/(dw + t)
@@ -170,7 +140,7 @@ c	        t = sqrt(dv**2 + Sq(tv))
 	        goto 2
 	      endif
 
-	      if( p .ne. px ) then
+	      if( p /= px ) then
 	        do j = 1, nx
 	          x = A_(p,j)
 	          A_(p,j) = A_(q,j)
@@ -199,26 +169,22 @@ c	        t = sqrt(dv**2 + Sq(tv))
 
 	do p = 1, nm
 	  d(p) = abs(A_(p,p))
-	  if( d(p) .gt. DBL_EPS .and. d(p) .ne. Re(A_(p,p)) ) then
+	  if( d(p) > DBL_EPS .and. d(p) /= Re(A_(p,p)) ) then
 	    f = A_(p,p)/d(p)
-	    do q = 1, nm
-	      W_(q,p) = W_(q,p)*f
-	    enddo
+	    W_(1:nm,p) = W_(1:nm,p)*f
 	  endif
 	enddo
 
 * sort the singular values
 
-	do p = 1, nm
-	  pi(p) = p
-	enddo
+	forall(p = 1:nm) pi(p) = p
 
 	do p = 1, nm
 	  j = p
 	  t = d(p)
-	  if( sort .ne. 0 ) then
+	  if( sort /= 0 ) then
 	    do q = p + 1, nm
-	      if( sort*(t - d(q)) .gt. 0 ) then
+	      if( sort*(t - d(q)) > 0 ) then
 	        j = q
 	        t = d(q)
 	      endif
@@ -231,12 +197,8 @@ c	        t = sqrt(dv**2 + Sq(tv))
 	  q = pi(j)
 	  pi(j) = pi(p)
 
-	  do j = 1, m
-	    VL(p,j) = VW(j,q,rev)
-	  enddo
-	  do j = 1, n
-	    WL(p,j) = VW(j,q,1-rev)
-	  enddo
+	  VL(p,1:m) = VW(1:m,q,rev)
+	  WL(p,1:n) = VW(1:n,q,1-rev)
 	enddo
 	end
 

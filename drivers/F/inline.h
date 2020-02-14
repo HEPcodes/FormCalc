@@ -1,11 +1,13 @@
 * inline.h
 * inline util functions and computation of numerators
 * this file is part of FormCalc
-* last modified 16 Jun 16 th
+* last modified 29 Mar 19 th
 
 
 #ifndef INLINE_H
 #define INLINE_H
+
+#define Sq(z) Re((z)*Conjugate(z))
 
 #ifdef NINJA
 
@@ -13,10 +15,10 @@
 #define Result(f) res
 #define MuExpFunction(f) subroutine f(ncut, vTin, njcoeff)
 #define T3ExpFunction(f) subroutine f(ncut, v0in, v3in, v4in, para, mindeg, njcoeff)
-#define T3ExpCoeff(d,m) if( d .gt. mindeg ) return
+#define T3ExpCoeff(d,m) if( d > mindeg ) return
 * i.e. coefficient of tnj^(rank-d) MuTildeSq^m
 #define T2ExpFunction(f) subroutine f(ncut, v1in, v2in, v3in, v4in, para, mindeg, njcoeff)
-#define T2ExpCoeff(d,x,m) if( d .gt. mindeg ) return
+#define T2ExpCoeff(d,x,m) if( d > mindeg ) return
 * i.e. coefficient of tnj^(rank-d) xnj^x MuTildeSq^m
 #define CNNum CNum
 #define b0nj para(1)
@@ -112,17 +114,15 @@ CT2Exp	ComplexType para(*)
 	BitCount(h_) = int(ishft(
      &    bc8(bc4(bc2(h_)))*int8(Z'0101010101010101'), -56 ))
 
-	IndexDelta(a_, b_) = merge(1, 0, a_ .eq. b_)
+	IndexDelta(a_, b_) = merge(1, 0, a_ == b_)
 
 	IndexSign(a_) = signbit(ior(a_, -a_)) - 2*signbit(a_)
 	IndexEps(a_, b_, c_) =
      &    IndexSign(a_ - b_)*IndexSign(c_ - b_)*IndexSign(a_ - c_)
 
-	Sq(z_) = Re(z_*Conjugate(z_))
-
 	SqDiff(ma_, mb_) = (ma_ - mb_)*(ma_ + mb_)
 	ThreeMom(sqrtS_, ma_, mb_) = sqrt(SqDiff(
-     &    .5D0*(sqrtS_ - SqDiff(ma_, mb_)/sqrtS_), mb_ ))
+     &    1/2D0*(sqrtS_ - SqDiff(ma_, mb_)/sqrtS_), mb_ ))
 
 	SInvariant(a_, b_) =
      &    (Re(vec0(1,1,k0(a_))) + Re(vec0(1,1,k0(b_))))*
@@ -134,14 +134,14 @@ CT2Exp	ComplexType para(*)
      &    (Re(vec0(2,2,k0(a_))) - Re(vec0(2,2,k0(b_)))) -
      &    Sq(vec0(1,2,k0(a_)) - vec0(1,2,k0(b_)))
 
-	Pair0(a_, b_) = .5D0*(
+	Pair0(a_, b_) = 1/2D0*(
      &    vec0(1,1,a_)*vec0(2,2,b_) + vec0(2,2,a_)*vec0(1,1,b_) -
      &    vec0(1,2,a_)*vec0(2,1,b_) - vec0(2,1,a_)*vec0(1,2,b_) )
 
 	Eps0_(a_, b_, c_, d_) =
      &    (vec0(1,1,a_)*vec0(2,2,b_) - vec0(2,2,a_)*vec0(1,1,b_))*
      &    (vec0(2,1,c_)*vec0(1,2,d_) - vec0(1,2,c_)*vec0(2,1,d_))
-	Eps0(a_, b_, c_, d_) = .25D0*(
+	Eps0(a_, b_, c_, d_) = 1/4D0*(
      &    Eps0_(a_, b_, c_, d_) + Eps0_(c_, d_, a_, b_) -
      &    Eps0_(a_, c_, b_, d_) - Eps0_(b_, d_, a_, c_) +
      &    Eps0_(a_, d_, b_, c_) + Eps0_(b_, c_, a_, d_) )

@@ -1,7 +1,7 @@
 * lumi_hadron.F
 * parton luminosity for a hadron collider
 * this file is part of FormCalc
-* last modified 20 Feb 17 th
+* last modified 18 Mar 19 th
 
 * This code links to the LHAPDF library.
 * The following variables are used:
@@ -31,15 +31,15 @@
 	integer partonsign
 	common /hadron/ partonsign
 
-	if( Upper(SQRTS) .gt. 0 .and.
-     &      Lower(SQRTS) .ne. Upper(SQRTS) )
+	if( Upper(SQRTS) > 0 .and.
+     &      Lower(SQRTS) /= Upper(SQRTS) )
      &    stop "Cannot handle a range of beam energies"
 
-	if( Lower(SQRTS) .eq. 2000 ) then
-	  partonsign = -1
-	else if( Lower(SQRTS) .ge. 7000 .and.
-     &           Lower(SQRTS) .le. 14000 ) then
-	  partonsign = 1
+	if( Lower(SQRTS) == 2000 ) then
+	  partonsign = -1	! FNAL p-pbar
+	else if( Lower(SQRTS) >= 7000 .and.
+     &           Lower(SQRTS) <= 14000 ) then
+	  partonsign = 1	! LHC p-p
 	else
 	  stop "Unknown collider"
 	endif
@@ -58,19 +58,19 @@
 
 #include "xsection.h"
 
-	if( parton1 .eq. -999 .or. parton2 .eq. -999 )
+	if( parton1 == -999 .or. parton2 == -999 )
      &    stop "parton1,2 not set"
 
 #ifdef M_INV
         call SetEnergy(fail, Re(M_INV), sqme)
-        if( fail .ne. 0 ) return
+        if( fail /= 0 ) return
 
         Lower(PARTON_T) = M_INV/Lower(SQRTS)
         Upper(PARTON_T) = Lower(PARTON_T)
         Step(PARTON_T) = 1
 #else
 	call SetEnergy(fail, Lower(SQRTS), sqme)
-	if( fail .ne. 0 ) return
+	if( fail /= 0 ) return
 
 	Lower(PARTON_T) = threshold/sqrtS
 	Upper(PARTON_T) = 1
@@ -106,12 +106,12 @@
 
 #include "inline.h"
 
-c	tooSmall(x) = x .lt. eps_sqrtS .or. x .gt. 1 - eps_sqrtS
-	tooSmall(x) = abs(.5D0 - x) .gt. .5D0 - eps_sqrtS
+c	tooSmall(x) = x < eps_sqrtS .or. x > 1 - eps_sqrtS
+	tooSmall(x) = abs(1/2D0 - x) > 1/2D0 - eps_sqrtS
 
 #ifndef M_INV
 	call SetEnergy(fail, Var(PARTON_T)*Var(SQRTS), sqme)
-	if( fail .ne. 0 ) then
+	if( fail /= 0 ) then
 	  fac = 0
 	  return
 	endif

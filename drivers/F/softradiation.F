@@ -1,7 +1,7 @@
 * softradiation.F
 * routines for the treatment of soft-photon or soft-gluon radiation
 * this file is part of FormCalc
-* last modified 18 Jun 16 th
+* last modified 18 Mar 19 th
 
 
 ************************************************************************
@@ -30,7 +30,7 @@
 
 	fac = 0
 	do i = 1, LEGS
-	  if( chg(i) .eq. 0 ) goto 1
+	  if( chg(i) == 0 ) goto 1
 	  chsi = sign(1, LEGS_IN - i)*chg(i)
 
 	  mi = momspec(SPEC_M,i)
@@ -39,7 +39,7 @@
 	  kidelta = momspec(SPEC_DELTAK,i)
 	  kilog = log(kidelta/(ki0 + ki))
 
-	  if( ki .lt. 1D-14 ) then
+	  if( ki < 1D-14 ) then
 	    psint = pi*(loglambda - 2)
 	  else
 	    psint = pi*(loglambda + ki0/ki*kilog)
@@ -47,7 +47,7 @@
 	  fac = fac + chsi**2*psint
 
 	  do j = i + 1, LEGS
-	    if( chg(j) .eq. 0 ) goto 2
+	    if( chg(j) == 0 ) goto 2
 	    chsj = sign(1, LEGS_IN - j)*chg(j)
 
 	    mj = momspec(SPEC_M,j)
@@ -60,14 +60,14 @@
 
 	    d = sqrt((kikj - mi*mj)*(kikj + mi*mj))
 	    alpha = (kikj + d)/mi**2
-	    if( alpha*ki0 .lt. kj0 ) alpha = (kikj - d)/mi**2
+	    if( alpha*ki0 < kj0 ) alpha = (kikj - d)/mi**2
 
 	    d = 1/((alpha*mi - mj)*(alpha*mi + mj))
 	    vi = 2*(alpha*ki0 - kj0)*d
 
 	    psint = 4*pi*alpha*kikj*d * Re(
      &        log(mi/mj*abs(alpha))*loglambda +
-     &        .25D0*(kilog - kjlog)*(kilog + kjlog) +
+     &        1/4D0*(kilog - kjlog)*(kilog + kjlog) +
      &        Li2omx((ki0 + ki)*alpha*vi) - Li2omx((kj0 + kj)*vi) +
      &        Li2omx(kidelta*alpha*vi) - Li2omx(kjdelta*vi) )
 	    fac = fac + chsi*chsj*psint*weight(i,j)

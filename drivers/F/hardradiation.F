@@ -2,7 +2,7 @@
 * routines for the treatment of hard- and soft-photon radiation
 * this file is part of FormCalc
 * Christian Schappacher, 24 Oct 13
-* last modified 22 Jul 18 th
+* last modified 18 Mar 19 th
 
 
 ************************************************************************
@@ -48,8 +48,8 @@
 	parameter (FFV = VERT(FERMION,FERMION,VECTOR))
 	parameter (VFF = VERT(VECTOR,FERMION,FERMION))
 
-#define zero(m) (m .lt. 1D-6)
-#define nonzero(m) (m .gt. 1D-6)
+#define zero(m) (m < 1D-6)
+#define nonzero(m) (m > 1D-6)
 
 	g1 = chg(1)
 	g11 = g1**2
@@ -178,15 +178,15 @@
 	endif
 
 
-	if( type .eq. SSS ) then
+	if( type == SSS ) then
 	  fac = -4*Alfa/Pi*m12/k
 	  radii = fac*(g11*I00*m12 + g22*I11*m22 +
      &      g33*I22*m32 - g23*(I1 + I2 - I12*X) +
      &      g13*(I0 + I2 + I02*Y) + g12*(I0 + I1 + I01*Z))
 	  radij = bogus
 
-	else if( type .eq. SVV .and.
-     &	    mass(2) .eq. MW .and. mass(3) .eq. MW ) then
+	else if( type == SVV .and.
+     &	    mass(2) == MW .and. mass(3) == MW ) then
 	  beta = sqrt(1 - 4*m32/m12)
 	  fac = Alfa/(4*Pi)*m32/
      &      (beta*(beta**2*m12**2 + 12*m32**2))
@@ -199,7 +199,7 @@
      &            (I1 + I2 - d12*I12 + (I11 + I12 + I22)*m22))/m22)
 	  radij = bogus
 
-	else if( type .eq. SSV ) then
+	else if( type == SSV ) then
 	  fac = Alfa/Pi*m12*m32/k**3
 	  radii = fac*((II*
      &         (d12**2*(g13 - g23 - g33) + 
@@ -232,7 +232,7 @@
      &         g23*I12*(m32*(X + Y) + X*(2*Y + 4*Z))))
 	  radij = bogus
 
-	else if( type .eq. SFF ) then
+	else if( type == SFF ) then
 	  fac = Alfa/(16*Pi**2)/m1
 	  radii = 2*fac*(
      &      g22*I1_2 + g33*I2_1 - (g11 - g12 - g13 + 2*g23)*II + 
@@ -246,7 +246,7 @@
      &      g33*(I2 + 2*I22*m32) - g23*(I1 + I2 - 2*I12*X) + 
      &      g13*(I0 + I2 + 2*I02*Y) + g12*(I0 + I1 + 2*I01*Z) )
 
-	else if( type .eq. FFS ) then
+	else if( type == FFS ) then
 	  fac = Alfa/(32*Pi**2)/m1
 	  radii = 2*fac*(
      &      g13*I0_2 - g12*(I0_1 + I1_0) - g23*I1_2 + 
@@ -261,7 +261,7 @@
      &      g23*(I1 - I12*X) + g13*(I0 + I02*Y) + 
      &      g12*(I0 + I1 + I01*Z) )
 
-	else if( type .eq. FFV ) then
+	else if( type == FFV ) then
 	  fac = Alfa/(16*Pi**2)/(m1*m32)
 	  radii = fac*(
      &      4*((2*g12 - g22)*I22_01 + (4*g12 - 3*g22)*I2_1 - 
@@ -281,7 +281,7 @@
      &        g22*(I1 + I2 + I11*m22 + I22*m32 + (I01 + I02)*X) -
      &        g11*(I0 + I2 + I00*m12 + I22*m32 + I02*Y)) )
 
-	else if( type .eq. VFF ) then
+	else if( type == VFF ) then
 	  fac = 4*Alfa/Pi*m12/k
 	  G1m = X + Y*Z/m12
 	  radii = -fac*

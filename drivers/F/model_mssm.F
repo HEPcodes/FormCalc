@@ -2,7 +2,7 @@
 * all parameters for the MSSM are initialized here
 * this file is part of FormCalc
 * Christian Schappacher, 17 Feb 99
-* last modified 06 Jun 17 cs
+* last modified 18 Mar 19 th
 
 
 * The input parameters for model_mssm are:
@@ -156,17 +156,11 @@
 
 #include "decl.h"
 
-	integer i
-
-	do i = 1, 3*3*3
-	  Af_flat(i) = 0
-	  Xf_flat(i) = 0
-	enddo
+	Af = 0
+	Xf = 0
 
 #if FV
-	do i = 1, 6*6*4
-	  deltaSf_flat(i) = 0
-	enddo
+	deltaSf = 0
 #endif
 
 	TB = -1
@@ -188,7 +182,7 @@
 	integer nf
 
 	call SMConstIni(fail)
-	if( fail .ne. 0 ) return
+	if( fail /= 0 ) return
 
 	call AlphaS(AlfasMT, nf, MT, ALPHAS_ORDER)
 
@@ -201,13 +195,13 @@
 	C2B = CB2*(1 - TB)*(1 + TB)
 
 	call SfermionMasses(fail)
-	if( fail .ne. 0 ) return
+	if( fail /= 0 ) return
 
 	call CharginoMasses(fail)
-	if( fail .ne. 0 ) return
+	if( fail /= 0 ) return
 
 	call NeutralinoMasses(fail)
-	if( fail .ne. 0 ) return
+	if( fail /= 0 ) return
 
 	call HiggsMassesConst(fail)
 	end
@@ -223,7 +217,7 @@
 #include "decl.h"
 
 	call SMVarIni(fail, Q)
-	if( fail .ne. 0 ) return
+	if( fail /= 0 ) return
 
 #ifndef NO_GUT_RELATION
 * Gluino mass: GUT relation
@@ -233,7 +227,7 @@
 
 	MGl = abs(Mino3)
 #ifndef NO_EXCLUSION_LIMITS
-	if( MGl .lt. MGl_LOWERBOUND ) then
+	if( MGl < MGl_LOWERBOUND ) then
 	  Error(fail, "MGl < MGl_LOWERBOUND")
 	  return
 	endif
@@ -241,7 +235,7 @@
 	MGl2 = MGl**2
 
 	SqrtEGl = Mino3
-	if( MGl .gt. 1D-14 ) SqrtEGl = sqrt(SqrtEGl/MGl)
+	if( MGl > 1D-14 ) SqrtEGl = sqrt(SqrtEGl/MGl)
 
 	call HiggsMassesVar(fail)
 	end
@@ -361,9 +355,6 @@
 #define MX2_LR(i,j) MX2(i,j+3)
 #define MX2_RL(i,j) Conjugate(MX2(j,i+3))
 #define MX2_RR(i,j) MX2(i+3,j+3)
-
-	ComplexType MX2_flat(6*6)
-	equivalence (MX2, MX2_flat)
 #endif
 
 #include "inline.h"
@@ -422,12 +413,9 @@
      &        MSS2(1,t,g) + DSf(1,t) + Mf2(t,g),
      &        MSS2(2,t,g) + DSf(2,t) + Mf2(t,g),
      &        Mf(t,g)*Conjugate(Xf(t,g)))
-	    if( fail .ne. 0 ) return
+	    if( fail /= 0 ) return
 
-	    UCSf(1,1,t,g) = Sq(USf(1,1,t,g))
-	    UCSf(2,1,t,g) = Sq(USf(2,1,t,g))
-	    UCSf(1,2,t,g) = Sq(USf(1,2,t,g))
-	    UCSf(2,2,t,g) = Sq(USf(2,2,t,g))
+	    UCSf(1:2,1:2,t,g) = Sq(USf(1:2,1:2,t,g))
 
 	    UCSf(3,1,t,g) = USf(1,1,t,g)*USfC(2,1,t,g)
 	    UCSf(3,2,t,g) = USf(1,2,t,g)*USfC(2,2,t,g)
@@ -436,10 +424,7 @@
 	    UCSf(3,3,t,g) = USf(1,1,t,g)*USfC(2,2,t,g)
 	    UCSf(3,4,t,g) = USf(1,2,t,g)*USfC(2,1,t,g)
 
-	    UUSf(1,1,t,g) = USf(1,1,t,g)**2
-	    UUSf(2,1,t,g) = USf(2,1,t,g)**2
-	    UUSf(1,2,t,g) = USf(1,2,t,g)**2
-	    UUSf(2,2,t,g) = USf(2,2,t,g)**2
+	    UUSf(1:2,1:2,t,g) = USf(1:2,1:2,t,g)**2
 
 	    UUSf(3,1,t,g) = USf(1,1,t,g)*USf(2,1,t,g)
 	    UUSf(3,2,t,g) = USf(1,2,t,g)*USf(2,2,t,g)
@@ -451,22 +436,22 @@
 	enddo
 
 #ifndef NO_EXCLUSION_LIMITS
-	if( MSf(1,4,3) .lt. MSbottom_LOWERBOUND ) then
+	if( MSf(1,4,3) < MSbottom_LOWERBOUND ) then
 	  Error(fail, "MSf(1,4,3) < MSbottom_LOWERBOUND")
 	  return
 	endif
 
-	if( MSf(1,3,3) .lt. MStop_LOWERBOUND ) then
+	if( MSf(1,3,3) < MStop_LOWERBOUND ) then
 	  Error(fail, "MSf(1,3,3) < MStop_LOWERBOUND")
 	  return
 	endif
 
-	if( MSf(1,2,1) .lt. MSlepton_LOWERBOUND ) then
+	if( MSf(1,2,1) < MSlepton_LOWERBOUND ) then
 	  Error(fail, "MSf(1,2,1) < MSlepton_LOWERBOUND")
 	  return
 	endif
 
-	if( MSf(1,3,1) .lt. MSquark_LOWERBOUND ) then
+	if( MSf(1,3,1) < MSquark_LOWERBOUND ) then
 	  Error(fail, "MSf(1,3,1) < MSquark_LOWERBOUND")
 	  return
 	endif
@@ -479,7 +464,7 @@
      &    USf2(1,2,3,3)*USf2(2,2,3,3)*f1f2(MSf2(1,3,3), MSf2(2,3,3)) -
      &    USf2(1,2,4,3)*USf2(2,2,4,3)*f1f2(MSf2(1,4,3), MSf2(2,4,3))
 
-	if( DeltaRho .gt. DeltaRho_UPPERBOUND ) then
+	if( DeltaRho > DeltaRho_UPPERBOUND ) then
 	  Error(fail, "DeltaRho > DeltaRho_UPPERBOUND")
 	  return
 	endif
@@ -498,7 +483,7 @@
 	  MX2_LL(1,2) = MSS(1,t,1)*MSS(1,t,2)*deltaSf_LL(1,2,t)
 	  MX2_LL(2,3) = MSS(1,t,2)*MSS(1,t,3)*deltaSf_LL(2,3,t)
 	  MX2_LL(1,3) = MSS(1,t,1)*MSS(1,t,3)*deltaSf_LL(1,3,t)
-	  if( t .eq. 3 ) then
+	  if( t == 3 ) then
 	    do g2 = 1, 3
 	      m1 = MX2_LL(1,1)*CKMC(g2,1) +
      &             MX2_LL(1,2)*CKMC(g2,2) +
@@ -543,14 +528,12 @@
 
 	  call HEigensystem(6, MX2,6, MASf2(1,t), UASf(1,1,t),6, 1)
 
-	  if( MASf2(1,t) .lt. 0 ) then
+	  if( MASf2(1,t) < 0 ) then
 	    Error(fail, "Negative MASf2")
 	    return
 	  endif
 
-	  do as = 1, 6
-	    MASf(as,t) = sqrt(MASf2(as,t))
-	  enddo
+	  MASf(:,t) = sqrt(MASf2(:,t))
 	enddo
 #endif
 	end
@@ -570,11 +553,11 @@
 	logm1m2 = log(m1/m2)
 	c1 = 2*m1*m2/(m1 - m2)*logm1m2
 	f1 = m1 + m2 - c1
-	f2 = m1 + m2 - c1*(2 + m1/m2*logm1m2)
-     &   + (m1 + m2)*m1**2/(m1 - m2)**2 * logm1m2**2
-     &   - 2*(m1 - m2) * Re(Li2(1 - m1/m2))
+	f2 = m1 + m2 - c1*(2 + m1/m2*logm1m2) +
+     &    (m1 + m2)*m1**2/(m1 - m2)**2*logm1m2**2 -
+     &    2*(m1 - m2)*Re(Li2omx(m1/m2))
 
-	f1f2 = 3*GF/(8*sqrt2*pi**2) * (f1 + 2/(3*pi)*AlfasMT*f2)
+	f1f2 = 3*GF/(8*sqrt2*pi**2)*(f1 + 2/(3*pi)*AlfasMT*f2)
 	end
 
 
@@ -597,14 +580,13 @@
 	call SVD(2, 2, X,2, MCha, UCha,2, VCha,2, 1)
 
 #ifndef NO_EXCLUSION_LIMITS
-	if( MCha(1) .lt. MCha_LOWERBOUND ) then
+	if( MCha(1) < MCha_LOWERBOUND ) then
 	  Error(fail, "MCha(1) < MCha_LOWERBOUND")
 	  return
 	endif
 #endif
 
-	MCha2(1) = MCha(1)**2
-	MCha2(2) = MCha(2)**2
+	MCha2 = MCha**2
 	end
 
 
@@ -644,16 +626,13 @@
 	call TakagiFactor(4, Y,4, MNeu, ZNeu,4, 1)
 
 #ifndef NO_EXCLUSION_LIMITS
-	if( MNeu(1) .lt. MNeu_LOWERBOUND ) then
+	if( MNeu(1) < MNeu_LOWERBOUND ) then
 	  Error(fail, "MNeu(1) < MNeu_LOWERBOUND")
 	  return
 	endif
 #endif
 
-	MNeu2(1) = MNeu(1)**2
-	MNeu2(2) = MNeu(2)**2
-	MNeu2(3) = MNeu(3)**2
-	MNeu2(4) = MNeu(4)**2
+	MNeu2 = MNeu**2
 	end
 
 
@@ -670,10 +649,10 @@
 	integer inputmass
 	data inputmass /0/
 
-	if( inputmass .eq. 0 ) then
-	  if( MA0 .ge. 0 ) then
+	if( inputmass == 0 ) then
+	  if( MA0 >= 0 ) then
 	    inputmass = 3
-	  else if( MHp .gt. MW ) then
+	  else if( MHp > MW ) then
 	    inputmass = 4
 	  else
 	    Error(fail, "Neither MA0 nor MHp given")
@@ -681,21 +660,21 @@
 	  endif
 	endif
 
-	if( inputmass .eq. 3 ) then
+	if( inputmass == 3 ) then
 	  MA0tree2 = MA0**2
 	  MHptree2 = MA0tree2 + MW2
-	else if( inputmass .eq. 4 ) then
+	else if( inputmass == 4 ) then
 	  MA0tree2 = (MHp - MW)*(MHp + MW)
 	  MHptree2 = MHp**2
 	endif
 
-	avgMH2 = .5D0*(MA0tree2 + MZ2)
+	avgMH2 = 1/2D0*(MA0tree2 + MZ2)
 	deltaMH2 = sqrt(MA0tree2*MZ2)*C2B
 	deltaMH2 = sqrt((avgMH2 - deltaMH2)*(avgMH2 + deltaMH2))
 	Mh0tree2 = avgMH2 - deltaMH2
 	MHHtree2 = avgMH2 + deltaMH2
 
-	CA2 = .5D0*(SB2*MA0tree2 + CB2*MZ2 - Mh0tree2)/deltaMH2
+	CA2 = 1/2D0*(SB2*MA0tree2 + CB2*MZ2 - Mh0tree2)/deltaMH2
 	CA = sqrt(CA2)
 	SA = -SB*CB*avgMH2/(CA*deltaMH2)
 
@@ -706,7 +685,7 @@
 	MHp2 = MHptree2
 #if HIGGS_MASSES != TREE
 	call HiggsCorr(fail)
-	if( fail .ne. 0 ) return
+	if( fail /= 0 ) return
 #endif
 	Mh0 = sqrt(Mh02)
 	MHH = sqrt(MHH2)
@@ -739,11 +718,11 @@
 
 #if HIGGS_MASSES == FEYNHIGGS
 	call FeynHiggs(fail)
-	if( fail .ne. 0 ) return
+	if( fail /= 0 ) return
 #endif
 
 #ifndef NO_EXCLUSION_LIMITS
-	if( Mh0 .lt. Mh0_LOWERBOUND ) then
+	if( Mh0 < Mh0_LOWERBOUND ) then
 	  Error(fail, "Mh0 < Mh0_LOWERBOUND")
 	  return
 	endif
@@ -765,11 +744,11 @@
 * we only need beta to be consistent with the values of Mh0 and MZ.
 
 	C2B = Mh0/MZ
-	if( C2B .gt. 1 ) then
+	if( C2B > 1 ) then
 	  fail = 4
 	  return
 	endif
-	CB2 = .5D0*(1 + C2B)
+	CB2 = 1/2D0*(1 + C2B)
 	CB = sqrt(CB2)
 	SB2 = (1 - CB)*(1 + CB)
 	TB2 = SB2/CB2
@@ -903,7 +882,7 @@
      &    pref*SB2*(Pbf + Pg2h)*tmplog +
      &    pref2*MUEr*(MB2*MUEr*Xbr**2/(3*CB2*MSS2(1,3,3)) +
      &      MZ2*TB*(Xbr + MUEr*TB/3D0))
-	if( MA02 .gt. MZ2 ) then
+	if( MA02 > MZ2 ) then
 	  tmplog = log(MA02/MZ2)
 	  sig11 = sig11 - pref*CB2*(P1h - P2h)*tmplog
 	  sig12 = sig12 - pref*SB*CB*(P1h + P2h_)*tmplog
@@ -918,16 +897,16 @@
 	Mh02 = avgMH2 - deltaMH2
 	MHH2 = avgMH2 + deltaMH2
 
-	if( Mh02 .lt. 0 ) then
+	if( Mh02 < 0 ) then
 	  Error(fail, "Negative Mh0^2")
 	  return
 	endif
 
-	CA2 = .5D0*(SB2*MA02 + CB2*MZ2 - Mh02 - sig11)/deltaMH2
+	CA2 = 1/2D0*(SB2*MA02 + CB2*MZ2 - Mh02 - sig11)/deltaMH2
 	CA = sqrt(CA2)
 	SA = -.5D0*(SB*CB*(MA02 + MZ2) + sig12)/(CA*deltaMH2)
 
-	if( MA0 .le. 250 .and. MSS(1,3,3) .ge. 250 ) then
+	if( MA0 <= 250 .and. MSS(1,3,3) >= 250 ) then
 	  MHp2 = MHp2 +
      &      Alfa*MW2/(12*pi*SW2)*
      &        (Nc*(Ng - 1) + Ng - 9 + 15*SW2/CW2)*
@@ -977,7 +956,7 @@
 	call FHSetFlags(fail, mssmpart, fieldren, tanbren,
      &    higgsmix, p2approx, looplevel, loglevel, runningMT,
      &    botResum, tlCplxApprox)
-	if( fail .ne. 0 ) return
+	if( fail /= 0 ) return
 
 	call FHSetSMPara(fail,
      &    1/Alfa, 1/AlfaMZ, AlfasMZ, GF,
@@ -988,7 +967,7 @@
 #else
      &    CKMlambda, CKMA, CKMrhobar, CKMetabar)
 #endif
-	if( fail .ne. 0 ) return
+	if( fail /= 0 ) return
 
 	call FHSetPara(fail, scalefactor,
      &    MT, TB, MA0, MHp,
@@ -1001,7 +980,7 @@
      &    Af(2,1,1), Af(3,1,1), Af(4,1,1),
      &    Mino1, Mino2, Mino3,
      &    Qtau, Qt, Qb)
-	if( fail .ne. 0 ) return
+	if( fail /= 0 ) return
 
 #if FV >= 2
 	call FHSetLFV(fail,
@@ -1009,7 +988,7 @@
      &    deltaELR12, deltaELR23, deltaELR13,
      &    deltaERL12, deltaERL23, deltaERL13,
      &    deltaERR12, deltaERR23, deltaERR13)
-	if( fail .ne. 0 ) return
+	if( fail /= 0 ) return
 #endif
 
 #if FV >= 3
@@ -1021,15 +1000,12 @@
      &    deltaDLR12, deltaDLR23, deltaDLR13,
      &    deltaDRL12, deltaDRL23, deltaDRL13,
      &    deltaDRR12, deltaDRR23, deltaDRR13)
-	if( fail .ne. 0 ) return
+	if( fail /= 0 ) return
 #endif
 
 	call FHHiggsCorr(fail, MHiggs, SAeff, UHiggs, ZHiggs)
 
-	MHiggs2(1) = MHiggs(1)**2
-	MHiggs2(2) = MHiggs(2)**2
-	MHiggs2(3) = MHiggs(3)**2
-	MHiggs2(4) = MHiggs(4)**2
+	MHiggs2 = MHiggs**2
 	end
 
 #endif

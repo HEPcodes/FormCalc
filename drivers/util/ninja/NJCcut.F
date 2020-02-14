@@ -1,7 +1,7 @@
 * NJCcut.F
 * the FormCalc wrapper for the Ninja three-point function
 * this file is part of FormCalc
-* last modified 27 Oct 15 th
+* last modified 18 Mar 19 th
 
 #include "types.h"
 
@@ -31,18 +31,13 @@
 	ComplexType res(-2:0)
 
 	NJCcut = 0
-	if( hdelta .eq. 0 ) return
+	if( hdelta == 0 ) return
 
-	kj(0,1) = 0
-	kj(1,1) = 0
-	kj(2,1) = 0
-	kj(3,1) = 0
+	kj(:,1) = 0
 	call NJMomDecode(k1, kj(0,2))
 	call NJMomDecode(k2, kj(0,3))
 
-	mj(1) = m1
-	mj(2) = m2
-	mj(3) = m3
+	mj = [m1, m2, m3]
 
 #if NJDEBUG >= 3
 	print *, "  rank =", rank

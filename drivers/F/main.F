@@ -2,7 +2,7 @@
 * this is the main program for the generated Fortran code,
 * it scans the command line and then invokes ParameterScan
 * this file is part of FormCalc
-* last modified 13 Jan 16 th
+* last modified 25 Mar 19 th
 
 
 #include "xsection.F"
@@ -35,7 +35,7 @@ c	call setfpu
 
 	argc = 0
 1	call getarg(argc + 1, dir(next:))
-	if( dir(next:next) .eq. ':' ) then
+	if( dir(next:next) == ':' ) then
 	  argc = argc + 1
 	  argv(argc) = dir(next+1:)
 	  next = next + len_trim(dir(next:))
@@ -50,14 +50,14 @@ c	call setfpu
 	call getarg(argc + 2, tmp)
 	read(tmp, *, iostat=fail, end=991, err=999)
      &    sqrtSfrom, sqrtSto, sqrtSstep
-991	if( sqrtSfrom .eq. -1 ) goto 999
+991	if( sqrtSfrom == -1 ) goto 999
 
 	call ProcessIni(fail, pol,
      &    sqrtSfrom, sqrtSto, sqrtSstep,
      &    argc, argv)
-	if( fail .ne. 0 ) goto 999
+	if( fail /= 0 ) goto 999
 
-	if( sqrtSto .eq. 0 ) then
+	if( sqrtSto == 0 ) then
 100	  format(".", A, ".", I5.5)
 	  write(dir(next:), 100) pol(1:LEGS), int(sqrtSfrom)
 	else
@@ -69,12 +69,12 @@ c	call setfpu
 	serialfrom = 0
 	serialto = 2**30
 	serialstep = 1
-	if( argc + 3 .le. iargc() ) then
+	if( argc + 3 <= iargc() ) then
 	  call getarg(argc + 3, tmp)
 	  serialfrom = -1
 	  read(tmp, *, iostat=fail, end=992, err=999)
      &      serialfrom, serialto, serialstep
-992	  if( serialfrom .eq. -1 ) goto 999
+992	  if( serialfrom == -1 ) goto 999
 	endif
 
 	hseleps = 1D-7

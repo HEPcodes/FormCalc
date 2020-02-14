@@ -1,3 +1,49 @@
+2 Sep 2019:
+
+- Fixed gfortran hiccup with integer*8 in *MomDecode.F.
+
+- Upgraded to latest FORM version.
+
+
+10 Jun 2019:
+
+- Fixed issue with IndexSum on fermion chains.
+
+
+12 Apr 2019:
+
+- Computation of generic fermion amplitudes fixed (unresolved SpinorType).
+
+- Improved partial fractioning of loop denominators in FORM.
+
+- Removed spurious IGram instances for PaVeReduce -> LoopTools.
+
+- Added $Dminus4MaxPower (= 1 for one-loop).
+
+
+10 Apr 2019:
+
+- Fixed a few bugs introduced in the last release, most notably one
+  in the F90 rework of ODESolve.F.
+
+
+4 Apr 2019:
+
+- Added better simplification of (numerical) roots, e.g. Sqrt[2],
+  in FORM.
+
+
+29 Mar 2019:
+
+- Overhauled large parts of the drivers, put Fortran vector syntax
+  in many places.
+
+- Split xsection.F's TotalXS into IterateXS and (new) TotalXS, the latter
+  just for the computation of the XS without looping over phase space.
+
+- Added latest FORM executables.
+
+
 8 Mar 2019:
 
 - Moved partial fractioning of loop denominators...
@@ -248,7 +294,7 @@
   i.e. a statement of the form NoDebug[var -> expr] does not
   produce a debug line.
 
-- Added Unexpr[expr, !patt] to not expand abbreviations and
+- Added Unabbr[expr, !patt] to not expand abbreviations and
   subexpressions inside objects matching patt.
 
 - Fixed the (rather special) case where PolarizationSum is used to

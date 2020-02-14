@@ -3,7 +3,7 @@
 * code adapted from the "Handbook" routines
 * (Wilkinson, Reinsch: Handbook for Automatic Computation, p. 202)
 * this file is part of the Diag library
-* last modified 20 Aug 15 th
+* last modified 29 Mar 19 th
 
 #include "diag-f.h"
 
@@ -21,67 +21,49 @@
 	subroutine TakagiFactor(n, A,ldA, d, U,ldU, sort)
 	implicit none
 	integer n, ldA, ldU, sort
-	ComplexType A(ldA,*), U(ldU,*)
-	RealType d(*)
+	ComplexType A(ldA,n), U(ldU,n)
+	RealType d(n)
 
 	integer p, q, j
 	RealType red, off, thresh
 	RealType sqp, sqq, t, invc
 	ComplexType f, x, y
-	ComplexType ev(2,MAXDIM)
+	ComplexType ev(2,n)
 
 	integer sweep
 	common /nsweeps/ sweep
 
-	if( n .gt. MAXDIM ) then
-	  print *, "Dimension too large"
-	  d(1) = -999
-	  return
-	endif
+	ev(1,:) = 0
+	forall(p = 1:n) ev(2,p) = A(p,p)
 
-	do p = 1, n
-	  ev(1,p) = 0
-	  ev(2,p) = A(p,p)
-	enddo
-
-	do p = 1, n
-	  do q = 1, n
-	    U(q,p) = 0
-	  enddo
-	  U(p,p) = 1
-	enddo
+	U(1:n,1:n) = 0
+	forall(p = 1:n) U(p,p) = 1
 
 	red = .04D0/n**4
 
 	do sweep = 1, 50
-	  off = 0
-	  do q = 2, n
-	    do p = 1, q - 1
-	      off = off + Sq(A(p,q))
-	    enddo
-	  enddo
-	  if( .not. off .gt. SYM_EPS ) goto 1
+	  off = sum([(Sq(A(1:q-1,q)), q = 2,n)])
+	  if( .not. off > SYM_EPS ) goto 1
 
 	  thresh = 0
-	  if( sweep .lt. 4 ) thresh = off*red
+	  if( sweep < 4 ) thresh = off*red
 
 	  do q = 2, n
 	    do p = 1, q - 1
 	      off = Sq(A(p,q))
 	      sqp = Sq(ev(2,p))
 	      sqq = Sq(ev(2,q))
-	      if( sweep .gt. 4 .and.
-     &            off .lt. SYM_EPS*(sqp + sqq) ) then
+	      if( sweep > 4 .and. off < SYM_EPS*(sqp + sqq) ) then
 	        A(p,q) = 0
-	      else if( off .gt. thresh ) then
-	        t = .5D0*abs(sqp - sqq)
-	        if( t .gt. 0 ) then
+	      else if( off > thresh ) then
+	        t = abs(sqp - sqq)/2
+	        if( t > 0 ) then
 	          f = sign(1D0, sqp - sqq)*
      &              (ev(2,q)*Conjugate(A(p,q)) +
      &               Conjugate(ev(2,p))*A(p,q))
 	        else
 	          f = 1
-	          if( sqp .ne. 0 ) f = sqrt(ev(2,q)/ev(2,p))
+	          if( sqp /= 0 ) f = sqrt(ev(2,q)/ev(2,p))
 	        endif
 	        t = t + sqrt(t**2 + Sq(f))
 	        f = f/t
@@ -129,10 +111,8 @@
 	    enddo
 	  enddo
 
-	  do p = 1, n
-	    ev(1,p) = 0
-	    A(p,p) = ev(2,p)
-	  enddo
+	  ev(1,:) = 0
+	  forall(p = 1:n) A(p,p) = ev(2,p)
 	enddo
 
 	print *, "Bad convergence in TakagiFactor"
@@ -143,15 +123,13 @@
 
 	do p = 1, n
 	  d(p) = abs(A(p,p))
-	  if( d(p) .gt. DBL_EPS .and. d(p) .ne. Re(A(p,p)) ) then
+	  if( d(p) > DBL_EPS .and. d(p) /= Re(A(p,p)) ) then
 	    f = sqrt(A(p,p)/d(p))
-	    do q = 1, n
-	      UL(p,q) = UL(p,q)*f
-	    enddo
+	    UL(p,1:n) = UL(p,1:n)*f
 	  endif
 	enddo
 
-	if( sort .eq. 0 ) return
+	if( sort == 0 ) return
 
 * sort the eigenvalues
 
@@ -159,13 +137,13 @@
 	  j = p
 	  t = d(p)
 	  do q = p + 1, n
-	    if( sort*(t - d(q)) .gt. 0 ) then
+	    if( sort*(t - d(q)) > 0 ) then
 	      j = q
 	      t = d(q)
 	    endif
 	  enddo
 
-	  if( j .ne. p ) then
+	  if( j /= p ) then
 	    d(j) = d(p)
 	    d(p) = t
 	    do q = 1, n

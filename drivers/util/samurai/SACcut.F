@@ -1,7 +1,7 @@
 * SACcut.F
 * the FormCalc wrapper for the Samurai three-point function
 * this file is part of FormCalc
-* last modified 16 Jun 16 th
+* last modified 18 Mar 19 th
 
 #include "types.h"
 
@@ -29,18 +29,13 @@
 	RealType kj(3,4), mj(3)
 
 	SACcut = 0
-	if( hdelta .eq. 0 ) return
+	if( hdelta == 0 ) return
 
-	kj(1,1) = 0
-	kj(1,2) = 0
-	kj(1,3) = 0
-	kj(1,4) = 0
+	kj(1,:) = 0
 	call SAMomDecode(k1, kj(2,1),3)
 	call SAMomDecode(k2, kj(3,1),3)
 
-	mj(1) = m1
-	mj(2) = m2
-	mj(3) = m3
+	mj = [m1, m2, m3]
 
 #if SADEBUG >= 3
 	print *, "  rank =", rank

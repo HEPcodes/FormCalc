@@ -2,7 +2,7 @@
 	model_sm.h
 	declarations for model_sm.F
 	this file is part of FormCalc
-	last modified 13 Jun 16 th
+	last modified 13 Mar 19 th
 #endif
 
 
@@ -19,7 +19,7 @@
 #define CW2 (CW*CW)
 #define SW2 (1 - CW2)
 #define GammaW 2.1180
-#define GammaZ = 2.4952
+#define GammaZ 2.4952
 
 #define GF 1.16637e-5
 #define Alfa0 (1/137.035999074)

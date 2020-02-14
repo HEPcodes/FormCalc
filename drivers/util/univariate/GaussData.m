@@ -3,7 +3,7 @@
 		calculate the abscissas and weights for the
 		Gaussian quadrature in gauss.F
 		this file is part of FormCalc
-		last modified 13 Feb 12 th
+		last modified 24 Mar 19 th
 *)
 
 
@@ -16,7 +16,7 @@ Block[ {nodes, weight, workingprec = 50, finalprec = 35},
   SetPrecision[{#, weight[#]}&/@ Take[-nodes, n/2], finalprec]
 ]
 
-gaussdata = Table[GaussData[n], {n, 8, 32, 8}]//Flatten
+gaussdata = Table[GaussData[n]/2, {n, 8, 32, 8}]//Flatten
 
 delim := (delim = ","; "\tdata gaussdata /")
 

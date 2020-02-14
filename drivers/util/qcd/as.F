@@ -2,7 +2,7 @@
 * command-line interface to AlphaS
 * compile with e.g.
 * gfortran -Idrivers/F -o as drivers/util/qcd/as.F MacOSX-x86-64/util.a
-* last modified 22 Sep 17 th
+* last modified 25 Mar 19 th
 
 #include "types.h"
 
@@ -33,7 +33,7 @@
 	nloop = 3
 
 	argc = iargc() 
-	if( argc .ge. 1 .and. argc .le. 2 ) goto 1
+	if( argc >= 1 .and. argc <= 2 ) goto 1
 
 999	print *, "Usage:  as scale [nloop]"
 	print *, "computes alpha_s(scale) at nloop order"
@@ -41,7 +41,7 @@
 
 1	call getarg(1, argv)
 	read(argv, *, iostat=fail, err=999) Q
-	if( argc .gt. 1 ) then
+	if( argc > 1 ) then
 	  call getarg(2, argv)
 	  read(argv, *, iostat=fail, err=999) nloop
 	endif

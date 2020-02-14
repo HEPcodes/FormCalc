@@ -2,7 +2,7 @@
 * splits a parent momentum into two child momenta
 * loosely based on code by T. Fritzsche
 * this file is part of FormCalc
-* last modified 5 Apr 16 th
+* last modified 18 Mar 19 th
 
 #include "types.h"
 #include "util.h"
@@ -77,7 +77,7 @@
 * rotate the unit vector e = (ex,ey,ez) into the desired direction:
 * rotate by theta in the e-n-plane and then by phi around e.
 
-	if( Step(xphi) .eq. 0 ) fac = 2*pi*fac
+	if( Step(xphi) == 0 ) fac = 2*pi*fac
 	Show(xphi) = 2*pi*Var(xphi)
 	cosphi = cos(Show(xphi))
 	sinphi = sin(Show(xphi))
@@ -87,7 +87,7 @@
 	fz = ez
 	fxz = fx**2 + fz**2
 	fyz = fy**2 + fz**2
-	if( fyz .lt. fxz ) then
+	if( fyz < fxz ) then
 	  fxz = sqrt(fxz)
 	  nx = (-cosphi*fx*fy - sinphi*fz)/fxz
 	  ny = cosphi*fxz
@@ -117,7 +117,7 @@
 	  bmrem(2) = min(bmrem(2), CutMax(xmrem))
 	endif
 
-	if( bmrem(2) .le. bmrem(1) ) return
+	if( bmrem(2) <= bmrem(1) ) return
 
 	bcosth(1) = -1
 	bcosth(2) = 1
@@ -132,9 +132,9 @@
 	  bcosth(2) = min(bcosth(2), CutMax(xcosth))
 	endif
 
-	if( bcosth(2) .le. bcosth(1) ) return
+	if( bcosth(2) <= bcosth(1) ) return
 	bcosth(2) = bcosth(2) - bcosth(1)
-	if( Step(xcosth) .eq. 0 ) fac = fac*bcosth(2)
+	if( Step(xcosth) == 0 ) fac = fac*bcosth(2)
 	costh = bcosth(1) + Var(xcosth)*bcosth(2)
 	Show(xcosth) = costh
 
@@ -185,22 +185,21 @@
 	  j = ieor(c, ibits(-int(sign(1D0, k2eq(k2max))), 1, 2))
 
 	  d = c1**2*(c0*(c0 + c2*m2) + (c1*m2)**2)
-	  if( d .lt. 0 ) goto (999, 1) j
+	  if( d < 0 ) goto (999, 1) j
 	  d = sqrt(d)
 
 	  n = 0
 	  do s = 1, 2
 	    d = -d
 	    k2 = (c0*c2 + 2*(c1**2*m2 + d))/sqdiff(c2, 2*c1)
-	    if( k2 .gt. 0 .and. k2 .lt. k2max .and.
-     &          abs(k2eq(k2)) .lt. eps ) then
+	    if( k2 > 0 .and. k2 < k2max .and. abs(k2eq(k2)) < eps ) then
 	      n = n + 1
 	      cmrem(n) = sqrt(m2 + minv*(minv - 2*sqrt(k2 + m2)))
 	    endif
 	  enddo
 
-	  if( n .eq. 2 .and. abs(cmrem(2) - cmrem(1)) .gt. eps ) then
-	    if( j .eq. 2 ) then
+	  if( n == 2 .and. abs(cmrem(2) - cmrem(1)) > eps ) then
+	    if( j == 2 ) then
 	      print *, "Cannot satisfy direct cut, use veto cut"
 	      print *, "bnd mrem = ", bmrem
 	      print *, "cut mrem = ", cmrem
@@ -209,26 +208,26 @@
 	      bmrem(2) = min(bmrem(2), cmrem(2))
 	    endif
 	  else if( n .ne. 0 ) then
-	    if( (2*j - 3)*(bmrem(j) - cmrem(1)) .gt. 0 )
+	    if( (2*j - 3)*(bmrem(j) - cmrem(1)) > 0 )
      &        bmrem(j) = cmrem(1)
 	  else
 	    goto (999, 1) j
 	  endif
 
-	  if( bmrem(2) .ge. bmrem(1) ) goto 1
+	  if( bmrem(2) >= bmrem(1) ) goto 1
 999	  return
 
 1	  continue
 	enddo
 
 	bmrem(2) = bmrem(2) - bmrem(1)
-	if( Step(xmrem) .eq. 0 ) fac = fac*bmrem(2)
+	if( Step(xmrem) == 0 ) fac = fac*bmrem(2)
 	mrem = bmrem(1) + Var(xmrem)*bmrem(2)
 	Show(xmrem) = mrem
 
-	k10 = .5D0*(minv - sqdiff(mrem, m)/minv)
+	k10 = 1/2D0*(minv - sqdiff(mrem, m)/minv)
 	k = sqrt(sqdiff(k10, m))
-	cutfac = .5D0*k*fac
+	cutfac = 1/2D0*k*fac
 
 * k is in the CMS of the decay minv -> m + mrem and must finally
 * be boosted into the CMS of the entire process

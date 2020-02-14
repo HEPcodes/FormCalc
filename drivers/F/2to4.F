@@ -1,7 +1,7 @@
 * 2to4.F
 * the kinematics for a 2 -> 4 process
 * this file is part of FormCalc
-* last modified 24 Jun 16 th
+* last modified 18 Mar 19 th
 
 
 #define LEGS 6
@@ -26,21 +26,6 @@
 
 ************************************************************************
 
-	subroutine SetArray(ar, a1, a2, a3, a4, a5, a6)
-	implicit none
-	RealType ar(*), a1, a2, a3, a4, a5, a6
-
-	ar(1) = a1
-	ar(2) = a2
-	ar(3) = a3
-	ar(4) = a4
-	ar(5) = a5
-	ar(6) = a6
-	end
-
-
-************************************************************************
-
 	subroutine KinIni(fail)
 	implicit none
 	integer fail
@@ -49,7 +34,7 @@
 
 	Lower(XMREM1) = 0
 	Upper(XMREM1) = 1
-	if( Lower(SQRTS) .gt. Upper(SQRTS) ) then
+	if( Lower(SQRTS) > Upper(SQRTS) ) then
 	  Step(XMREM1) = XMREM1STEP
 	else
 	  Step(XMREM1) = 0
@@ -98,9 +83,8 @@
 
 	p = ThreeMom(sqrtS, mass(1), mass(2))
 
-	call VecSet(1, mass(1), p, 0D0, 0D0, 1D0)
-
-	call VecSet(2, mass(2), p, 0D0, 0D0, -1D0)
+	call VecSet(1, mass(1), p, 0D0,0D0,1D0)
+	call VecSet(2, mass(2), p, 0D0,0D0,-1D0)
 
 	p = 0
 	ex = 0
@@ -123,12 +107,12 @@
 	call Split(6, mass(6), p, ex,ey,ez, minv, msum,
      &    fac, key, Var(XMREM1), Var(XCOSTH1), Var(TRIVIAL))
 	Show(XMREM1) = momspec(SPEC_E, 6)
-	if( fac .eq. 0 ) return
+	if( fac == 0 ) return
 
 	call Split(5, mass(5), p, ex,ey,ez, minv, msum,
      &    fac, 0, Var(XMREM2), Var(XCOSTH2), Var(XPHI2))
 	Show(XMREM2) = momspec(SPEC_E, 5)
-	if( fac .eq. 0 ) return
+	if( fac == 0 ) return
 
 	call Split(4, mass(4), p, ex,ey,ez, minv, msum,
      &    fac, 0, Var(FIXED), Var(XCOSTH3), Var(XPHI3))

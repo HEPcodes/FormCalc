@@ -1,7 +1,7 @@
 * CTmpnum.F
 * a dummy multiprecision numerator function
 * this file is part of FormCalc
-* last modified 13 Feb 12 th
+* last modified 18 Mar 19 th
 
 #include "types.h"
 
@@ -15,7 +15,7 @@
 	data ini /0/
 	save ini
 
-	if( ini .eq. 0 ) then
+	if( ini == 0 ) then
 	  print *, "MP version not yet available"
 	  ini = 1
 	endif

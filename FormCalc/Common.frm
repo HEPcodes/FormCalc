@@ -1,7 +1,7 @@
 * Common.frm
 * FORM procedures common to CalcFeynAmp, HelicityME, PolarizationSum
 * this file is part of FormCalc
-* last modified 13 Apr 18 th
+* last modified 12 Apr 19 th
 
 
 #procedure CommonDecl

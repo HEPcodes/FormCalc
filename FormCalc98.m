@@ -1,8 +1,8 @@
 (*
 
-This is FormCalc, Version 9.7
+This is FormCalc, Version 9.8
 Copyright by Thomas Hahn 1996-2019
-last modified 8 Mar 19 by Thomas Hahn
+last modified 22 Apr 19 by Thomas Hahn
 
 Release notes:
 
@@ -287,8 +287,8 @@ BeginPackage["Form`"]
 
 { MuTilde, dm4M, qfM, qcM, numM, intM, paveM, cutM, extM,
   dotM, abbM, fermM, sunM, helM, powM, addM, mulM, subM,
-  d$$, e$$, i$$, dummy$$, g5M, g6M, g7M, dirM, iM, sM, EiKi,
-  njM, tnj, xnj, bnj, b0nj, b1nj, b2nj,
+  root$$, d$$, e$$, i$$, dummy$$, g5M, g6M, g7M, dirM,
+  iM, sM, EiKi, njM, tnj, xnj, bnj, b0nj, b1nj, b2nj,
   vTnj, v0nj, v1nj, v2nj, v3nj, v4nj }
 
 FormLoopMomenta = {q1, q2}
@@ -301,7 +301,7 @@ EndPackage[]
 (* symbols from the model files live in Global` *)
 
 { DiracMatrix, DiracSlash, ChiralityProjector,
-  DiracSpinor, MajoranaSpinor, DiracObject,
+  DiracSpinor, MajoranaSpinor, SpinorType, DiracObject,
   PolarizationVector, PolarizationTensor,
   MetricTensor, FourVector, ScalarProduct,
   Lorentz, Lorentz4, EpsilonScalar,
@@ -428,6 +428,11 @@ LoopIntegral = Join[PaVeIntegral, Blank/@ CutIntegral]
   CurrentProc, LastAmps, DenList, DenMatch,
   FormSetup, ToFPlus, UnitarityDebug, SUNObjs,
   DenyNoExp, DenyHide }
+
+$Dminus4MaxPower::usage =
+"$Dminus4MaxPower gives the maximum power of the Dminus4 symbol needed."
+
+$Dminus4MaxPower = 1	(* for one-loop *)
 
 
 (* symbols appearing in the output *)
@@ -2144,14 +2149,15 @@ the file is split into several pieces."
 
 Begin["`Private`"]
 
-$FormCalc = {9, 7}
+$FormCalc = {9, 8}
 
-$FormCalcVersionNumber = 9.7
+$FormCalcVersionNumber = 9.8
 
-$FormCalcVersion = "FormCalc 9.7 (21 Feb 2019)"
+$FormCalcVersion = "FormCalc 9.8 (22 Apr 2019)"
 
-$FormCalcDir = DirectoryName[ File /.
-  FileInformation[System`Private`FindFile[$Input]] ]
+$FormCalcDir = DirectoryName[$InputFileName /.
+  $HoldPattern[$InputFileName] :>
+    (File /. FileInformation[System`Private`FindFile[$Input]])]
 
 $FormCalcSrc = ToFileName[{$FormCalcDir, "FormCalc"}]
 
@@ -3100,7 +3106,8 @@ invproc = {}, invs = {}, kikj = {}, eiki = {}, eiei = {}},
 #define MomElim \"" <> ToString[momelim && Length[MomSubst] === 0] <> "\"\n\
 #define MomRange \"" <> ToSeq[momrange] <> "\"\n\
 #define DotExpand \"" <> ToBool[dotexp] <> "\"\n\
-#define Antisymmetrize \"" <> ToBool[antisymm] <> "\"\n\n" <>
+#define Antisymmetrize \"" <> ToBool[antisymm] <> "\"\n\
+#define Dminus4MaxPower \"" <> ToString[$Dminus4MaxPower] <> "\"\n\n" <>
     ToForm[FormProcs] <> "\n\
 #procedure Neglect\n" <>
     FormId[neglect] <> "\
@@ -3339,7 +3346,7 @@ Block[ {c = 0},
 partoff[x_, _off] := x
 
 partoff[{fi_, p_, m_, qn__}, f_] := (
-  Sow[(s:DiracSpinor | MajoranaSpinor)[k:_. p, _] :> s[k, #]];
+  Sow[(s:DiracSpinor | MajoranaSpinor | _SpinorType)[k:_. p, _] :> s[k, #]];
   {fi, p, #, qn}
 )& @ f[m]
 
@@ -3418,10 +3425,7 @@ DenyNoExp = {_String, Spinor, Den, intM, PowerOf,
 DenyHide = Level[{SumOver, PowerOf, IndexDelta, IndexEps, SUNObjs},
   {-1}, Alternatives]
 
-FinalFormRules = {
-  (f:_[__])^(n_?Negative) :> powM[f, n],
-  x_^n_ :> powM[x, n] /; !IntegerQ[n],
-  Complex[a_, b_] :> a + "i_" b }
+FinalFormRules = {Power -> FormPower, Complex[re_, im_] :> re + "i_" im}
 
 
 Attributes[CalcFeynAmp] = {Listable}
@@ -3452,9 +3456,9 @@ Options[CalcFeynAmp] = {
   EditCode -> False,
   RetainFile -> False }
 
-CalcFeynAmp::ddim = "Warning: `` \
-implies the use of Fierz identities which are in general not \
-applicable in D dimensions.  You know what you are doing."
+CalcFeynAmp::ddim = "Warning: `` implies the use of Fierz identities \
+which are in general not applicable in D dimensions.  \
+You know what you are doing."
 
 CalcFeynAmp[FormAmp[proc_][amp___], opt___Rule] :=
 Block[ {lev, dim, nocost, fchain, forder, evanes,
@@ -3504,7 +3508,7 @@ intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
     FourMomentum[Internal, i_] :> FormLoopMomenta[[i]] /.
     PolarizationVector | PolarizationTensor -> pvt /.
     Prepend[momrul,
-      (DiracSpinor | MajoranaSpinor)[s_. p_Symbol, m_] :>
+      (DiracSpinor | MajoranaSpinor | _SpinorType)[s_. p_Symbol, m_] :>
         Spinor[p, Neglect[m], s]] /.
     { LeviCivita -> Eps,
       ScalarProduct -> scalar,
@@ -3830,7 +3834,22 @@ Block[ {res},
 ]
 
 
+FormPower[Rational[x_, y_], Rational[n_, d_]] := ("root_"[d, x y^(d - 1)]/y)^n
+
+FormPower[y_?NumberQ, Rational[n_?Negative, d_]] := ("root_"[d, y^(d - 1)]/y)^-n
+
+FormPower[x_?NumberQ, Rational[n_, d_]] := "root_"[d, x^n]
+
+FormPower[f:_[__], n_?Negative] := powM[f, n]
+
+FormPower[x_, n_Integer] := x^n
+
+FormPower[other__] := powM[other]
+
+
 (* things to do when the amplitude comes back from FORM *)
+
+root$$[d_, x_] := x^(1/d)
 
 _dummy$$ = 1
 
@@ -4129,7 +4148,7 @@ Gkin[kin__] := {kin} /. {
   DiracSlash | DiracMatrix -> "ga",
   ChiralityProjector[-1] -> "L",
   ChiralityProjector[+1] -> "R",
-  FourVector | NonCommutative -> Dot }
+  FourVector | ScalarProduct | NonCommutative -> Dot }
 
 
 GenericList[] := Flatten[dv@@@ DownValues[gn]]

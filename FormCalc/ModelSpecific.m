@@ -2,27 +2,22 @@
 	ModelSpecific.m
 		global definitions for specific models
 		this file is part of FormCalc
-		last modified 21 Dec 18 th
+		last modified 2 Sep 19 th
 
 Note: This file is read by FormCalc only if $NoModelSpecific is not True.
 
 *)
 
-
-powQ[1] = powQ[-1] = False
-
-powQ[other_] := IntegerQ[other]
-
-Sq/: (Sq[v_] = v2_) := (
-  v^(n_?EvenQ) ^:= v2^(n/2);
-  (v^(n_?powQ) ^:= v2^((n - Sign[n])/2) #^Sign[n])&[ v /. Pattern -> (#1 &) ];
-  Square[v] = v2
+Sq/: (Sq[m:h_[___] | h_] = m2_) := (
+  (h/: m^(n:Except[1 | -1, _Integer]) :=
+     If[EvenQ[n], m2^(n/2), m2^((n - Sign[n])/2) #^Sign[n]]
+  )&[ m /. Pattern -> (#1 &) ];
+  Square[m] = m2
 )
 
-Sq/: (Sq[v_] =.) := (
-  v/: v^(n_?EvenQ) =.;
-  v/: v^(n_?powQ) =.;
-  Square[v] =.
+Sq/: (Sq[m:h_[___] | h_] =.) := (
+  h/: m^(n:Except[1 | -1, _Integer]) =.;
+  Square[m] =.
 )
 
 

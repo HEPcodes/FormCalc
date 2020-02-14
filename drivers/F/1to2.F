@@ -1,7 +1,7 @@
 * 1to2.F
 * the kinematics for a 1 -> 2 process
 * this file is part of FormCalc
-* last modified 20 Feb 17 th
+* last modified 18 Mar 19 th
 
 
 #define LEGS 3
@@ -20,18 +20,6 @@
 
 ************************************************************************
 
-	subroutine SetArray(ar, a1, a2, a3)
-	implicit none
-	RealType ar(*), a1, a2, a3
-
-	ar(1) = a1
-	ar(2) = a2
-	ar(3) = a3
-	end
-
-
-************************************************************************
-
 	subroutine KinIni(fail)
 	implicit none
 	integer fail
@@ -40,7 +28,7 @@
 
 	Lower(XCOSTH1) = 0
 	Upper(XCOSTH1) = 1
-	if( Lower(SQRTS) .gt. Upper(SQRTS) ) then
+	if( Lower(SQRTS) > Upper(SQRTS) ) then
 	  Step(XCOSTH1) = XCOSTH1STEP
 	else
 	  Step(XCOSTH1) = 0
@@ -68,7 +56,7 @@
 	save warn
 
 	p = dim(sqrtS, mass(1))
-	if( warn .eq. 0 .and. p .gt. eps_sqrtS ) then
+	if( warn == 0 .and. p > eps_sqrtS ) then
 	  warn = 1
 	  INFO "Computing off-shell decay"
 	  INFO "Warning: Results correct only if decaying particle"
@@ -77,7 +65,7 @@
 	p = sqrt(p*(sqrtS + mass(1)))
 #endif
 
-	call VecSet(1, mass(1), p, 0D0, 0D0, 1D0)
+	call VecSet(1, mass(1), p, 0D0,0D0,1D0)
 
 	p = 0
 	ex = 0

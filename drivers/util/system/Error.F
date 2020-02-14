@@ -1,7 +1,7 @@
 * Error.F
 * print the error messages and return the error code
 * this file is part of FormCalc
-* last modified 29 Oct 08 th
+* last modified 18 Mar 19 th
 
 
 	subroutine m_(error, lineno, file, msg)
@@ -12,9 +12,9 @@
 	if( lineno .gt. 0 ) error = lineno
 
 101	format(3A)
-	if( lineno .gt. 0 ) then
+	if( lineno > 0 ) then
 	  print 101, file, " error: ", msg
-	else if( lineno .eq. 0 ) then
+	else if( lineno == 0 ) then
 	  print 101, file, " warning: ", msg
 	else
 	  print 101, file, ": ", msg

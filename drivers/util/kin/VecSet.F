@@ -2,7 +2,7 @@
 * construct the CMS representation of a momentum and the
 * three corresponding polarization vectors
 * this file is part of FormCalc
-* last modified 29 Mar 16 th
+* last modified 25 Mar 19 th
 
 #include "types.h"
 #include "util.h"
@@ -46,7 +46,7 @@
 	momspec(SPEC_K,i) = p
 
 	m2 = m**2
-	if( m2 .lt. 1D-14 ) then
+	if( m2 < 1D-14 ) then
 	  p0 = p
 	  deltap = 0
 	else
@@ -63,11 +63,11 @@
 
 	sinth = ex**2 + ey**2
 	onePez = 1 + ez
-	if( onePez .lt. .5D0 ) onePez = sinth/(1 - ez)
+	if( onePez < .5D0 ) onePez = sinth/(1 - ez)
 	oneMez = 1 - ez
-	if( oneMez .lt. .5D0 ) oneMez = sinth/(1 + ez)
+	if( oneMez < .5D0 ) oneMez = sinth/(1 + ez)
 
-	if( sinth .lt. 1D-14 ) then
+	if( sinth < 1D-14 ) then
 * phi is irrelevant when theta = 0
 	  expIphi = 1
 	  momspec(SPEC_PHI,i) = 0

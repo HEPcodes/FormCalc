@@ -1,7 +1,7 @@
 * ODESolve.F
 * ODE solver a la Numerical Recipes
 * this file is part of FormCalc
-* last modified 14 Jan 16 th
+* last modified 10 Apr 19 th
 
 #include "types.h"
 
@@ -13,7 +13,7 @@ c#define WARNINGS
 	implicit none
 	integer nvar
 	external f, userarg
-	RealType ystart(*), x1, x2, eps, h1
+	RealType ystart(nvar), x1, x2, eps, h1
 
 	RealType safety, pgrow, pshrink, errcon
 	parameter (safety = .9D0)
@@ -40,99 +40,76 @@ c#define WARNINGS
 	parameter (DC5 = -277/14336D0)
 	parameter (C6 = 512/1771D0, DC6 = C6 - .25D0)
 
-	integer nvarmax, maxstep
-	parameter (nvarmax = 8, maxstep = 10000)
+	integer maxstep
+	parameter (maxstep = 10000)
 
-	RealType x0, y0(nvarmax), y(nvarmax), dydx(nvarmax,6)
+	RealType x0, yy(nvar,-1:6)
 	RealType h, h0, yerr, yscal, errmax
 	integer i, step
 
+#define y0	yy(1,-1)
+#define Y0	yy(1:nvar,-1)
+#define y	yy(1,0)
+#define Y	yy(1:nvar,0)
+#define dy(i)	yy(1,i)
+#define DY(i)	yy(1:nvar,i)
+
 	h = sign(h1, x2 - x1)
 	x0 = x1
-	do i = 1, nvar
-	  y0(i) = ystart(i)
-	enddo
+	Y0 = ystart
 
 	do step = 1, maxstep
 #ifdef VERBOSE
 	  print *, "step,stepsize,x ", step, h, x0
-	  print *, "y =", (y0(i), i = 1,nvar)
+	  print *, "y =", Y0
 #endif
-	  call f(dydx(1,1), y0, x0, userarg)
+	  call f(dy(1), y0, x0, userarg)
 	  h0 = h
-	  if( (x0 + h - x2)*(x0 + h - x1) .gt. 0 ) h = x2 - x0
+	  if( (x0 + h - x2)*(x0 + h - x1) > 0 ) h = x2 - x0
 
 * determine Cash-Karp step
-1	  do i = 1, nvar
-	    y(i) = y0(i) + B21*dydx(i,1)*h
-	  enddo
-	  call f(dydx(1,2), y, x0 + A2*h, userarg)
+1	  Y = Y0 + h*B21*DY(1)
+	  call f(dy(2), y, x0 + A2*h, userarg)
 
-	  do i = 1, nvar
-	    y(i) = y0(i) + (B31*dydx(i,1) + B32*dydx(i,2))*h
-	  enddo
-	  call f(dydx(1,3), y, x0 + A3*h, userarg)
+	  Y = Y0 + h*(B31*DY(1) + B32*DY(2))
+	  call f(dy(3), y, x0 + A3*h, userarg)
 
-	  do i = 1, nvar
-	    y(i) = y0(i) + (B41*dydx(i,1) + B42*dydx(i,2) +
-     &                      B43*dydx(i,3))*h
-	  enddo
-	  call f(dydx(1,4), y, x0 + A4*h, userarg)
+	  Y = Y0 + h*(B41*DY(1) + B42*DY(2) + B43*DY(3))
+	  call f(dy(4), y, x0 + A4*h, userarg)
 
-	  do i = 1, nvar
-	    y(i) = y0(i) + (B51*dydx(i,1) + B52*dydx(i,2) +
-     &                      B53*dydx(i,3) + B54*dydx(i,4))*h
-	  enddo
-	  call f(dydx(1,5), y, x0 + A5*h, userarg)
+	  Y = Y0 + h*(B51*DY(1) + B52*DY(2) + B53*DY(3) + B54*DY(4))
+	  call f(dy(5), y, x0 + A5*h, userarg)
 
-	  do i = 1, nvar
-	    y(i) = y0(i) + (B61*dydx(i,1) + B62*dydx(i,2) +
-     &                      B63*dydx(i,3) + B64*dydx(i,4) +
-     &                      B65*dydx(i,5))*h
-	  enddo
-	  call f(dydx(1,6), y, x0 + A6*h, userarg)
+	  Y = Y0 + h*(B61*DY(1) + B62*DY(2) + B63*DY(3) + B64*DY(4) + B65*DY(5))
+	  call f(dy(6), y, x0 + A6*h, userarg)
 
-	  errmax = 0
-	  do i = 1, nvar
-	    yscal = abs(y0(i)) + abs(h0*dydx(i,1)) + 1D-30
-	    yerr = h*(DC1*dydx(i,1) + DC3*dydx(i,3) +
-     &                DC4*dydx(i,4) + DC5*dydx(i,5) + DC6*dydx(i,6))
-	    errmax = max(errmax, abs(yerr/yscal))
-	  enddo
-
-	  errmax = errmax/eps
-	  if( errmax .gt. 1 ) then
+	  errmax = maxval(
+     &      abs(h*(DC1*DY(1) + DC3*DY(3) + DC4*DY(4) + DC5*DY(5) + DC6*DY(6)))/
+     &      (abs(Y0) + abs(h0*DY(1)) + 1D-30)
+     &    )/eps
+	  if( errmax > 1 ) then
 	    h = sign(max(abs(safety*h*errmax**pshrink), .1D0*abs(h)), h)
-	    if( x0 + h .eq. x0 ) then
+	    if( x0 + h /= x0 ) goto 1
 #ifdef WARNINGS
-	      print *, "stepsize underflow in ODESolve"
+	    print *, "stepsize underflow in ODESolve"
 #endif
-	    else
-	      goto 1
-	    endif
 	  endif
 
+	  Y0 = Y0 + h*(C1*DY(1) + C3*DY(3) + C4*DY(4) + C6*DY(6))
 	  x0 = x0 + h
-	  do i = 1, nvar
-	    y0(i) = y0(i) + h*(C1*dydx(i,1) + C3*dydx(i,3) +
-     &                         C4*dydx(i,4) + C6*dydx(i,6))
-	  enddo
+	  if( (x0 - x2)*(x2 - x1) >= 0 ) goto 9
 
-	  if( errmax .gt. errcon ) then
+	  if( errmax > errcon ) then
 	    h = safety*h*errmax**pgrow
 	  else
 	    h = 5*h
 	  endif
-
-	  if( (x0 - x2)*(x2 - x1) .ge. 0 ) goto 9
 	enddo
 
 #ifdef WARNINGS
 	print *, "RGE solution did not converge"
 #endif
 
-9	do i = 1, nvar
-	  ystart(i) = y0(i)
-	enddo
+9	ystart = Y0
 	end
 

@@ -1,7 +1,7 @@
 * HelicityME.frm
 * the FORM part of the HelicityME function
 * this file is part of FormCalc
-* last modified 9 Dec 16 th
+* last modified 12 Apr 19 th
 
 
 #procedure Emit
@@ -117,7 +117,7 @@ print;
 
 #call CommonDecl
 
-s D, Dminus4, Dminus4Eps;
+s D, Dminus4(:`Dminus4MaxPower'), Dminus4Eps(:`Dminus4MaxPower');
 cf DiracChain, helM;
 i [om], KK;
 t DD;
