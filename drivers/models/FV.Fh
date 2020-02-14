@@ -1,8 +1,11 @@
-* model_fv.h
-* flavor-violating extension for model_mssm.h and model_fh.h
+* FV.Fh
+* flavor-violating extension for MSSM.h and MSSMFH.h
 * this file is part of FormCalc
-* last modified 31 Jul 14 th
+* last modified 6 Oct 19 th
 
+#ifndef FV
+#define FV 1
+#endif
 
 	ComplexType deltaSf(6,6,4)
 	ComplexType UASf(6,6,5)

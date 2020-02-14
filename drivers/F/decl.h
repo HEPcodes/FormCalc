@@ -1,7 +1,7 @@
 * decl.h
 * these declarations are included "everywhere"
 * this file is part of FormCalc
-* last modified 10 Feb 17 th
+* last modified 6 Oct 19 th
 
 
 #ifndef DECL_H
@@ -26,6 +26,6 @@
 #include "user.h"
 #include "util.h"
 
-#include "RenConst.h.F"
-#include "MassShift.h.F"
+#include "RenConst.Fh"
+#include "MassShift.Fh"
 

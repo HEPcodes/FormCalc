@@ -1,7 +1,7 @@
-* model_mssm.h
-* declarations for model_mssm.F
+* MSSM.Fh
+* declarations for MSSM.F
 * this file is part of FormCalc
-* last modified 29 Dec 15 th
+* last modified 6 Oct 19 th
 
 
 #ifndef USfC
@@ -20,7 +20,7 @@
 #define SqrtEGlC Conjugate(SqrtEGl)
 #endif
 
-#include "model_sm.h"
+#include "SM.Fh"
 
 	ComplexType UCha(2,2), VCha(2,2), ZNeu(4,4)
 	ComplexType USf(2,2,4,3), UCSf(3,4,2:4,3), UUSf(3,4,2:4,3)
@@ -101,7 +101,4 @@
 	equivalence (Mino3, M_3, ReImMino3)
 	equivalence (ReImMino3(1), ReMino3, ReM_3)
 	equivalence (ReImMino3(2), ImMino3, ImM_3)
-
-
-#include "model_fv.h"
 

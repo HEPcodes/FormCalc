@@ -1,8 +1,8 @@
 #if 0
-	model_fh.h
-	declarations for model_fh.F
+	MSSMFH.ch
+	C declarations for MSSMFH.F
 	this file is part of FormCalc
-	last modified 2 Oct 13 th
+	last modified 6 Oct 19 th
 #endif
 
 

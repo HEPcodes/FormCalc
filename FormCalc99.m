@@ -1,8 +1,8 @@
 (*
 
-This is FormCalc, Version 9.8
+This is FormCalc, Version 9.9
 Copyright by Thomas Hahn 1996-2019
-last modified 22 Apr 19 by Thomas Hahn
+last modified 6 Oct 19 by Thomas Hahn
 
 Release notes:
 
@@ -53,8 +53,8 @@ BeginPackage["FeynArts`"]
   Index, IndexDelta, IndexEps, IndexSum, SumOver,
   MatrixTrace, FermionChain, NonCommutative, LeviCivita,
   CreateTopologies, ExcludeTopologies, Tadpoles,
-  InitializeModel, $Model, Model, GenericModel, Reinitialize,
-  InsertFields, InsertionLevel, AmplitudeLevel,
+  InitializeModel, $ModelPath, $Model, Model, GenericModel,
+  Reinitialize, InsertFields, InsertionLevel, AmplitudeLevel,
   ExcludeParticles, ExcludeFieldPoints, LastSelections,
   Restrictions, CreateFeynAmp, Truncated,
   RenConst, MassShift, Paint, DiagramGrouping }
@@ -244,7 +244,7 @@ evaluated.  b0args are the same arguments as for B0, k is the external
 momentum and m1, m2 are the masses squared."
 
 Ccut::usage =
-"Ccut[c0args][rank, num, numtilde, k1, k2, m1, m2, m3] is the
+"Ccut[c0args][hel, r, num4, numE, k1, k2, m1, m2, m3] is the
 three-point OPP integral with numerator functions num4 (4-dim) and numE
 (D-4-dim), where num4 contains r powers of the integration momentum.
 For vanishing hel the coefficient is known to be zero so the integral
@@ -252,7 +252,7 @@ need not be evaluated.  c0args are the same arguments as for C0,
 k1, k2 are the external momenta and m1..m3 are the masses squared."
 
 Dcut::usage =
-"Dcut[d0args][rank, num, numtilde, k1, k2, k3, m1, m2, m3, m4] is the 
+"Dcut[d0args][hel, r, num4, numE, k1, k2, k3, m1, m2, m3, m4] is the 
 four-point OPP integral with numerator functions num4 (4-dim) and numE 
 (D-4-dim), where num4 contains r powers of the integration momentum.
 For vanishing hel the coefficient is known to be zero so the integral 
@@ -260,7 +260,7 @@ need not be evaluated.  d0args are the same arguments as for D0,
 k1..k3 are the external momenta and m1..m4 are the masses squared."
 
 Ecut::usage =
-"Ecut[e0args][rank, num, numtilde, k1, k2, k3, k4, m1, m2, m3, m4, m5]
+"Ecut[e0args][hel, r, num4, numE, k1, k2, k3, k4, m1, m2, m3, m4, m5]
 is the five-point OPP integral with numerator functions num4 (4-dim)
 and numE (D-4-dim), where num4 contains r powers of the integration
 momentum.  For vanishing hel the coefficient is known to be zero so
@@ -269,7 +269,7 @@ for E0, k1..k4 are the external momenta and m1..m5 are the masses
 squared."
 
 Fcut::usage =
-"Fcut[f0args][rank, num, numtilde, k1, k2, k3, k4, k5, m1, m2, m3, m4,
+"Fcut[f0args][hel, r, num4, numE, k1, k2, k3, k4, k5, m1, m2, m3, m4,
 m5, m6] is the six-point OPP integral with numerator functions num4
 (4-dim) and numE (D-4-dim), where num4 contains r powers of the
 integration momentum.  For vanishing hel the coefficient is known to
@@ -2149,11 +2149,11 @@ the file is split into several pieces."
 
 Begin["`Private`"]
 
-$FormCalc = {9, 8}
+$FormCalc = {9, 9}
 
-$FormCalcVersionNumber = 9.8
+$FormCalcVersionNumber = 9.9
 
-$FormCalcVersion = "FormCalc 9.8 (22 Apr 2019)"
+$FormCalcVersion = "FormCalc 9.9 (6 Oct 2019)"
 
 $FormCalcDir = DirectoryName[$InputFileName /.
   $HoldPattern[$InputFileName] :>
@@ -2252,6 +2252,8 @@ ToStr[x__] := StringJoin[ToString/@ Flatten[{x}]]
 ToSymbol[x__] := ToExpression[ToStr[x]]
 
 RPad[s_, n_] := s <> Table[" ", {n - StringLength[s]}]
+
+AttachTo[h_, arg__, rhs_] := h[arg] = {h[arg], rhs}
 
 
 _SymbolNumber = 0
@@ -5236,34 +5238,180 @@ MkDir[dirs__] := MkDir[Flatten[{dirs}]]
 
 Off[CopyFile::filex]
 
-Options[SetupCodeDir] = {Drivers -> "drivers"}
+Options[SetupCodeDir] = {
+  Model :> $Model,
+  Drivers -> "drivers",
+  Folder -> "models",
+  FileHeader -> FileHeader (* i.e. from WriteSquaredME *) }
 
-SetupCodeDir[dir_, opt___Rule] :=
-Block[ {drivers, path, files = {}},
-  {drivers} = ParseOpt[SetupCodeDir, opt];
+SetupCodeDir[dir_, opt___?OptionQ] :=
+Block[ {mod, drivers, folder, header, path, modpath, fmod,
+files = {}, prefix = "", ModName},
+  {mod, drivers, folder, header} = ParseOpt[SetupCodeDir, opt] /.
+    Options[WriteSquaredME];
   path = SetDirectory[MkDir[dir]];
   ResetDirectory[];
 
-  If[ FileType[drivers] === Directory,
-    SetDirectory[drivers];
+  If[ Quiet[SetDirectory[drivers]] =!= $Failed,
     files = FileNames["*", "", Infinity];
     CopyFile[#, ToFileName[path, #]]&/@
       (files = FileNames["*", "", Infinity]);
-    ResetDirectory[]
-  ];
+    ResetDirectory[] ];
 
-  If[ FileType[$DriversDir] === Directory,
-    SetDirectory[$DriversDir];
+  If[ Quiet[SetDirectory[$DriversDir]] =!= Failed,
     CopyFile[#, ToFileName[path, #]]&/@
       Complement[FileNames["*", "", Infinity], files];
-    ResetDirectory[]
-  ];
+    ResetDirectory[] ];
 
   CopyFile[ToFileName[$FormCalcBin, #], ToFileName[path, #]]&/@
     {"util.a", "simd.h"};
 
+  DefModName[modpath = MkDir[dir, folder]];
+  _fmod = {};
+  ModelIniFiles[mod];
+  Cases[ DownValues[fmod], _[_[_[ext_String]], mods_] :>
+    (ModelIniAll[ext, Thread[{"#include \"", #1, ".", ext, "\"\n"}], #2]&)@@
+      Thread[Flatten[mods], Rule] ];
+
   path
 ]
+
+
+Attributes[ModelIniFiles] = {Listable}
+
+ModelIniFiles[mod_String] :=
+Block[ {smod, files, defs, defs2, subs, vars, subvars, cplx, hh, file},
+  smod = StringJoin[StringCases[mod, LetterCharacter]];
+
+  files = FileNames[mod <> ".*", modpath];
+  If[ Length[files] > 0,
+    AttachTo[fmod, FileExtension[#], mod -> smod]&/@ files;
+    Return[] ];
+
+  Needs["FeynArts`"];
+  Block[ {$Path = $ModelPath},
+    If[ Quiet[Get[mod <> ".pars"]] === $Failed, Return[] ];
+    defs = Flatten[{Global`M$ExtParams, Global`M$IntParams,
+                    Global`M$Masses, Global`M$Widths}];
+    Get[mod <> ".mod"];
+    subs = Global`M$FACouplings ];
+
+  defs2 = DeleteCases[
+    Flatten[{#1 -> #2, #1^2 -> HoldForm[#1^2]}&@@@ defs],
+    _[_^2, _] ] /. Complex[re_, im_] :> re + cI im;
+
+  subvars = First/@ subs;
+  vars = Flatten[{defs2, subs}];
+  cplx = Union[Cases[vars, Conjugate[var_] :> var, Infinity]];
+  cplx = Union[cplx, FindDeps[vars, Alt[Append[cplx, cI]]]];
+  vars = First/@ defs2;
+
+  Scan[(N[#] = Random[])&, vars];
+  Scan[(RealQ[#] = True)&, Complement[vars, cplx]];
+
+  hh = OpenFortran[ModName[mod, ".Fh"]];
+  Block[ {varDecl = varDeclF},
+    WriteString[hh,
+      Hdr["declarations for " <> mod] <>
+      VarDecl[Complement[vars, cplx], "RealType"] <>
+      VarDecl[Intersection[vars, cplx], "ComplexType"] <>
+      modParaF@@@ defs2 <> "\n\n" <>
+      VarDecl[Complement[subvars, cplx], "RealType"] <>
+      VarDecl[Intersection[subvars, cplx], "ComplexType"] <> "\n"] ];
+  Close[hh];
+  AttachTo[fmod, "Fh", mod -> smod];
+
+  hh = OpenC[ModName[mod, ".ch"]];
+  Block[ {varDecl = varDeclC},
+    WriteString[hh,
+      Hdr["declarations for " <> mod] <>
+      modParaC@@@ defs2 <> "\n\n" <>
+      VarDecl[Complement[subvars, cplx], "RealType"] <>
+      VarDecl[Intersection[subvars, cplx], "ComplexType"] <> "\n"] ];
+  Close[hh];
+  AttachTo[fmod, "ch", mod -> smod];
+
+  hh = OpenCode[ModName[mod, ".F"]];
+  WriteExpr[hh, {
+    Hdr["initialization of " <> mod] <>
+    SubroutineDecl[smod <> "Defaults(argc, argv)", "\
+\tinteger argc\n\
+\tcharacter*128 argv(*)\n"] <> "\
+\tend\n\n\
+************************************************************************\n\n" <>
+    SubroutineDecl[smod <> "ConstIni(fail)", "\
+\tinteger fail\n"] <> "\
+#include \"" <> mod <> ".Fh\"\n\n",
+    subs, "\n\
+\tfail = 0\n\
+\tend\n\n\
+************************************************************************\n\n" <>
+    SubroutineDecl[smod <> "VarIni(fail, Q)", "\
+\tinteger fail\n\
+\tRealType Q\n"] <> "\
+\tfail = 0\n\
+\tend\n\n\
+************************************************************************\n\n" <>
+    SubroutineDecl[smod <> "Digest"] <> "\
+#include \"" <> mod <> ".Fh\"\n\n" <>
+    ({"!INFO \"", ToCode[#1], " =\", ", ToCode[#1], "\n"}&@@@ defs) <> "\
+\tend\n\n"
+  }, Newline -> ""];
+  Close[hh];
+  AttachTo[fmod, "F", mod -> smod];
+]
+
+ModelIniFiles[other_] := (Message[SetupCodeDir::nomod, other]; Abort[])
+
+SetupCodeDir::nomod = "Model `` unknown."
+
+
+modParaF[var_, val_] :=
+  {"\n\tparameter (", ToCode[var], " = ", ToCode[val], ")"}
+
+modParaC[var_, val_?NonNegative] :=
+  {"\n#define ", ToCode[var], " ", ToCode[val]}
+
+modParaC[var_, val_] := {"\n#define ", ToCode[var], " (", ToCode[val], ")"}
+
+
+ModelIniAll["F", {incl_}, {stub_}] :=
+  WriteString[ModName["model.F", ""],
+    Hdr["model initialization routines"] <>
+    incl <> "\n\
+#define ModelDefaults " <> stub <> "Defaults\n\
+#define ModelConstIni " <> stub <> "ConstIni\n\
+#define ModelVarIni " <> stub <> "VarIni\n\
+#define ModelDigest " <> stub <> "Digest\n\n"]
+
+ModelIniAll["F", incl_, stub_] :=
+  WriteString[ModName["model.F", ""],
+    Hdr["model initialization routines"] <>
+    incl <> "\n\n" <>
+    SubroutineDecl["ModelDefaults(argc, argv)", "\
+\tinteger argc\n\
+\tcharacter*128 argv(*)\n"] <>
+    Thread[{"\tcall ", stub, "Defaults(argc, argv)\n"}] <> "\
+\tend\n\n\
+************************************************************************\n\n" <>
+    SubroutineDecl["ModelConstIni(fail)", "\
+\tinteger fail\n"] <>
+    Thread[{"\tcall ", stub, "ConstIni(fail)\n"}] <> "\
+\tend\n\n\
+************************************************************************\n\n" <>
+    SubroutineDecl["ModelVarIni(fail, Q)", "\
+\tinteger fail\n\
+\tRealType Q\n"] <>
+    Thread[{"\tcall ", stub, "VarIni(fail, Q)\n"}] <> "\
+\tend\n\n\
+************************************************************************\n\n" <>
+    SubroutineDecl["ModelDigest"] <>
+    Thread[{"\tcall ", stub, "Digest\n"}] <> "\
+\tend\n\n"]
+
+ModelIniAll[ext_, incl_, stub_] :=
+  WriteString[ModName["model.", ext],
+    Hdr["model declarations"] <> incl <> "\n"]
 
 
 (* Fortran code generation *)
@@ -7323,11 +7471,11 @@ WriteRC[RenConstList[h_][rcs___]] :=
 Block[ {fname = fname /. Automatic :> ToString[h], rcmods},
   Block[ {varDecl, hh},
     varDecl = varDeclF;
-    hh = OpenFortran[ModName[fname, ".h.F"]];
+    hh = OpenFortran[ModName[fname, ".Fh"]];
     WriteString[hh, #1 <> IfDecl[#2, {}, VarDecl[#3]]];
     Close[hh];
     varDecl = varDeclC;
-    hh = OpenC[ModName[fname, ".h.c"]];
+    hh = OpenC[ModName[fname, ".ch"]];
     WriteString[hh, #1 <> IfDecl[#2, VarDecl[#3], {}]];
     Close[hh]
   ]&[ Hdr["RC declarations"],
@@ -7342,7 +7490,7 @@ Block[ {fname = fname /. Automatic :> ToString[h], rcmods},
   {"\
 OBJS :=", MakefileObjs[rcmods], "\n\n\
 OBJS_RC += $(OBJS)\n\n\
-$(LIB)($(OBJS)): ", $MakeDeps[[2]], MakefileName[fname, ".h" <> $CodeExt], "\n\n\n"}
+$(LIB)($(OBJS)): ", $MakeDeps[[2]], MakefileName[fname, $CodeExt <> "h"], "\n\n\n"}
 ]
 
 
@@ -8016,7 +8164,7 @@ WriteBlock[hh_, other_] := (
 
 
 FExpr[expr_] := fcoll[ expr /.
-    Complex[a_, b_] :> a + cI b /.
+    Complex[re_, im_] :> re + cI im /.
     Dminus4 -> -2/Divergence /.
     E^x_ :> exp[x] /.
     f:rargs[__] :> RealArgs[f] /.

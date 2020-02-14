@@ -1,7 +1,7 @@
 * xsection.F
 * routines to compute the cross-section
 * this file is part of FormCalc
-* last modified 28 Mar 19 th
+* last modified 6 Oct 19 th
 
 #include "decl.h"
 #include "inline.h"
@@ -11,7 +11,8 @@
 
 #include "partonic.h"
 #include KIN
-#include MODEL
+
+#include "model.F"
 
 #if PHOTONRADIATION == SOFT || GLUONRADIATION == SOFT
 #include "softradiation.F"

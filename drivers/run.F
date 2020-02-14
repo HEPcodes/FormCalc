@@ -1,7 +1,7 @@
 * run.F
 * defines parameter settings for one run, then includes main.F
 * this file is part of FormCalc
-* last modified 25 Mar 19 th
+* last modified 6 Oct 19 th
 
 
 * Whether to run in testing mode
@@ -24,24 +24,15 @@ c#define MUDIM 1D100
 c#define LAMBDA 1D10
 #endif
 
-* The following sets all ren. constants to zero for debugging
-* or if calculating a tree-level reaction.
 
-#ifndef NO_RENCONST
-c#define NO_RENCONST
-#endif
+* Options for the model.F file (e.g. NO_SQUARK_MIXING for MSSM.F).
 
-
-* The model initialization code is included here.  Options for the
-* model_XXX.F file (e.g. NO_SQUARK_MIXING for model_mssm.F) must be
-* defined before the #include line.
-
-* options for model_sm.F:
+* options for SM.F:
 c#define NO_CKM
 #define MB_SCHEME ONSHELL
 #define ALPHAS_ORDER 3
 
-* options for model_mssm.F:
+* options for MSSM.F:
 c#define NO_SQUARK_MIXING
 c#define HIGGS_MASSES TREE
 c#define HIGGS_MASSES SIMPLE
@@ -51,14 +42,10 @@ c#define FV 3
 c#define NO_EXCLUSION_LIMITS
 c#define NO_GUT_RELATION
 
-* options for model_thdm.F:
+* options for THDM.F:
 c#define MODEL_TYPE_I
 c#define MODEL_TYPE_II
 c#define NO_EXCLUSION_LIMITS
-
-#ifndef MODEL
-#define MODEL "model_sm.F"
-#endif
 
 
 * The LOOPn set up the model parameters for the calculation, either
@@ -67,15 +54,15 @@ c#define NO_EXCLUSION_LIMITS
 * - or as do-loops terminating on label 1, e.g.
 *       do 1 MA0 = 100, 500, 10
 
-#define LOOP1 TB = 5
-#define LOOP2 MA0 = 750
-#define LOOP3 MSusy = 1000
-#define LOOP4 MUE = 200
-#define LOOP5 Mino2 = 200
-#define LOOP6 MGl = .8D0*MSusy
-#define LOOP7 At = MUE/TB + 2*MSusy
-#define LOOP8 Ab = At
-#define LOOP9 Atau = At
+#define LOOP1
+#define LOOP2
+#define LOOP3
+#define LOOP4
+#define LOOP5
+#define LOOP6
+#define LOOP7
+#define LOOP8
+#define LOOP9
 #define LOOP10
 #define LOOP11
 #define LOOP12

@@ -1,7 +1,7 @@
-* model_fh.F
-* parameter initialization via FeynHiggs
+* MSSMFH.F
+* MSSM with parameter initialization via FeynHiggs
 * this file is part of FormCalc
-* last modified 18 Mar 19 th
+* last modified 18 Oct 19 th
 
 
 #ifndef MB_SCHEME
@@ -49,7 +49,7 @@
 
 ************************************************************************
 
-	subroutine ModelDefaults(argc, argv)
+	subroutine MSSMFHDefaults(argc, argv)
 	implicit none
 	integer argc
 	character*128 argv(*)
@@ -64,7 +64,7 @@
 	data flags /"400202113"/
 
 	if( argc < 1 .or. argc > 2 )
-     &    stop "model_fh: need arguments <file> [<flags>]"
+     &    stop "MSSMFH: need arguments <file> [<flags>]"
 
 	if( argc >= 2 ) flags = argv(2)
 	call FHSetFlagsString(error, flags)
@@ -81,7 +81,7 @@
 
 ************************************************************************
 
-	subroutine ModelConstIni(fail)
+	subroutine MSSMFHConstIni(fail)
 	implicit none
 	integer fail
 
@@ -238,7 +238,7 @@
 
 ************************************************************************
 
-	subroutine ModelVarIni(fail, Q)
+	subroutine MSSMFHVarIni(fail, Q)
 	implicit none
 	integer fail
 	RealType Q
@@ -267,7 +267,7 @@
 
 ************************************************************************
 
-	subroutine ModelDigest
+	subroutine MSSMFHDigest
 	implicit none
 
 #include "decl.h"

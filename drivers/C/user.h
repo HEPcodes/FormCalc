@@ -3,7 +3,7 @@
 	the model declarations should be inserted here
 	as well as any kind of user definition
 	this file is part of FormCalc
-	last modified 10 Feb 17 th
+	last modified 6 Oct 19 th
 #endif
 
 
@@ -15,7 +15,7 @@
 //#define SAMURAI
 //#define CUTTOOLS
 
-#include "model_mssm.h"
+#include "model.hc"
 
 #else
 // declarations for every subroutine

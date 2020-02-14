@@ -1,12 +1,12 @@
 #if 0
-	model_thdm.h
-	declarations for model_thdm.F
+	THDM.ch
+	C declarations for THDM.F
 	this file is part of FormCalc
-	last modified 9 Mar 13 th
+	last modified 6 Oct 19 th
 #endif
 
 
-#include "model_sm.h"
+#include "SM.ch"
 
 #if NOUNDERSCORE
 #define thdmpara_ thdmpara

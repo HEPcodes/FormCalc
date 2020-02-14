@@ -1,8 +1,8 @@
 #if 0
-	model_sm.h
-	declarations for model_sm.F
+	SM.ch
+	C declarations for SM.F
 	this file is part of FormCalc
-	last modified 13 Mar 19 th
+	last modified 18 Oct 19 th
 #endif
 
 
@@ -63,6 +63,7 @@ struct smpara_ {
   ComplexType CKM[3][3];
   RealType Mf[3][4], Mf2[3][4], MH, MH2;
   RealType EL, ELMZ, GS, Alfas, Alfas2, SW;
+  integer nf;
 } smpara_;
 
 #define CKM(i,j) smpara_.CKM[j-1][i-1]
@@ -77,4 +78,5 @@ struct smpara_ {
 #define Alfas smpara_.Alfas
 #define Alfas2 smpara_.Alfas2
 #define SW smpara_.SW
+#define nf smpara_.nf
 

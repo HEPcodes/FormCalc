@@ -1,7 +1,7 @@
 # makefile.in
 # makefile template used by configure
 # this file is part of FormCalc
-# last modified 29 Jul 18 th
+# last modified 6 Oct 19 th
 
 # Note: make permanent changes only in makefile.in,
 # changes in makefile will be overwritten by configure.
@@ -23,7 +23,7 @@ RANLIB = $(SRC)/tools/ranlib
 DIR = $(dir $(lastword $(MAKEFILE_LIST)))
 LIB = $(subst /,_,$(patsubst $(SRC)/%,%,$(DIR:/=))).a
 LIBS :=
-VPATH := .:$(SRC):$(SRC)/include
+VPATH := .:$(SRC):$(SRC)/models:$(SRC)/include
 
 -include $(SRC)/renconst/*akefile
 

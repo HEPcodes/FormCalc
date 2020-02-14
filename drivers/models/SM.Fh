@@ -1,7 +1,7 @@
-* model_sm.h
-* declarations for model_sm.F
+* SM.Fh
+* declarations for SM.F
 * this file is part of FormCalc
-* last modified 06 Jun 17 cs
+* last modified 18 Oct 19 th
 
 
 #ifndef CKMC
@@ -53,10 +53,12 @@
 	ComplexType CKM(3,3)
 	RealType Mf(4,3), Mf2(4,3), MH, MH2
 	RealType EL, ELMZ, GS, Alfas, Alfas2, SW
+	integer nf
 
 	common /smpara/ CKM
 	common /smpara/ Mf, Mf2, MH, MH2
 	common /smpara/ EL, ELMZ, GS, Alfas, Alfas2, SW
+	common /smpara/ nf
 
 	RealType MU, MU2, MD, MD2, MB, MB2
 	equivalence (Mf(3,1), MU)

@@ -2,7 +2,7 @@
 * the model declarations should be inserted here
 * as well as any kind of user definition
 * this file is part of FormCalc
-* last modified 10 Feb 17 th
+* last modified 6 Oct 19 th
 
 
 #ifndef USER_H
@@ -17,7 +17,7 @@ c#define CUTTOOLS
 * declarations for every subroutine
 
 c#include "opp.h"
-#include "model_mssm.h"
+#include "model.Fh"
 
 #endif
 

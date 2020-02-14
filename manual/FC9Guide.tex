@@ -6,18 +6,18 @@
 \graphicspath{{figures/}}
 
 
-%\special{!TeXDict begin
+\special{!TeXDict begin
 %/Blue{0 0 1 setrgbcolor}DC
 %/Red{1 0 0 setrgbcolor}DC
-%/PastelRed{1 .8 .8 setrgbcolor}DC
-%/PastelBlue{.8 .8 1 setrgbcolor}DC
-%/PastelGreen{.54 .9 .54 setrgbcolor}DC
+/PastelRed{1 .8 .8 setrgbcolor}DC
+/PastelBlue{.8 .8 1 setrgbcolor}DC
+/PastelGreen{.54 .9 .54 setrgbcolor}DC
 %/OliveGreen{.216 .60 .030 setrgbcolor}DC
-%end }
+end }
 
-\newrgbcolor{PastelRed}{1 .8 .8}
-\newrgbcolor{PastelBlue}{.8 .8 1}
-\newrgbcolor{PastelGreen}{.54 .9 .54}
+%\newrgbcolor{PastelRed}{1 .8 .8}
+%\newrgbcolor{PastelBlue}{.8 .8 1}
+%\newrgbcolor{PastelGreen}{.54 .9 .54}
 
 \makeindex
 \def\indextt#1{\index{#1@\texttt{#1}}}
@@ -170,7 +170,7 @@
 
 \vspace*{1ex}
 
-\hfill\hbox{Mar 15, 2018~~~~~Thomas Hahn}
+\hfill\hbox{Sep 29, 2019~~~~~Thomas Hahn}
 
 \bigskip
 \bigskip
@@ -2649,8 +2649,6 @@ evaluation:
 	setup for a single partonic process \\
 \quad\Code{num.h} \>
 	definitions for the OPP numerator functions \\
-\quad\Code{model\uscore *.F,.h} \>
-	initialization of the model parameters \\
 \quad\Code{lumi\uscore *.F} \>
 	luminosity computation \\
 \quad\MtoN.F,.h \>
@@ -2688,6 +2686,11 @@ evaluation:
 	user definitions, \eg choice of model, OPP, etc. \\
 \quad\Code{decl.h} \>
 	combined declarations file, included `everywhere'
+\\[1ex]
+\Code{drivers/models/} \>
+	code for model initialization: \\
+\quad\Code{model\uscore *.F,.h} \>
+	initialization of the stock models
 \\[1ex]
 \Code{drivers/tools/} \>
 	helper scripts: \\
@@ -2787,23 +2790,65 @@ or the driver programs, so a code directory, once created, stays put.
 The \Code{Drivers} option can be used to load customized driver programs
 from a local directory.
 \biiitab{Option}
+\Code{Model} & \Code{\$Model} &
+	the model used for the calculation, the presently initialized
+	one by default \\
+\Code{Folder} & \Code{models} &
+	the subdirectory of the generated directory into which
+	the model initialization code is written \\
+\Code{FileHeader} & \Code{FileHeader} &
+	the header for generated code files, same as for
+	\Code{WriteSquaredME} by default \\
 \Code{Drivers} & \Code{"drivers"} &
 	a directory containing customized versions of the driver 
 	programs which take precedence over the default ones in
 	\Code{\$DriversDir}
 \etab
+\indextt{Model}%
+\indextt{Folder}%
+\indextt{FileHeader}%
 \indextt{Drivers}%
 \indextt{\$DriversDir}%
 To illustrate the concept, consider generating code for a particular 
 scattering process.  The first time, no customized drivers exist and 
 hence \FC\ copies the default drivers into the code directory.  The user 
-then modifies, say, \Code{process.h}.  To preserve the changes, he 
-copies the file to a local directory, \eg \Code{drivers}, and 
-specifies this directory with the \Code{Drivers} option.  Now even if 
-the code directory is deleted, generating the code anew will recover all 
+then modifies, say, \Code{run.F}.  To preserve the changes, he copies 
+the file to a local directory, \eg \Code{drivers}, and specifies this 
+directory with the \Code{Drivers} option.  Now even if the code 
+directory is deleted, generating the code anew will recover all 
 modifications because the customized version of \Code{process.h} in 
-\Code{drivers} supersedes the default \Code{process.h} in 
+\Code{drivers} supersedes the default \Code{run.F} in 
 \Code{\$DriversDir}.
+
+\index{model initialization}%
+\index{FeynRules}%
+\Code{SetupCodeDir} also sets up the model initialization, which
+consists of three files:
+\begin{itemize}
+\item \Code{models/model.F}, which contains the initialization routines
+  of Sect.~\ref{sec:numpar},
+\item \Code{models/model.Fh}, model declarations for Fortran code,
+\item \Code{models/model.ch}, model declarations for C code.
+\end{itemize}
+For \FA's stock models the generated initialization merely uses/combines
+the ready-made files in \Code{drivers/models}.
+
+Models created with the \FA\ interface of \textit{FeynRules}
+\cite{Al09,Al14} come with a \Code{\Var{model}.pars} file containing 
+numerical values for model parameters, and also the model file
+\Code{\Var{model}.mod} itself uses shorthands in coupling expressions, 
+defined in the variable \Code{FA\$Couplings}.
+
+\emph{Important:} the numbers listed in the \Code{.pars} file are 
+usually tree-level values and may need to be adapted depending on the 
+renormalization scheme, which is in the sole responsibility of the
+user.
+
+The generation of initialization code is silently skipped if neither
+stock initialization files nor a \Code{.pars} file is found on the
+\Code{\$ModelPath}.
+
+\smallskip
 
 The function \Code{WriteSquaredME} assumes that there is a tree-level
 amplitude $\Mtree$ and a one-loop amplitude $\Mloop$ and writes out a
@@ -2869,7 +2914,7 @@ The following options can be used with \Code{WriteSquaredME}.
 	the file header \\[-\parskip]
 	& \Code{* \%f\backsl n\backsl} \\[-\parskip]
 	& \Code{* \%d\backsl n\backsl} \\[-\parskip]
-	& \rlap{\Code{* generated by FormCalc \Vm.\Vn \%t\backsl n\backsl}} \\[-\parskip]
+	& \rlap{\Code{* generated by FormCalc \Vm.\Vn\ \%t\backsl n\backsl}} \\[-\parskip]
 	& \rlap{\Code{\#endif\backsl n\backsl n"}} \\
 \Code{SubroutineIncludes} & \Code{FileIncludes} &
 	per-subroutine \Code{\#include} statements \\
@@ -3100,12 +3145,11 @@ process.
 
 %------------------------------------------------------------------------
 
-\subsubsection{Specifying numerical parameters}
+\subsubsection{Specifying model parameters}
+\label{sec:numpar}
 
-Numerical parameters are specified in the model initialization file, \eg 
-\Code{model\uscore sm.F}, with declarations in \Code{model\uscore sm.h}.  
-Each such initialization file must implement the following three 
-subroutines:
+Numerical model parameters are specified in the model initialization file.
+The initialization file must implement three subroutines:
 \begin{verbatim}
         subroutine ModelDefaults
 \end{verbatim}
@@ -5896,14 +5940,21 @@ new (\Code{B0i[b0,b1,$\dots$]}) conventions for two-point functions in
 \newcommand{\prl}[3]{\textsl{Phys.\ Rev.\ Lett.} \textbf{#1} (#2) #3}
 \newcommand{\zp}[3]{\textsl{Z.\ Phys.} \textbf{#1} (#2) #3}
 
+\bibitem[Al09]{Al09}
+\cpc{180}{2009}{1614} [arXiv:0806.4194].
+
+\bibitem[Al14]{Al14}
+A.~Alloul, N.~Christensen, C.~Degrande, C.~Duhr, B.~Fuks
+\cpc{185}{2014}{2250} [arXiv:1310.1921].
+
 \bibitem[Ch79]{ChFH79}
-M.~Chanowitz, M.~Furman, and I.~Hinchliffe, \np{B159}{1979}{225}.
+M.~Chanowitz, M.~Furman, I.~Hinchliffe, \np{B159}{1979}{225}.
 
 \bibitem[Cv76]{Cv76}
 P.~Cvitanovic, \pr{D14}{1976}{1536}.
 
 \bibitem[dA98]{dACTP98}
-F.~del~Aguila, A.~Culatti, R.~Mu\~noz Tapia, and M.~P\'erez-Victoria,
+F.~del~Aguila, A.~Culatti, R.~Mu\~noz Tapia, M.~P\'erez-Victoria,
 \np{B537}{1999}{561} [hep-ph/9806451].
 
 \bibitem[De93]{De93}
@@ -5934,7 +5985,7 @@ C.C.~Nishi, \ajp{73}{2005}{1160} [hep-ph/0412245].
 W.~Siegel, \pl{B84}{1979}{193}.
 
 \bibitem[tH72]{tHV72}
-G.~'t~Hooft and M.~Veltman, \np{B44}{1972}{189}.
+G.~'t~Hooft, M.~Veltman, \np{B44}{1972}{189}.
 
 \bibitem[Ve00]{Ve00}
 J.A.M.~Vermaseren, math-ph/0010025.

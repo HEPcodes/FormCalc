@@ -1,13 +1,13 @@
 * run.F
 * defines parameter settings for one run, then includes main.F
 * this file is part of FormCalc
-* last modified 6 Oct 19 th
+* last modified 14 Jan 16 th
 
 
-* Whether to run in testing mode
+* Whether to run in debugging mode
 
-#ifndef TESTRUN
-#define TESTRUN 1
+#ifndef DEBUG
+#define DEBUG 1
 #endif
 
 * Uncomment the following to check UV- and IR-finiteness
@@ -55,6 +55,10 @@ c#define NO_GUT_RELATION
 c#define MODEL_TYPE_I
 c#define MODEL_TYPE_II
 c#define NO_EXCLUSION_LIMITS
+
+#ifndef MODEL
+#define MODEL "model_mssm.F"
+#endif
 
 
 * The LOOPn set up the model parameters for the calculation, either
@@ -121,7 +125,7 @@ c#define NO_EXCLUSION_LIMITS
 #define SQRTSSTEP 10
 
 #define COSTH1CUT .01D0
-#ifdef TESTRUN
+#ifdef DEBUG
 #define XCOSTH1STEP 1/3D0
 #else
 #define XCOSTH1STEP .02D0
@@ -133,11 +137,11 @@ c#define NO_EXCLUSION_LIMITS
 * The following are veto cuts, i.e. the cross-section is kept if the
 * cut conditions apply (set to zero otherwise).  They are formulated
 * in terms of the CUT_... macros in cuts.F, e.g.
-*   #define CUT1 CUT_kT(3) > 10
+*   #define CUT1 CUT_kT(3) .gt. 10
 * The CUT1..20 together make up a single logical expression in Fortran
 * and may include logical operators, e.g.
-*   #define CUT1 CUT_kT(3) > 10
-*   #define CUT2 .and. CUT_kT(4) > 10
+*   #define CUT1 CUT_kT(3) .gt. 10
+*   #define CUT2 .or. CUT_kT(4) .gt. 10
 
 #define CUT1 .TRUE.
 #define CUT2

@@ -1,11 +1,11 @@
-* model_thdm.F
+* THDM.F
 * all parameters for the THDM are initialized here
 * this file is part of FormCalc
 * Abdesslam Arhrib, 2 Jun 03
-* last modified 9 Nov 15 th
+* last modified 18 Oct 19 th
 
 
-* The input parameters for model_thdm are:
+* The input parameters are:
 
 * SA = sin alpha
 * TB = tan beta
@@ -31,16 +31,14 @@
 #define DeltaRho_UPPERBOUND .003D0
 
 
-#define ModelConstIni SMConstIni
-#define ModelDigest SMDigest
-#include "model_sm.F"
-#undef ModelConstIni
-#undef ModelDigest
+#include "SM.F"
 
+#define THDMDefaults SMDefaults
+#define THDMVarIni SMVarIni
 
 ************************************************************************
 
-	subroutine ModelConstIni(fail)
+	subroutine THDMConstIni(fail)
 	implicit none
 	integer fail
 
@@ -56,7 +54,7 @@
 #endif
 
 	call SMConstIni(fail)
-	if( fail .ne. 0 ) return
+	if( fail /= 0 ) return
 
 	TB2 = TB**2
 	CB2 = 1/(1 + TB2)
@@ -108,13 +106,13 @@
         Lambda6 = (2*Alfa*Pi)/(MW2*SW2)*MA02
 
 	if( max(abs(Lambda1), abs(Lambda2), abs(Lambda3),
-     &          Lambda4, abs(Lambda5), Lambda6) .gt. 8*pi ) then
+     &          Lambda4, abs(Lambda5), Lambda6) > 8*pi ) then
 	  Error(fail, "Perturbativity violated")
 	  return
 	endif
 
-	if( abs(MA02 - MHH2) .gt. 1D-13 .and.
-     &      abs(MHp2 - MHH2) .gt. 1D-13 ) then
+	if( abs(MA02 - MHH2) > 1D-13 .and.
+     &      abs(MHp2 - MHH2) > 1D-13 ) then
 	  DeltaRho = GF/(8*sqrt2*pi**2)*(
      &      MHp2*(1 - MA02/(MHp2 - MA02)*log(MHp2/MA02)) +
      &      CBA**2*Mh02*(MA02/(MA02 - Mh02)*log(MA02/Mh02) -
@@ -122,7 +120,7 @@
      &      SBA**2*MHH2*(MA02/(MA02 - MHH2)*log(MA02/MHH2) -
      &                   MHp2/(MHp2 - MHH2)*log(MHp2/MHH2)) )
 
-	  if( DeltaRho .gt. DeltaRho_UPPERBOUND ) then
+	  if( DeltaRho > DeltaRho_UPPERBOUND ) then
 	    Error(fail, "DeltaRho > DeltaRho_UPPERBOUND")
 	    return
 	  endif
@@ -133,10 +131,10 @@
 
 ************************************************************************
 
-	subroutine ModelDigest
+	subroutine THDMDigest
 	implicit none
 
-#include "model_thdm.h"
+#include "decl.h"
 
 	call SMDigest
 

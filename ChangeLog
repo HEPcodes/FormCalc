@@ -1,3 +1,20 @@
+18 Oct 2019:
+
+- Moved nf into SM common blocks.
+
+- Minor cosmetic changes.
+
+
+7 Oct 2019:
+
+- Automated generation of model initialization code, now takes care of 
+  FeynRules' .pars files.
+
+- Warning: FormCalc does not, of course, guarantee that the numerical 
+  parameters transmitted by FeynRules are compatible with the chosen 
+  renormalization scheme. 
+
+
 2 Sep 2019:
 
 - Fixed gfortran hiccup with integer*8 in *MomDecode.F.

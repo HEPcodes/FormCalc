@@ -1,7 +1,7 @@
-* model_fh.h
-* declarations for model_fh.F
+* MSSMFH.Fh
+* declarations for MSSMFH.F
 * this file is part of FormCalc
-* last modified 31 Jul 14 th
+* last modified 6 Oct 19 th
 
 
 #include "FHRecord.h"
@@ -111,7 +111,4 @@
 	equivalence (Afd(2,3), Atau)
 	equivalence (Afd(3,3), At)
 	equivalence (Afd(4,3), Ab)
-
-
-#include "model_fv.h"
 

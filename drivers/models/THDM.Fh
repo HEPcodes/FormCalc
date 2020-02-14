@@ -1,10 +1,10 @@
-* model_thdm.h
-* declarations for model_thdm.F
+* THDM.Fh
+* declarations for THDM.F
 * this file is part of FormCalc
-* last modified 7 Jun 13 th
+* last modified 6 Oct 19 th
 
 
-#include "model_sm.h"
+#include "SM.Fh"
 
 	RealType Lambda5
 	RealType Yuk1, Yuk2, Yuk3
