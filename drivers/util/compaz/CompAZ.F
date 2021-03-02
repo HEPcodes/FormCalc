@@ -2,12 +2,12 @@
 * compute the spectrum of a backscattered laser photon at a
 * photon collider
 * Code adapted from http://hep.fuw.edu.pl/u/zarnecki/compaz/compaz.f
-* last modified 18 Mar 19 th
+* last modified 1 Mar 21 th
 
 #include "types.h"
 
 
-	subroutine CompAZnew(res, x, E, icase)
+	subroutine CompAZ(res, x, E, icase)
 	implicit none
 	RealType res, x, E
 	integer icase

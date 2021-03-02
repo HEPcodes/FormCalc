@@ -1,7 +1,7 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 10 Jun 19 th
+* last modified 28 Aug 20 th
 
 
 #procedure Contract
@@ -565,7 +565,7 @@ i Col1,...,Col`Legs', Ind1,...,Ind9;
 v nul, vTnj, v0nj, v1nj, v2nj, v3nj, v4nj;
 
 * variables that make it into Mma but don't appear in the output
-cf powM, sunM, intM, extM, paveM, cutM, numM, qfM, qcM;
+cf powM, sunM, intM, tensM, extM, paveM, cutM, numM, qfM, qcM;
 s dm4M, njM;
 
 * patterns
@@ -577,12 +577,13 @@ i [LA], [om], [omA], [omB];
 i [j], [k], [l], [I], [J], [K];
 i [a], [b], [c], [d];
 cf [f];
+t [Q];
 
 * variables internal to FORM
 s TAG, ETAG, QTAG, CUTRAT, JJ, KK;
 cf TMP, MOM, ABB, SUNX, ORD, CH, SIGN(antisymm);
 cf NEQ, NN, FF, DROP, JGRAM, D1, D2, E1, E2, HDEL;
-t NUM, EQ, DD, EPS(antisymm);
+t NUM, EQ, DD, EE, EPS(antisymm);
 nt GB, GC, GD;
 f FC, CC;
 set MOMS: k1,...,k`Legs';
@@ -784,6 +785,31 @@ label 1;
 id intM(Den([p1]?, 0)) = 0;
 
 id Den([p1]?, [m1]?) * [p1]?.[p1]? = 1 + [m1]*Den([p1], [m1]);
+
+*----------------------------------------------------------------------
+
+#if "`KeepTensors'" == "True"
+
+id [q1]?LOOPMOM.[q2]?LOOPMOM = tensM([q1].[q2]);
+repeat;
+  once [q1]?LOOPMOM.[p1]? = tensM([q1](N100_?))*[p1](N100_?);
+  renumber;
+endrepeat;
+
+id e_([mu]?, [nu]?, [ro]?, [si]?) = EE([mu], [nu], [ro], [si]);
+
+repeat;
+  once [Q]?(?a, [q1]?LOOPMOM, ?b) = tensM([q1](N100_?))*[Q](?a, N100_?, ?b);
+  renumber;
+endrepeat;
+
+id EE(?a) = e_(?a);
+
+repeat id tensM([x]?)*tensM([y]?) = tensM([x]*[y]);
+id tensM(?n)*intM(?d) = tensM(?n, intM(?d));
+id intM(?d) = tensM(1, intM(?d));
+
+#endif
 
 *----------------------------------------------------------------------
 
@@ -1244,7 +1270,7 @@ id GA([om]?, ?g) * Spinor([p1]?MOMS[[n]], 0, [s1]?) =
 id HDEL(mulM([x]?number_)) = delta_([x]);
 endif;
 
-b Spinor;
+b Spinor, GA;
 .sort
 keep brackets;
 
@@ -1284,12 +1310,13 @@ id CH([s1]?, ?g, [s2]?) = [s1] * GA(?g) * [s2];
 
 id Spinor(?s1) * GA(?g) * Spinor(?s2) =
 #if "`FermionOrder'" == "Mat"
-  Mat(fermM(WeylChain(Spinor(?s1), ?g, Spinor(?s2))));
+  Mat(
 #else
-  abbM(fermM(WeylChain(Spinor(?s1), ?g, Spinor(?s2))));
+  abbM(
 #endif
+    fermM(WeylChain(Spinor(?s1), ?g, Spinor(?s2))) );
 
-#call Abbrev
+#call DiracFinal
 
 #else
 

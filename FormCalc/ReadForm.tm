@@ -38,7 +38,7 @@
 	ReadForm.tm
 		reads FORM output back into Mathematica
 		this file is part of FormCalc
-		last modified 18 Mar 13 th
+		last modified 1 Mar 21 th
 
 Note: FORM code must have
 	1. #- (no listing),
@@ -53,6 +53,10 @@ Debug:
 */
 
 #include "mathlink.h"
+#ifndef MLCONST
+#define MLCONST
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

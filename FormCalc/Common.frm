@@ -1,7 +1,7 @@
 * Common.frm
 * FORM procedures common to CalcFeynAmp, HelicityME, PolarizationSum
 * this file is part of FormCalc
-* last modified 12 Apr 19 th
+* last modified 28 Aug 20 th
 
 
 #procedure CommonDecl
@@ -22,7 +22,7 @@ set LOOPMOM: `LoopMomenta';
 i [mu], [nu], [ro], [si], [i];
 s <[m0]>,...,<[m20]>;
 s <[s0]>,...,<[s20]>;
-v <[p0]>,...,<[p20]>, [q1];
+v <[p0]>,...,<[p20]>, [q1], [q2];
 s [x], [y], [n];
 t [t];
 #endprocedure

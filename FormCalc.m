@@ -1,8 +1,8 @@
 (*
 
 This is FormCalc, Version 9.9
-Copyright by Thomas Hahn 1996-2019
-last modified 6 Oct 19 by Thomas Hahn
+Copyright by Thomas Hahn 1996-2020
+last modified 28 Aug 20 by Thomas Hahn
 
 Release notes:
 
@@ -692,6 +692,11 @@ larger than that integer are inserted only after the amplitude comes
 back from FORM (this is a workaround for the rare cases where the FORM
 code aborts due to very long insertions)."
 
+KeepTensors::usage =
+"KeepTensors is an option of CalcFeynAmp.  It controls whether loop
+integrals are kept in an unreduced form.  Tensor reduction is available
+in FormCalc for one-loop integrals only."
+
 PaVeReduce::usage =
 "PaVeReduce is an option of CalcFeynAmp.  False retains the one-loop
 tensor-coefficient functions.  LoopTools reduces all tensors not
@@ -774,9 +779,9 @@ is multiplied by (1 + Gamma5Test (D - 4)) and the dependence on
 Gamma5Test in the final result should vanish."
 
 Gamma5ToEps::usage =
-"Gamma5ToEps is an option of CalcFeynAmp.  It substitutes gamma_5 by
-1/24 eps(mu, nu, ro, si) gamma(mu) gamma(nu) gamma(ro) gamma(si) in
-fermion traces."
+"Gamma5ToEps is an option of CalcFeynAmp.  It controls substitution of
+gamma_5 by 1/24 eps^{mu nu ro si} gamma_mu gamma_nu gamma_ro gamma_si
+in fermion traces."
 
 NoExpand::usage =
 "NoExpand is an option of CalcFeynAmp.  NoExpand -> {sym1, sym2, ...}
@@ -2153,7 +2158,7 @@ $FormCalc = {9, 9}
 
 $FormCalcVersionNumber = 9.9
 
-$FormCalcVersion = "FormCalc 9.9 (6 Oct 2019)"
+$FormCalcVersion = "FormCalc 9.9 (28 Aug 2020)"
 
 $FormCalcDir = DirectoryName[$InputFileName /.
   $HoldPattern[$InputFileName] :>
@@ -2770,6 +2775,8 @@ FromFormRules = Flatten[FromFormRules]
 MomThread[f_][i_Index] := f[i]
 
 MomThread[f_][p_Symbol] := f[p]
+
+MomThread[f_][om:1 | 5 | 6 | 7] := f[om]
 
 MomThread[f_][p_] := Replace[MomReduce[p], k_Symbol :> f[k], {-1}]
 
@@ -3442,6 +3449,7 @@ Options[CalcFeynAmp] = {
   InsertionPolicy -> Default,
   SortDen -> True,
   CombineDen -> Automatic,
+  KeepTensors -> False,
   PaVeReduce -> False,
   CancelQ2 -> True,
   OPP -> 6,
@@ -3464,14 +3472,15 @@ You know what you are doing."
 
 CalcFeynAmp[FormAmp[proc_][amp___], opt___Rule] :=
 Block[ {lev, dim, nocost, fchain, forder, evanes,
-inspol, sortden, combden, pavered, cancelq2, opp, oppmeth, oppqsl,
-g5test, g5eps, noexp, nobrk, momrul, pre, post, tag, edit, retain,
+inspol, sortden, combden, keeptens, pavered, cancelq2,
+opp, oppmeth, oppqsl, g5test, g5eps, noexp, nobrk, momrul,
+pre, post, tag, edit, retain,
 uniq, vecs, kc = 0, hd, ic, inssym, mmains,
 indices = {}, ranges = {}, haveferm = False, indsym, momrange,
 intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
 
   { lev, dim, nocost, fchain, forder, evanes, inspol,
-    sortden, combden, pavered, cancelq2,
+    sortden, combden, keeptens, pavered, cancelq2,
     opp, oppmeth, oppqsl,
     g5test, g5eps, noexp, nobrk, momrul,
     pre, post, tag, edit, retain } = ParseOpt[CalcFeynAmp, opt];
@@ -3501,33 +3510,37 @@ intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
   _uniq = 0;
   vecs = {};
 
-  amps = pre/@ {amp} /.
-    { g:G[_][_][__][_] :> g,
-      IndexDelta -> idelta,
-      IndexEps -> ieps,
-      IndexSum -> isum } /.
+  amps = pre/@ {amp} /. {
+    g:G[_][_][__][_] :> g,
+    IndexDelta -> idelta,
+    IndexEps -> ieps,
+    IndexSum -> isum };
+  amps = amps /.
     FormMom[proc] /.
     FourMomentum[Internal, i_] :> FormLoopMomenta[[i]] /.
     PolarizationVector | PolarizationTensor -> pvt /.
     Prepend[momrul,
       (DiracSpinor | MajoranaSpinor | _SpinorType)[s_. p_Symbol, m_] :>
-        Spinor[p, Neglect[m], s]] /.
-    { LeviCivita -> Eps,
-      ScalarProduct -> scalar,
-      PropagatorDenominator -> prop,
-      FeynAmpDenominator -> loop,
-      FourVector -> fvec,
-      g:G[_][_][__][_] :> g,	(* for gn *)
-      ChiralityProjector[c_] :> ga[(13 - c)/2],
-      (DiracSlash | DiracMatrix) -> MomThread[ga],
-      NonCommutative -> noncomm,
-      MetricTensor[mu_, _]^2 :> "d_"[mu, mu],
-      MetricTensor -> "d_" };
+        Spinor[p, Neglect[m], s]];
+  amps = amps /. {
+    LeviCivita -> Eps,
+    ScalarProduct -> scalar,
+    PropagatorDenominator -> prop,
+    FeynAmpDenominator -> loop,
+    FourVector -> fvec,
+    g:G[_][_][__][_] :> g,	(* for gn *)
+    ChiralityProjector[c_] :> ga[(13 - c)/2],
+    (DiracSlash | DiracMatrix) -> MomThread[ga],
+    NonCommutative -> noncomm,
+    MetricTensor[mu_, _]^2 :> "d_"[mu, mu],
+    MetricTensor -> "d_" };
 
   ampden = If[ combden === False, IdDen,
     DenList = Reverse[SortBy[DenList, Length]];
     AmpDen ];
   amps = LevelSelect[lev]@@@ amps;
+(* <<< Global`AMPS4=amps; *)
+
   Apply[ (amps[[##,0]] = DenExtend)&,
     Sort[Thread[-Length@@@ Extract[amps, #] -> #]& @
       Position[amps, _ExtDen]], {2} ];
@@ -3594,6 +3607,7 @@ intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
 #define SUNN \"" <> ToForm[SUNN] <> "\"\n\
 #define SortDen \"" <> ToBool[sortden] <> "\"\n\
 #define CombineDen \"" <> ToForm[combden] <> "\"\n\
+#define KeepTensors \"" <> ToForm[keeptens] <> "\"\n\
 #define PaVeReduce \"" <> ToForm[pavered] <> "\"\n\
 #define CancelQ2 \"" <> ToBool[cancelq2] <> "\"\n\
 #define OPP \"" <> ToForm[Max[2, opp]] <> "\"\n\

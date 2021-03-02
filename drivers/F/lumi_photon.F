@@ -1,7 +1,7 @@
 * lumi_photon.F
 * parton luminosity for a photon collider
 * this file is part of FormCalc
-* last modified 24 Jun 16 th
+* last modified 1 Mar 21 th
 
 
 #define PARTON_T -1
@@ -55,10 +55,7 @@
 #include "xsection.h"
 
 	integer fail
-	RealType tau, x, xrange, beamenergy
-
-	RealType CompAZ
-	external CompAZ
+	RealType tau, x, xrange, beamenergy, ph1, ph2
 
 	call SetEnergy(fail, Var(PARTON_T)*Var(SQRTS), sqme)
 	if( fail .ne. 0 ) then
@@ -71,9 +68,9 @@
 	x = tau + xrange*Var(PARTON_X)
 
 	beamenergy = .5D0*Var(SQRTS)
+	call CompAZ(ph1, x, beamenergy, 0)
+	call CompAZ(ph2, tau/x, beamenergy, 0)
 
-	fac = 2*fac*Var(PARTON_T)*xrange/x*
-     &    CompAZ(x, beamenergy, 0)*
-     &    CompAZ(tau/x, beamenergy, 0)
+	fac = 2*fac*Var(PARTON_T)*xrange/x*ph1*ph2
 	end
 
