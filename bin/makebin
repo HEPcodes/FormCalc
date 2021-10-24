@@ -1,18 +1,14 @@
 #! /bin/bash -x
 # get and build FORM and the MathLink executables for a given platform
-# last modified 15 Mar 19 th
+# last modified 6 Aug 21 th
 
-gmp=gmp-6.1.2
+gmp=gmp-6.2.1
 zlib=zlib-1.2.11
 
 cc=gcc
 cxx=g++
-clang --version > /dev/null 2>&1 && {
-  cc=clang
-  cxx=clang++
-}
-
 cflags="-O3 -fomit-frame-pointer -ffast-math"
+
 lin_cflags="$cflags -static"
 mac_cflags="$cflags -fno-pic -mmacosx-version-min=10.9"
 win_cflags="$cflags"
@@ -22,8 +18,6 @@ exe=
 case "$1" in
 Linux)
 	build=i686-unknown-linux-gnu
-	cc=gcc
-	cxx=g++
 	cflags="$lin_cflags"
 	bits=32
 	;;
@@ -36,13 +30,28 @@ MacOSX-x86)
 	build=i486-apple-darwin
 	cflags="$mac_cflags -Wl,-read_only_relocs,suppress"
 	ldflags="-Wl,-no_pie"
+	cc=clang
+	cxx=clang++
 	bits=32
+	mcflags="-n"
 	;;
 MacOSX-x86-64)
 	build=x86_64-apple-darwin
 	cflags="$mac_cflags"
 	ldflags="-Wl,-no_pie"
+	cc=clang
+	cxx=clang++
 	bits=64
+	mcflags="-n"
+	;;
+MacOSX-ARM64)
+	build=arm64-apple-darwin
+	cflags="$mac_cflags"
+	ldflags="-Wl,-no_pie"
+	cc=clang
+	cxx=clang++
+	bits=64
+	mcflags="-n"
 	;;
 Windows)
 	build=i686-pc-cygwin
@@ -51,6 +60,7 @@ Windows)
 	cflags="$win_cflags"
 	bits=32
 	exe=.exe
+	mcflags="-D__int64='long long int'"
 	;;
 Windows-x86-64)
 	build=x86_64-pc-cygwin
@@ -59,6 +69,7 @@ Windows-x86-64)
 	cflags="$win_cflags"
 	bits=64
 	exe=.exe
+	mcflags="-D__int64='long long int'"
 	;;
 *)
 	cat << _EOF_
@@ -68,6 +79,7 @@ Linux
 Linux-x86-64
 MacOSX-x86
 MacOSX-x86-64
+MacOSX-ARM64
 Windows
 Windows-x86-64
 _EOF_
@@ -83,13 +95,14 @@ test -f form.zip || {
 
 test -f $zlib.tar.gz || wget http://zlib.net/$zlib.tar.gz
 
-test -f $gmp.tar.xz || wget http://ftp.gnu.org/gnu/gmp/$gmp.tar.xz
+test -f $gmp.tar.lz || wget http://ftp.gnu.org/gnu/gmp/$gmp.tar.lz
 
 src="$PWD"
 dest=/tmp/makebin-build
 rm -fr "$dest" "$src/$1"
-mkdir -p $dest/bin
-cp -pf "$src/$gmp.tar.xz" "$src/$zlib.tar.gz" "$src/form.zip" \
+mkdir -p "$dest/bin" "$dest/lib"
+ln -s lib "$dest/lib64"
+cp -pf "$src/$gmp.tar.lz" "$src/$zlib.tar.gz" "$src/form.zip" \
   "$src/../drivers/tools/fcc" "$src/../drivers/tools/mcc" \
   "$src/../FormCalc/ReadForm.tm" "$src/../tools/ReadData.tm" $dest/
 ln -s fcc "$dest/f++"
@@ -106,6 +119,7 @@ make BUILD="$build" \
      CC="$cc" \
      CXX="$cxx" \
      CFLAGS="$cflags -m$bits" \
+     MCFLAGS="${mcflags:--b$bits}" \
      LDFLAGS="$ldflags" \
      EXE="$exe" \
      GMP="$gmp" \
@@ -124,7 +138,7 @@ CONF2 = $(CONF1) --build="$(BUILD)"
 MCC = \
 CC="./fcc" REALCC="$(CC)" \
 CXX="./f++" REALCXX="$(CXX)" \
-PATH="$(PATH):." mcc -st -b$(BITS) $(CFLAGS)
+PATH="$(PATH):." mcc -st $(MCFLAGS) $(CFLAGS)
 
 all: FORM ReadForm ReadData
 
@@ -134,7 +148,7 @@ FORM: $(DEST)/lib/libgmp.a $(DEST)/lib/libz.a form.zip
 	  -e '/mmacosx-version-min/d' \
 	  -e '/LINKFLAGS/s/-s//' form/sources/Makefile.am
 	cd form && autoreconf -i
-	cd form && $(CONF2) --with-gmp=$(DEST) --with-zlib=$(DEST) --enable-native=no
+	cd form && $(CONF1) --with-gmp=$(DEST) --with-zlib=$(DEST) --enable-native=no
 	sed -i \
 	  -e 's|-lz|"$(DEST)/lib/libz.a"|' \
 	  -e 's|-lgmp|"$(DEST)/lib/libgmp.a"|' form/sources/Makefile
@@ -142,8 +156,8 @@ FORM: $(DEST)/lib/libgmp.a $(DEST)/lib/libz.a form.zip
 	strip $(DEST)/bin/*form$(EXE)
 	rm -fr form
 
-$(DEST)/lib/libgmp.a: $(GMP).tar.xz
-	tar xvf $(GMP).tar.xz
+$(DEST)/lib/libgmp.a: $(GMP).tar.lz
+	tar xvf $(GMP).tar.lz
 	cd $(GMP) && $(CONF2) --disable-shared ABI=$(BITS)
 	cd $(GMP) && $(MAKE) install
 	rm -fr $(GMP)

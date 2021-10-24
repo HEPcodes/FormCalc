@@ -1,6 +1,6 @@
 #! /bin/bash
 # compile script for the C programs used by FormCalc
-# last modified 16 Oct 18 th
+# last modified 6 Aug 21 th
 
 # If this compile script doesn't work on your system, check these things:
 #
@@ -13,7 +13,7 @@
 #    Such programs have the extension .tm.  If you have Mathematica,
 #    you should also have mcc.  If mcc is not on the path, specify it
 #    in the environment variable MCC, e.g.
-#    setenv MCC /opt/Wolfram/Mathematica/10.0/Executables/mcc
+#    export MCC=/usr/local/Wolfram/Mathematica/m.n/Executables/mcc
 
 CC="${CC:-gcc}"
 
@@ -25,7 +25,7 @@ MATH="${MATH:-math}"
 
 CFLAGS="${CFLAGS:--O3 -fomit-frame-pointer -ffast-math -Wall -Wextra} $@"
 
-SRC="${SRC:-`dirname $0`}"
+SRC="${SRC:-`dirname "$0"`}"
 
 os="`uname`"
 exe=
@@ -74,13 +74,12 @@ additional flags (such as -pwfile) and re-run $0.
 
 _EOF_
 	exit 1 ;;
-Linux | MacOSX-x86)
-	CFLAGS="$CFLAGS -m32"
-	MCFLAGS="$MCFLAGS -b32" ;;
-Linux-x86-64 | MacOSX-x86-64)
-	CFLAGS="$CFLAGS -m64"
-	MCFLAGS="$MCFLAGS -b64" ;;
+Linux-x86-64)
+	CFLAGS+=" -m64"	MCFLAGS+=" -b64";;
+MacOSX-x86-64 | MacOSX-ARM64)
+	CFLAGS+=" -m64"	MCFLAGS+=" -n";;
 Windows-x86-64)
+	MCFLAGS+=" -D__int64='long long int'"
 	${DLLTOOL:-dlltool} --help | grep x86-64 > /dev/null || BIN=Windows ;;
 esac
 

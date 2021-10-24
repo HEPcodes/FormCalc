@@ -1,7 +1,7 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 28 Aug 20 th
+* last modified 7 Jun 21 th
 
 
 #procedure Contract
@@ -1104,12 +1104,16 @@ id intM(Den(0, [p1]?, [m1]?)) = A0([m1]);
 #do n = 2, `IntMax'
 also intM(<Den(0,[p1]?,[m1]?)>*...*<Den({`n'-1},[p`n']?,[m`n']?)>) =
   intM(`n',
+#if "`VectorMoms'" == "True"
+    <[p2]-[p1]>,...,<[p`n']-[p1]>,
+#else
 #do i = 1, {`n'/2}
     <MOM([p{`i'+1}]-[p1])>,...,<MOM([p`n']-[p{`n'-`i'}])>,
 #if {2*`i'} < `n'
     <MOM([p1]-[p{`n'-`i'+1}])>,...,<MOM([p`i']-[p`n'])>,
 #endif
 #enddo
+#endif
     <[m1]>,...,<[m`n']>);
 #enddo
 

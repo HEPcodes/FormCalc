@@ -1,8 +1,8 @@
 (*
 
 This is FormCalc, Version 9.9
-Copyright by Thomas Hahn 1996-2020
-last modified 28 Aug 20 by Thomas Hahn
+Copyright by Thomas Hahn 1996-2021
+last modified 7 Jun 21 by Thomas Hahn
 
 Release notes:
 
@@ -696,6 +696,12 @@ KeepTensors::usage =
 "KeepTensors is an option of CalcFeynAmp.  It controls whether loop
 integrals are kept in an unreduced form.  Tensor reduction is available
 in FormCalc for one-loop integrals only."
+
+VectorMoms::usage =
+"VectorMoms is an option of CalcFeynAmp.  It controls whether loop
+integrals are returned with vectors (True) or invariants (False) for
+their momentum arguments.  Only the latter kind is available in
+LoopTools, however."
 
 PaVeReduce::usage =
 "PaVeReduce is an option of CalcFeynAmp.  False retains the one-loop
@@ -2158,7 +2164,7 @@ $FormCalc = {9, 9}
 
 $FormCalcVersionNumber = 9.9
 
-$FormCalcVersion = "FormCalc 9.9 (28 Aug 2020)"
+$FormCalcVersion = "FormCalc 9.9 (7 Jun 2021)"
 
 $FormCalcDir = DirectoryName[$InputFileName /.
   $HoldPattern[$InputFileName] :>
@@ -3450,6 +3456,7 @@ Options[CalcFeynAmp] = {
   SortDen -> True,
   CombineDen -> Automatic,
   KeepTensors -> False,
+  VectorMoms -> False,
   PaVeReduce -> False,
   CancelQ2 -> True,
   OPP -> 6,
@@ -3472,7 +3479,7 @@ You know what you are doing."
 
 CalcFeynAmp[FormAmp[proc_][amp___], opt___Rule] :=
 Block[ {lev, dim, nocost, fchain, forder, evanes,
-inspol, sortden, combden, keeptens, pavered, cancelq2,
+inspol, sortden, combden, keeptens, vecmoms, pavered, cancelq2,
 opp, oppmeth, oppqsl, g5test, g5eps, noexp, nobrk, momrul,
 pre, post, tag, edit, retain,
 uniq, vecs, kc = 0, hd, ic, inssym, mmains,
@@ -3480,7 +3487,7 @@ indices = {}, ranges = {}, haveferm = False, indsym, momrange,
 intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
 
   { lev, dim, nocost, fchain, forder, evanes, inspol,
-    sortden, combden, keeptens, pavered, cancelq2,
+    sortden, combden, keeptens, vecmoms, pavered, cancelq2,
     opp, oppmeth, oppqsl,
     g5test, g5eps, noexp, nobrk, momrul,
     pre, post, tag, edit, retain } = ParseOpt[CalcFeynAmp, opt];
@@ -3608,6 +3615,7 @@ intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
 #define SortDen \"" <> ToBool[sortden] <> "\"\n\
 #define CombineDen \"" <> ToForm[combden] <> "\"\n\
 #define KeepTensors \"" <> ToForm[keeptens] <> "\"\n\
+#define VectorMoms \"" <> ToForm[vecmoms] <> "\"\n\
 #define PaVeReduce \"" <> ToForm[pavered] <> "\"\n\
 #define CancelQ2 \"" <> ToBool[cancelq2] <> "\"\n\
 #define OPP \"" <> ToForm[Max[2, opp]] <> "\"\n\

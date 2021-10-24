@@ -38,7 +38,7 @@
 	ReadForm.tm
 		reads FORM output back into Mathematica
 		this file is part of FormCalc
-		last modified 1 Mar 21 th
+		last modified 23 Jun 21 th
 
 Note: FORM code must have
 	1. #- (no listing),
@@ -52,11 +52,6 @@ Debug:
 	bit 3 = DEB_CHO = internal chains after OrderChain
 */
 
-#include "mathlink.h"
-#ifndef MLCONST
-#define MLCONST
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -66,6 +61,11 @@ Debug:
 #include <signal.h>
 #include <sys/wait.h>
 #include <sys/types.h>
+
+#include "mathlink.h"
+#ifndef MLCONST
+#define MLCONST
+#endif
 
 #define TERMBUF 500000
 

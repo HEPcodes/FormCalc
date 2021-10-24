@@ -1,7 +1,7 @@
 /*
 	stddecl.h
 		declarations common to all Cuba routines
-		last modified 23 Apr 15 th
+		last modified 30 Oct 20 th
 */
 
 
@@ -14,6 +14,7 @@
 
 #define _BSD_SOURCE
 #define _SVID_SOURCE
+#define _DEFAULT_SOURCE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -553,7 +554,7 @@ static inline void Print(MLCONST char *s)
 
 #else
 
-#define Print(s) puts(s); fflush(stdout)
+#define Print(s) do { puts(s); fflush(stdout); } while( 0 )
 
 #endif
 
