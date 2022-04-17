@@ -1,8 +1,8 @@
 (*
 
-This is FormCalc, Version 9.9
-Copyright by Thomas Hahn 1996-2021
-last modified 7 Jun 21 by Thomas Hahn
+This is FormCalc, Version 9.10
+Copyright by Thomas Hahn 1996-2022
+last modified 28 Mar 22 by Thomas Hahn
 
 Release notes:
 
@@ -418,7 +418,7 @@ BeginPackage["FormCalc`",
 
 (* some internal symbols must be visible for FORM/ReadForm *)
 
-{ SUNSum, ReadForm, ReadFormDebug, FormExpr }
+{ SUNSum, ReadForm, ReadFormDebug, ReadFormWrap, FormExpr, FormWrap }
 
 (* some internal symbols made visible for debugging *)
 
@@ -2160,11 +2160,11 @@ the file is split into several pieces."
 
 Begin["`Private`"]
 
-$FormCalc = {9, 9}
+$FormCalc = {9, 10}
 
-$FormCalcVersionNumber = 9.9
+$FormCalcVersionNumber = 9.10
 
-$FormCalcVersion = "FormCalc 9.9 (7 Jun 2021)"
+$FormCalcVersion = "FormCalc 9.10 (28 Mar 2022)"
 
 $FormCalcDir = DirectoryName[$InputFileName /.
   $HoldPattern[$InputFileName] :>
@@ -2181,6 +2181,8 @@ Print[$FormCalcVersion];
 Print["by Thomas Hahn"];
 
 $ReadForm = ToFileName[$FormCalcBin, "ReadForm"];
+(*$ReadForm = "strace -o /tmp/readform.strace " <> $ReadForm;*)
+(*$ReadForm = "valgrind --leak-check=full --log-file=/tmp/readform.valgrind " <> $ReadForm;*)
 
 Check[
   $ReadFormHandle = Install[$ReadForm],
@@ -2689,7 +2691,8 @@ OnSize[args__] := osfun[][args]
 
 
 DiagramType[a_FeynAmp] := Exponent[
-  a[[3]] /. _FeynAmpDenominator -> 1 /. _PropagatorDenominator -> pd,
+  a[[3]] /. _FeynAmpDenominator -> 1 /.
+    PropagatorDenominator[_, _, n_:1] :> pd^n,
   pd ]
 
 
@@ -2792,11 +2795,9 @@ MomReduce[p_Plus] := Fewest[p, p + MomSum, p - MomSum]
 MomReduce[p_] := p
 
 
-Fewest[a_, b_, r___] := Fewest[a, r] /; Length[a] <= Length[b]
-
-Fewest[_, b__] := Fewest[b]
-
 Fewest[a_] := a
+
+Fewest[a_, b_, r___] := If[ Length[a] <= Length[b], Fewest[a, r], Fewest[b, r] ]
 
 
 fvec[p_] := (vecs = {vecs, Symbols[p]}; MomReduce[p])
@@ -2804,8 +2805,9 @@ fvec[p_] := (vecs = {vecs, Symbols[p]}; MomReduce[p])
 fvec[p_, mu_] := (vecs = {vecs, Symbols[p]}; MomThread[#[mu]&][p])
 
 
-iname[type_, n_] := iname[type, n] =
-  ToSymbol[StringTake[ToString[type], 3], n]
+iname[type_] := StringTake[ToString[type], UpTo[3]]
+
+iname[type_, n___] := iname[type, n] = ToSymbol[iname[type], n]
 
 
 Attributes[idelta] = {Orderless}
@@ -2822,14 +2824,16 @@ ieps[c__] := Block[{eps = SUNEps[c]}, eps /; !FreeQ[eps, Index[Colour, _]]]
 ieps[x__] := IndexEps[x]
 
 
-isum[expr_, j__, i_] := isum[isum[expr, i], j]
+is_isum[expr_, {i_, f_:1, t_, s_:1}, j___] :=
+  is[Floor[(t - f + 1)/s] expr, j] /; FreeQ[expr, i]
 
-isum[expr_, {i_, f_:1, t_, s_:1}] :=
-  Floor[(t - f + 1)/s] expr /; FreeQ[expr, i]
+isum[r___][expr_, {i_, 1..., t_}, j___] :=
+  isum[r, autoind = {autoind, i}; ranges = {ranges, i -> i == t}; {i, t}][expr, j]
 
-isum[expr_, {i_, 1, t_}] := isum[expr, {i, t}]
+isum[r___][expr_, i_Symbol, j___] :=
+  isum[r, autoind = {autoind, i}; {i}][expr, j]
 
-isum[x__] := IndexSum@@ Flatten[{x}]
+isum[r___][expr_] := IndexSum[expr, r]
 
 
 KinFunc[
@@ -3483,8 +3487,9 @@ inspol, sortden, combden, keeptens, vecmoms, pavered, cancelq2,
 opp, oppmeth, oppqsl, g5test, g5eps, noexp, nobrk, momrul,
 pre, post, tag, edit, retain,
 uniq, vecs, kc = 0, hd, ic, inssym, mmains,
-indices = {}, ranges = {}, haveferm = False, indsym, momrange,
-intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
+indices = {}, ranges = {}, autoind = {}, indsym,
+momrange, intmax, extmax = 0, ampden, vars, hh, amps, res,
+haveferm = False, traces = 0},
 
   { lev, dim, nocost, fchain, forder, evanes, inspol,
     sortden, combden, keeptens, vecmoms, pavered, cancelq2,
@@ -3521,7 +3526,7 @@ intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
     g:G[_][_][__][_] :> g,
     IndexDelta -> idelta,
     IndexEps -> ieps,
-    IndexSum -> isum };
+    IndexSum -> isum[] };
   amps = amps /.
     FormMom[proc] /.
     FourMomentum[Internal, i_] :> FormLoopMomenta[[i]] /.
@@ -3577,15 +3582,15 @@ intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
   mmains = mmains /. Index -> indsym;
   ranges = Append[Union[Flatten[ranges]] /. Index -> indsym, i_ :> i == 0];
 
-  indices = Union[Flatten[ {indices, iM,
+  autoind = Union[Flatten[autoind]];
+  indices = Union[Flatten[{indices, iM,
     Cases[DownValues[indsym], _[_, s_Symbol] :> s],
-    Cases[amps, SumOver[i_, ___] | IndexSum[_, i_, ___] |
-                IndexDelta[i__] | IndexEps[i__] :> i, Infinity],
+    Cases[amps, SumOver[i_, ___] | IndexDelta[i__] | IndexEps[i__] :> i, Infinity],
 	(* possibly some colour or gluon indices have been fixed by
 	   the user in FeynArts; these would by default be declared
 	   as symbols and not be seen by FORM: *)
     Cases[Cases[amps, SUNObjs[__], Infinity] /. SUNSum -> (#1 &),
-      _Symbol, {-1}]} ]];
+      _Symbol, {-1}]}]];
 
   If[ Head[forder] === Colour,
     indices = Join[#, Complement[indices, #]]&[
@@ -3596,7 +3601,7 @@ intmax, extmax = 0, ampden, vars, hh, amps, res, traces = 0},
     amps = amps /. {"g5_" -> g5M, "g6_" -> g6M, "g7_" -> g7M} ];
 
   vars = FormVars[ If[dim === 4, 4, D],
-    {amps, SUNN, Hel[], dirM[]}, indices, ranges ];
+    {amps, SUNN, Hel[], dirM[]}, indices, autoind, ranges ];
 
   hh = OpenForm["fc-" <> tag <> "-"];
   WriteString[hh, "\
@@ -3736,12 +3741,12 @@ FormSq[_[lhs_, rhs_]] :=
 
 NCFuncs = Spinor | g5M | g6M | g7M
 
-FormVars[dim_, expr_, inds_:{}, ranges_:{}] :=
-Block[ {theexpr, vars, func},
+FormVars[dim_, expr_, ind_:{}, autoind_:{}, ranges_:{}] :=
+Block[ {theexpr, var, func},
   theexpr = {expr, dim, FormSymbols};
 
-  vars = Complement[Symbols[theexpr],
-    Flatten[{inds, FormLoopMomenta, FormVectors}]];
+  var = Complement[Symbols[theexpr],
+    Flatten[{ind, autoind, FormLoopMomenta, FormVectors}]];
 
   func = Complement[
     Cases[Head/@ Level[theexpr, {1, -2}, Heads -> True], _Symbol],
@@ -3749,17 +3754,19 @@ Block[ {theexpr, vars, func},
       ga, MatrixTrace, FermionChain, NonCommutativeMultiply,
       Rule, Equal, Plus, Times, Power, Dot, Rational}] ];
 
-  { { FormDecl["s ", vars],
+  { { FormDecl["s ", var],
       FormDecl["cf ", DeleteCases[func, NCFuncs]],
       FormDecl["f ", Cases[func, NCFuncs]],
       If[ dim === 4, "", "d D;\n"],
-      FormDecl["i ", Replace[inds, ranges, 1]], "\
+      FormDecl["i ", Replace[ind, ranges, 1]],
+      FormDecl["auto i ", Replace[autoind, ranges, 1]],
+      "\
 t Pol;\n\n\
 #define LoopMomenta \"", ToSeq[FormLoopMomenta], "\"\n\
 #define Vectors \"`LoopMomenta',\n\
   ", ToSeq[FormVectors], "\"\n\
 v `Vectors';\n" },
-    inds, vars, func }
+    ind, var, func }
 ]
 
 
@@ -3793,7 +3800,12 @@ toform = "!" <> Escape[ToFileName[$FormCalcBin, "ToForm"]] <> " > "
 
 Attributes[FormExpr] = {HoldAll}
 
-FormExpr[x__] := Block[{addM = Plus, mulM = Times, powM = Power, subM}, {x}]
+FormExpr[expr_] := Block[{addM = Plus, mulM = Times, powM = Power, subM}, expr]
+
+
+Attributes[FormWrap] = {HoldRest}
+
+FormWrap[lev_, expr_] := expr
 
 
 	(* simplification settings *)
@@ -3804,7 +3816,9 @@ FormPre = AbbrevSet[#, Preprocess -> FormMat]&
 
 FormSub = AbbrevDo
 
-FormDot = DotSimplify[Simplify, TermCollect]
+(* originally FormDot = DotSimplify[Simplify, TermCollect]
+   but gives segfault on Simplify in Mathematica 12.x *)
+FormDot = TermCollect
 
 FormMat = TermCollect
 
@@ -5258,7 +5272,7 @@ MkDir[dirs_List] := Fold[MkDir[ToFileName[##]]&, {}, dirs]
 MkDir[dirs__] := MkDir[Flatten[{dirs}]]
 
 
-Off[CopyFile::filex]
+Off[CopyFile::filex, CopyFile::eexist]
 
 Options[SetupCodeDir] = {
   Model :> $Model,
@@ -7263,7 +7277,8 @@ RCInt = Simplify
 ClearSE[] := Clear[RCCache]
 
 CalcSelfEnergy[proc_] := CalcSelfEnergy[RCCache @
-  Hash[{proc, Options[CreateTopologies], Options[InsertFields]}], proc]
+  Hash[{#, Options[CreateTopologies], Options[InsertFields]}], #]& @
+  Replace[proc, {p_} :> p, {1}]
 
 CalcSelfEnergy[c_RCCache, proc_] := c = CalcProcess[1, proc] /. {
   Pair[_k, _k] -> K2,

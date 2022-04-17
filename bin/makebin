@@ -95,14 +95,14 @@ test -f form.zip || {
 
 test -f $zlib.tar.gz || wget http://zlib.net/$zlib.tar.gz
 
-test -f $gmp.tar.lz || wget http://ftp.gnu.org/gnu/gmp/$gmp.tar.lz
+test -f $gmp.tar.xz || wget http://ftp.gnu.org/gnu/gmp/$gmp.tar.xz
 
 src="$PWD"
 dest=/tmp/makebin-build
 rm -fr "$dest" "$src/$1"
 mkdir -p "$dest/bin" "$dest/lib"
 ln -s lib "$dest/lib64"
-cp -pf "$src/$gmp.tar.lz" "$src/$zlib.tar.gz" "$src/form.zip" \
+cp -pf "$src/$gmp.tar.xz" "$src/$zlib.tar.gz" "$src/form.zip" \
   "$src/../drivers/tools/fcc" "$src/../drivers/tools/mcc" \
   "$src/../FormCalc/ReadForm.tm" "$src/../tools/ReadData.tm" $dest/
 ln -s fcc "$dest/f++"
@@ -156,8 +156,8 @@ FORM: $(DEST)/lib/libgmp.a $(DEST)/lib/libz.a form.zip
 	strip $(DEST)/bin/*form$(EXE)
 	rm -fr form
 
-$(DEST)/lib/libgmp.a: $(GMP).tar.lz
-	tar xvf $(GMP).tar.lz
+$(DEST)/lib/libgmp.a: $(GMP).tar.xz
+	tar xvf $(GMP).tar.xz
 	cd $(GMP) && $(CONF2) --disable-shared ABI=$(BITS)
 	cd $(GMP) && $(MAKE) install
 	rm -fr $(GMP)

@@ -24,6 +24,14 @@
 :ReturnType: Manual
 :End:
 
+:Begin:
+:Function: readformwrap
+:Pattern: ReadFormWrap[wrap_Integer]
+:Arguments: {wrap}
+:ArgumentTypes: {Integer}
+:ReturnType: Manual
+:End:
+
 :Evaluate: ReadForm::syntax = "Bad syntax."
 
 :Evaluate: ReadForm::noopen = "Cannot open ``."
@@ -38,7 +46,7 @@
 	ReadForm.tm
 		reads FORM output back into Mathematica
 		this file is part of FormCalc
-		last modified 23 Jun 21 th
+		last modified 29 Nov 21 th
 
 Note: FORM code must have
 	1. #- (no listing),
@@ -64,20 +72,16 @@ Debug:
 
 #include "mathlink.h"
 #ifndef MLCONST
-#define MLCONST
+#define MLCONST const
 #endif
 
 #define TERMBUF 500000
 
 #define DEB_IN 1
-#define DEB_OUT 2
-#define DEB_CHU 4
-#define DEB_CHO 8
-
-#define RED "\e[31m"
-#define BLUE "\e[34m"
-#define RESET "\e[0m"
-
+#define DEB_OUT 2	// red
+#define DEB_CHU 4	// blue
+#define DEB_CHO 8	// magenta
+#define DEB_ML 16	// green
 
 /*
 
@@ -123,6 +127,7 @@ static const FUN funtab[] = {
   {(cstring)"helM",    LEVEL_DEN},
   {(cstring)"paveM",   LEVEL_LOOP},
   {(cstring)"cutM",    LEVEL_LOOP},
+  {(cstring)"IGram",   LEVEL_LOOP},
   {(cstring)"A0i",     LEVEL_LOOP},
   {(cstring)"B0i",     LEVEL_LOOP},
   {(cstring)"C0i",     LEVEL_LOOP},
@@ -153,7 +158,7 @@ static const FUN funtab[] = {
 };
 
 static byte nothing[] = "";
-static int debug = 0;
+static int debug = 0, wrap = 0;
 static FILE *stddeb;
 static const char *levname[] = {"LOOP", "COEFF", "DEN", "MAT", "SUM"};
 
@@ -169,6 +174,12 @@ typedef struct term {
 
 /******************************************************************/
 
+#define RED "\e[31m"
+#define GREEN "\e[32m"
+#define BLUE "\e[34m"
+#define MAGENTA "\e[35m"
+#define RESET "\e[0m"
+
 #define Atoi(s) atoi((const char *)(s))
 #define Strlen(s) strlen((const char *)(s))
 #define Strchr(s, c) (string)strchr((const char *)(s), (char)(c))
@@ -177,20 +188,48 @@ typedef struct term {
 #define Strcmp(s1, s2) strcmp((const char *)(s1), (const char *)(s2))
 #define Strncmp(s1, s2, n) strncmp((const char *)(s1), (const char *)(s2), n)
 #define Strncpy(s1, s2, n) strncpy((char *)(s1), (const char *)(s2), n)
-#define MLPutStr(mlp, s) MLPutByteString(mlp, (string)s, Strlen(s))
+#define MLPutStr(mlp, s) MLPutByteString(mlp, s, Strlen(s))
+
+#if 0
+#define MLDeb(mlfun, mlp, fmt, ...) { \
+  if( debug & DEB_ML ) fprintf(stddeb, GREEN #mlfun fmt RESET "\n", ##__VA_ARGS__); \
+  return mlfun(mlp, ##__VA_ARGS__); \
+}
+static inline int mlPutFunction(MLINK mlp, const char *fun, int argc)
+  MLDeb(MLPutFunction, mlp, " %s %d", fun, argc)
+static inline int mlPutSymbol(MLINK mlp, const char *sym)
+  MLDeb(MLPutSymbol, mlp, " %s", sym)
+static inline int mlPutStr(MLINK mlp, cstring s)
+  MLDeb(MLPutStr, mlp, " %s", s)
+static inline int mlPutInteger(MLINK mlp, int i)
+  MLDeb(MLPutInteger, mlp, " %d", i)
+static inline int mlEndPacket(MLINK mlp)
+  MLDeb(MLEndPacket, mlp, "")
+static inline int mlNewPacket(MLINK mlp)
+  MLDeb(MLNewPacket, mlp, "")
+static inline int mlNextPacket(MLINK mlp)
+  MLDeb(MLNextPacket, mlp, "")
+#else
+#define mlPutFunction MLPutFunction
+#define mlPutSymbol MLPutSymbol
+#define mlPutStr MLPutStr
+#define mlPutInteger MLPutInteger
+#define mlEndPacket MLEndPacket
+#define mlNewPacket MLNewPacket
+#define mlNextPacket MLNextPacket
+#endif
 
 /******************************************************************/
 
-static void PrintChain(TERM *tp, const char *info)
-{
+static void PrintChain(TERM *tp, const char *col, const char *info) {
   int n = 0, lev;
   while( tp ) {
-    fprintf(stddeb, "\n" BLUE "%s term %d (%p):" RESET "\n", info, ++n, tp);
+    fprintf(stddeb, "\n%s%s term %d (%p):" RESET "\n", col, info, ++n, tp);
     for( lev = 0; lev < NLEVELS; ++lev )
       if( *tp->f[lev] )
-        fprintf(stddeb, BLUE "  %s" RESET " |%s|\n", levname[lev], tp->f[lev]);
-    fprintf(stddeb, BLUE "  flags: " RESET "subM=%d coll=%d last=%d\n",
-      tp->flags >> 2, (tp->flags & FLAGS_COLL) >> 1, tp->flags & FLAGS_LAST);
+        fprintf(stddeb, "%s  %s" RESET " |%s|\n", col, levname[lev], tp->f[lev]);
+    fprintf(stddeb, "%s  flags: " RESET "subM=%d coll=%d last=%d\n",
+      col, tp->flags >> 2, (tp->flags & FLAGS_COLL) >> 1, tp->flags & FLAGS_LAST);
     tp = tp->next;
   }
   fprintf(stddeb, "\n");
@@ -198,15 +237,14 @@ static void PrintChain(TERM *tp, const char *info)
 
 /******************************************************************/
 
-static inline string MLString(MLINK mlp)
-{
+static inline string MLString(MLINK mlp) {
   cstring s;
   string d;
   int n;
 
   if( MLGetByteString(mlp, &s, &n, ' ') == 0 ) {
     MLClearError(mlp);
-    MLNewPacket(mlp);
+    mlNewPacket(mlp);
     return NULL;
   }
   d = malloc(n + 1);
@@ -220,42 +258,38 @@ static inline string MLString(MLINK mlp)
 
 /******************************************************************/
 
-static inline void MLSendPacket(MLINK mlp)
-{
-  MLEndPacket(mlp);
-  while( MLNextPacket(mlp) != RETURNPKT )
-    MLNewPacket(mlp);
+static inline void MLSendPacket(MLINK mlp) {
+  mlEndPacket(mlp);
+  while( mlNextPacket(mlp) != RETURNPKT )
+    mlNewPacket(mlp);
 }
 
 /******************************************************************/
 
-static inline void MLEmitMessage(MLINK mlp, const char *tag, cstring arg)
-{
-  MLPutFunction(mlp, "EvaluatePacket", 1);
+static inline void MLEmitMessage(MLINK mlp, const char *tag, cstring arg) {
+  mlPutFunction(mlp, "EvaluatePacket", 1);
 
-  MLPutFunction(mlp, "Message", (arg) ? 2 : 1);
-  MLPutFunction(mlp, "MessageName", 2);
-  MLPutSymbol(mlp, "ReadForm");
-  MLPutStr(mlp, tag);
-  if( arg ) MLPutStr(mlp, arg);
+  mlPutFunction(mlp, "Message", (arg) ? 2 : 1);
+  mlPutFunction(mlp, "MessageName", 2);
+  mlPutSymbol(mlp, "ReadForm");
+  mlPutStr(mlp, (string)tag);
+  if( arg ) mlPutStr(mlp, arg);
   MLSendPacket(mlp);
   MLNewPacket(mlp);	/* discard returned Null */
 }
 
 /******************************************************************/
 
-static inline int MLPutExpr(MLINK mlp, TERM *tp, cint lev)
-{
+static inline int MLPutExpr(MLINK mlp, TERM *tp, cint lev, const char *indent) {
   if( debug & DEB_OUT )
-    fprintf(stddeb, RED "  %s" RESET " |%s|\n", levname[lev], tp->f[lev]);
-  MLPutFunction(mlp, "ToExpression", 1);
-  return MLPutStr(mlp, tp->f[lev]);
+    fprintf(stddeb, "%s  " RED "%s" RESET " |%s|\n", indent, levname[lev], tp->f[lev]);
+  mlPutFunction(mlp, "ToExpression", 1);
+  return mlPutStr(mlp, tp->f[lev]);
 }
 
 /******************************************************************/
 
-static inline void InsertLor(string s)
-{
+static inline void InsertLor(string s) {
   s -= 3;
   do s[3] = s[0]; while( *--s < 'A' );
   memcpy(s, "Lor[", 4);
@@ -263,8 +297,7 @@ static inline void InsertLor(string s)
 
 /******************************************************************/
 
-static inline void Shift(TERM *tp, csize_t len, cstring old, cstring new)
-{
+static inline void Shift(TERM *tp, csize_t len, cstring old, cstring new) {
   if( new != old ) {
     string *f;
     for( f = tp->f; f < &tp->f[NLEVELS]; ++f )
@@ -274,25 +307,23 @@ static inline void Shift(TERM *tp, csize_t len, cstring old, cstring new)
 
 /******************************************************************/
 
-static inline TERM *Resize(TERM *tp, csize_t len, cint newsize)
-{
+static inline TERM *Resize(TERM *tp, csize_t len, cint newsize) {
   TERM *new;
-  assert(new = realloc(tp, newsize));
+  assert( (new = realloc(tp, newsize)) );
   Shift(new, len, tp->expr, new->expr);
   return new;
 }
 
 /******************************************************************/
 
-static inline void MoveToEnd(TERM *tp, cint lev, cstring end)
-{
+static inline void MoveToEnd(TERM *tp, cint lev, cstring end) {
   string s = tp->f[lev];
   csize_t len = Strlen(s);
   cstring begin = s + len + 1;
   csize_t rest = end - begin;
   string tmp;
 
-  assert(tmp = malloc(len));
+  assert( (tmp = malloc(len)) );
   memcpy(tmp, s, len);
   memmove(s, begin, rest);
   s += rest;
@@ -306,8 +337,7 @@ static inline void MoveToEnd(TERM *tp, cint lev, cstring end)
 
 /******************************************************************/
 
-static string PutFactor(string to, cstring from)
-{
+static string PutFactor(string to, cstring from) {
   if( *from ) {
     csize_t len = Strlen(from) + 1;
     memcpy(to, from, len);
@@ -320,8 +350,7 @@ static string PutFactor(string to, cstring from)
 
 /******************************************************************/
 
-static TERM *CollectLoop(TERM *termp, csize_t maxloopsize)
-{
+static TERM *CollectLoop(TERM *termp, csize_t maxloopsize) {
   TERM *old;
 
   do {
@@ -337,7 +366,7 @@ static TERM *CollectLoop(TERM *termp, csize_t maxloopsize)
           goto loop;
         }
       if( (termp->flags & FLAGS_COLL) == 0 ) {
-        assert(termp->f[LEVEL_LOOP] = malloc(maxloopsize));
+        assert( (termp->f[LEVEL_LOOP] = malloc(maxloopsize)) );
         s = PutFactor(termp->f[LEVEL_LOOP], s);
         termp->flags |= FLAGS_COLL;
       }
@@ -349,8 +378,8 @@ loop: ;
     }
 
     if( termp->flags & FLAGS_COLL )
-      assert(termp->f[LEVEL_LOOP] =
-        realloc(termp->f[LEVEL_LOOP], s - termp->f[LEVEL_LOOP]));
+      assert( (termp->f[LEVEL_LOOP] =
+        realloc(termp->f[LEVEL_LOOP], s - termp->f[LEVEL_LOOP])) );
 
     old = termp;
   } while( (termp = termp->next) );
@@ -360,8 +389,7 @@ loop: ;
 
 /******************************************************************/
 
-static TERM *OrderChain(TERM *t1p, cint level)
-{
+static TERM *OrderChain(TERM *t1p, cint level) {
   TERM *old1;
   int *const nterms = &t1p->nterms[level];
   int c = 0;
@@ -407,20 +435,28 @@ next:
 
 /******************************************************************/
 
-static TERM *Transmit(TERM *tp, int level, int simp)
-{
+static TERM *Transmit(TERM *tp, int level, int simp) {
+  const char *indent = &"          "[2*level];
   cint nterms = tp->nterms[level];
   int term;
 
-  if( level == LEVEL_SUMOVER ) MLPutFunction(stdlink, "List", nterms);
-  else if( nterms > 1 ) MLPutFunction(stdlink, "Plus", nterms);
+  if( debug & DEB_OUT )
+    fprintf(stddeb, MAGENTA "[%s" RESET "\n", levname[level]);
+
+  if( wrap & (1 << level) ) {
+    mlPutFunction(stdlink, "FormWrap", 2);
+    mlPutInteger(stdlink, level);
+  }
+
+  if( level == LEVEL_SUMOVER ) mlPutFunction(stdlink, "List", nterms);
+  else if( nterms > 1 ) mlPutFunction(stdlink, "Plus", nterms);
 
   for( term = 1; term <= nterms; ++term ) {
     int lev, ntimes = (*tp->f[level] != 0);
 
     if( debug & DEB_OUT )
-      fprintf(stddeb, RED "term %d/%d of %s" RESET "\n",
-        term, nterms, levname[level]);
+      fprintf(stddeb, "%s" RED "term %d/%d of %s" RESET "\n",
+        indent, term, nterms, levname[level]);
 
     for( lev = level - 1; lev > LEVEL_LOOP; --lev ) {
       ++ntimes;
@@ -433,36 +469,39 @@ static TERM *Transmit(TERM *tp, int level, int simp)
 sendit:
     switch( ntimes ) {
     case 0:
-      MLPutInteger(stdlink, 1);
+      mlPutInteger(stdlink, 1);
       break;
 
     default:
-      MLPutFunction(stdlink, "Times", ntimes);
+      mlPutFunction(stdlink, "Times", ntimes);
+	/* fall through */
     case 1:
-      if( *tp->f[level] ) MLPutExpr(stdlink, tp, level);
+      if( *tp->f[level] ) MLPutExpr(stdlink, tp, level, indent);
       for( lev = level - 1; lev > LEVEL_LOOP; --lev ) {
         if( simp && lev == LEVEL_MAT - 1 )
-          MLPutFunction(stdlink, "FormMat", 1);
+          mlPutFunction(stdlink, "FormMat", 1);
         if( tp->nterms[lev] > 1 ) {
           tp = Transmit(tp, lev, simp);
           goto loop;
         }
-        if( *tp->f[lev] ) MLPutExpr(stdlink, tp, lev);
+        if( *tp->f[lev] ) MLPutExpr(stdlink, tp, lev, indent);
       }
-      if( *tp->f[LEVEL_LOOP] ) MLPutExpr(stdlink, tp, LEVEL_LOOP);
+      if( *tp->f[LEVEL_LOOP] ) MLPutExpr(stdlink, tp, LEVEL_LOOP, indent);
       break;
     }
     tp = tp->next;
 loop: ;
   }
 
+  if( debug & DEB_OUT )
+    fprintf(stddeb, MAGENTA "%s]" RESET "\n", levname[level]);
+
   return tp;
 }
 
 /******************************************************************/
 
-static void ReadForm(FILE *file, cstring errarg)
-{
+static void ReadForm(FILE *file, cstring errarg) {
   TERM *termp = NULL, **exprp = NULL, *ep;
   TERM *anchor = NULL, **last = &anchor;
   byte br[64], lhs[64];
@@ -510,27 +549,30 @@ nextline:
 
         /* successful exit */
         if( debug & DEB_OUT )
-          fprintf(stddeb, "\n" RED "nexpr = %d  nsubM = %d" RESET "\n",
-            nexpr, nsubM);
-        MLPutFunction(stdlink, "FormExpr", nexpr - nsubM);
-        if( nsubM ) MLPutFunction(stdlink, "CompoundExpression", nsubM + 1);
-        for( termp = anchor; nexpr--; ) {
-          cint n = termp->flags >> 2;
-          if( n ) {
-            if( debug & DEB_OUT )
-              fprintf(stddeb, "\n" RED "%s[%d] = " RESET, lhs, n);
-            MLPutFunction(stdlink, "Set", 2);
-            MLPutFunction(stdlink, (const char *)lhs, 1);
-            MLPutInteger(stdlink, n);
+          fprintf(stddeb, "\n" RED "nexpr = %d  nsubM = %d" RESET "\n", nexpr, nsubM);
+        mlPutFunction(stdlink, "FormExpr", 1);
+        if( wrap & (1 << NLEVELS) ) {
+          mlPutFunction(stdlink, "FormWrap", 2);
+          mlPutInteger(stdlink, NLEVELS);
+        }
+        if( nsubM ) {
+          mlPutFunction(stdlink, "CompoundExpression", nsubM + 1);
+          nexpr -= nsubM;
+          for( termp = anchor; nsubM--; ) {
+            cint n = termp->flags >> 2;
+            if( debug & DEB_OUT ) fprintf(stddeb, "\n" RED "%s[%d] =\n" RESET, lhs, n);
+            mlPutFunction(stdlink, "Set", 2);
+            mlPutFunction(stdlink, (const char *)lhs, 1);
+            mlPutInteger(stdlink, n);
             if( Strncmp(termp->f[LEVEL_COEFF], "mulM", 4) == 0 )
-              MLPutFunction(stdlink, "FormSub", 1);
+              mlPutFunction(stdlink, "FormSub", 1);
             termp = Transmit(termp, LEVEL_MAT, 0);
           }
-          else {
-            if( debug & DEB_OUT )
-              fprintf(stddeb, "\n" RED "expr = " RESET);
-            termp = Transmit(termp, LEVEL_SUMOVER, 1);
-          }
+        }
+        mlPutFunction(stdlink, "List", nexpr);
+        while( nexpr-- ) {
+          if( debug & DEB_OUT ) fprintf(stddeb, "\n" RED "expr =\n" RESET);
+          termp = Transmit(termp, LEVEL_SUMOVER, 1);
         }
 
         goto quit;
@@ -567,7 +609,7 @@ nextline:
       }
       else if( (pos = Strchr(si, '=')) == NULL ) continue;
 
-      assert(termp = malloc(termsize = sizeof *termp + TERMBUF));
+      assert( (termp = malloc(termsize = sizeof *termp + TERMBUF)) );
       termp->next = NULL;
       termp->flags = 0;
       memset(termp->nterms, 0, sizeof termp->nterms);
@@ -648,11 +690,11 @@ nextline:
         FinalizeTerm();
         ep = *exprp;
         if( maxloopsize ) termp = CollectLoop(ep, maxloopsize);
-        if( debug & DEB_CHU ) PrintChain(ep, "unordered");
+        if( debug & DEB_CHU ) PrintChain(ep, BLUE, "unordered");
         if( (ep->flags >> 2) ) ep->nterms[NLEVELS-2] = nterms;
         else {
           termp = OrderChain(ep, NLEVELS - 1);
-          if( debug & DEB_CHO ) PrintChain(ep, "ordered");
+          if( debug & DEB_CHO ) PrintChain(ep, MAGENTA, "ordered");
         }
         termp->flags |= FLAGS_LAST;
         maxloopsize = nterms = 0;
@@ -677,10 +719,10 @@ error:
   MLEmitMessage(stdlink, errtag, errarg);
 
 abort:
-  MLPutFunction(stdlink, "Abort", 0);
+  mlPutFunction(stdlink, "Abort", 0);
 
 quit:
-  MLEndPacket(stdlink);
+  mlEndPacket(stdlink);
 
   while( anchor ) {
     TERM *tp = anchor;
@@ -688,12 +730,13 @@ quit:
     if( tp->flags & FLAGS_COLL ) free(tp->f[LEVEL_LOOP]);
     free(tp);
   }
+
+  if( debug & DEB_OUT ) fprintf(stddeb, "\n" RED "end ReadForm" RESET "\n");
 }
 
 /******************************************************************/
 
-static void readform_file(void)
-{
+static void readform_file(void) {
   string filename = MLString(stdlink);
   ReadForm(fopen((const char *)filename, "r"), filename);
   free(filename);
@@ -701,8 +744,7 @@ static void readform_file(void)
 
 /******************************************************************/
 
-static void readform_exec(void)
-{
+static void readform_exec(void) {
   int fd[2], status;
   pid_t pid;
   string argv[16], *argp = argv;
@@ -736,10 +778,9 @@ static void readform_exec(void)
 
 /******************************************************************/
 
-static void readformdebug(cint deb)
-{
-  cstring filename = MLString(stdlink);
-  debug = deb;
+static void readformdebug(cint debug_) {
+  string filename = MLString(stdlink);
+  debug = debug_;
 
   stddeb = stderr;
   if( filename && *filename ) {
@@ -753,15 +794,23 @@ static void readformdebug(cint deb)
     }
     setbuf(stddeb, NULL);
   }
+  free(filename);
 
-  MLPutSymbol(stdlink, "True");
+  MLPutInteger(stdlink, debug);
   MLEndPacket(stdlink);
 }
 
 /******************************************************************/
 
-int main(int argc, char **argv)
-{
+static void readformwrap(cint wrap_) {
+  wrap = wrap_;
+  MLPutInteger(stdlink, wrap);
+  MLEndPacket(stdlink);
+}
+
+/******************************************************************/
+
+int main(int argc, char **argv) {
   int fd;
 
 	/* make sure a pipe will not overlap with 0, 1, 2 */

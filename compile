@@ -1,6 +1,6 @@
 #! /bin/bash
 # compile script for the C programs used by FormCalc
-# last modified 6 Aug 21 th
+# last modified 16 Feb 22 th
 
 # If this compile script doesn't work on your system, check these things:
 #
@@ -76,8 +76,10 @@ _EOF_
 	exit 1 ;;
 Linux-x86-64)
 	CFLAGS+=" -m64"	MCFLAGS+=" -b64";;
-MacOSX-x86-64 | MacOSX-ARM64)
+MacOSX-x86-64)
 	CFLAGS+=" -m64"	MCFLAGS+=" -n";;
+MacOSX-ARM64)
+	MCFLAGS+=" -n";;
 Windows-x86-64)
 	MCFLAGS+=" -D__int64='long long int'"
 	${DLLTOOL:-dlltool} --help | grep x86-64 > /dev/null || BIN=Windows ;;

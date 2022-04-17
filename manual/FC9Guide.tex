@@ -164,13 +164,13 @@ end }
 
 \newbox\titlebox\setbox\titlebox=\hbox{\underline{%
 \vrule width 0pt height 0pt depth 2ex%
-\Huge \FC~9.6~~~User's Guide}}
+\Huge \FC~9.9~~~User's Guide}}
 
 \hfill\copy\titlebox
 
 \vspace*{1ex}
 
-\hfill\hbox{Sep 6, 2021~~~~~Thomas Hahn}
+\hfill\hbox{Mar 28, 2022~~~~~Thomas Hahn}
 
 \bigskip
 \bigskip
@@ -1045,7 +1045,7 @@ False} which takes all legs off-shell by not using $p_i^2 = m_i^2$ at all.
 Finally, the following two functions serve to add factors to particular 
 diagrams.
 \biitab
-\Code{MultiplyDiagrams[\Var{f}][\Var{amps}]} &
+\Code{MultiplyDiagrams[\Var{amps},\,\Var{f}]} &
 	multiply the diagrams in \Var{amps} with the factor returned
 	by the function \Var{f} \\
 \Code{TagDiagrams[\Var{amp}]} &
@@ -1055,7 +1055,7 @@ diagrams.
 \etab
 \indextt{MultiplyDiagrams}%
 \indextt{TagDiagrams}%
-\Code{MultiplyDiagrams[\Var{f}][\Var{amp}]} multiplies the diagrams in
+\Code{MultiplyDiagrams[\Var{amp},\,\Var{f}]} multiplies the diagrams in
 \Var{amp} with factors depending on their contents.  The factor is
 determined by the function \Var{f} which is applied to each diagram
 either as \Var{f[\Var{amplitude}]}, for fully inserted diagrams, or
@@ -1071,7 +1071,7 @@ following function could be used as
 \Code{TagDiagrams} is a special case of \Code{MultiplyDiagrams} and 
 multiplies each diagram with an identifier of the form 
 \Code{Diagram[\Var{n}]}, where \Var{n} is the diagram's running number.  
-This provides is very simple mechanism to identify the origin of terms 
+This provides a very simple mechanism to identify the origin of terms 
 in the final amplitude.
 
 %------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 * CalcFeynAmp.frm
 * the FORM part of the CalcFeynAmp function
 * this file is part of FormCalc
-* last modified 7 Jun 21 th
+* last modified 29 Mar 22 th
 
 
 #procedure Contract
@@ -434,55 +434,49 @@ repeat id powM([x]?, [y]?) * powM([x]?, [z]?) = powM([x], [y] + [z]);
 id powM([x]?, [y]?int_) = [x]^[y];
 
 repeat;
-  once IndexSum([x]?, [i]?, ?n) =
-    TMP([x] * replace_([i], N100_?) * SumOver(N100_?, ?n, Renumber));
+  once IndexSum([x]?, List([i]?, ?n), ?i) =
+    TMP([x] * replace_([i], N100_?), ?i) * SumOver(N100_?, ?n, [i], -1);
   renumber;
-  id TMP([x]?) = [x];
 endrepeat;
+id TMP([x]?) = [x];
 
-id SumOver([i]?, Renumber) = 1;
+* Lorentz indices remain N1_?
+id SumOver([i]?, [j]?, -1) = 1;
 
 #ifdef `Inserted'
 repeat;
-  once SumOver([i]?, ?a, Renumber) =
-    TMP(N100_?) * SumOver(N100_?, ?a) * replace_([i], N100_?);
-  renumber;
-endrepeat;
-
-id IndexEps([i]?, [j]?, [k]?) = EPS([i], [j], [k]);
-
-repeat;
-  id EPS([I]?, [J]?, [K]?) * EPS([I]?, [J]?, [K]?) *
-    SumOver([I]?, 3) * SumOver([J]?, 3) * SumOver([K]?, 3) = 6;
-  id EPS([I]?, [J]?, [k]?) * EPS([I]?, [J]?, [c]?) *
-    SumOver([I]?, 3) * SumOver([J]?, 3) = 2*IndexDelta([k], [c]);
-  id EPS([I]?, [j]?, [k]?) * EPS([I]?, [b]?, [c]?) *
-    SumOver([I]?, 3) =
+  id IndexEps([I]?, [J]?, [K]?) * IndexEps([I]?, [J]?, [K]?) *
+    SumOver([I]?, 3, ?i) * SumOver([J]?, 3, ?j) * SumOver([K]?, 3, ?k) = 6;
+  id IndexEps([I]?, [J]?, [k]?) * IndexEps([I]?, [J]?, [c]?) *
+    SumOver([I]?, 3, ?i) * SumOver([J]?, 3, ?j) = 2*IndexDelta([k], [c]);
+  id IndexEps([I]?, [j]?, [k]?) * IndexEps([I]?, [b]?, [c]?) *
+    SumOver([I]?, 3, ?i) =
     IndexDelta([j], [b])*IndexDelta([k], [c]) -
     IndexDelta([j], [c])*IndexDelta([k], [b]);
   repeat;
     id IndexDelta([I]?, [I]?) = 1;
-    symm IndexDelta;
-    once ifmatch->1 IndexDelta([i]?, [J]?) * SumOver([J]?, [x]?) =
-      replace_([J], [i]);
-    once IndexDelta([I]?, [j]?) * SumOver([I]?, [x]?) =
-      replace_([I], [j]);
-    label 1;
+    once IndexDelta([I]?, [j]?) * SumOver([I]?, ?i) = replace_([I], [j]);
   endrepeat;
 endrepeat;
 
 id IndexDelta([x]?int_, [y]?int_) = delta_([x], [y]);
-
-id TMP([x]?int_) = 1;
-repeat id TMP([I]?)^2 = TMP([I]);
+id SumOver([x]?int_, ?n) = 1;
 
 renumber 1;
 
-#do i = 1, 9
-once TMP([I]?) = replace_([I], Ind`i');
+#$c = 0;
+#do stop = 1,1
+#$c = $c + 1;
+once ifnomatch->1 SumOver([i]?$i, ?n, [j]?$j, -1) = SumOver([i], ?n);
+redefine stop "0";
+label 1;
+.sort
+#if `stop' == 0
+mul TMP(`$i', `$j'`$c'i);
+#endif
 #enddo
 
-id EPS([i]?, [j]?, [k]?) = IndexEps([j], [k], [i]);
+id TMP(?a) = replace_(?a);
 
 moduleoption polyfun=mulM;
 .sort
@@ -559,7 +553,7 @@ s Gamma5Test, Finite, MuTilde, MuTildeSq, Renumber;
 s tnj, xnj, b0nj, b1nj, b2nj;
 cf SumOver, PowerOf, Den, A0, IGram, List;
 cf DiracChain, WeylChain, Evanescent;
-cf IndexDelta, IndexEps, IndexSum, `SUNObjs', SUNTr(c);
+cf IndexDelta(s), IndexEps(a), IndexSum, `SUNObjs'(a), SUNTr(c);
 f Spinor, g5M, g6M, g7M;
 i Col1,...,Col`Legs', Ind1,...,Ind9;
 v nul, vTnj, v0nj, v1nj, v2nj, v3nj, v4nj;
@@ -581,9 +575,9 @@ t [Q];
 
 * variables internal to FORM
 s TAG, ETAG, QTAG, CUTRAT, JJ, KK;
-cf TMP, MOM, ABB, SUNX, ORD, CH, SIGN(antisymm);
+cf TMP, MOM, ABB, SUNX, ORD, CH, SIGN(a);
 cf NEQ, NN, FF, DROP, JGRAM, D1, D2, E1, E2, HDEL;
-t NUM, EQ, DD, EE, EPS(antisymm);
+t NUM, EQ, DD, EE;
 nt GB, GC, GD;
 f FC, CC;
 set MOMS: k1,...,k`Legs';
@@ -1462,29 +1456,25 @@ id SUNTSum([i]?, [j]?, [k]?, [l]?) =
   1/2/(`SUNN') * SUNT([i], [j]) * SUNT([k], [l]);
 
 
-id SUNEps([i]?, [j]?, [k]?) = EPS([i], [j], [k]);
-
-
 * cleaning up, step 1: get rid of the deltas
 
 repeat;
-  id EPS([I]?, [j]?, [k]?) * EPS([I]?, [b]?, [c]?) * SUNSum([I]?, [n]?) =
+  id SUNEps([I]?, [j]?, [k]?) * SUNEps([I]?, [b]?, [c]?) * SUNSum([I]?, [n]?) =
     SUNT([j], [b])*SUNT([k], [c]) -
     SUNT([j], [c])*SUNT([k], [b]);
   repeat;
     id SUNT([I]?, [I]?) * SUNSum([I]?, [n]?, ?n) = `SUNN';
-    symm SUNT:2 1, 2;
-    once ifmatch->1 SUNT([I]?, [j]?) * SUNSum([I]?, [n]?, ?n) = 
-      replace_([I], [j]);
+    once ifmatch->1 SUNT([I]?, [j]?) * SUNSum([I]?, [n]?, ?n) = replace_([I], [j]);
     once SUNT([i]?, [J]?) * SUNSum([J]?, [n]?, ?n) = replace_([J], [i]);
     label 1;
+    symm SUNT:2 1, 2;
   endrepeat;
 endrepeat;
 
 id SUNT([x]?int_, [y]?int_) = delta_([x], [y]);
 id SUNT([a]?, [i]?, [i]?) * SUNSum([i]?, ?a) = 0;
 
-id EPS([i]?, [j]?, [k]?) = sunM(SUNEps([j], [k], [i]));
+id SUNEps([i]?, [j]?, [k]?) = sunM(SUNEps([i], [j], [k]));
 
 * cleaning up, step 2: bead up the SUNTs into chains
 

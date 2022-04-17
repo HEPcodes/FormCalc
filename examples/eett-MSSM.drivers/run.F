@@ -1,7 +1,7 @@
 * run.F
 * defines parameter settings for one run, then includes main.F
 * this file is part of FormCalc
-* last modified 6 Oct 19 th
+* last modified 28 Mar 22 th
 
 
 * Whether to run in testing mode
@@ -24,24 +24,15 @@ c#define MUDIM 1D100
 c#define LAMBDA 1D10
 #endif
 
-* The following sets all ren. constants to zero for debugging
-* or if calculating a tree-level reaction.
 
-#ifndef NO_RENCONST
-c#define NO_RENCONST
-#endif
+* Options for the model.F file (e.g. NO_SQUARK_MIXING for MSSM.F).
 
-
-* The model initialization code is included here.  Options for the
-* model_XXX.F file (e.g. NO_SQUARK_MIXING for model_mssm.F) must be
-* defined before the #include line.
-
-* options for model_sm.F:
+* options for SM.F:
 c#define NO_CKM
 #define MB_SCHEME ONSHELL
 #define ALPHAS_ORDER 3
 
-* options for model_mssm.F:
+* options for MSSM.F:
 c#define NO_SQUARK_MIXING
 c#define HIGGS_MASSES TREE
 c#define HIGGS_MASSES SIMPLE
@@ -51,7 +42,7 @@ c#define FV 3
 c#define NO_EXCLUSION_LIMITS
 c#define NO_GUT_RELATION
 
-* options for model_thdm.F:
+* options for THDM.F:
 c#define MODEL_TYPE_I
 c#define MODEL_TYPE_II
 c#define NO_EXCLUSION_LIMITS
