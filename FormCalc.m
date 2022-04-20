@@ -4618,6 +4618,10 @@ UVDiv[A0[m_]] := m Divergence
 
 UVDiv[A00[m_]] := m^2/4 Divergence
 
+UVDiv[A0i[LoopTools`aa0, m_]] := m Divergence
+
+UVDiv[A0i[LoopTools`aa00, m_]] := m^2/4 Divergence
+
 UVDiv[B0i[bb0, __]] = Divergence
 
 UVDiv[B0i[bb1, __]] = -1/2 Divergence
