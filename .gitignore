@@ -1,6 +1,5 @@
 # binary files created by ./compile
 /Windows
-/MacOSX-x86
-/MacOSX-x86-64
+/MacOSX-*
 /Linux
-/Linux-x86-64
+/linux-*
