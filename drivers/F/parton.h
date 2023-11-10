@@ -2,7 +2,7 @@
 * setup for a single partonic process
 * is included by partonic.h for every partonic process
 * this file is part of FormCalc
-* last modified 18 Mar 19 th
+* last modified 30 Aug 22 th
 
 #undef CPall
 #if defined CPini || defined CPxs
@@ -23,6 +23,7 @@ CPall	pid = PID
 CPall	parton1 = PARTON1
 CPall	parton2 = PARTON2
 CPall	type = Generic(ARG_Ptyp,JOIN_OCT)
+CPall	crossing = Crossing(ARG_InvPerm,JOIN_ADD)
 CPxs	avgfac = Re(COLOURFACTOR)/(IDENTICALFACTOR)
 
 #ifdef PHOTONRADIATION

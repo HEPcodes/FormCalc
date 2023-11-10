@@ -1,7 +1,7 @@
 * 2to3.F
 * the kinematics for a 2 -> 3 process
 * this file is part of FormCalc
-* last modified 18 Mar 19 th
+* last modified 30 Aug 22 th
 
 
 #define LEGS 5
@@ -63,14 +63,16 @@
 #include "xsection.h"
 
 	RealType p, ex,ey,ez, msum, minv
-	integer key
+	integer i, key
 
 #include "inline.h"
 
 	p = ThreeMom(sqrtS, mass(1), mass(2))
 
-	call VecSet(1, mass(1), p, 0D0,0D0,1D0)
-	call VecSet(2, mass(2), p, 0D0,0D0,-1D0)
+	i = FromPerm(crossing, 1)
+	call VecSet(i, mass(i), p, 0D0,0D0,1D0)
+	i = FromPerm(crossing, 2)
+	call VecSet(i, mass(i), p, 0D0,0D0,-1D0)
 
 	p = 0
 	ex = 0
@@ -90,14 +92,17 @@
 	key = key + Cut(CUT_COSTH, CUT_MIN + CUT_MAX)
 #endif
 
-	call Split(5, mass(5), p, ex,ey,ez, minv, msum,
+	i = FromPerm(crossing, 5)
+	call Split(i, mass(i), p, ex,ey,ez, minv, msum,
      &    fac, key, Var(XMREM1), Var(XCOSTH1), Var(TRIVIAL))
 	Show(XMREM1) = momspec(SPEC_E, 5)
 	if( fac == 0 ) return
 
-	call Split(4, mass(4), p, ex,ey,ez, minv, msum,
+	i = FromPerm(crossing, 4)
+	call Split(i, mass(i), p, ex,ey,ez, minv, msum,
      &    fac, 0, Var(FIXED), Var(XCOSTH2), Var(XPHI2))
 
-	call VecSet(3, mass(3), p, ex,ey,ez)
+	i = FromPerm(crossing, 3)
+	call VecSet(i, mass(i), p, ex,ey,ez)
 	end
 

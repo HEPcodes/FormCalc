@@ -1,7 +1,7 @@
 * util.h
 * prototypes for the util functions
 * this file is part of FormCalc
-* last modified 16 Jun 16 th
+* last modified 30 Aug 22 th
 
 
 #ifndef UTIL_H
@@ -78,6 +78,9 @@
 
 #define HelSet(i) ibset(0,Hel0(i)+2)
 #define HelBit(x,i,h) int(ibits(x,h-(i-LEGS)*ldQH+2,1))
+
+#define ToPerm(n,i) ishft(n,(LEGS-i)*4)
+#define FromPerm(p,i) ibits(p,(LEGS-i)*4,4)
 
 #define MomEncoding(f,i) iand(f,QK-1)*QK**(i-1)
 

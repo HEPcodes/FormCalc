@@ -3,7 +3,7 @@
 	prototypes for the util functions
 	this file is part of FormCalc
 	SIMD functions by J.-N. Lang
-	last modified 17 Jun 16 th
+	last modified 30 Aug 22 th
 #endif
 
 
@@ -69,7 +69,7 @@ struct {
 #define QK (1<<ldQK)
 
 #define HelSet(i) (1LL << (Hel0(i)+2))
-#define HelBit(x,i,h) ((x >> (h-(i-LEGS)*ldQH+2)) & 1)
+#define HelBit(x,i,h) (((x) >> (h-(i-LEGS)*ldQH+2)) & 1)
 
 #define MomEncoding(f,i) ((integer8)((f) & (QK-1)) << (i-1)*ldQK)
 

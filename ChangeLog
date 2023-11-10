@@ -1,3 +1,37 @@
+30 Aug 2022:
+
+- Fixed RegisterAbbr issue on abbreviations of the form DiracChain[.]*Eps[.].
+
+- Added way to implement crossing (beta).
+
+
+15 Jul 2022:
+
+- Worked around yet another Mathematica segfault due to RCSub = Simplify.
+
+
+29 Mar 2022:
+
+- Indices in IndexSums etc. now get renumbered with similar index names
+  (no Ind1, Ind2, ...).
+
+
+5 Jan 2022:
+
+- DiagramType now takes powers of denominators properly into account.
+
+
+29 Nov 2021:
+
+- Added ReadFormWrap for better debugging of Mathematica-FORM handshake.
+
+
+7 Jun 2021:
+
+- Added VectorMoms option to CalcFeynAmp to return loop integrals
+  with vectors instead of invariants as arguments.
+
+
 18 Oct 2019:
 
 - Moved nf into SM common blocks.
