@@ -1,7 +1,7 @@
 * xsection.h
 * common blocks for xsection.F
 * this file is part of FormCalc
-* last modified 20 Feb 17 th
+* last modified 30 Aug 22 th
 
 
 #include "decl.h"
@@ -24,7 +24,7 @@
 	RealType colorcharge(LEGS,NPID)
 	RealType sqrtS, mass_in, mass_out, fscale
 	RealType threshold, avgfac
-	integer*8 helmask
+	integer*8 helmask, crossing
 	integer type, pid, parton1, parton2, serial
 	integer sqrtSinvalid, flags
 
@@ -32,7 +32,7 @@
      &    mass, charge, colorcharge,
      &    sqrtS, mass_in, mass_out, fscale,
      &    threshold, avgfac,
-     &    helmask,
+     &    helmask, crossing,
      &    type, pid, parton1, parton2, serial,
      &    sqrtSinvalid, flags
 

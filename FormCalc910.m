@@ -2,7 +2,7 @@
 
 This is FormCalc, Version 9.10
 Copyright by Thomas Hahn 1996-2022
-last modified 28 Mar 22 by Thomas Hahn
+last modified 30 Aug 22 by Thomas Hahn
 
 Release notes:
 
@@ -2164,7 +2164,7 @@ $FormCalc = {9, 10}
 
 $FormCalcVersionNumber = 9.10
 
-$FormCalcVersion = "FormCalc 9.10 (28 Mar 2022)"
+$FormCalcVersion = "FormCalc 9.10 (30 Aug 2022)"
 
 $FormCalcDir = DirectoryName[$InputFileName /.
   $HoldPattern[$InputFileName] :>
@@ -3827,6 +3827,11 @@ FormQC = FormNum =
 
 FormQF = Simplify
 
+(* originally RCSub = Simplify but segfaults like FormDot above *)
+RCSub = TermCollect
+
+RCInt = Simplify
+
 
 Attributes[Profile] = {HoldFirst}
 
@@ -4368,7 +4373,7 @@ regabb[s_, 1, 1, e_, 1, 1] := setabb[eps, e, s]
 
 regabb[s_, 1, 1, 1, t_, 1] := setabb[pol, t, s]
 
-regabb[s_, x_, 1, 1, 1, f_] := setabb[fermM, x f, s]
+regabb[s_, x__, f_] := setabb[fermM, x f, s]
 
 regabb[s_, rhs___] :=
   (Message[RegisterAbbr::unknown, #]; #)&[ s -> Times[rhs] ]
@@ -5512,13 +5517,14 @@ Block[ {qn, n = 0},
     MapThread[ {"\n\n\
 #undef ", #1, "\n\
 #define ", #1, "(f,c) Compose(f,c", {",", #}&/@ #2, ")"}&,
-      {Flatten[{"Generic", "Anti", "Mass", ToCode/@ qn}], {##3}} ]
+      {Flatten[{"Crossing", "Generic", "Anti", "Mass", ToCode/@ qn}], {##3}} ]
   }&@@ Transpose[Level[MapIndexed[pspec, proc, {2}], {2}]]
 ]
 
 pspec[{(s_Integer:1) p_, _, m_, q_:0}, {o_, _}] := Flatten[{
   "," <> #,
   "f(" <> # <> "," <> ToString[n] <> "," <> ToString[o] <> ")",
+  ToString[n],
   ptype[p, m],
   ToString[s],
   ToCode[m],
@@ -7267,11 +7273,6 @@ DSelfEnergy[f:Except[_Rule], opt___Rule] :=
   DSelfEnergy[f -> f, TheMass[f], opt]
 
 DSelfEnergy[f:Except[_Rule], m__] := DSelfEnergy[f -> f, m]
-
-
-RCSub = Simplify
-
-RCInt = Simplify
 
 
 ClearSE[] := Clear[RCCache]

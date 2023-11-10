@@ -2,7 +2,7 @@
 	generic.h
 	macros for the use with the functions of specs.h
 	this file is part of FormCalc
-	last modified 16 Jun 16 th
+	last modified 30 Aug 22 th
 
 
 ARG-type functions:
@@ -38,6 +38,9 @@ arg 4 'b' = bit pattern used for testing helicities
 #define GRAVITINO(f,i,o) f(5,27,0,HelSet(i))
 #define GRAVITON(f,i,o) f(6,27,0,HelSet(i))
 #define TENSOR(f,i,o) f(7,31,0,HelSet(i))
+
+#define ARG_Perm(n,i,o) ToPerm(n,i)
+#define ARG_InvPerm(n,i,o) ToPerm(i,n)
 
 #define ARG_ID(x,i,o) x
 #define ARG_RE(x,i,o) Re(x)
